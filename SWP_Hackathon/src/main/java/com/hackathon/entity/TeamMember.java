@@ -27,6 +27,4 @@ public class TeamMember {
     @JoinColumn(name = "Team_ID", nullable = false)
     private Team team;
 
-
-
 }
