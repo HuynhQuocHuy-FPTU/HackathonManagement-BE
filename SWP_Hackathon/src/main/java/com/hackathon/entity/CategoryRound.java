@@ -1,0 +1,34 @@
+package com.hackathon.entity;
+
+import jakarta.persistence.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name = "CategoryRound")
+public class CategoryRound {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "Category_Round_ID")
+    private int category_round_id;
+
+    // 1 category - N category_round
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "Category_ID", nullable = false)
+    private Category category;
+
+    // 1 round - N category_round
+    @ManyToOne
+    @JoinColumn(name = "Round_ID")
+    private Round round;
+
+    //1 categoryRound- N submission
+    @OneToMany(mappedBy = "categoryRound", cascade = CascadeType.ALL,orphanRemoval = true)
+    private List<Submission> submissions = new ArrayList<>();
+
+    // 1 Category Round - N expertAssign
+    @OneToMany(mappedBy = "categoryRound", cascade = CascadeType.ALL,orphanRemoval = true)
+    private List<ExpertAssign> expertAssigns = new ArrayList<>();
+
+}

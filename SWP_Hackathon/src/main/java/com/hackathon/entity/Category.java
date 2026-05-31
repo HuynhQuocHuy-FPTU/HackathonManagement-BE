@@ -1,0 +1,31 @@
+package com.hackathon.entity;
+
+import jakarta.persistence.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name ="Category")
+public class Category {
+    @Id
+    @GeneratedValue(strategy  = GenerationType.IDENTITY)
+    @Column(name="Category_ID")
+    private int category_id;
+    @Column(name = "Category_Name", columnDefinition = "NVARCHAR(50)", nullable = false)
+    private String category_name;
+
+    // 1 Category - N registration
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL,orphanRemoval = true)
+    private List<Registration> registrations = new ArrayList<>();
+
+    //1 CATEGORY - N CATEGORY_ROUND
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL,orphanRemoval = true)
+    private List<CategoryRound> categoryRounds;
+
+    // 1 HACKATHON - N CATEGORY
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "Event_ID", nullable = false)
+    private HackathonEvent hackathonEvent;
+
+}
