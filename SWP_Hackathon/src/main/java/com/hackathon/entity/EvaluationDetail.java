@@ -1,8 +1,14 @@
 package com.hackathon.entity;
 
 import jakarta.persistence.*;
+import lombok.*;
 
 import java.math.BigDecimal;
+@NoArgsConstructor
+@AllArgsConstructor
+@Setter
+@Getter
+@ToString
 @Entity
 @Table(name="EvaluationDetail")
 public class EvaluationDetail {

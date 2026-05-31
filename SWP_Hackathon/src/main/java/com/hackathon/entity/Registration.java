@@ -2,10 +2,15 @@ package com.hackathon.entity;
 
 import com.hackathon.entity.enums.TeamStatus;
 import jakarta.persistence.*;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
-
+@NoArgsConstructor
+@AllArgsConstructor
+@Setter
+@Getter
+@ToString
 @Entity
 @Table(name = "Registration")
 public class Registration {
