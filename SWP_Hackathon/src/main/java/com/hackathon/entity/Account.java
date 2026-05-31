@@ -3,11 +3,17 @@ package com.hackathon.entity;
 import com.hackathon.entity.enums.AccountRole;
 import com.hackathon.entity.enums.AccountStatus;
 import jakarta.persistence.*;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
+@NoArgsConstructor
+@AllArgsConstructor
+@Setter
+@Getter
+@ToString
 @Entity
 @Table(name="Account")
 public class Account {

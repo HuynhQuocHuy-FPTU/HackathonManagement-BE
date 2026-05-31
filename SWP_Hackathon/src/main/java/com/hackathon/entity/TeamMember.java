@@ -1,7 +1,13 @@
 package com.hackathon.entity;
 
 import jakarta.persistence.*;
+import lombok.*;
 
+@NoArgsConstructor
+@AllArgsConstructor
+@Setter
+@Getter
+@ToString
 @Entity
 @Table(name = "TeamMember")
 public class TeamMember {
