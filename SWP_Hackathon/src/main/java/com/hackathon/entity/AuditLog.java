@@ -16,7 +16,7 @@ public class AuditLog {
     private AuditAction action;
     private String entityType;
     private Long entityId;
-    @Column(columnDefinition = "NAVARCHAR(1000)")
+    @Column(columnDefinition = "NVARCHAR(1000)")
     private String description;
     private LocalDateTime createdAt;
 
@@ -24,7 +24,7 @@ public class AuditLog {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_Id")
     private Account account;
-
+    @PrePersist
     public void prePersist(){
         createdAt = LocalDateTime.now();
     }
