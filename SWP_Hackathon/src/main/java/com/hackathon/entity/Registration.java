@@ -40,4 +40,5 @@ public class Registration {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "Event_ID", nullable = false)
     private HackathonEvent hackathonEvent;
+
 }
