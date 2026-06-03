@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 @Setter
 @Getter
 @ToString
+@Builder
 @Entity
 @Table(name="EvaluationDetail")
 public class EvaluationDetail {

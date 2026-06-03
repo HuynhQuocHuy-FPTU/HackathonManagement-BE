@@ -8,6 +8,7 @@ import lombok.*;
 @Setter
 @Getter
 @ToString
+@Builder
 @Entity
 @Table(name = "TeamMember")
 public class TeamMember {

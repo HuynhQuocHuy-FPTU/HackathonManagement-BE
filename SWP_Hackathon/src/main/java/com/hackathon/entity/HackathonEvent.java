@@ -12,6 +12,7 @@ import java.util.List;
 @Setter
 @Getter
 @ToString
+@Builder
 @Entity
 public class HackathonEvent {
     @Id
@@ -35,7 +36,8 @@ public class HackathonEvent {
     @Column(name = "Status", nullable = false)
     @Enumerated(EnumType.STRING)
     private EventStatus status;
-
+    @Column(name = "Max_Team")
+    private Integer maxTeam;
     // 1 HACKATHON - N CATEGORY
     @OneToMany(mappedBy = "hackathonEvent", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Category> categorys = new ArrayList<>();
@@ -49,6 +51,8 @@ public class HackathonEvent {
     @OneToMany(mappedBy = "hackathonEvent", cascade = CascadeType.ALL,orphanRemoval = true)
     private List<Round> rounds = new ArrayList<>();
 
-    //
+    //1 HackthonEvent - N Registration
+    @OneToMany(mappedBy = "hackathonEvent", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Registration> registrations = new ArrayList<>();
 
 }

@@ -11,21 +11,22 @@ import java.util.List;
 @Setter
 @Getter
 @ToString
+@Builder
 @Entity
 @Table(name="Organization")
 public class Organization {
     @Id
     @Column(name="Organization_ID", nullable = false, columnDefinition = "VARCHAR(50)")
-    private String university_id;
+    private String organization_id;
     @Column(name="Organization_Name", nullable = false, columnDefinition = "NVARCHAR(255)", unique = true)
-    private String university_name;
+    private String organization_name;
     @Column(name="Address", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String address;
     @Column(name = "Short_Name", nullable = false, columnDefinition = "NVARCHAR(100)")
     private String short_name;
     @Column(name = "Email_Domain", nullable = false, columnDefinition = "NVARCHAR(255)", unique = true)
     private String email_domain;
-    @Enumerated
+    @Enumerated(EnumType.STRING)
     @Column(name = "Type", nullable = false)
     private OrganizationType type;
 

@@ -10,6 +10,7 @@ import java.util.List;
 @Setter
 @Getter
 @ToString
+@Builder
 @Entity
 @Table(name ="Category")
 public class Category {

@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Setter
 @Getter
 @ToString
+@Builder
 @Entity
 @Table(name = "Registration")
 public class Registration {
@@ -35,5 +36,8 @@ public class Registration {
     @JoinColumn(name = "Team_ID", nullable = false)
     private Team team;
 
-
+    // N Registration - 1 HackathonEvent
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "Event_ID", nullable = false)
+    private HackathonEvent hackathonEvent;
 }
