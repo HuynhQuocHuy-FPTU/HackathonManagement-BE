@@ -36,7 +36,7 @@ public class Registration {
     @JoinColumn(name = "Team_ID", nullable = false)
     private Team team;
 
-    // N Registration - 1 HackathonEvent
+    // 1 HackathonEvent - N Registration
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "Event_ID", nullable = false)
     private HackathonEvent hackathonEvent;
