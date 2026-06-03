@@ -1,0 +1,23 @@
+package com.hackathon.entity.enums;
+
+public enum AuditAction {
+    CREATE_EVENT,
+    UPDATE_EVENT,
+    DELETE_EVENT,
+    CREATE_ROUND,
+    CREATE_CATEGORY,
+    CREATE_TEAM,
+    CREATE_CRITERIA,
+    UPDATE_ROUND,
+    UPDATE_CRITERIA,
+    UPDATE_TEAM,
+    DELETE_ROUND,
+    DELETE_CATEGORY,
+    DELETE_TEAM,
+    DELETE_CRITERIA,
+    SUBMIT_PROJECT,
+    ASSIGN_JUDGE,
+    ASSIGN_MENTOR,
+    LOGIN,
+    LOGOUT,
+}

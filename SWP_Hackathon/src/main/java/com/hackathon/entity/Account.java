@@ -8,12 +8,14 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
 @Getter
 @ToString
+@Builder
 @Entity
 @Table(name="Account")
 public class Account {
@@ -53,5 +55,11 @@ public class Account {
     //1Account - 1 EventCoordinator
     @OneToOne(mappedBy = "account", cascade = CascadeType.ALL,fetch = FetchType.LAZY)
     private EventCoordinator eventCoordinator;
+    //1 Account - N Notification
+    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Notification> notifications;
 
+    // 1 account - N Auditlog
+    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<AuditLog> auditLogs;
 }

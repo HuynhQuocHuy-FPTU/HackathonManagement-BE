@@ -11,6 +11,7 @@ import java.util.List;
 @Setter
 @Getter
 @ToString
+@Builder
 @Entity
 @Table(name ="EventCoordinator" )
 public class EventCoordinator {

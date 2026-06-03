@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Setter
 @Getter
 @ToString
+@Builder
 @Entity
 @Table(name = "Registration")
 public class Registration {
