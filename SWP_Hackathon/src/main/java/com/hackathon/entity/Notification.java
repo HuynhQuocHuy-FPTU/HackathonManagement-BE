@@ -26,4 +26,5 @@ public class Notification {
         createdAt = LocalDateTime.now();
         isRead = false;
     }
+
 }
