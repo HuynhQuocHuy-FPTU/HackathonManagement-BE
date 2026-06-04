@@ -5,21 +5,16 @@ import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
-@NoArgsConstructor
-@AllArgsConstructor
-@Setter
-@Getter
-@ToString
-@Builder
+@Data
 @Entity
 @Table(name ="Category")
 public class Category {
     @Id
     @GeneratedValue(strategy  = GenerationType.IDENTITY)
     @Column(name="Category_ID")
-    private int category_id;
-    @Column(name = "Category_Name", columnDefinition = "NVARCHAR(50)", nullable = false)
-    private String category_name;
+    private int categoryId;
+    @Column(name = "Category_Name", columnDefinition = "NVARCHAR(255)", nullable = false)
+    private String categoryName;
 
     // 1 Category - N registration
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL,orphanRemoval = true)

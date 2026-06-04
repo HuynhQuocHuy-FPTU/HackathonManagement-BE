@@ -7,24 +7,19 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-@NoArgsConstructor
-@AllArgsConstructor
-@Setter
-@Getter
-@ToString
-@Builder
+@Data
 @Entity
 public class HackathonEvent {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "Event_ID")
-    private int event_id;
+    private int eventId;
     @Column(name = "Event_Name", columnDefinition = "NVARCHAR(50)", nullable = false)
-    private String event_name;
-    @Column(name = "Start_Date")
-    private LocalDateTime start_date;
-    @Column(name = "End_Date")
-    private LocalDateTime end_date;
+    private String eventName;
+    @Column(name = "Start_Date", nullable = false)
+    private LocalDateTime startDate;
+    @Column(name = "End_Date", nullable = false)
+    private LocalDateTime endDate;
     @Column(name = "Title", columnDefinition = "VARCHAR(50)", nullable = false)
     private String title;
     @Column(name = "Address", columnDefinition = "NVARCHAR(255)", nullable = false)
@@ -38,9 +33,18 @@ public class HackathonEvent {
     private EventStatus status;
     @Column(name = "Max_Team")
     private Integer maxTeam;
+    @Column(name = "Max_Team_Size", nullable = false)
+    private Integer maxTeamSize;
+    @Column(name = "Min_Team_Size", nullable = false)
+    private Integer minTeamSize;
+    @Column(name ="Registration_Dealine", nullable = false)
+    private LocalDateTime registrationDeadline;
+    @Column(name = "Create_At", nullable = false)
+    private LocalDateTime createAt;
+
     // 1 HACKATHON - N CATEGORY
     @OneToMany(mappedBy = "hackathonEvent", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Category> categorys = new ArrayList<>();
+    private List<Category> categories = new ArrayList<>();
 
     // 1 EventCoordinator - N HackathonEvent
     @ManyToOne(fetch = FetchType.LAZY)

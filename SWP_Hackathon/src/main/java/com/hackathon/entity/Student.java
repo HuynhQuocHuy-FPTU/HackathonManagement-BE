@@ -7,23 +7,18 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-@NoArgsConstructor
-@AllArgsConstructor
-@Setter
-@Getter
-@ToString
-@Builder
+@Data
 @Entity
 @Table(name="Student")
 public class Student {
     @Id
     @GeneratedValue (strategy = GenerationType.IDENTITY)
     @Column(name="Student_ID")
-    private int student_id;
+    private int studentId;
     @Column(name = "Student_Code", columnDefinition = "VARCHAR(20)" ,nullable = false)
     private String studentCode;
     @Column(name = "Student_Name", columnDefinition = "NVARCHAR(50)" ,nullable = false)
-    private String student_Name;
+    private String studentName;
     @Column(name = "Address", columnDefinition = "NVARCHAR(255)",nullable = false )
     private String address;
     @Column(name = "Major", nullable = false, columnDefinition = "NVARCHAR(255)")
