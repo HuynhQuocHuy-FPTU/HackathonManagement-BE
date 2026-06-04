@@ -55,7 +55,7 @@ public class HackathonEvent {
     @OneToMany(mappedBy = "hackathonEvent", cascade = CascadeType.ALL,orphanRemoval = true)
     private List<Round> rounds = new ArrayList<>();
 
-    //1 Hackathon - N Registration'
+    //1 Hackthon - N Registration'
     @OneToMany(mappedBy = "hackathonEvent", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Registration> registrations = new ArrayList<>();
 
