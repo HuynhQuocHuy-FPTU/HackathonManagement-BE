@@ -4,12 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-@NoArgsConstructor
-@AllArgsConstructor
-@Setter
-@Getter
-@ToString
-@Builder
+@Data
 @Entity
 @Table(name="EvaluationDetail")
 public class EvaluationDetail {

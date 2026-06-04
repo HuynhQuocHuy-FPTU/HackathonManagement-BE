@@ -6,12 +6,7 @@ import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
-@NoArgsConstructor
-@AllArgsConstructor
-@Setter
-@Getter
-@ToString
-@Builder
+@Data
 @Entity
 @Table(name = "Expert_Assign")
 public class ExpertAssign {

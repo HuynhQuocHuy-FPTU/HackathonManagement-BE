@@ -10,12 +10,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@NoArgsConstructor
-@AllArgsConstructor
-@Setter
-@Getter
-@ToString
-@Builder
+@Data
 @Entity
 @Table(name="Account")
 public class Account {
@@ -23,23 +18,31 @@ public class Account {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "Account_ID")
     private int accountId;
+
     @Column(name = "Account_Name", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String accountName;
+
     @Column(name = "Password", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String password;
+
     @Column(name = "Phone", nullable = false, columnDefinition = "VARCHAR(10)")
     private String phone;
+
     @Column(name = "Email", nullable = false, columnDefinition = "VARCHAR(255)", unique = true)
     private String email;
+
     @Column(name = "Status", nullable = false)
     @Enumerated(EnumType.STRING)
     private AccountStatus status;
+
     @Column(name = "Created_At", nullable = false, updatable = false)
     @CreationTimestamp
     private LocalDateTime createdAt;
+
     @Column(name = "Updated_At", nullable = false)
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "Role", nullable = false)
     private AccountRole role;

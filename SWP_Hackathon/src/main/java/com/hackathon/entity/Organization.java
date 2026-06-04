@@ -6,26 +6,21 @@ import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
-@NoArgsConstructor
-@AllArgsConstructor
-@Setter
-@Getter
-@ToString
-@Builder
+@Data
 @Entity
 @Table(name="Organization")
 public class Organization {
     @Id
     @Column(name="Organization_ID", nullable = false, columnDefinition = "VARCHAR(50)")
-    private String organization_id;
+    private String organizationID;
     @Column(name="Organization_Name", nullable = false, columnDefinition = "NVARCHAR(255)", unique = true)
-    private String organization_name;
+    private String organizationName;
     @Column(name="Address", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String address;
     @Column(name = "Short_Name", nullable = false, columnDefinition = "NVARCHAR(100)")
-    private String short_name;
+    private String shortName;
     @Column(name = "Email_Domain", nullable = false, columnDefinition = "NVARCHAR(255)", unique = true)
-    private String email_domain;
+    private String emailDomain;
     @Enumerated(EnumType.STRING)
     @Column(name = "Type", nullable = false)
     private OrganizationType type;

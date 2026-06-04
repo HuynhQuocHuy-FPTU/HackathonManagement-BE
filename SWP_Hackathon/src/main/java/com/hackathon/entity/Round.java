@@ -6,19 +6,14 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-@NoArgsConstructor
-@AllArgsConstructor
-@Setter
-@Getter
-@ToString
-@Builder
+@Data
 @Entity
 @Table(name = "Round")
 public class Round {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "Round_ID")
-    private int round_id;
+    private int roundId;
     @Column(name="Round_Name", columnDefinition = "NVARCHAR(50)", nullable = false)
     private String roundName;
     @Column(name="Start_Time", nullable = false)

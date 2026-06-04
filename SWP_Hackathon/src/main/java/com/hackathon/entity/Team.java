@@ -8,27 +8,24 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-@NoArgsConstructor
-@AllArgsConstructor
-@Setter
-@Getter
-@ToString
-@Builder
+@Data
 @Entity
 @Table(name = "Team")
 public class Team {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "Team_ID" )
-    private int team_id ;
+    private int teamId ;
     @Column(name="Team_Name", columnDefinition = "NVARCHAR(50)")
-    private String team_name;
+    private String teamName;
     @Column(name="Create_Date")
     @CreationTimestamp
-    private LocalDateTime create_date;
+    private LocalDateTime createAt;
     @Column(name="Status", columnDefinition = "VARCHAR(10)")
     @Enumerated(EnumType.STRING)
     private TeamStatus status;
+    @Column(name = "Team_Size", nullable = false)
+    private Integer teamSize;
 
     //N TeamMember - 1 Team
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)

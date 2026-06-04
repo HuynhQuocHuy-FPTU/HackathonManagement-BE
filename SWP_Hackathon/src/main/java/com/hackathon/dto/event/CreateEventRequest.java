@@ -15,5 +15,6 @@ public class CreateEventRequest {
 
     private String description;
 
-    private String season;
+    private LocalDateTime registrationDeadline;
+
 }
