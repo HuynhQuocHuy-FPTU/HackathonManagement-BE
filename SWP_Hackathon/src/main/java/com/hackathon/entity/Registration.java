@@ -6,11 +6,8 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
-@NoArgsConstructor
-@AllArgsConstructor
-@Setter
-@Getter
-@ToString
+
+@Data
 @Entity
 @Table(name = "Registration")
 public class Registration {
@@ -39,5 +36,4 @@ public class Registration {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "Event_ID", nullable = false)
     private HackathonEvent hackathonEvent;
-
 }
