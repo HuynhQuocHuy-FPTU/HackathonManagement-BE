@@ -5,18 +5,14 @@ import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
-@NoArgsConstructor
-@AllArgsConstructor
-@Setter
-@Getter
-@ToString
+@Data
 @Entity
 @Table(name = "CategoryRound")
 public class CategoryRound {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "Category_Round_ID")
-    private int category_round_id;
+    private int categoryRoundId;
 
     // 1 category - N category_round
     @ManyToOne(fetch = FetchType.LAZY)

@@ -6,11 +6,7 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-@NoArgsConstructor
-@AllArgsConstructor
-@Setter
-@Getter
-@ToString
+@Data
 @Entity
 @Table(name="CriteriaDetail")
 public class CriteriaDetail {
@@ -25,7 +21,7 @@ public class CriteriaDetail {
 
     // 1 Criteria_set - N Criteria Detail
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "criteriaSet_id", nullable = false)
+    @JoinColumn(name = "CriteriaSet_Id", nullable = false)
     private CriteriaSet criteriaSet;
 
     // 1 Criteria Detail - N Evaluation _ Detail

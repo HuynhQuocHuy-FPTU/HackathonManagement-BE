@@ -7,26 +7,22 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-@NoArgsConstructor
-@AllArgsConstructor
-@Setter
-@Getter
-@ToString
+@Data
 @Entity
 @Table(name="Submission")
 public class Submission {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "Submission_ID")
-    private int submission_id;
+    private int submissionId;
     @Column(name  ="Create_date")
-    private LocalDateTime create_date;
+    private LocalDateTime createAt;
     @Column(name = "Description", nullable = false, columnDefinition = "NVARCHAR(500)")
     private String description;
     @Column(name="Github_URL")
-    private String github_url;
+    private String githubUrl;
     @Column(name="File_URL")
-    private String file_url;
+    private String fileUrl;
     @Column(name = "Status", nullable = false)
     @Enumerated(EnumType.STRING)
     private SubmissionStatus status;

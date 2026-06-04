@@ -6,18 +6,14 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-@NoArgsConstructor
-@AllArgsConstructor
-@Setter
-@Getter
-@ToString
+@Data
 @Entity
 @Table(name="CriteriaSet")
 public class CriteriaSet {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "CriteriaSet_ID")
-    private int criteriaSet_id;
+    private int criteriaSetId;
     @Column(name = "Max_Score", precision = 10, scale = 2, nullable = false)
     private BigDecimal maxScore;
 

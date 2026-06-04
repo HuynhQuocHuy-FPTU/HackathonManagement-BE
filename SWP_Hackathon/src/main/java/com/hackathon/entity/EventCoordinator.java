@@ -6,11 +6,7 @@ import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
-@NoArgsConstructor
-@AllArgsConstructor
-@Setter
-@Getter
-@ToString
+@Data
 @Entity
 @Table(name ="EventCoordinator" )
 public class EventCoordinator {
