@@ -39,10 +39,6 @@ public class EventCoordinator {
     @JsonIgnore
     private List<CriteriaSet>criteriaSets = new ArrayList<>();
 
-    // N EventCoordinator - 1 Organization
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "Organization_ID", nullable = false)
-    private Organization organization;
 
 
 
