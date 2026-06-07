@@ -24,4 +24,5 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexcepted error: " + ex.getMessage());
     }
 
+
 }

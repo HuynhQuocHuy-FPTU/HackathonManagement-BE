@@ -21,4 +21,5 @@ public class EventController {
         eventService.createEvent(request);
         return  ResponseEntity.ok("Create event successfully");
     }
+
 }

@@ -13,4 +13,5 @@ public class CreateCategoryRequest {
     private Integer eventId;
 
 
+
 }

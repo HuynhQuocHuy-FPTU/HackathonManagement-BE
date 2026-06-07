@@ -33,4 +33,5 @@ public class EvaluationDetail {
      private CriteriaRound criteriaRound;
 
 
+
 }

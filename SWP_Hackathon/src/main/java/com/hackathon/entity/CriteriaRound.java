@@ -35,4 +35,5 @@ public class CriteriaRound {
     @JoinColumn(name = "Round_ID", nullable = false)
     private Round round;
 
+
 }

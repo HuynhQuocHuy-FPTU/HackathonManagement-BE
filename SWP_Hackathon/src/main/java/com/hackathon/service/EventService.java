@@ -5,4 +5,5 @@ import com.hackathon.exception.BadRequestException;
 
 public interface EventService {
     public void createEvent(CreateEventRequest request) throws BadRequestException;
+
 }

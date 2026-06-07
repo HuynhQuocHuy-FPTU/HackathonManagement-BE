@@ -7,4 +7,5 @@ import com.hackathon.exception.BadRequestException;
 
 public interface RoundService {
     public Round createRound(CreateRoundRequest request) throws BadRequestException;
+
 }

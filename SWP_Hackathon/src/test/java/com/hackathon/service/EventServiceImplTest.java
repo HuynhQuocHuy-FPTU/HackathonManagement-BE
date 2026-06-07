@@ -155,6 +155,7 @@ class EventServiceImplTest {
         when(roundService.createRound(any(CreateRoundRequest.class)))
                 .thenThrow(new RuntimeException("Phát hiện lỗi bất nhất! Tiêu chí con không nằm trong Bộ tiêu chí tổng đã chọn."));
 
+
         // When & Then
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             eventService.createEvent(request);

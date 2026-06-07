@@ -47,4 +47,5 @@ public class CreateEventRequest {
 
     private List<CreateCategoryRequest> categories;
     private List<CreateRoundRequest> rounds;
+
 }
