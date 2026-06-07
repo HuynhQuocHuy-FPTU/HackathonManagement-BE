@@ -1,6 +1,6 @@
 package com.hackathon.dto.round;
 
-import com.hackathon.dto.criteria.CustomCriteriaRound;
+import com.hackathon.dto.criteria.EvaluationCriteriaRequestDTO;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -32,6 +32,6 @@ public class CreateRoundRequest {
     private Integer criteriaSetId;
 
 
-    private List<CustomCriteriaRound> customCriteriaRounds;
+    private List<EvaluationCriteriaRequestDTO> customCriteriaDetatils;
 
 }

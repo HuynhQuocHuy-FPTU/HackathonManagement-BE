@@ -1,12 +1,11 @@
 package com.hackathon.service;
 
-import com.hackathon.dto.criteria.CustomCriteriaRound;
+import com.hackathon.dto.criteria.EvaluationCriteriaRequestDTO;
 import com.hackathon.dto.round.CreateRoundRequest;
 import com.hackathon.entity.*;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.*;
 import com.hackathon.validator.RoundValidator;
-import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -28,7 +27,7 @@ public class RoundServiceImpl implements RoundService{
     private CriteriaDetailRepository criteriaDetailRepository;
 
     @Autowired
-    private CriteriaRoundRepository criteriaRoundRepository;
+    private EvaluationCriteriaRepository evaluationCriteriaRepository;
 
     @Autowired
     private RoundValidator roundValidator;
@@ -56,8 +55,8 @@ public class RoundServiceImpl implements RoundService{
         Round savedRound = roundRepository.save(round);
 
         //5. Custom criteria
-        if (request.getCustomCriteriaRounds() != null && !request.getCustomCriteriaRounds().isEmpty()) {
-            for (CustomCriteriaRound customCriteria : request.getCustomCriteriaRounds()) {
+        if (request.getCustomCriteriaDetatils() != null && !request.getCustomCriteriaDetatils().isEmpty()) {
+            for (EvaluationCriteriaRequestDTO customCriteria : request.getCustomCriteriaDetatils()) {
                 // tìm thoong tin tieu chi goc
                 CriteriaDetail tempCriteriaDetail = criteriaDetailRepository.findById(customCriteria.getCriteriaDetailId()).orElseThrow(() -> new RuntimeException("Criteria detail not valid with ID: " + customCriteria.getCriteriaDetailId()));
 
@@ -67,16 +66,16 @@ public class RoundServiceImpl implements RoundService{
                 }
 
                 //tạo CriteriaRound để snapshot dữ liệu()
-                CriteriaRound criteriaRound = new CriteriaRound();
-                criteriaRound.setRound(savedRound);
-                criteriaRound.setCriteriaDetail(tempCriteriaDetail);
-                criteriaRound.setCriteriaName(tempCriteriaDetail.getCriteriaName());
+                EvaluationCriteria evaluationCriteria = new EvaluationCriteria();
+                evaluationCriteria.setRound(savedRound);
+                evaluationCriteria.setCriteriaDetail(tempCriteriaDetail);
+                evaluationCriteria.setCriteriaName(tempCriteriaDetail.getCriteriaName());
 
                 //quyết định có custom hay không
-                criteriaRound.setWeight(BigDecimal.valueOf(customCriteria.getCustomWeight()));
+                evaluationCriteria.setWeight(BigDecimal.valueOf(customCriteria.getCustomWeight()));
 
                 //lưu xuống DB
-                criteriaRoundRepository.save(criteriaRound);
+                evaluationCriteriaRepository.save(evaluationCriteria);
 
             }
 

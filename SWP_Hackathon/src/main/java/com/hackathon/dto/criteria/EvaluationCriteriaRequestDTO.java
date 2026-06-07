@@ -1,4 +1,6 @@
 package com.hackathon.dto.criteria;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,13 +14,13 @@ import java.util.List;
 @Setter
 @Getter
 public class EvaluationCriteriaRequestDTO {
-    private Integer criteriaSetId;
-    private Integer evaluationCriteriaId;
-    private  Integer eventId;
-    private Integer roundId;
-    private String criteriaName;
-    private BigDecimal weight;
+    @NotNull(message = "Criteria detail id is required")
+    private int criteriaDetailId;
+
+    @NotNull(message = "Custom weight is required")
+    private double customWeight;
+
+    @NotBlank(message = "Description is required")
     private String description;
-    private List<CriteriaCustomDTO> criteriaList;  // lay ds da duoc chinh sua
 
 }

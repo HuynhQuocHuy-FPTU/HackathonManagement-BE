@@ -25,9 +25,9 @@ public class CriteriaDetail {
     private CriteriaSet criteriaSet;
 
 
-//    // 1 Criteria Detail - N Evaluation _ Detail
-//    @OneToMany(mappedBy = "criteriaDetail", cascade = CascadeType.ALL,orphanRemoval = true)
-//    private List<EvaluationDetail> evaluationDetail = new ArrayList<>() ;
+    // 1 Criteria Detail - N Evaluation _ Criteria
+    @OneToMany(mappedBy = "criteriaDetail", cascade = CascadeType.ALL,orphanRemoval = true)
+    private List<EvaluationCriteria> evaluationCriteria = new ArrayList<>() ;
 
 
 

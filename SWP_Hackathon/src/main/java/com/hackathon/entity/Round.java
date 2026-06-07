@@ -32,10 +32,16 @@ public class Round {
     @JoinColumn(name = "Event_ID", nullable = false)
     private HackathonEvent hackathonEvent;
 
-    //1 Criteria_Set - N round
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "CriteriaSet_ID", nullable = false)
-    private CriteriaSet criteriaSet;
+//    //1 Criteria_Set - N round
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "CriteriaSet_ID", nullable = false)
+//    private CriteriaSet criteriaSet;
+
+    //1 Round - N Evaluation Criteria
+    @OneToMany(mappedBy = "round")
+    private List<EvaluationCriteria> evaluationCriterias = new ArrayList<>() ;
+
+
 
 
 }
