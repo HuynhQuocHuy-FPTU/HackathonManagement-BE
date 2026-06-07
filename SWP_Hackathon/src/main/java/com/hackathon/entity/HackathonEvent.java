@@ -59,4 +59,5 @@ public class HackathonEvent {
     @OneToMany(mappedBy = "hackathonEvent", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Registration> registrations = new ArrayList<>();
 
+
 }
