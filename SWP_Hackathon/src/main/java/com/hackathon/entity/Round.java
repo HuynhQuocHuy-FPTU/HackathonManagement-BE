@@ -24,7 +24,7 @@ public class Round {
     private String advancementRule;
 
     // 1 round - N category_round
-    @OneToMany(mappedBy = "round")
+    @OneToMany(mappedBy = "round",cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CategoryRound> categoryRounds = new ArrayList<>();
 
     // 1 hackathon - N round
@@ -32,10 +32,13 @@ public class Round {
     @JoinColumn(name = "Event_ID", nullable = false)
     private HackathonEvent hackathonEvent;
 
-    //1 Criteria_Set - N round
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "CriteriaSet_ID", nullable = false)
-    private CriteriaSet criteriaSet;
+//    //1 Criteria_Set - N round
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "CriteriaSet_ID", nullable = false)
+//    private CriteriaSet criteriaSet;
 
+    //1 Round - N Criteria_Round
+    @OneToMany(mappedBy = "round", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CriteriaRound> criteriaRounds;
 
 }
