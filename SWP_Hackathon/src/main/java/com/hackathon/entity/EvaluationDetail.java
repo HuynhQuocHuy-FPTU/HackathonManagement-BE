@@ -17,13 +17,21 @@ public class EvaluationDetail {
     @Column(name = "Comment", columnDefinition = "NVARCHAR(500)")
     private String comment;
 
-    // 1 Criteria Detail - N Evaluation _ Detail
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "Criteria_ID", nullable = false)
-     private CriteriaDetail criteriaDetail;
+//    // 1 Criteria Detail - N Evaluation _ Detail
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "Criteria_ID", nullable = false)
+//     private CriteriaDetail criteriaDetail;
 
     // 1 evaluation - N evaluation detail
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="Evaluation_ID", nullable = false)
     private Evaluation evaluation;
+
+    // 1 Criteria Detail - N Evaluation _ Detail
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "Criteria_ID", nullable = false)
+     private CriteriaRound criteriaRound;
+
+
+
 }
