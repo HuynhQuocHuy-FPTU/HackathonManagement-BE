@@ -46,5 +46,6 @@ public class CreateEventRequest {
     private LocalDateTime registrationDeadline;
 
     private List<CreateCategoryRequest> categories;
+
     private List<CreateRoundRequest> rounds;
 }
