@@ -1,5 +1,6 @@
 package com.hackathon.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hackathon.entity.enums.EventStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -22,6 +23,7 @@ public class EventCoordinator {
     @Enumerated(EnumType.STRING)
     private EventStatus status;
 
+
     // 1 ACCOUNT - 1 EVENT COORDINATOR
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="Account_ID", unique = true)
@@ -29,10 +31,12 @@ public class EventCoordinator {
 
     //1 EventCoordinator - N HackathonEvent
     @OneToMany(mappedBy = "eventCoordinator", cascade = CascadeType.ALL,orphanRemoval = true)
+    @JsonIgnore
     private List<HackathonEvent> hackathonEvents= new ArrayList<>();
 
     // 1 eventCoordinator - N Criteria_SET
     @OneToMany(mappedBy = "eventCoordinator", cascade = CascadeType.ALL,orphanRemoval = true)
+    @JsonIgnore
     private List<CriteriaSet>criteriaSets = new ArrayList<>();
 
     // N EventCoordinator - 1 Organization
@@ -41,4 +45,14 @@ public class EventCoordinator {
     private Organization organization;
 
 
+
 }
+
+
+
+
+
+
+
+
+

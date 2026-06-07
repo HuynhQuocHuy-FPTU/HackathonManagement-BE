@@ -1,5 +1,6 @@
 package com.hackathon.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hackathon.entity.enums.EventStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -44,6 +45,7 @@ public class HackathonEvent {
 
     // 1 HACKATHON - N CATEGORY
     @OneToMany(mappedBy = "hackathonEvent", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Category> categories = new ArrayList<>();
 
     // 1 EventCoordinator - N HackathonEvent
@@ -53,10 +55,12 @@ public class HackathonEvent {
 
     // 1 Hackthon - N round
     @OneToMany(mappedBy = "hackathonEvent", cascade = CascadeType.ALL,orphanRemoval = true)
+    @JsonIgnore
     private List<Round> rounds = new ArrayList<>();
 
     //1 Hackthon - N Registration'
     @OneToMany(mappedBy = "hackathonEvent", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Registration> registrations = new ArrayList<>();
 
 }

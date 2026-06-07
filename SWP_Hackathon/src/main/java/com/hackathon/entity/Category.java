@@ -1,5 +1,6 @@
 package com.hackathon.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -18,10 +19,12 @@ public class Category {
 
     // 1 Category - N registration
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL,orphanRemoval = true)
+    @JsonIgnore
     private List<Registration> registrations = new ArrayList<>();
 
     //1 CATEGORY - N CATEGORY_ROUND
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL,orphanRemoval = true)
+    @JsonIgnore
     private List<CategoryRound> categoryRounds;
 
     // 1 HACKATHON - N CATEGORY

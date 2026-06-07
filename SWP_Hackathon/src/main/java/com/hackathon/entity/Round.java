@@ -1,5 +1,6 @@
 package com.hackathon.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -31,6 +32,11 @@ public class Round {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "Event_ID", nullable = false)
     private HackathonEvent hackathonEvent;
+
+    // 1 round - N evaluationCriteria
+    @OneToMany(mappedBy = "round")
+    @JsonIgnore
+    private List<EvaluationCriteria> evaluationCriteriaList = new ArrayList<>();
 
     //1 Criteria_Set - N round
     @ManyToOne(fetch = FetchType.LAZY)

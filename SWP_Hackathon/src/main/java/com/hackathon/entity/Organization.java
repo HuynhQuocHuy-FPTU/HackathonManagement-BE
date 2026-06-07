@@ -1,5 +1,6 @@
 package com.hackathon.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hackathon.entity.enums.OrganizationType;
 import jakarta.persistence.*;
 import lombok.*;
@@ -27,14 +28,17 @@ public class Organization {
 
     //1 Organization - N student
     @OneToMany(mappedBy = "organization", cascade = CascadeType.ALL,orphanRemoval = true)
+    @JsonIgnore
     private List<Student> students = new ArrayList<>();
 
     //1 Organization - N Expert
     @OneToMany(mappedBy = "organization",cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Expert> experts = new ArrayList<>();
 
     //1 Organization - N Event Coordinator
     @OneToMany(mappedBy = "organization",cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<EventCoordinator> eventCoordinators = new ArrayList<>();
 
 

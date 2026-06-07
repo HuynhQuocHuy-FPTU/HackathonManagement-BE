@@ -1,5 +1,6 @@
 package com.hackathon.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hackathon.entity.enums.StudentStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -40,6 +41,7 @@ public class Student {
 
     // 1 Student - N Team
     @OneToMany(mappedBy = "student", fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<TeamMember> teamMembers = new ArrayList<>();
 
 

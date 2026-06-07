@@ -1,5 +1,6 @@
 package com.hackathon.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hackathon.entity.enums.SubmissionStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -30,6 +31,7 @@ public class Submission {
 
     // 1 Submission -N EVALUATION
     @OneToMany(mappedBy = "submission", cascade = CascadeType.ALL,orphanRemoval = true)
+    @JsonIgnore
     private List<Evaluation>evaluations= new ArrayList<>();
 
     // 1 TEAM - N SUBMISSION

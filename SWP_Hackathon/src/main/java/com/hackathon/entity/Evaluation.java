@@ -29,7 +29,5 @@ public class Evaluation {
     @JoinColumn(name = "Submission_ID", nullable = false)
     private Submission submission;
 
-    // 1 Evaluation - N Evaluation Detail
-    @OneToMany(mappedBy = "evaluation", cascade = CascadeType.ALL,orphanRemoval = true)
-    private List<EvaluationDetail> evaluationDetails= new ArrayList<>();
+
 }

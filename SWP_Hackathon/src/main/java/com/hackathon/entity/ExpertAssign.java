@@ -1,5 +1,6 @@
 package com.hackathon.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hackathon.entity.enums.ExpertRole;
 import jakarta.persistence.*;
 import lombok.*;
@@ -26,6 +27,7 @@ public class ExpertAssign {
 
     //1 expertAssign - N evaluation
     @OneToMany(mappedBy = "expertAssign", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Evaluation> evaluations = new ArrayList<>();
 
     //1  Category_round - N expertAssign

@@ -11,7 +11,7 @@ public class EvaluationDetail {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "Evaluation_Detail_ID")
-    private int id;
+    private int evaluationDetailId;
     @Column(name="Score", precision = 10 , scale = 2, nullable = false)
     private BigDecimal score;
     @Column(name = "Comment", columnDefinition = "NVARCHAR(500)")
@@ -22,8 +22,8 @@ public class EvaluationDetail {
     @JoinColumn(name = "Criteria_ID", nullable = false)
      private CriteriaDetail criteriaDetail;
 
-    // 1 evaluation - N evaluation detail
+    // 1 evaluationCriteria  - N evaluation detail
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="Evaluation_ID", nullable = false)
-    private Evaluation evaluation;
+    @JoinColumn(name="Evaluation_Criteria_ID", nullable = false)
+    private EvaluationCriteria evaluationCriteria;
 }

@@ -1,5 +1,6 @@
 package com.hackathon.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -28,5 +29,6 @@ public class Expert {
 
     //1 Expert- N expertAssign
     @OneToMany(mappedBy = "expert", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<ExpertAssign> expertAssigns = new ArrayList<>();
 }

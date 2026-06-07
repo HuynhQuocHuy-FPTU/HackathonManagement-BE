@@ -1,5 +1,6 @@
 package com.hackathon.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hackathon.entity.enums.TeamStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -29,13 +30,16 @@ public class Team {
 
     //N TeamMember - 1 Team
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<TeamMember> teamMembers = new ArrayList<>();
 
     //1 Team - N Registration
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Registration> registrations = new ArrayList<>();
 
     // 1 TEAM - N SUBMISSION
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL,orphanRemoval = true)
+    @JsonIgnore
     private List< Submission> submissions = new ArrayList<>();
 }
