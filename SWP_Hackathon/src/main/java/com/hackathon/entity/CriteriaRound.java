@@ -30,6 +30,7 @@ public class CriteriaRound {
     @JoinColumn(name = "Criteria_Detail_ID", nullable = false)
     private CriteriaDetail criteriaDetail;
 
+
     //1 Round - N Criteria_Round
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "Round_ID", nullable = false)
