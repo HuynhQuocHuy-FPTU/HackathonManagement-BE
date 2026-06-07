@@ -31,4 +31,6 @@ public class EvaluationDetail {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "Criteria_ID", nullable = false)
      private CriteriaRound criteriaRound;
+
+
 }
