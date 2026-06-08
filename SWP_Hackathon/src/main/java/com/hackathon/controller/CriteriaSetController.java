@@ -1,6 +1,7 @@
 package com.hackathon.controller;
 
 
+import com.hackathon.dto.criteria.CriteriaDetailResponseDTO;
 import com.hackathon.dto.criteria.CriteriaSetDetailResponseDTO;
 import com.hackathon.dto.criteria.CriteriaSetResponseDTO;
 import com.hackathon.service.CriteriaSetService;
@@ -17,22 +18,27 @@ public class CriteriaSetController {
     @Autowired
     private CriteriaSetService criteriaSetService;
 
-    // hien thi all bo tieu chi hien co
+    //1. get all bo tieu chi hien co(criteria-set)
     @GetMapping
     public List<CriteriaSetResponseDTO> getAllCriteriaSets() {
+
         return criteriaSetService.getAllCriteriaSets();
     }
-
-    // lay bo tiey chi theo id
-    @GetMapping("/{id}")
-    public CriteriaSetResponseDTO getCriteriaSet(@PathVariable("id") Integer criteriaSetId) {
-        return criteriaSetService.getCriteriaSetById(criteriaSetId);
+   //2. get  bo tiey chi chi tiet (criteria-detail)
+    @GetMapping("criteria-detail")
+    public List<CriteriaDetailResponseDTO>  getCriteriaSet() {
+        return criteriaSetService.getAllCriteriaDetail();
     }
 
-    // lay bo tieu chi chi tiet , khi click vao bo tieu chi thi se hien thi chi tiet bo tieu chi do
-    @GetMapping("/{id}/details")
-    public List<CriteriaSetDetailResponseDTO> getCriteriaSetDetails(@PathVariable("id") Integer criteriaSetId) {
+    //3.   Lay tat ca thong tin trong bo tieu chi goc(template) va tieu chi chi tiet trong template
+    @GetMapping("/with-details")
+    public List<CriteriaSetDetailResponseDTO> getAllCriteriaSetDetail(){
+        return criteriaSetService.getAllCriteriaSetDetail();
+    }
+    //4. Lay thong tin Criteria_Detail bang ID cua bo tieu chi (Set).
+    @GetMapping("/{id}/detail")
+    public List<CriteriaDetailResponseDTO> getCriteriaDetailByCriteriaSet(@PathVariable ("id") Integer criteriaSetId ){
         return criteriaSetService.getCriteriaDetailById(criteriaSetId);
-    }
 
+    }
 }
