@@ -10,4 +10,5 @@ public class CustomCriteriaRound {
 
     @NotNull(message = "Custom weight is required")
     private double customWeight;
+
 }

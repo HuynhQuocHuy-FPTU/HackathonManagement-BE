@@ -13,6 +13,8 @@ public class EventValidator {
         //check time
         if(request.getStartDate().isAfter(request.getEndDate())){
             throw new BadRequestException("Start date must be before end date");
+
+
         }
 
         // check time

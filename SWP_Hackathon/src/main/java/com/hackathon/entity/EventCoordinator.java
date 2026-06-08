@@ -35,5 +35,10 @@ public class EventCoordinator {
     @OneToMany(mappedBy = "eventCoordinator", cascade = CascadeType.ALL,orphanRemoval = true)
     private List<CriteriaSet>criteriaSets = new ArrayList<>();
 
+//    // N EventCoordinator - 1 Organization
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "Organization_ID", nullable = false)
+//    private Organization organization;
+
 
 }

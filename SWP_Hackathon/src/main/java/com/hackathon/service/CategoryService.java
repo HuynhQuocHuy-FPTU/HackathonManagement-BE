@@ -5,4 +5,5 @@ import com.hackathon.entity.Category;
 
 public interface CategoryService {
     public Category createCategory(CreateCategoryRequest request);
+
 }

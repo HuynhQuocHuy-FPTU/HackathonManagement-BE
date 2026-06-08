@@ -24,6 +24,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class EventServiceImpl implements EventService{
 
+
     private final HackathonEventRepository eventRepository;
     private final EventCoordinatorRepository eventCoordinatorRepository;
     private final EventValidator eventValidator;
