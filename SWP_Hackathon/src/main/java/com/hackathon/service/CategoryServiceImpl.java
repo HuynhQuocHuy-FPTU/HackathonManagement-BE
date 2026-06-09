@@ -1,11 +1,13 @@
 package com.hackathon.service;
 
-import com.hackathon.dto.category.request.CreateCategoryRequest;
+import com.hackathon.dto.category.CreateCategoryRequest;
 import com.hackathon.entity.Category;
 import com.hackathon.entity.HackathonEvent;
 import com.hackathon.repository.CategoryRepository;
 import com.hackathon.repository.HackathonEventRepository;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
