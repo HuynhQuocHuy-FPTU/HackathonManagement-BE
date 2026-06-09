@@ -1,6 +1,6 @@
 package com.hackathon.validator;
 
-import com.hackathon.dto.event.CreateEventRequest;
+import com.hackathon.dto.event.request.CreateEventRequest;
 import com.hackathon.exception.BadRequestException;
 import org.springframework.stereotype.Component;
 
@@ -13,8 +13,6 @@ public class EventValidator {
         //check time
         if(request.getStartDate().isAfter(request.getEndDate())){
             throw new BadRequestException("Start date must be before end date");
-
-
         }
 
         // check time

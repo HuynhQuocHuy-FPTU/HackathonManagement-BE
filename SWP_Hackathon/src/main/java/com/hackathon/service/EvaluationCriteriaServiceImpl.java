@@ -1,14 +1,14 @@
 package com.hackathon.service;
 
-import com.hackathon.dto.criteria.EvaluationCriteriaResponseDTO;
-import com.hackathon.dto.criteria.EvaluationCriteriaRequestDTO;
+import com.hackathon.dto.criteria.response.EvaluationCriteriaResponseDTO;
+import com.hackathon.dto.criteria.request.EvaluationCriteriaRequestDTO;
 import com.hackathon.entity.EvaluationCriteria;
 import com.hackathon.repository.EvaluationCriteriaRepository;
 import com.hackathon.repository.RoundRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import com.hackathon.dto.criteria.CriteriaCustomDTO;
+import com.hackathon.dto.criteria.response.CriteriaCustomDTO;
 
 import com.hackathon.entity.Round;
 
@@ -19,7 +19,6 @@ import java.util.List;
 
 @Service
 public class EvaluationCriteriaServiceImpl implements EvaluationCriteriaService {
-
     @Autowired
     EvaluationCriteriaRepository evaluationCriteriaRepository;
     @Autowired
@@ -70,7 +69,7 @@ public class EvaluationCriteriaServiceImpl implements EvaluationCriteriaService 
                     entity = new EvaluationCriteria();
                 }
 
-                entity.setEventId(request.getEventId());
+//                entity.setEventId(request.getEventId());
                 entity.setRound(round);
                 entity.setCriteriaName(dto.getCriteriaName());
                 entity.setDescription(dto.getDescription());
