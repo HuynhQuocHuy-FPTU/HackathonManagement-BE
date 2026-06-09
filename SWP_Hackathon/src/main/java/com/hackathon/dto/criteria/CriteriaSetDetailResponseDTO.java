@@ -12,10 +12,11 @@ import java.util.List;
 @AllArgsConstructor
 @Setter
 @Getter
-// Dua du lieu CriteriaSet + CriteriaDetail tu Criteria Mau len UI
 public class CriteriaSetDetailResponseDTO {
     private Integer criteriaSetId;
     private String criteriaSetName;
-    private BigDecimal maxScore;
+    private BigDecimal weight;
     private List<CriteriaDetailResponseDTO> criteriaDetails;
+
+
 }

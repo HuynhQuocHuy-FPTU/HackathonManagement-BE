@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-// CLASS NAY COI LAI
 @RestController
 @RequestMapping("/api/v1/registration")
 public class RegistrationController {

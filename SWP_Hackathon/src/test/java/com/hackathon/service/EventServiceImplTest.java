@@ -3,10 +3,6 @@ package com.hackathon.service;
 import com.hackathon.dto.category.CreateCategoryRequest; // 🔥 Đã cập nhật đúng DTO của bạn
 import com.hackathon.dto.event.CreateEventRequest;
 import com.hackathon.dto.round.CreateRoundRequest;
-<<<<<<< HEAD
-import com.hackathon.dto.criteria.request.CustomCriteriaRound;
-=======
->>>>>>> d2901bebba4a026b6f8bf66193b8dfe738f6ae7e
 import com.hackathon.entity.*;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.CategoryRoundRepository;

@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 // Dua du lieu CriteriaDetail tu Criteria Mau len UI
 @NoArgsConstructor

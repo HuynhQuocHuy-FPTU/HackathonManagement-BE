@@ -49,7 +49,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
 
             dto.setCriteriaSetId(set.getCriteriaSetId());
             dto.setCriteriaSetName(set.getCriteriaSetName());
-            dto.setMaxScore(set.getMaxScore());
+            dto.setWeight(set.getMaxScore());
 
             List<CriteriaDetailResponseDTO> details = set.getCriteriaDetails()
                     .stream()
