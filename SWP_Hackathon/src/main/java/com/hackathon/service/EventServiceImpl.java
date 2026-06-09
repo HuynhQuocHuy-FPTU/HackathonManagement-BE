@@ -1,12 +1,14 @@
 package com.hackathon.service;
 
+import com.hackathon.dto.category.CategoryResponse;
 import com.hackathon.dto.event.CreateEventRequest;
+import com.hackathon.dto.event.EventResponse;
+import com.hackathon.dto.event.UpdateEventRequest;
+import com.hackathon.dto.round.RoundResponse;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.EventStatus;
 import com.hackathon.exception.BadRequestException;
-import com.hackathon.repository.CategoryRoundRepository;
-import com.hackathon.repository.EventCoordinatorRepository;
-import com.hackathon.repository.HackathonEventRepository;
+import com.hackathon.repository.*;
 import com.hackathon.validator.EventValidator;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -14,15 +16,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.Month;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class EventServiceImpl implements EventService{
+public class EventServiceImpl implements EventService {
 
 
     private final HackathonEventRepository eventRepository;
@@ -31,8 +30,13 @@ public class EventServiceImpl implements EventService{
     private final CategoryService categoryService;
     private final RoundService roundService;
     private final CategoryRoundRepository categoryRoundRepository;
+    private final RoundRepository roundRepository;
+    private final CategoryRepository categoryRepository;
+    private final EvaluationCriteriaRepository evaluationCriteriaRepository;
+
     @Override
-    public void createEvent(CreateEventRequest request) throws BadRequestException {
+    @Transactional
+    public EventResponse createEvent(CreateEventRequest request) throws BadRequestException {
 
         //1. Validator business rule
         eventValidator.validatorCreate(request);
@@ -64,9 +68,9 @@ public class EventServiceImpl implements EventService{
 
         //5. create categories và save vào map để dễ tra cứu
         Map<String, Category> categoryMap = new HashMap<>();
-        if(request.getCategories() != null && !request.getCategories().isEmpty()){
-            for(var catRequest : request.getCategories()){
-               catRequest.setEventId(savedEvent.getEventId());
+        if (request.getCategories() != null && !request.getCategories().isEmpty()) {
+            for (var catRequest : request.getCategories()) {
+                catRequest.setEventId(savedEvent.getEventId());
 
                 Category savedCate = categoryService.createCategory(catRequest);
                 //key: category name, value: category
@@ -75,20 +79,21 @@ public class EventServiceImpl implements EventService{
         }
 
         //6. create rounds and categoryRounds
-        if(request.getRounds() != null && !request.getRounds().isEmpty()){
-            for(var roundRequest : request.getRounds()){
+        List<RoundResponse> roundResponses = new ArrayList<>();
+        if (request.getRounds() != null && !request.getRounds().isEmpty()) {
+            for (var roundRequest : request.getRounds()) {
                 roundRequest.setEventID(savedEvent.getEventId());
 
                 Round saveRound = roundService.createRound(roundRequest);
 
                 List<String> selectCategories = roundRequest.getAppliedListCategoryNames();
 
-                if(selectCategories != null && !selectCategories.isEmpty()){
-                    for(String cateName : selectCategories){
+                if (selectCategories != null && !selectCategories.isEmpty()) {
+                    for (String cateName : selectCategories) {
 
                         Category matchedCategory = categoryMap.get(cateName);
 
-                        if(matchedCategory != null){
+                        if (matchedCategory != null) {
                             CategoryRound roundCategory = new CategoryRound();
                             roundCategory.setRound(saveRound);
                             roundCategory.setCategory(matchedCategory);
@@ -97,23 +102,276 @@ public class EventServiceImpl implements EventService{
                     }
                 }
 
+                RoundResponse roundResponse = roundService.mapToResponse(saveRound, selectCategories);
+                roundResponses.add(roundResponse);
+
             }
         }
+        // 7. Chuyển category sang Response
+        List<CategoryResponse> categoryResponses = new ArrayList<>();
+        if (!categoryMap.isEmpty()) {
+            categoryResponses = categoryMap.values().stream().map(categoryService::mapToResponse).collect(Collectors.toList());
+        }
+
+        // 8. Chyển event thành response
+
+        return new EventResponse(event, categoryResponses, roundResponses);
+
+
     }
+
+    @Override
+    public void publishEvent(Integer eventID) {
+        HackathonEvent event = eventRepository.findById(eventID).orElseThrow(() -> new BadRequestException("Not found event"));
+
+        //check xem có là draft ko
+        if (event.getStatus() != EventStatus.DRAFT) {
+            throw new BadRequestException("Sự kiện này đã được công bố");
+        }
+        //đổi trạng thái
+        event.setStatus(EventStatus.ACTIVE);
+        //lưu lại vào DB
+        eventRepository.save(event);
+    }
+
+    @Override
+    @Transactional
+    public void updateEvent(UpdateEventRequest request) {
+        // lấy event cần update
+        HackathonEvent event = eventRepository.findById(request.getEventID()).orElseThrow(() -> new BadRequestException("Not found event by id"));
+
+        //chỉ update nếu là draft
+        if (event.getStatus() != EventStatus.DRAFT) {
+            throw new BadRequestException("Sự kiện đã được công bố");
+        }
+
+        // Cập nhật thông tin cơ bản
+        event.setStartDate(request.getStartDate());
+        event.setEndDate(request.getEndDate());
+        event.setSeason(this.generateSeason(request.getStartDate()));
+        event.setTitle(request.getTitle());
+        event.setAddress(request.getAddress());
+        event.setDescription(request.getDescription());
+        event.setMaxTeam(request.getMaxTeam());
+        event.setMaxTeamSize(request.getMaxTeamSize());
+        event.setMinTeamSize(request.getMinTeamSize());
+        event.setRegistrationDeadline(request.getRegistrationDeadline());
+        event.setUpdateAt(LocalDateTime.now());
+
+        HackathonEvent updateEvent = eventRepository.save(event);
+
+        //xóa cấu hình cũ
+        //xóa category_round
+        categoryRoundRepository.deleteCategoryRoundsByRound_HackathonEvent_EventId(event.getEventId());
+        //xóa round
+        roundRepository.deleteRoundByHackathonEvent_EventId(event.getEventId());
+        //xóa category
+        categoryRepository.deleteCategoriesByHackathonEvent_EventId(event.getEventId());
+
+        //5. create categories và save vào map để dễ tra cứu
+        Map<String, Category> categoryMap = new HashMap<>();
+        if (request.getCategories() != null && !request.getCategories().isEmpty()) {
+            for (var catRequest : request.getCategories()) {
+                catRequest.setEventId(event.getEventId());
+
+                Category savedCate = categoryService.createCategory(catRequest);
+                //key: category name, value: category
+                categoryMap.put(savedCate.getCategoryName(), savedCate);
+            }
+        }
+
+        //6. create rounds and categoryRounds
+        if (request.getRounds() != null && !request.getRounds().isEmpty()) {
+            for (var roundRequest : request.getRounds()) {
+                roundRequest.setEventID(event.getEventId());
+
+                Round saveRound = roundService.createRound(roundRequest);
+
+                List<String> selectCategories = roundRequest.getAppliedListCategoryNames();
+
+                List<CategoryRound> listCategoryRound = new ArrayList<>();
+                if (selectCategories != null && !selectCategories.isEmpty()) {
+                    for (String cateName : selectCategories) {
+
+                        Category matchedCategory = categoryMap.get(cateName);
+
+                        if (matchedCategory != null) {
+                            CategoryRound roundCategory = new CategoryRound();
+                            roundCategory.setRound(saveRound);
+                            roundCategory.setCategory(matchedCategory);
+                            listCategoryRound.add(roundCategory);
+                        }
+                    }
+                }
+                if (!listCategoryRound.isEmpty()) {
+                    categoryRoundRepository.saveAll(listCategoryRound);
+                }
+
+            }
+
+
+        }
+    }
+
+    @Override
+    public void deleteEvent(Integer eventID) {
+        HackathonEvent event = eventRepository.findById(eventID).orElseThrow(() -> new BadRequestException("Not found event"));
+
+        //check xem có là draft ko
+        if (event.getStatus() != EventStatus.DRAFT) {
+            throw new BadRequestException("Sự kiện này đã được công bố");
+        }
+
+        event.setStatus(EventStatus.DELETED);
+        event.setUpdateAt(LocalDateTime.now());
+        // lưu xuống database
+        eventRepository.save(event);
+
+    }
+
+    @Override
+    public List<EventResponse> getDeletedEvents() {
+        List<HackathonEvent> deledtedEvents = eventRepository.findByStatus(EventStatus.DELETED);
+
+        return deledtedEvents.stream().map(event -> new EventResponse(event, new ArrayList<>(), new ArrayList<>())).collect(Collectors.toList());
+    }
+
+    @Override
+    public void restoreEvent(Integer eventId) {
+        //1.
+        HackathonEvent event = eventRepository.findById(eventId).orElseThrow(() -> new BadRequestException("Không tìm thấy event"));
+
+        //2. chỉ khôi phục event có trạng thái là deleted
+        if (event.getStatus() != EventStatus.DELETED) {
+            throw new BadRequestException("Sự kiện này không nằm trong thùng rác");
+        }
+
+        //3. Đổi trạng thái
+        event.setStatus(EventStatus.DRAFT);
+        event.setUpdateAt(LocalDateTime.now());
+
+        //4. Lưu xuống DB
+        eventRepository.save(event);
+
+    }
+
+    @Override
+    public void permanentlyDeleteEvent(Integer eventId) {
+        HackathonEvent event = eventRepository.findById(eventId).orElseThrow(() -> new BadRequestException("Not found event"));
+
+        //check xem có là draft ko
+        if (event.getStatus() != EventStatus.DELETED) {
+            throw new BadRequestException("Sự kiện này chưa thêm vào thùng rác");
+        }
+        //xóa cấu hình cũ
+        //xóa evaluation criteria
+        evaluationCriteriaRepository.deleteEvaluationCriteriaByRound_HackathonEvent_EventId(event.getEventId());
+        //xóa category_round
+        categoryRoundRepository.deleteCategoryRoundsByRound_HackathonEvent_EventId(event.getEventId());
+        //xóa round
+        roundRepository.deleteRoundByHackathonEvent_EventId(event.getEventId());
+        //xóa category
+        categoryRepository.deleteCategoriesByHackathonEvent_EventId(event.getEventId());
+        //xóa event
+        eventRepository.deleteHackathonEventByEventId(event.getEventId());
+    }
+
+
     // create season
-    private String generateSeason(LocalDateTime startDate){
+    private String generateSeason(LocalDateTime startDate) {
         int year = startDate.getYear();
         int month = startDate.getMonthValue();
 
-        if(month >= 1 && month <= 3){
+        if (month >= 1 && month <= 3) {
             return "SPRING " + year;
-        }else if(month <= 6){
+        } else if (month <= 6) {
             return "SUMMER " + year;
-        }else if(month <= 9){
+        } else if (month <= 9) {
             return "FALL " + year;
-        }else {
+        } else {
             return "WINTER " + year;
         }
 
     }
+
+    @Override
+    public EventResponse getEventDetail(Integer eventId) {
+        HackathonEvent event = eventRepository.findById(eventId).orElseThrow(() -> new BadRequestException("Not found event"));
+
+        List<CategoryResponse> categories = event.getCategories().stream()
+                .map(category -> CategoryResponse.builder()
+                        .categoryName(category.getCategoryName()).build()).toList();
+
+        List<RoundResponse> rounds = event.getRounds()
+                .stream()
+                .map(round -> RoundResponse.builder()
+                        .roundName(round.getRoundName())
+                        .startDate(round.getStartTime())
+                        .endDate(round.getEndTime())
+                        .advancementRule(round.getAdvancementRule())
+                        .build())
+                .toList();
+        return EventResponse.builder()
+                .eventId(event.getEventId())
+                .eventName(event.getEventName())
+                .startDate(event.getStartDate())
+                .endDate(event.getEndDate())
+                .title(event.getTitle())
+                .address(event.getAddress())
+                .season(event.getSeason())
+                .description(event.getDescription())
+                .maxTeam(event.getMaxTeam())
+                .maxTeamSize(event.getMaxTeamSize())
+                .minTeamSize(event.getMinTeamSize())
+                .registrationDeadline(event.getRegistrationDeadline())
+                .status(event.getStatus())
+                .createdAt(event.getCreateAt())
+                .updateAt(event.getUpdateAt())
+                .categories(categories)
+                .rounds(rounds)
+                .build();
+    }
+
+
+    @Override
+    public List<EventResponse> searchByEventName(String eventName) {
+        List<HackathonEvent> events =
+                eventRepository.findByEventNameContainingIgnoreCase(eventName);
+
+        return events.stream()
+                .map(event -> EventResponse.builder()
+                        .eventId(event.getEventId())
+                        .eventName(event.getEventName())
+                        .title(event.getTitle())
+                        .season(event.getSeason())
+                        .address(event.getAddress())
+                        .description(event.getDescription())
+                        .maxTeam(event.getMaxTeam())
+                        .maxTeamSize(event.getMaxTeamSize())
+                        .minTeamSize(event.getMinTeamSize())
+                        .status(event.getStatus())
+                        .startDate(event.getStartDate())
+                        .endDate(event.getEndDate())
+                        .registrationDeadline(event.getRegistrationDeadline())
+                        .build())
+                .toList();
+    }
+
+    @Override
+    public List<EventResponse> getAllEvent() {
+        List<HackathonEvent> events = eventRepository.findAll();
+        return events.stream()
+                .map(event -> EventResponse.builder()
+                        .eventName(event.getEventName())
+                        .title(event.getTitle())
+                        .season(event.getSeason())
+                        .status(event.getStatus())
+                        .startDate(event.getStartDate())
+                        .endDate(event.getEndDate())
+                        .registrationDeadline(event.getRegistrationDeadline())
+                        .build())
+                .toList();
+    }
 }
+
+

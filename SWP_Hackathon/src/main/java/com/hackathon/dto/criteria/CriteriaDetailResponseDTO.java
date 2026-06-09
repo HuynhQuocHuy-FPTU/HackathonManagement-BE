@@ -8,15 +8,16 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.util.List;
 
+// Dua du lieu CriteriaDetail tu Criteria Mau len UI
 @NoArgsConstructor
 @AllArgsConstructor
-@Setter
 @Getter
-public class CriteriaSetDetailResponseDTO {
-    private Integer criteriaSetId;
-    private String criteriaSetName;
+@Setter
+
+public class CriteriaDetailResponseDTO {
+    private Integer criteriaId;
+    private String criteriaName;
     private BigDecimal weight;
-    private List<CriteriaDetailResponseDTO> criteriaDetails;
 
 
 }

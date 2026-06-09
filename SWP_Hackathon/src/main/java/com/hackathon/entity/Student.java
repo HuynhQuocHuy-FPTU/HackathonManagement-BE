@@ -28,15 +28,11 @@ public class Student {
     @Column(name = "Status", nullable = false)
     @Enumerated(EnumType.STRING)
     private StudentStatus status;
+
     //1 account - 1 student
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="Account_ID", unique = true)
     private Account account;
-
-//    //1 Organization - N Student
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name="organization_ID",nullable = false )
-//    private Organization organization;
 
     // 1 Student - N Team
     @OneToMany(mappedBy = "student", fetch = FetchType.LAZY)
