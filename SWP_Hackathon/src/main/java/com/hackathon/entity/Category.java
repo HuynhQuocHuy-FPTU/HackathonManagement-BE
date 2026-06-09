@@ -29,4 +29,5 @@ public class Category {
     @JoinColumn(name = "Event_ID", nullable = false)
     private HackathonEvent hackathonEvent;
 
+
 }

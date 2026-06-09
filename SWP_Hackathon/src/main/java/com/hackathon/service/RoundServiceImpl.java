@@ -1,7 +1,9 @@
 package com.hackathon.service;
 
 import com.hackathon.dto.criteria.EvaluationCriteriaRequestDTO;
+import com.hackathon.dto.criteria.EvaluationCriteriaResponseDTO;
 import com.hackathon.dto.round.CreateRoundRequest;
+import com.hackathon.dto.round.RoundResponse;
 import com.hackathon.entity.*;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.*;
@@ -10,9 +12,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
-
 public class RoundServiceImpl implements RoundService{
 
     @Autowired
@@ -21,13 +25,11 @@ public class RoundServiceImpl implements RoundService{
     @Autowired
     private HackathonEventRepository eventRepository;
 
-//    @Autowired
-//    private CriteriaSetRepository criteriaSetRepository;
     @Autowired
     private CriteriaDetailRepository criteriaDetailRepository;
 
     @Autowired
-    private EvaluationCriteriaRepository evaluationCriteriaRepository;
+    private EvaluationCriteriaService evaluationCriteriaService;
 
     @Autowired
     private RoundValidator roundValidator;
@@ -49,6 +51,7 @@ public class RoundServiceImpl implements RoundService{
         round.setStartTime(request.getStartDate());
         round.setEndTime(request.getEndDate());
         round.setAdvancementRule(request.getAdvancementRule());
+        round.setOrderIndex(request.getOrderIndex());
         round.setHackathonEvent(event);
 
         //4. Save DB
@@ -57,29 +60,37 @@ public class RoundServiceImpl implements RoundService{
         //5. Custom criteria
         if (request.getCustomCriteriaDetatils() != null && !request.getCustomCriteriaDetatils().isEmpty()) {
             for (EvaluationCriteriaRequestDTO customCriteria : request.getCustomCriteriaDetatils()) {
-                // tìm thoong tin tieu chi goc
-                CriteriaDetail tempCriteriaDetail = criteriaDetailRepository.findById(customCriteria.getCriteriaDetailId()).orElseThrow(() -> new RuntimeException("Criteria detail not valid with ID: " + customCriteria.getCriteriaDetailId()));
-
-                // kiểm tra tiêu chí con có thuộc bộ tieu chsi không
-                if (tempCriteriaDetail.getCriteriaSet().getCriteriaSetId() != request.getCriteriaSetId()) {
-                    throw new RuntimeException("Criteria detail not criteria set");
-                }
-
-                //tạo CriteriaRound để snapshot dữ liệu()
-                EvaluationCriteria evaluationCriteria = new EvaluationCriteria();
-                evaluationCriteria.setRound(savedRound);
-                evaluationCriteria.setCriteriaDetail(tempCriteriaDetail);
-                evaluationCriteria.setCriteriaName(tempCriteriaDetail.getCriteriaName());
-
-                //quyết định có custom hay không
-                evaluationCriteria.setWeight(BigDecimal.valueOf(customCriteria.getCustomWeight()));
-
-                //lưu xuống DB
-                evaluationCriteriaRepository.save(evaluationCriteria);
-
+                evaluationCriteriaService.createEvaluationCritera(customCriteria, request.getCriteriaSetId(), savedRound);
             }
 
         }
         return savedRound;
+    }
+
+    @Override
+    public RoundResponse mapToResponse(Round round, List<String> appliedCategoryName) {
+
+        if(round == null){
+            return null;
+        }
+
+        //1. Map danh sách tiêu chí chấm điểm từ entity sang Response
+        List<EvaluationCriteriaResponseDTO> criteriaResponses = new ArrayList<>();
+        if(round.getEvaluationCriterias() != null){
+            criteriaResponses = round.getEvaluationCriterias().stream().map(evaluationCriteriaService ::mapToResponse).collect(Collectors.toList());
+        }
+        // lay id event
+        Integer eventId = (round.getHackathonEvent() != null) ? round.getHackathonEvent().getEventId() : null;
+
+        return RoundResponse.builder()
+                .roundId(round.getRoundId())
+                .roundName(round.getRoundName())
+                .advancementRule(round.getAdvancementRule())
+                .endDate(round.getEndTime())
+                .startDate(round.getStartTime())
+                .eventID(eventId)
+                .appliedListCategoryNames(appliedCategoryName)
+                .orderIndex(round.getOrderIndex())
+                .customCriteriaDetatils(criteriaResponses).build();
     }
 }

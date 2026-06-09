@@ -22,7 +22,8 @@ public class Round {
     private LocalDateTime endTime;
     @Column(name = "Advancement_Rule", nullable = false)
     private String advancementRule;
-
+    @Column(name = "Order_Index", nullable = false)
+    private Integer orderIndex;
     // 1 round - N category_round
     @OneToMany(mappedBy = "round")
     private List<CategoryRound> categoryRounds = new ArrayList<>();

@@ -1,5 +1,6 @@
 package com.hackathon.service;
 
+import com.hackathon.dto.category.CategoryResponse;
 import com.hackathon.dto.category.CreateCategoryRequest;
 import com.hackathon.entity.Category;
 import com.hackathon.entity.HackathonEvent;
@@ -31,5 +32,11 @@ public class CategoryServiceImpl implements CategoryService{
         //3. save DB
         return categoryRepository.save(category);
 
+    }
+
+    @Override
+    public CategoryResponse mapToResponse(Category category) {
+
+        return CategoryResponse.builder().categoryId(category.getCategoryId()).categoryName(category.getCategoryName()).build();
     }
 }
