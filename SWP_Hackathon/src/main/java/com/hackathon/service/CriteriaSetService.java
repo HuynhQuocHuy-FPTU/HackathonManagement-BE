@@ -1,8 +1,8 @@
 package com.hackathon.service;
 
-import com.hackathon.dto.criteria.CriteriaDetailResponseDTO;
-import com.hackathon.dto.criteria.CriteriaSetDetailResponseDTO;
-import com.hackathon.dto.criteria.CriteriaSetResponseDTO;
+import com.hackathon.dto.criteria.response.CriteriaDetailResponseDTO;
+import com.hackathon.dto.criteria.response.CriteriaSetDetailResponseDTO;
+import com.hackathon.dto.criteria.response.CriteriaSetResponseDTO;
 import java.util.List;
 
 public interface CriteriaSetService {

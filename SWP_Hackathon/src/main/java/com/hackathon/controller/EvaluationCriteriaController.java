@@ -1,7 +1,7 @@
 package com.hackathon.controller;
 
-import com.hackathon.dto.criteria.EvaluationCriteriaResponseDTO;
-import com.hackathon.dto.criteria.EvaluationCriteriaRequestDTO;
+import com.hackathon.dto.criteria.response.EvaluationCriteriaResponseDTO;
+import com.hackathon.dto.criteria.request.EvaluationCriteriaRequestDTO;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.service.EvaluationCriteriaService;
 import org.springframework.beans.factory.annotation.Autowired;

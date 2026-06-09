@@ -1,12 +1,11 @@
 package com.hackathon.service;
 
-import com.hackathon.dto.criteria.CustomCriteriaRound;
+import com.hackathon.dto.criteria.request.CustomCriteriaRound;
 import com.hackathon.dto.round.CreateRoundRequest;
 import com.hackathon.entity.*;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.*;
 import com.hackathon.validator.RoundValidator;
-import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

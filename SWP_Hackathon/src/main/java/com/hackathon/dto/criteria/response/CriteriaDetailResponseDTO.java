@@ -1,4 +1,4 @@
-package com.hackathon.dto.criteria;
+package com.hackathon.dto.criteria.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -1,6 +1,6 @@
-package com.hackathon.dto.event;
+package com.hackathon.dto.event.request;
 
-import com.hackathon.dto.category.CreateCategoryRequest;
+import com.hackathon.dto.category.request.CreateCategoryRequest;
 import com.hackathon.dto.round.CreateRoundRequest;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

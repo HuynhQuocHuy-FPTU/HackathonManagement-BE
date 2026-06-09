@@ -1,4 +1,4 @@
-package com.hackathon.dto.criteria;
+package com.hackathon.dto.criteria.request;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;

@@ -22,10 +22,10 @@ public class Registration {
     @Enumerated(EnumType.STRING)
     private TeamStatus status;
 
-    // 1 Category - N registration
-    @ManyToOne(fetch =FetchType.LAZY)
-    @JoinColumn(name = "Category_ID", nullable = false)
-    private Category category;
+//    // 1 Category - N registration
+//    @ManyToOne(fetch =FetchType.LAZY)
+//    @JoinColumn(name = "Category_ID", nullable = false)
+//    private Category category;
 
     //N Registration - 1 Team
     @ManyToOne(fetch = FetchType.LAZY)

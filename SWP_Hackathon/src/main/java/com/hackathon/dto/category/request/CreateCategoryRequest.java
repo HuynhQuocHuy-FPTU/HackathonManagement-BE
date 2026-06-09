@@ -1,7 +1,6 @@
-package com.hackathon.dto.category;
+package com.hackathon.dto.category.request;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data

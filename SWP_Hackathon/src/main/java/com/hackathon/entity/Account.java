@@ -47,6 +47,8 @@ public class Account {
     @Column(name = "Role", nullable = false)
     private AccountRole role;
 
+    private  String avatarUrl;
+
     // 1 Account - 1 Expert
     @OneToOne(mappedBy = "account", cascade = CascadeType.ALL,fetch = FetchType.LAZY)
     private Expert expert;

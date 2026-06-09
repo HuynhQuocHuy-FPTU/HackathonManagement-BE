@@ -1,7 +1,7 @@
 package com.hackathon.service;
 
-import com.hackathon.dto.criteria.EvaluationCriteriaResponseDTO;
-import com.hackathon.dto.criteria.EvaluationCriteriaRequestDTO;
+import com.hackathon.dto.criteria.response.EvaluationCriteriaResponseDTO;
+import com.hackathon.dto.criteria.request.EvaluationCriteriaRequestDTO;
 
 import java.util.List;
 

@@ -1,6 +1,6 @@
 package com.hackathon.dto.round;
 
-import com.hackathon.dto.criteria.CustomCriteriaRound;
+import com.hackathon.dto.criteria.request.CustomCriteriaRound;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
