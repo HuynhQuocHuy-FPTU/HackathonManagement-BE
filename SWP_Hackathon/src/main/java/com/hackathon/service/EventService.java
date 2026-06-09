@@ -1,18 +1,20 @@
 package com.hackathon.service;
 
-import com.hackathon.dto.event.request.CreateEventRequest;
-import com.hackathon.dto.event.response.EventDetailResponse;
-import com.hackathon.dto.event.response.EventResponse;
+import com.hackathon.dto.event.CreateEventRequest;
+import com.hackathon.dto.event.EventResponse;
+import com.hackathon.dto.event.UpdateEventRequest;
 import com.hackathon.exception.BadRequestException;
+import jakarta.persistence.criteria.CriteriaBuilder;
 
 import java.util.List;
 
 public interface EventService {
-    public void createEvent(CreateEventRequest request) throws BadRequestException;
-    // Information about HackathonEvent Detail
-    public List<EventDetailResponse> getAllEventDetail(Integer eventID);
-    //Search HackathonEvent by Name
-    public List<EventResponse>searchByEventName(String eventName);
-    //General Information about HackathonEVent
-    public List<EventResponse> getAllEvent();
+
+    public EventResponse createEvent(CreateEventRequest request) throws BadRequestException;
+    public void publishEvent(Integer eventID);
+    public void updateEvent(UpdateEventRequest request);
+    public void deleteEvent(Integer eventID);
+    public List<EventResponse> getDeletedEvents();
+    public void restoreEvent(Integer eventId);
+    public void permanentlyDeleteEvent(Integer eventId);
 }

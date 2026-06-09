@@ -6,6 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface EvaluationCriteriaRepository extends JpaRepository<EvaluationCriteria, Integer> {
-    List<EvaluationCriteria> findByEvaluationCriteriaId(Integer evaluationCriteriaId);
-    List<EvaluationCriteria> findByRound_RoundId(Integer roundId);
+    void deleteEvaluationCriteriaByRound_HackathonEvent_EventId(int roundHackathonEventEventId);
 }

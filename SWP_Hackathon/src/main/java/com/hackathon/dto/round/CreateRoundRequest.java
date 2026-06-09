@@ -1,6 +1,10 @@
 package com.hackathon.dto.round;
 
+<<<<<<< HEAD
 import com.hackathon.dto.criteria.request.CustomCriteriaRound;
+=======
+import com.hackathon.dto.criteria.EvaluationCriteriaRequestDTO;
+>>>>>>> d2901bebba4a026b6f8bf66193b8dfe738f6ae7e
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -32,6 +36,9 @@ public class CreateRoundRequest {
     private Integer criteriaSetId;
 
 
-    private List<CustomCriteriaRound> customCriteriaRounds;
+    @NotNull(message = "Order index is required")
+    private Integer orderIndex;
+
+    private List<EvaluationCriteriaRequestDTO> customCriteriaDetatils;
 
 }
