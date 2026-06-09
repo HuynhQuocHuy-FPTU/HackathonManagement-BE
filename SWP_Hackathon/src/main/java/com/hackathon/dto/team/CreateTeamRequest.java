@@ -1,4 +1,4 @@
-package com.hackathon.dto.Team.request;
+package com.hackathon.dto.team;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

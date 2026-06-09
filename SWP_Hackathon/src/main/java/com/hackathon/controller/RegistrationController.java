@@ -1,7 +1,6 @@
 package com.hackathon.controller;
 
-import com.hackathon.dto.event.response.EventDetailResponse;
-import com.hackathon.dto.event.response.EventResponse;
+import com.hackathon.dto.event.EventResponse;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.service.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,7 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
+// CLASS NAY COI LAI
 @RestController
 @RequestMapping("/api/v1/registration")
 public class RegistrationController {
@@ -26,8 +25,8 @@ public class RegistrationController {
 
     //View all information detail about hackathon(click Event show details)
     @GetMapping("/{eventId}")
-    public ResponseEntity<ApiResponse<List<EventDetailResponse>>> getAllEventDetail(@PathVariable("eventId") Integer id) {
-        List<EventDetailResponse> list = eventService.getAllEventDetail(id);
+    public ResponseEntity<ApiResponse<EventResponse>> getEventDetail(@PathVariable("eventId") Integer id) {
+        EventResponse  list = eventService.getEventDetail(id);
         return ResponseEntity.ok(ApiResponse.success(list, "Get all event details successfully"));
     }
 

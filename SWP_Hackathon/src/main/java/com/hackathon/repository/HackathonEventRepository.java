@@ -10,4 +10,6 @@ public interface HackathonEventRepository extends JpaRepository<HackathonEvent, 
     void deleteHackathonEventByEventId(int eventId);
 
     List<HackathonEvent> findByStatus(EventStatus status);
+
+    List<HackathonEvent> findByEventNameContainingIgnoreCase(String eventName);
 }

@@ -27,10 +27,7 @@ public class CriteriaDetail {
     private CriteriaSet criteriaSet;
 
 
-    // 1 Criteria Detail - N Evaluation _ Criteria
-    @OneToMany(mappedBy = "criteriaDetail", cascade = CascadeType.ALL,orphanRemoval = true)
-    @JsonIgnore
-    private List<EvaluationCriteria> evaluationCriteria = new ArrayList<>() ;
+
 
 
 }

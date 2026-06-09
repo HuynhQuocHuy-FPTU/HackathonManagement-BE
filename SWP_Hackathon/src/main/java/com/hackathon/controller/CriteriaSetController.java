@@ -1,9 +1,9 @@
 package com.hackathon.controller;
 
 
-import com.hackathon.dto.criteria.response.CriteriaDetailResponseDTO;
-import com.hackathon.dto.criteria.response.CriteriaSetDetailResponseDTO;
-import com.hackathon.dto.criteria.response.CriteriaSetResponseDTO;
+import com.hackathon.dto.criteria.CriteriaDetailResponseDTO;
+import com.hackathon.dto.criteria.CriteriaSetDetailResponseDTO;
+import com.hackathon.dto.criteria.CriteriaSetResponseDTO;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.service.CriteriaSetService;
 import org.springframework.beans.factory.annotation.Autowired;

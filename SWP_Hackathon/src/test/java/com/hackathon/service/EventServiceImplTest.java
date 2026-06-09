@@ -1,7 +1,7 @@
 package com.hackathon.service;
 
-import com.hackathon.dto.category.request.CreateCategoryRequest; // 🔥 Đã cập nhật đúng DTO của bạn
-import com.hackathon.dto.event.request.CreateEventRequest;
+import com.hackathon.dto.category.CreateCategoryRequest; // 🔥 Đã cập nhật đúng DTO của bạn
+import com.hackathon.dto.event.CreateEventRequest;
 import com.hackathon.dto.round.CreateRoundRequest;
 <<<<<<< HEAD
 import com.hackathon.dto.criteria.request.CustomCriteriaRound;

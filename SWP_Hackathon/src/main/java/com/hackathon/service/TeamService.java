@@ -1,7 +1,7 @@
 package com.hackathon.service;
 
-import com.hackathon.dto.Team.request.CreateTeamRequest;
-import com.hackathon.dto.Team.response.TeamResponse;
+import com.hackathon.dto.team.CreateTeamRequest;
+import com.hackathon.dto.team.TeamResponse;
 
 public interface TeamService {
     TeamResponse createTeam (CreateTeamRequest request);

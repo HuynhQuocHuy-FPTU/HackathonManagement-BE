@@ -1,4 +1,4 @@
-package com.hackathon.dto.Team.response;
+package com.hackathon.dto.team;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
