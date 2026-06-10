@@ -1,16 +1,14 @@
 package com.hackathon.service;
 
-import com.hackathon.dto.request.RegisterRequest;
-import com.hackathon.dto.request.ResendVerificationRequest;
+import com.hackathon.dto.auth.RegisterRequest;
+import com.hackathon.dto.auth.ResendVerificationRequest;
 import com.hackathon.entity.Account;
-import com.hackathon.entity.Organization;
 import com.hackathon.entity.Student;
 import com.hackathon.entity.enums.AccountRole;
 import com.hackathon.entity.enums.AccountStatus;
 import com.hackathon.entity.enums.StudentStatus;
 import com.hackathon.exception.ApiException;
 import com.hackathon.repository.AccountRepository;
-import com.hackathon.repository.OrganizationRepository;
 import com.hackathon.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,7 +26,6 @@ public class RegisterServiceImpl implements RegisterService {
 
     private final AccountRepository accountRepository;
     private final StudentRepository studentRepository;
-    private final OrganizationRepository organizationRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
 
@@ -52,7 +49,7 @@ public class RegisterServiceImpl implements RegisterService {
         String verificationToken = UUID.randomUUID().toString();
 
         Account account = new Account();
-        account.setAccountName(request.getAccountName());
+        account.setAccountName(request.getStudentName());
         account.setEmail(request.getEmail().trim().toLowerCase());
         account.setPhone(request.getPhone());
         account.setPassword(passwordEncoder.encode(request.getPassword()));

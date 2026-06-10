@@ -6,13 +6,9 @@ import org.springframework.scheduling.config.Task;
 
 
 public interface AccountRepository extends JpaRepository<Account, Integer> {
-    boolean existsByAccountName(String accountName);
-
     boolean existsByEmail(String email);
 
     boolean existsByPhone(String phone);
-
-    java.util.Optional<Account> findByAccountName(String accountName);
 
     java.util.Optional<Account> findByEmail(String email);
 

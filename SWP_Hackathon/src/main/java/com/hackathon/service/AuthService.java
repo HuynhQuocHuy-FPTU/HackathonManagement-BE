@@ -1,7 +1,7 @@
 package com.hackathon.service;
 
-import com.hackathon.dto.request.LoginRequest;
-import com.hackathon.dto.response.AuthResponse;
+import com.hackathon.dto.auth.LoginRequest;
+import com.hackathon.dto.auth.AuthResponse;
 import com.hackathon.security.CustomUserDetails;
 
 public interface AuthService {

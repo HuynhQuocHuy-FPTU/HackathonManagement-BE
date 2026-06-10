@@ -1,7 +1,7 @@
 package com.hackathon.service;
 
-import com.hackathon.dto.request.LoginRequest;
-import com.hackathon.dto.response.AuthResponse;
+import com.hackathon.dto.auth.LoginRequest;
+import com.hackathon.dto.auth.AuthResponse;
 import com.hackathon.entity.Account;
 import com.hackathon.entity.RefreshToken;
 import com.hackathon.entity.enums.AccountStatus;
@@ -32,8 +32,9 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthResponse login(LoginRequest request) {
-        Account account = accountRepository.findByAccountName(request.getAccountName())
-                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Tên đăng nhập hoặc mật khẩu không đúng"));
+        String email = request.getEmail().trim().toLowerCase();
+        Account account = accountRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Email hoặc mật khẩu không đúng"));
 
         if (account.getStatus() == AccountStatus.INACTIVE) {
             throw new ApiException(HttpStatus.FORBIDDEN,
@@ -44,9 +45,8 @@ public class AuthServiceImpl implements AuthService {
         }
 
         try {
-            // CẬP NHẬT 2: Xác thực bằng AccountName với Password
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(account.getAccountName(), request.getPassword())
+                    new UsernamePasswordAuthenticationToken(account.getEmail(), request.getPassword())
             );
         } catch (DisabledException e) {
             throw new ApiException(HttpStatus.FORBIDDEN, "Tài khoản chưa được kích hoạt");
@@ -101,7 +101,7 @@ public class AuthServiceImpl implements AuthService {
                 .refreshToken(null)
                 .expiresIn(0)
                 .accountId(account.getAccountId())
-                .accountName(account.getAccountName()) // Đảm bảo trả về AccountName
+                .accountName(account.getAccountName())
                 .email(account.getEmail())
                 .role(account.getRole())
                 .build();

@@ -47,13 +47,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         try {
             // 4. Giải mã lấy email
-            String accountName = jwtService.existsByAccountName(jwt);
+            String email = jwtService.extractEmail(jwt);
 
-            // 5. Nếu lấy được AccountName và hiện tại Spring Security chưa ghi nhận ai đang đăng nhập
-            if (accountName != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            // 5. Nếu lấy được email và hiện tại Spring Security chưa ghi nhận ai đang đăng nhập
+            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
                 // 6. Gọi chuyên viên tra cứu hồ sơ lấy thông tin User từ DB
-                UserDetails userDetails = this.userDetailsService.loadUserByUsername(accountName);
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(email);
 
                 // 7. Máy soi chiếu kiểm tra Token xem có phải đồ giả hoặc hết hạn không
                 if (jwtService.isTokenValid(jwt, userDetails)) {
