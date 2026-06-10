@@ -12,13 +12,12 @@ import org.springframework.stereotype.Service;
 public class CustomUserDetailsService implements UserDetailsService {
     private final AccountRepository accountRepository;
     /**
-     * Hàm này nhận vào accountName, tìm trong DB và trả về CustomUserDetails.
-     * Nếu không thấy sẽ ném ra ngoại lệ tiêu chuẩn của Spring Security.
+     * Spring Security gọi hàm này với email làm username.
      */
     @Override
-    public UserDetails loadUserByUsername(String accountName) {
-        return accountRepository.findByAccountName(accountName)
-                .map(CustomUserDetails::new) // Nếu tìm thấy Account -> Bọc vào CustomUserDetails
-                .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy tài khoản với account name: " + accountName));
+    public UserDetails loadUserByUsername(String email) {
+        return accountRepository.findByEmail(email.trim().toLowerCase())
+                .map(CustomUserDetails::new)
+                .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy tài khoản với email: " + email));
     }
 }

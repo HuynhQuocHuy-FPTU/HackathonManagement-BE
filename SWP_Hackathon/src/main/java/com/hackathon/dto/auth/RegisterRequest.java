@@ -1,4 +1,4 @@
-package com.hackathon.dto.request;
+package com.hackathon.dto.auth;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -10,10 +10,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class RegisterRequest {
-
-    @NotBlank(message = "Tên tài khoản không được để trống")
-    @Size(max = 255, message = "Tên tài khoản tối đa 255 ký tự")
-    private String accountName;
 
     @NotBlank(message = "Email không được để trống")
     @Email(message = "Email không hợp lệ")
@@ -45,7 +41,4 @@ public class RegisterRequest {
     @NotBlank(message = "Chuyên ngành không được để trống")
     @Size(max = 255, message = "Chuyên ngành tối đa 255 ký tự")
     private String major;
-
-    @NotBlank(message = "Tên trường không được để trống")
-    private String organizationId;
 }

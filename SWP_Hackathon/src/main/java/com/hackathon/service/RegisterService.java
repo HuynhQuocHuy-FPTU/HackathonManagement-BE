@@ -1,7 +1,7 @@
 package com.hackathon.service;
 
-import com.hackathon.dto.request.RegisterRequest;
-import com.hackathon.dto.request.ResendVerificationRequest;
+import com.hackathon.dto.auth.RegisterRequest;
+import com.hackathon.dto.auth.ResendVerificationRequest;
 
 public interface RegisterService {
     void register(RegisterRequest request);

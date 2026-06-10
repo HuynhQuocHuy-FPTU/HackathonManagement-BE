@@ -1,5 +1,6 @@
-package com.hackathon.dto.request;
+package com.hackathon.dto.auth;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
@@ -8,8 +9,9 @@ import lombok.Setter;
 @Setter
 public class LoginRequest {
 
-    @NotBlank(message = "Tên đăng nhập không được để trống")
-    private String accountName;
+    @NotBlank(message = "Email không được để trống")
+    @Email(message = "Email không hợp lệ")
+    private String email;
 
     @NotBlank(message = "Mật khẩu không được để trống")
     private String password;

@@ -1,4 +1,4 @@
-package com.hackathon.dto.request;
+package com.hackathon.dto.auth;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;

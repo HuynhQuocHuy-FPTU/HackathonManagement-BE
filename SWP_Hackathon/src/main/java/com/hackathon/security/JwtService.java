@@ -50,7 +50,7 @@ public class JwtService {
     /**
      * Giải mã Token và lấy ra Subject (Email).
      */
-    public String existsByAccountName(String token) {
+    public String extractEmail(String token) {
         return parseClaims(token).getSubject();
     }
 
@@ -59,7 +59,7 @@ public class JwtService {
      * @Note: Đã sửa tham số Account thành UserDetails để chuẩn hóa với Spring Security Filter.
      */
     public boolean isTokenValid(String token, UserDetails userDetails) {
-        String email = existsByAccountName(token);
+        String email = extractEmail(token);
         return email.equals(userDetails.getUsername()) && !isTokenExpired(token);
     }
 

@@ -1,4 +1,4 @@
-package com.hackathon.dto.response;
+package com.hackathon.dto.auth;
 
 import com.hackathon.entity.enums.AccountRole;
 import lombok.AllArgsConstructor;

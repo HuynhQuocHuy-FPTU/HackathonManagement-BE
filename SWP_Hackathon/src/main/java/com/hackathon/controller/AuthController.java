@@ -1,11 +1,11 @@
 package com.hackathon.controller;
 
-import com.hackathon.dto.request.LoginRequest;
-import com.hackathon.dto.request.RefreshTokenRequest;
-import com.hackathon.dto.request.RegisterRequest;
-import com.hackathon.dto.request.ResendVerificationRequest;
-import com.hackathon.dto.response.ApiResponse;
-import com.hackathon.dto.response.AuthResponse;
+import com.hackathon.dto.auth.LoginRequest;
+import com.hackathon.dto.auth.RefreshTokenRequest;
+import com.hackathon.dto.auth.RegisterRequest;
+import com.hackathon.dto.auth.ResendVerificationRequest;
+import com.hackathon.dto.common.ApiResponse;
+import com.hackathon.dto.auth.AuthResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.AuthService;
 import com.hackathon.service.RegisterService;
@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/account")
+@RequestMapping("/api/account")
 public class AuthController {
 
     private final AuthService authService;
