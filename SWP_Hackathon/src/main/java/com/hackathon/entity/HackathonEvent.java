@@ -41,6 +41,8 @@ public class HackathonEvent {
     private LocalDateTime registrationDeadline;
     @Column(name = "Create_At", nullable = false)
     private LocalDateTime createAt;
+    @Column(name = "Update_At")
+    private LocalDateTime updateAt;
 
     // 1 HACKATHON - N CATEGORY
     @OneToMany(mappedBy = "hackathonEvent", cascade = CascadeType.ALL, orphanRemoval = true)

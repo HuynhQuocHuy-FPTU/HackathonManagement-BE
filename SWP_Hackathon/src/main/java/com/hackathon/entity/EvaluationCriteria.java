@@ -23,10 +23,11 @@ public class EvaluationCriteria {
     private BigDecimal weight;
     @Column(name = "Description", columnDefinition = "NVARCHAR(255)")
     private String description;
-    private Integer eventId;
 
-    @Column(name = "Criteria_Detail_ID")
-    private Integer criteriaDetailId; // Lưu ID gốc từ bảng EvaluationDetail sang
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "Criteria_Detail_ID", nullable = false)
+    private CriteriaDetail criteriaDetail; // Lưu ID gốc từ bảng EvaluationDetail sang
 
     // 1 evaluationCriteria  - N evaluation detail
     @OneToMany(mappedBy = "evaluationCriteria", cascade = CascadeType.ALL, orphanRemoval = true)

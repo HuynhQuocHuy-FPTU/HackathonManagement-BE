@@ -16,10 +16,6 @@ public class Category {
     @Column(name = "Category_Name", columnDefinition = "NVARCHAR(255)", nullable = false)
     private String categoryName;
 
-    // 1 Category - N registration
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL,orphanRemoval = true)
-    private List<Registration> registrations = new ArrayList<>();
-
     //1 CATEGORY - N CATEGORY_ROUND
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL,orphanRemoval = true)
     private List<CategoryRound> categoryRounds;
@@ -28,5 +24,6 @@ public class Category {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "Event_ID", nullable = false)
     private HackathonEvent hackathonEvent;
+
 
 }

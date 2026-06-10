@@ -3,13 +3,11 @@ package com.hackathon.service;
 import com.hackathon.dto.category.CreateCategoryRequest; // 🔥 Đã cập nhật đúng DTO của bạn
 import com.hackathon.dto.event.CreateEventRequest;
 import com.hackathon.dto.round.CreateRoundRequest;
-import com.hackathon.dto.criteria.CustomCriteriaRound;
 import com.hackathon.entity.*;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.CategoryRoundRepository;
 import com.hackathon.repository.EventCoordinatorRepository;
 import com.hackathon.repository.HackathonEventRepository;
-import com.hackathon.service.EventServiceImpl;
 import com.hackathon.validator.EventValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
