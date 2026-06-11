@@ -1,10 +1,10 @@
 package com.hackathon.entity.enums;
 
 public enum EventStatus {
-    DRAFT,
+    DRAFT,// ban nhap
     ACTIVE,
     REGISTRATION_CLOSED,
-    ONGOING,
+    ONGOING,// dang dien ra
     COMPLETED,
-    DELETED
+    DELETED// xoa event
 }

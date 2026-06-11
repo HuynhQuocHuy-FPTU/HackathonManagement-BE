@@ -16,13 +16,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.Month;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class EventServiceImpl implements EventService{
+public class EventServiceImpl implements EventService {
 
 
     private final HackathonEventRepository eventRepository;
@@ -69,8 +68,8 @@ public class EventServiceImpl implements EventService{
 
         //5. create categories và save vào map để dễ tra cứu
         Map<String, Category> categoryMap = new HashMap<>();
-        if(request.getCategories() != null && !request.getCategories().isEmpty()){
-            for(var catRequest : request.getCategories()){
+        if (request.getCategories() != null && !request.getCategories().isEmpty()) {
+            for (var catRequest : request.getCategories()) {
 
                 Category savedCate = categoryService.createCategory(catRequest, savedEvent.getEventId());
                 //key: category name, value: category
@@ -80,19 +79,19 @@ public class EventServiceImpl implements EventService{
 
         //6. create rounds and categoryRounds
         List<RoundResponse> roundResponses = new ArrayList<>();
-        if(request.getRounds() != null && !request.getRounds().isEmpty()){
-            for(var roundRequest : request.getRounds()){
+        if (request.getRounds() != null && !request.getRounds().isEmpty()) {
+            for (var roundRequest : request.getRounds()) {
 
                 Round saveRound = roundService.createRound(roundRequest, savedEvent.getEventId());
 
                 List<String> selectCategories = roundRequest.getAppliedListCategoryNames();
 
-                if(selectCategories != null && !selectCategories.isEmpty()){
-                    for(String cateName : selectCategories){
+                if (selectCategories != null && !selectCategories.isEmpty()) {
+                    for (String cateName : selectCategories) {
 
                         Category matchedCategory = categoryMap.get(cateName);
 
-                        if(matchedCategory != null){
+                        if (matchedCategory != null) {
                             CategoryRound roundCategory = new CategoryRound();
                             roundCategory.setRound(saveRound);
                             roundCategory.setCategory(matchedCategory);
@@ -108,8 +107,8 @@ public class EventServiceImpl implements EventService{
         }
         // 7. Chuyển category sang Response
         List<CategoryResponse> categoryResponses = new ArrayList<>();
-        if(!categoryMap.isEmpty()){
-            categoryResponses = categoryMap.values().stream().map(categoryService :: mapToResponse).collect(Collectors.toList());
+        if (!categoryMap.isEmpty()) {
+            categoryResponses = categoryMap.values().stream().map(categoryService::mapToResponse).collect(Collectors.toList());
         }
 
         // 8. Chyển event thành response
@@ -124,8 +123,8 @@ public class EventServiceImpl implements EventService{
         HackathonEvent event = eventRepository.findById(eventID).orElseThrow(() -> new BadRequestException("Not found event"));
 
         //check xem có là draft ko
-        if(event.getStatus() != EventStatus.DRAFT){
-                throw new BadRequestException("Sự kiện này đã được công bố");
+        if (event.getStatus() != EventStatus.DRAFT) {
+            throw new BadRequestException("Sự kiện này đã được công bố");
         }
         //đổi trạng thái
         event.setStatus(EventStatus.ACTIVE);
@@ -171,7 +170,8 @@ public class EventServiceImpl implements EventService{
         Map<String, Category> categoryMap = new HashMap<>();
         if (request.getCategories() != null && !request.getCategories().isEmpty()) {
             for (var catRequest : request.getCategories()) {
-                Category savedCate = categoryService.createCategory(catRequest, event.getEventId());
+
+                Category savedCate = categoryService.createCategory(catRequest, updateEvent.getEventId());
                 //key: category name, value: category
                 categoryMap.put(savedCate.getCategoryName(), savedCate);
             }
@@ -181,7 +181,7 @@ public class EventServiceImpl implements EventService{
         if (request.getRounds() != null && !request.getRounds().isEmpty()) {
             for (var roundRequest : request.getRounds()) {
 
-                Round saveRound = roundService.createRound(roundRequest, event.getEventId());
+                Round saveRound = roundService.createRound(roundRequest, updateEvent.getEventId());
 
                 List<String> selectCategories = roundRequest.getAppliedListCategoryNames();
 
@@ -199,7 +199,7 @@ public class EventServiceImpl implements EventService{
                         }
                     }
                 }
-                if(!listCategoryRound.isEmpty()){
+                if (!listCategoryRound.isEmpty()) {
                     categoryRoundRepository.saveAll(listCategoryRound);
                 }
 
@@ -214,7 +214,7 @@ public class EventServiceImpl implements EventService{
         HackathonEvent event = eventRepository.findById(eventID).orElseThrow(() -> new BadRequestException("Not found event"));
 
         //check xem có là draft ko
-        if(event.getStatus() != EventStatus.DRAFT){
+        if (event.getStatus() != EventStatus.DRAFT) {
             throw new BadRequestException("Sự kiện này đã được công bố");
         }
 
@@ -238,7 +238,7 @@ public class EventServiceImpl implements EventService{
         HackathonEvent event = eventRepository.findById(eventId).orElseThrow(() -> new BadRequestException("Không tìm thấy event"));
 
         //2. chỉ khôi phục event có trạng thái là deleted
-        if(event.getStatus() != EventStatus.DELETED){
+        if (event.getStatus() != EventStatus.DELETED) {
             throw new BadRequestException("Sự kiện này không nằm trong thùng rác");
         }
 
@@ -256,7 +256,7 @@ public class EventServiceImpl implements EventService{
         HackathonEvent event = eventRepository.findById(eventId).orElseThrow(() -> new BadRequestException("Not found event"));
 
         //check xem có là draft ko
-        if(event.getStatus() != EventStatus.DELETED){
+        if (event.getStatus() != EventStatus.DELETED) {
             throw new BadRequestException("Sự kiện này chưa thêm vào thùng rác");
         }
         //xóa cấu hình cũ
@@ -274,19 +274,100 @@ public class EventServiceImpl implements EventService{
 
 
     // create season
-    private String generateSeason(LocalDateTime startDate){
+    private String generateSeason(LocalDateTime startDate) {
         int year = startDate.getYear();
         int month = startDate.getMonthValue();
 
-        if(month >= 1 && month <= 3){
+        if (month >= 1 && month <= 3) {
             return "SPRING " + year;
-        }else if(month <= 6){
+        } else if (month <= 6) {
             return "SUMMER " + year;
-        }else if(month <= 9){
+        } else if (month <= 9) {
             return "FALL " + year;
-        }else {
+        } else {
             return "WINTER " + year;
         }
 
     }
+
+    @Override
+    public EventResponse getEventDetail(Integer eventId) {
+        HackathonEvent event = eventRepository.findById(eventId).orElseThrow(() -> new BadRequestException("Not found event"));
+
+        List<CategoryResponse> categories = event.getCategories().stream()
+                .map(category -> CategoryResponse.builder()
+                        .categoryName(category.getCategoryName()).build()).toList();
+
+        List<RoundResponse> rounds = event.getRounds()
+                .stream()
+                .map(round -> RoundResponse.builder()
+                        .roundName(round.getRoundName())
+                        .startDate(round.getStartTime())
+                        .endDate(round.getEndTime())
+                        .advancementRule(round.getAdvancementRule())
+                        .build())
+                .toList();
+        return EventResponse.builder()
+                .eventId(event.getEventId())
+                .eventName(event.getEventName())
+                .startDate(event.getStartDate())
+                .endDate(event.getEndDate())
+                .title(event.getTitle())
+                .address(event.getAddress())
+                .season(event.getSeason())
+                .description(event.getDescription())
+                .maxTeam(event.getMaxTeam())
+                .maxTeamSize(event.getMaxTeamSize())
+                .minTeamSize(event.getMinTeamSize())
+                .registrationDeadline(event.getRegistrationDeadline())
+                .status(event.getStatus())
+                .createdAt(event.getCreateAt())
+                .updateAt(event.getUpdateAt())
+                .categories(categories)
+                .rounds(rounds)
+                .build();
+    }
+
+
+    @Override
+    public List<EventResponse> searchByEventName(String eventName) {
+        List<HackathonEvent> events =
+                eventRepository.findByEventNameContainingIgnoreCase(eventName);
+
+        return events.stream()
+                .map(event -> EventResponse.builder()
+                        .eventId(event.getEventId())
+                        .eventName(event.getEventName())
+                        .title(event.getTitle())
+                        .season(event.getSeason())
+                        .address(event.getAddress())
+                        .description(event.getDescription())
+                        .maxTeam(event.getMaxTeam())
+                        .maxTeamSize(event.getMaxTeamSize())
+                        .minTeamSize(event.getMinTeamSize())
+                        .status(event.getStatus())
+                        .startDate(event.getStartDate())
+                        .endDate(event.getEndDate())
+                        .registrationDeadline(event.getRegistrationDeadline())
+                        .build())
+                .toList();
+    }
+
+    @Override
+    public List<EventResponse> getAllEvent() {
+        List<HackathonEvent> events = eventRepository.findAll();
+        return events.stream()
+                .map(event -> EventResponse.builder()
+                        .eventName(event.getEventName())
+                        .title(event.getTitle())
+                        .season(event.getSeason())
+                        .status(event.getStatus())
+                        .startDate(event.getStartDate())
+                        .endDate(event.getEndDate())
+                        .registrationDeadline(event.getRegistrationDeadline())
+                        .build())
+                .toList();
+    }
 }
+
+

@@ -1,5 +1,6 @@
 package com.hackathon.dto.round;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.hackathon.dto.criteria.EvaluationCriteriaRequestDTO;
 import com.hackathon.dto.criteria.EvaluationCriteriaResponseDTO;
 import jakarta.validation.constraints.NotBlank;
@@ -18,6 +19,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
+
 public class RoundResponse {
 
     private Integer roundId;

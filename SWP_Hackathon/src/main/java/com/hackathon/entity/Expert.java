@@ -30,11 +30,6 @@ public class Expert {
     @JoinColumn(name ="Account_ID", unique = true, nullable = false)
     private Account account;
 
-//    //1 Organization - N Expert
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name ="organization_ID",nullable = false)
-//    private Organization organization;
-
     //1 Expert- N expertAssign
     @OneToMany(mappedBy = "expert", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ExpertAssign> expertAssigns = new ArrayList<>();
