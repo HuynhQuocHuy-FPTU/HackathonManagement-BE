@@ -35,13 +35,13 @@ public class RoundServiceImpl implements RoundService{
     private RoundValidator roundValidator;
 
     @Override
-    public Round createRound(CreateRoundRequest request) throws BadRequestException {
+    public Round createRound(CreateRoundRequest request, int eventId) throws BadRequestException {
 
         // 1. Validation
         roundValidator.validatorCreate(request);
 
         //2. Get hackathon event & criteria set
-        HackathonEvent event = eventRepository.findById(request.getEventID()).orElseThrow(() -> new RuntimeException("Not found event with ID: " + request.getEventID()));
+        HackathonEvent event = eventRepository.findById(eventId).orElseThrow(() -> new RuntimeException("Not found event with ID: " + eventId));
 
 //        CriteriaSet criteriaSet = criteriaSetRepository.findById(request.getCriteriaSetId()).orElseThrow(() -> new RuntimeException("Not found criteria set with ID: " + request.getCriteriaSetId()));
 

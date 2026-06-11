@@ -33,10 +33,10 @@ public class CriteriaSet {
 
 
 
-    //1 Criteria_Set - N round
-    @OneToMany(mappedBy = "criteriaSet", cascade = CascadeType.ALL,orphanRemoval = true)
-    @JsonIgnore
-    private List<Round> rounds = new ArrayList<>();
+//    //1 Criteria_Set - N round
+//    @OneToMany(mappedBy = "criteriaSet", cascade = CascadeType.ALL,orphanRemoval = true)
+//    @JsonIgnore
+//    private List<Round> rounds = new ArrayList<>();
 
 
 

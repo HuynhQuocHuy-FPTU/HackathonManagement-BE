@@ -20,8 +20,6 @@ public class CreateRoundRequest {
     @NotNull(message = "End date is required")
     private LocalDateTime endDate;
 
-    @NotNull(message = "Event ID is required")
-    private Integer eventID;
     @NotBlank(message = "Advancement rule is required")
     private String advancementRule;
 

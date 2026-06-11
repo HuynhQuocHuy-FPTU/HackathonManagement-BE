@@ -71,9 +71,8 @@ public class EventServiceImpl implements EventService{
         Map<String, Category> categoryMap = new HashMap<>();
         if(request.getCategories() != null && !request.getCategories().isEmpty()){
             for(var catRequest : request.getCategories()){
-               catRequest.setEventId(savedEvent.getEventId());
 
-                Category savedCate = categoryService.createCategory(catRequest);
+                Category savedCate = categoryService.createCategory(catRequest, savedEvent.getEventId());
                 //key: category name, value: category
                 categoryMap.put(savedCate.getCategoryName(), savedCate);
             }
@@ -83,9 +82,8 @@ public class EventServiceImpl implements EventService{
         List<RoundResponse> roundResponses = new ArrayList<>();
         if(request.getRounds() != null && !request.getRounds().isEmpty()){
             for(var roundRequest : request.getRounds()){
-                roundRequest.setEventID(savedEvent.getEventId());
 
-                Round saveRound = roundService.createRound(roundRequest);
+                Round saveRound = roundService.createRound(roundRequest, savedEvent.getEventId());
 
                 List<String> selectCategories = roundRequest.getAppliedListCategoryNames();
 
@@ -173,9 +171,7 @@ public class EventServiceImpl implements EventService{
         Map<String, Category> categoryMap = new HashMap<>();
         if (request.getCategories() != null && !request.getCategories().isEmpty()) {
             for (var catRequest : request.getCategories()) {
-                catRequest.setEventId(event.getEventId());
-
-                Category savedCate = categoryService.createCategory(catRequest);
+                Category savedCate = categoryService.createCategory(catRequest, event.getEventId());
                 //key: category name, value: category
                 categoryMap.put(savedCate.getCategoryName(), savedCate);
             }
@@ -184,9 +180,8 @@ public class EventServiceImpl implements EventService{
         //6. create rounds and categoryRounds
         if (request.getRounds() != null && !request.getRounds().isEmpty()) {
             for (var roundRequest : request.getRounds()) {
-                roundRequest.setEventID(event.getEventId());
 
-                Round saveRound = roundService.createRound(roundRequest);
+                Round saveRound = roundService.createRound(roundRequest, event.getEventId());
 
                 List<String> selectCategories = roundRequest.getAppliedListCategoryNames();
 

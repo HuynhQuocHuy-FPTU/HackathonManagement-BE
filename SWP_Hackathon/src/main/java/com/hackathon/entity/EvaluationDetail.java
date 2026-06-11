@@ -27,11 +27,11 @@ public class EvaluationDetail {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "Evaluation_ID", nullable = false)
     private Evaluation evaluation;
-
-    // 1 Criteria Detail - N Evaluation _ Detail
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "Criteria_ID", nullable = false)
-    private CriteriaRound criteriaRound;
+//
+//    // 1 Criteria Detail - N Evaluation _ Detail
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "Criteria_ID", nullable = false)
+//    private EvaluationCriteria evaluationCriteria;
 
     // 1 evaluationCriteria - N evaluation_detail
     @ManyToOne(fetch = FetchType.LAZY)

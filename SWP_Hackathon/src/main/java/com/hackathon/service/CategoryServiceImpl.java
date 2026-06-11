@@ -20,9 +20,9 @@ public class CategoryServiceImpl implements CategoryService{
     private final HackathonEventRepository eventRepository;
 
     @Override
-    public Category createCategory(CreateCategoryRequest request) {
+    public Category createCategory(CreateCategoryRequest request, int eventId) {
         // 1. Get event id
-        HackathonEvent event = eventRepository.findById(request.getEventId()).orElseThrow(() -> new RuntimeException("Event not found"));
+        HackathonEvent event = eventRepository.findById(eventId).orElseThrow(() -> new RuntimeException("Event not found"));
 
         //2. create category
         Category category = new Category();

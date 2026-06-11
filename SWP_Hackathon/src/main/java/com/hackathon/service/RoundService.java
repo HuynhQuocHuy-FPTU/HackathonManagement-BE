@@ -9,6 +9,6 @@ import java.util.List;
 
 
 public interface RoundService {
-    public Round createRound(CreateRoundRequest request) throws BadRequestException;
+    public Round createRound(CreateRoundRequest request, int eventId) throws BadRequestException;
     public RoundResponse mapToResponse(Round round, List<String> appliedCategoryName);
 }
