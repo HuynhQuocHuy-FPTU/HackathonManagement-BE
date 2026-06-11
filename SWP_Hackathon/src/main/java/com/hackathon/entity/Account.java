@@ -65,4 +65,10 @@ public class Account {
     // 1 account - N Auditlog
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<AuditLog> auditLogs;
+
+    @Column(name = "Verification_Token", columnDefinition = "VARCHAR(255)")
+    private String verificationToken;
+
+    @Column(name = "Verification_Token_Expiry")
+    private LocalDateTime verificationTokenExpiry;
 }
