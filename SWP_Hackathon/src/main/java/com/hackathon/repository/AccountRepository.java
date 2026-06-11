@@ -4,6 +4,8 @@ import com.hackathon.entity.Account;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.scheduling.config.Task;
 
-public interface AccountRepository extends JpaRepository<Account, Integer> {
+import java.util.List;
 
+public interface AccountRepository extends JpaRepository<Account, Integer> {
+    Account findByEmail(String email);
 }

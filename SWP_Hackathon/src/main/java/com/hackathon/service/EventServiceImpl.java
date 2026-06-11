@@ -312,7 +312,6 @@ public class EventServiceImpl implements EventService {
                         .build())
                 .toList();
         return EventResponse.builder()
-                .eventId(event.getEventId())
                 .eventName(event.getEventName())
                 .startDate(event.getStartDate())
                 .endDate(event.getEndDate())
@@ -340,7 +339,6 @@ public class EventServiceImpl implements EventService {
 
         return events.stream()
                 .map(event -> EventResponse.builder()
-                        .eventId(event.getEventId())
                         .eventName(event.getEventName())
                         .title(event.getTitle())
                         .season(event.getSeason())

@@ -15,7 +15,7 @@ public class Student {
     @GeneratedValue (strategy = GenerationType.IDENTITY)
     @Column(name="Student_ID")
     private int studentId;
-    @Column(name = "Student_Code", columnDefinition = "VARCHAR(20)" ,nullable = false)
+    @Column(name = "Student_Code",unique = true, columnDefinition = "VARCHAR(20)" ,nullable = false)
     private String studentCode;
     @Column(name = "Student_Name", columnDefinition = "NVARCHAR(50)" ,nullable = false)
     private String studentName;

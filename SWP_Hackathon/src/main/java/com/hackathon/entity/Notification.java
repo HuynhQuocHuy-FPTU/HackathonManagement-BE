@@ -21,6 +21,11 @@ public class Notification {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_Id", nullable = false )
     private Account account;
+
+    //N Notification - 1 Team
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "Team_ID")
+    private Team team;
     @PrePersist
     public void prePersist(){
         createdAt = LocalDateTime.now();

@@ -1,18 +1,24 @@
 package com.hackathon.controller;
 
 import com.hackathon.dto.event.EventResponse;
+import com.hackathon.dto.team.CreateTeamRequest;
+import com.hackathon.dto.team.TeamResponse;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.service.EventService;
+import com.hackathon.service.TeamService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/registration")
 public class RegistrationController {
     @Autowired
     private EventService eventService;
+    @Autowired
+    private TeamService teamService;
 
     //View General Information about hackathon
     @GetMapping("/event")
@@ -25,7 +31,7 @@ public class RegistrationController {
     //View all information detail about hackathon(click Event show details)
     @GetMapping("/{eventId}")
     public ResponseEntity<ApiResponse<EventResponse>> getEventDetail(@PathVariable("eventId") Integer id) {
-        EventResponse  list = eventService.getEventDetail(id);
+        EventResponse list = eventService.getEventDetail(id);
         return ResponseEntity.ok(ApiResponse.success(list, "Get all event details successfully"));
     }
 
@@ -36,5 +42,34 @@ public class RegistrationController {
         return ResponseEntity.ok(ApiResponse.success(list, "Search Successfully"));
     }
 
+    //Create Team
+    @PostMapping("/createTeam")
+    public ResponseEntity<ApiResponse<TeamResponse>> createTeam(@RequestBody CreateTeamRequest request) {
+        TeamResponse team = teamService.createTeam(request);
+        return ResponseEntity.ok(ApiResponse.success(team, "Create Team successfully"));
+    }
 
+    //Update infor Team
+    @PutMapping("/update")
+    public ResponseEntity<ApiResponse<TeamResponse>> updateTeam(@RequestBody CreateTeamRequest request) {
+        TeamResponse team = teamService.updateInfo(request);
+        return ResponseEntity.ok(ApiResponse.success(team, "Update Team Successfully"));
+    }
+
+    // Out Team
+    @PostMapping("/{teamId}/leave")
+    public ResponseEntity<ApiResponse<Void>> leaveTeam(@PathVariable("teamId") Integer teamId) {
+        teamService.leaveTeam(teamId);
+        return ResponseEntity.ok(ApiResponse.success(null, "Leave Team Successfully"));
+    }
+
+    //Accept Invite
+    @PostMapping("/{id}/accept-invite/{notiId}")
+    public ResponseEntity<ApiResponse<Void>> acceptInvite(@PathVariable("id") Integer teamId,  @PathVariable ("notiId") Long notificationId){
+        teamService.acceptInvite(teamId,notificationId);
+        return ResponseEntity.ok(
+                ApiResponse.success(null,"Invitation accepted successfully"
+                )
+        );
+    }
 }

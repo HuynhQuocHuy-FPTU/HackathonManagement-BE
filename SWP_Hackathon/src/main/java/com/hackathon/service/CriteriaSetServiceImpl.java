@@ -9,6 +9,7 @@ import com.hackathon.repository.CriteriaDetailRepository;
 import com.hackathon.repository.CriteriaSetRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,11 +17,11 @@ import java.util.List;
 
 
 @Service
+@RequiredArgsConstructor
 public class CriteriaSetServiceImpl implements CriteriaSetService {
-    @Autowired
-    private CriteriaSetRepository criteriaSetRepository;
-    @Autowired
-    private CriteriaDetailRepository criteriaDetailRepository;
+
+    private final  CriteriaSetRepository criteriaSetRepository;
+    private final CriteriaDetailRepository criteriaDetailRepository;
 
 
     //1.Lay all thong tin trong Set
