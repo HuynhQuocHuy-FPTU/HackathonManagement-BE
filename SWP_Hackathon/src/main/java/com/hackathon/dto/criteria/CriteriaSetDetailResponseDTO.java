@@ -15,7 +15,7 @@ import java.util.List;
 public class CriteriaSetDetailResponseDTO {
     private Integer criteriaSetId;
     private String criteriaSetName;
-    private BigDecimal weight;
+    private Integer maxScore;
     private List<CriteriaDetailResponseDTO> criteriaDetails;
 
 

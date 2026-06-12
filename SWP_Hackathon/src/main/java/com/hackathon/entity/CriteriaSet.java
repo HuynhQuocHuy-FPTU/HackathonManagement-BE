@@ -18,8 +18,8 @@ public class CriteriaSet {
     private int criteriaSetId;
     @Column(name = "CriteriaSet_Name")
     private String criteriaSetName;
-    @Column(name = "Max_Score", precision = 10, scale = 2, nullable = false)
-    private BigDecimal maxScore;
+    @Column(name = "Max_Score", nullable = false)
+    private int maxScore;
 
     // 1 eventCoordinator - N Criteria_SET
     @ManyToOne(fetch = FetchType.LAZY)
@@ -31,10 +31,10 @@ public class CriteriaSet {
     @JsonIgnore
     private List<CriteriaDetail> criteriaDetails = new ArrayList<>();
 
-    //1 Criteria_Set - N round
-    @OneToMany(mappedBy = "criteriaSet", cascade = CascadeType.ALL,orphanRemoval = true)
-    @JsonIgnore
-    private List<Round> rounds = new ArrayList<>();
+//    //1 Criteria_Set - N round
+//    @OneToMany(mappedBy = "criteriaSet", cascade = CascadeType.ALL,orphanRemoval = true)
+//    @JsonIgnore
+//    private List<Round> rounds = new ArrayList<>();
 
 
 

@@ -15,4 +15,6 @@ public interface TeamService {
     void leaveTeam(Integer teamId,CustomUserDetails userDetails);
 
     void acceptInvite(Integer teamId, Long notificationId,  CustomUserDetails userDetails);
+
+
 }

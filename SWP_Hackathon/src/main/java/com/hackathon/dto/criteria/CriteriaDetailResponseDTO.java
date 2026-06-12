@@ -13,11 +13,11 @@ import java.util.List;
 @AllArgsConstructor
 @Getter
 @Setter
-
 public class CriteriaDetailResponseDTO {
     private Integer criteriaId;
     private String criteriaName;
     private BigDecimal weight;
+    private String description;
 
 
 }

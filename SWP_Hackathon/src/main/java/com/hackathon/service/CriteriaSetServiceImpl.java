@@ -1,8 +1,6 @@
 package com.hackathon.service;
 
-import com.hackathon.dto.criteria.CriteriaDetailResponseDTO;
-import com.hackathon.dto.criteria.CriteriaSetDetailResponseDTO;
-import com.hackathon.dto.criteria.CriteriaSetResponseDTO;
+import com.hackathon.dto.criteria.*;
 import com.hackathon.entity.CriteriaDetail;
 import com.hackathon.entity.CriteriaSet;
 import com.hackathon.repository.CriteriaDetailRepository;
@@ -13,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -20,7 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CriteriaSetServiceImpl implements CriteriaSetService {
 
-    private final  CriteriaSetRepository criteriaSetRepository;
+    private final CriteriaSetRepository criteriaSetRepository;
     private final CriteriaDetailRepository criteriaDetailRepository;
 
     //1.Lay all thong tin trong Set
@@ -49,14 +48,15 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
 
             dto.setCriteriaSetId(set.getCriteriaSetId());
             dto.setCriteriaSetName(set.getCriteriaSetName());
-            dto.setWeight(set.getMaxScore());
+            dto.setMaxScore(set.getMaxScore());
 
             List<CriteriaDetailResponseDTO> details = set.getCriteriaDetails()
                     .stream()
                     .map(d -> new CriteriaDetailResponseDTO(
                             d.getCriteriaId(),
                             d.getCriteriaName(),
-                            d.getWeight()
+                            d.getWeight(),
+                            d.getDescription()
                     ))
                     .toList();
 
@@ -75,7 +75,8 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
                 .map(cri -> new CriteriaDetailResponseDTO(
                         cri.getCriteriaId(),
                         cri.getCriteriaName(),
-                        cri.getWeight()
+                        cri.getWeight(),
+                        cri.getDescription()
                 ))
                 .toList();
     }
@@ -92,9 +93,72 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
         return details.stream().map(cri -> new CriteriaDetailResponseDTO(
                 cri.getCriteriaId(),
                 cri.getCriteriaName(),
-                cri.getWeight()
+                cri.getWeight(),
+                cri.getDescription()
         )).toList();
 
     }
+
+    @Override
+    public CriteriaSetResponseDTO createCriteriaSet(CriteriaSetRequestDTO request) {
+        // 1. Tao CriteriaSet
+        CriteriaSet criteriaSet = new CriteriaSet();
+        criteriaSet.setCriteriaSetName(request.getCriteriaSetName());
+        criteriaSet.setMaxScore(request.getMaxScore());
+
+        // 2.Tao 1 list de luu Criteria-detail
+        List<CriteriaDetail> list = new ArrayList<>();
+        for (CriteriaDetailRequestDTO dto : request.getCriteriaDetails()) {
+            CriteriaDetail detail = new CriteriaDetail();
+            detail.setCriteriaName(dto.getCriteriaName());
+            detail.setWeight(dto.getWeight());
+            detail.setDescription(dto.getDescription());
+            detail.setCriteriaSet(criteriaSet);
+            list.add(detail);
+        }
+        criteriaSet.setCriteriaDetails(list);
+        // 3. Luu du lieu xuong DB
+        CriteriaSet saved = criteriaSetRepository.save(criteriaSet);
+
+        // 4. Tra du lieu ve DTO
+        CriteriaSetResponseDTO response = new CriteriaSetResponseDTO();
+        response.setCriteriaSetId(saved.getCriteriaSetId());
+        response.setCriteriaName(saved.getCriteriaSetName());
+        response.setMaxScore(saved.getMaxScore());
+        return response;
+    }
+
+    @Override
+    public CriteriaSetResponseDTO updateCriteriaSet(CriteriaSetRequestDTO request) {
+        // Lay bo tieu chi can update
+        CriteriaSet criteriaSet = criteriaSetRepository
+                .findByCriteriaSetId(request.getCriteriaSetId());
+
+        if (criteriaSet == null) {
+            throw new RuntimeException("CriteriaSet not found with id: " + request.getCriteriaSetId());
+        }
+        criteriaSet.setCriteriaSetName(request.getCriteriaSetName());
+        criteriaSet.setMaxScore(request.getMaxScore());
+
+        CriteriaSet saved = criteriaSetRepository.save(criteriaSet);
+
+        CriteriaSetResponseDTO response = new CriteriaSetResponseDTO();
+        response.setCriteriaSetId(saved.getCriteriaSetId());
+        response.setCriteriaName(saved.getCriteriaSetName());
+        response.setMaxScore(saved.getMaxScore());
+        return response;
+    }
+
+    // Xoa bo tieu chi
+    @Override
+    public void deleteCriteriaSet(Integer criteriaSetId) {
+        CriteriaSet criteriaSet = criteriaSetRepository.findByCriteriaSetId(criteriaSetId);
+        if (criteriaSet == null) {
+            throw new RuntimeException("CriteriaSet not found with id: " + criteriaSetId);
+        }
+        criteriaSetRepository.delete(criteriaSet);
+
+    }
+
 
 }

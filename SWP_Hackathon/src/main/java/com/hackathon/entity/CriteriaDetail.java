@@ -16,18 +16,17 @@ public class CriteriaDetail {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "Criteria_ID")
     private int criteriaId;
-    @Column(name = "Criteria_Name", columnDefinition = "NVARCHAR(50)", nullable = false)
+    @Column(name = "Criteria_Name", columnDefinition = "NVARCHAR(255)", nullable = false)
     private String criteriaName;
     @Column(name = "Weight", precision = 10, scale = 2, nullable = false)
     private BigDecimal weight;
+    @Column(name = "Description",columnDefinition = "NVARCHAR(1000)")
+    private String description;
 
     // 1 Criteria_set - N Criteria Detail
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CriteriaSet_Id", nullable = false)
     private CriteriaSet criteriaSet;
-
-
-
 
 
 }
