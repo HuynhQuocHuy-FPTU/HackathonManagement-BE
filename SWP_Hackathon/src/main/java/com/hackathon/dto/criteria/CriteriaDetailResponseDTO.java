@@ -19,5 +19,4 @@ public class CriteriaDetailResponseDTO {
     private BigDecimal weight;
     private String description;
 
-
 }

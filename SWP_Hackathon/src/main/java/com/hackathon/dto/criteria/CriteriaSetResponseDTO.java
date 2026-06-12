@@ -1,18 +1,23 @@
 package com.hackathon.dto.criteria;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.List;
+
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
 @Getter
+@Builder
 public class CriteriaSetResponseDTO {
     private Integer criteriaSetId;
-    private String criteriaName;
+    private String criteriaSetName;
     private Integer maxScore;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private List<CriteriaDetailResponseDTO> criteriaDetails;
+
 
 }
