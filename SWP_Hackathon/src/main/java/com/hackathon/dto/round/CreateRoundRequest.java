@@ -25,12 +25,9 @@ public class CreateRoundRequest {
     @NotBlank(message = "Advancement rule is required")
     private String advancementRule;
 
-//    @NotEmpty(message = "List Category is required")
-//    private List<String> appliedListCategoryNames;
 
     @NotNull(message = "Criteria_Set is required")
     private Integer criteriaSetId;
-
 
     @NotNull(message = "Order index is required")
     private Integer orderIndex;

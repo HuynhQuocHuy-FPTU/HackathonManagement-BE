@@ -67,6 +67,9 @@ public class EventServiceImpl implements EventService {
 
         //4. Save DB
         HackathonEvent savedEvent = eventRepository.save(event);
+        if(savedEvent == null) {
+            System.out.println("error0");
+        }
 
         //5. tạo categories và lưu vào map để dễ tra cứu
         List<Category> categories = new ArrayList<>();
@@ -77,7 +80,6 @@ public class EventServiceImpl implements EventService {
                 categories.add(savedCate);
             }
         }
-
         //6. create rounds and categoryRounds
         List<RoundResponse> roundResponses = new ArrayList<>();
         if (request.getRounds() != null && !request.getRounds().isEmpty()) {

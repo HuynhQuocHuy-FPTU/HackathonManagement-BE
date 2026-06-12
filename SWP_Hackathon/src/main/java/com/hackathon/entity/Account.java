@@ -11,6 +11,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity
 @Table(name="Account")
 public class Account {
@@ -39,7 +42,7 @@ public class Account {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
-    @Column(name = "Updated_At", nullable = false)
+    @Column(name = "Updated_At")
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 

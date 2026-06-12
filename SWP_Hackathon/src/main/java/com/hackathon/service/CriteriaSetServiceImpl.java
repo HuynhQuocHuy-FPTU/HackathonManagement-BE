@@ -12,6 +12,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 
@@ -49,7 +50,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
 
             dto.setCriteriaSetId(set.getCriteriaSetId());
             dto.setCriteriaSetName(set.getCriteriaSetName());
-            dto.setWeight(set.getMaxScore());
+            dto.setWeight(BigDecimal.valueOf(set.getMaxScore()));
 
             List<CriteriaDetailResponseDTO> details = set.getCriteriaDetails()
                     .stream()

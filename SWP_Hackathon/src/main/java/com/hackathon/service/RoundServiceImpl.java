@@ -44,6 +44,9 @@ public class RoundServiceImpl implements RoundService{
     @Autowired
     private ExpertAssignRepository expertAssignRepository;
 
+    @Autowired
+    private CriteriaSetRepository criteriaSetRepository;
+
     @Override
     public Round createRound(CreateRoundRequest request, int eventId) throws BadRequestException {
 
@@ -53,6 +56,7 @@ public class RoundServiceImpl implements RoundService{
         //2. Get hackathon event & criteria set
         HackathonEvent event = eventRepository.findById(eventId).orElseThrow(() -> new RuntimeException("Not found event with ID: " + eventId));
 
+        CriteriaSet criteriaSet = criteriaSetRepository.findById(request.getCriteriaSetId()).orElseThrow(() -> new BadRequestException("Không tìm thấy criteria set ") );
         //3. Create round
         Round round = new Round();
         round.setRoundName(request.getRoundName());
@@ -61,6 +65,7 @@ public class RoundServiceImpl implements RoundService{
         round.setAdvancementRule(request.getAdvancementRule());
         round.setStatus(RoundStatus.UPCOMING);
         round.setOrderIndex(request.getOrderIndex());
+        round.setCriteriaSet(criteriaSet);
         round.setHackathonEvent(event);
 
         //4. Save DB
