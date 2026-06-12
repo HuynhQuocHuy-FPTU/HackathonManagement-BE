@@ -29,7 +29,7 @@ public class EventController {
         eventService.publishEvent(eventId);
         return ResponseEntity.ok("Sự kiện đã được công khai thành công");
     }
-    @PutMapping("/{eventId}/delete")
+    @DeleteMapping("/{eventId}/delete")
     public ResponseEntity<String> deleteEvent(@PathVariable Integer eventId){
         eventService.deleteEvent(eventId);
         return ResponseEntity.ok("Sự kiện đã được xóa thành công và chuyển vào thùng rác");

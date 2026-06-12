@@ -192,13 +192,8 @@ public class EventServiceImpl implements EventService {
                     expertAssignService.assignExpertsToCategoryRound(listCategoryRound, roundRequest.getCategoryExperts());
                     }
                 }
-
-
             }
-
-
         }
-
     @Override
     public void deleteEvent(Integer eventID) {
         HackathonEvent event = eventRepository.findById(eventID).orElseThrow(() -> new BadRequestException("Not found event"));
@@ -269,17 +264,16 @@ public class EventServiceImpl implements EventService {
     private String generateSeason(LocalDateTime startDate) {
         int year = startDate.getYear();
         int month = startDate.getMonthValue();
+        String season = "";
 
-        if (month >= 1 && month <= 3) {
-            return "SPRING " + year;
-        } else if (month <= 6) {
-            return "SUMMER " + year;
-        } else if (month <= 9) {
-            return "FALL " + year;
-        } else {
-            return "WINTER " + year;
+        if (month >= 1 && month <= 4) {
+            season =  "SPRING " + year;
+        } else if (month <= 8) {
+            season =  "SUMMER " + year;
+        } else if (month <= 12) {
+            season = "FALL " + year;
         }
-
+        return season;
     }
 
     @Override

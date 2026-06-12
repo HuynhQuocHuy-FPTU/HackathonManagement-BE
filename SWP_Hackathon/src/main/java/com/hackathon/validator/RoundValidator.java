@@ -14,9 +14,6 @@ public class RoundValidator {
         if(request.getStartDate().isAfter(request.getEndDate())){
             throw new BadRequestException("Start date must be before end date");
         }
-
-
-
-
+        
     }
 }
