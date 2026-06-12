@@ -1,5 +1,6 @@
 package com.hackathon.entity;
 
+import com.hackathon.entity.enums.RoundStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,6 +26,9 @@ public class Round {
     private String advancementRule;
     @Column(name = "Order_Index", nullable = false)
     private Integer orderIndex;
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private RoundStatus status;
 
     // 1 round - N category_round
     @OneToMany(mappedBy = "round")

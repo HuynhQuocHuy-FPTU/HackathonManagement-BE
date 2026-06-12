@@ -24,12 +24,12 @@ public class EventController {
         return new ResponseEntity<>(response,HttpStatus.CREATED);
     }
 
-    @PatchMapping("/{eventId}/publish")
+    @PutMapping("/{eventId}/publish")
     public ResponseEntity<String> publishEvent(@PathVariable Integer eventId){
         eventService.publishEvent(eventId);
         return ResponseEntity.ok("Sự kiện đã được công khai thành công");
     }
-    @PatchMapping("/{eventId}/delete")
+    @PutMapping("/{eventId}/delete")
     public ResponseEntity<String> deleteEvent(@PathVariable Integer eventId){
         eventService.deleteEvent(eventId);
         return ResponseEntity.ok("Sự kiện đã được xóa thành công và chuyển vào thùng rác");
@@ -46,7 +46,7 @@ public class EventController {
         return ResponseEntity.ok(responses);
     }
 
-    @PatchMapping("/{eventId}/restore")
+    @PutMapping("/{eventId}/restore")
     public ResponseEntity<String> restoreEvent(@PathVariable Integer eventId){
         eventService.restoreEvent(eventId);
         return ResponseEntity.ok("Khôi phục event thành công! Trạng thái đã được cập nhật");

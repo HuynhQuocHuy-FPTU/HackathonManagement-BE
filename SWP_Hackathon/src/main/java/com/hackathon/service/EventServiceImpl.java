@@ -33,6 +33,8 @@ public class EventServiceImpl implements EventService {
     private final RoundRepository roundRepository;
     private final CategoryRepository categoryRepository;
     private final EvaluationCriteriaRepository evaluationCriteriaRepository;
+    private final ExpertAssignService expertAssignService;
+    private final ExpertAssignRepository expertAssignRepository;
 
     @Override
     @Transactional
@@ -66,14 +68,13 @@ public class EventServiceImpl implements EventService {
         //4. Save DB
         HackathonEvent savedEvent = eventRepository.save(event);
 
-        //5. create categories và save vào map để dễ tra cứu
-        Map<String, Category> categoryMap = new HashMap<>();
+        //5. tạo categories và lưu vào map để dễ tra cứu
+        List<Category> categories = new ArrayList<>();
         if (request.getCategories() != null && !request.getCategories().isEmpty()) {
             for (var catRequest : request.getCategories()) {
 
                 Category savedCate = categoryService.createCategory(catRequest, savedEvent.getEventId());
-                //key: category name, value: category
-                categoryMap.put(savedCate.getCategoryName(), savedCate);
+                categories.add(savedCate);
             }
         }
 
@@ -81,38 +82,32 @@ public class EventServiceImpl implements EventService {
         List<RoundResponse> roundResponses = new ArrayList<>();
         if (request.getRounds() != null && !request.getRounds().isEmpty()) {
             for (var roundRequest : request.getRounds()) {
-
+                // tạo round trống (có liên quan tới Event trước)
                 Round saveRound = roundService.createRound(roundRequest, savedEvent.getEventId());
-
-                List<String> selectCategories = roundRequest.getAppliedListCategoryNames();
-
-                if (selectCategories != null && !selectCategories.isEmpty()) {
-                    for (String cateName : selectCategories) {
-
-                        Category matchedCategory = categoryMap.get(cateName);
-
-                        if (matchedCategory != null) {
-                            CategoryRound roundCategory = new CategoryRound();
-                            roundCategory.setRound(saveRound);
-                            roundCategory.setCategory(matchedCategory);
-                            categoryRoundRepository.save(roundCategory);
-                        }
+                // tự động gán toàn bộ categories cho round chung event
+                List<CategoryRound> categoryRounds = new ArrayList<>();
+                if(!categories.isEmpty()){
+                    for(Category cate : categories){
+                        CategoryRound cateRound = new CategoryRound();
+                        cateRound.setRound(saveRound);
+                        cateRound.setCategory(cate);
+                        categoryRounds.add(cateRound);
                     }
+                    //lưu xuống DB
+                    categoryRounds = categoryRoundRepository.saveAll(categoryRounds);
                 }
+                //gán expert cho round theo category
+                expertAssignService.assignExpertsToCategoryRound(categoryRounds, roundRequest.getCategoryExperts());
 
-                RoundResponse roundResponse = roundService.mapToResponse(saveRound, selectCategories);
+                // chuyển round sang response
+                RoundResponse roundResponse = roundService.mapToResponse(saveRound);
                 roundResponses.add(roundResponse);
-
             }
         }
         // 7. Chuyển category sang Response
-        List<CategoryResponse> categoryResponses = new ArrayList<>();
-        if (!categoryMap.isEmpty()) {
-            categoryResponses = categoryMap.values().stream().map(categoryService::mapToResponse).collect(Collectors.toList());
-        }
+        List<CategoryResponse> categoryResponses = categories.stream().map(categoryService :: mapToResponse).toList();
 
         // 8. Chyển event thành response
-
         return new EventResponse(event, categoryResponses, roundResponses);
 
 
@@ -159,6 +154,10 @@ public class EventServiceImpl implements EventService {
         HackathonEvent updateEvent = eventRepository.save(event);
 
         //xóa cấu hình cũ
+        //xóa expertAssign
+        expertAssignRepository.deleteExpertAssignByCategoryRound_Round_HackathonEvent_EventId(event.getEventId());
+        //xóa evaluation criteria
+        evaluationCriteriaRepository.deleteEvaluationCriteriaByRound_HackathonEvent_EventId(event.getEventId());
         //xóa category_round
         categoryRoundRepository.deleteCategoryRoundsByRound_HackathonEvent_EventId(event.getEventId());
         //xóa round
@@ -167,13 +166,11 @@ public class EventServiceImpl implements EventService {
         categoryRepository.deleteCategoriesByHackathonEvent_EventId(event.getEventId());
 
         //5. create categories và save vào map để dễ tra cứu
-        Map<String, Category> categoryMap = new HashMap<>();
+        List<Category> categories = new ArrayList<>();
         if (request.getCategories() != null && !request.getCategories().isEmpty()) {
             for (var catRequest : request.getCategories()) {
-
                 Category savedCate = categoryService.createCategory(catRequest, updateEvent.getEventId());
-                //key: category name, value: category
-                categoryMap.put(savedCate.getCategoryName(), savedCate);
+                categories.add(savedCate);
             }
         }
 
@@ -183,31 +180,24 @@ public class EventServiceImpl implements EventService {
 
                 Round saveRound = roundService.createRound(roundRequest, updateEvent.getEventId());
 
-                List<String> selectCategories = roundRequest.getAppliedListCategoryNames();
-
-                List<CategoryRound> listCategoryRound = new ArrayList<>();
-                if (selectCategories != null && !selectCategories.isEmpty()) {
-                    for (String cateName : selectCategories) {
-
-                        Category matchedCategory = categoryMap.get(cateName);
-
-                        if (matchedCategory != null) {
+                if (!categories.isEmpty()) {
+                    List<CategoryRound> listCategoryRound = new ArrayList<>();
+                    for (Category cate : categories) {
                             CategoryRound roundCategory = new CategoryRound();
                             roundCategory.setRound(saveRound);
-                            roundCategory.setCategory(matchedCategory);
+                            roundCategory.setCategory(cate);
                             listCategoryRound.add(roundCategory);
                         }
+                    listCategoryRound = categoryRoundRepository.saveAll(listCategoryRound);
+                    expertAssignService.assignExpertsToCategoryRound(listCategoryRound, roundRequest.getCategoryExperts());
                     }
                 }
-                if (!listCategoryRound.isEmpty()) {
-                    categoryRoundRepository.saveAll(listCategoryRound);
-                }
+
 
             }
 
 
         }
-    }
 
     @Override
     public void deleteEvent(Integer eventID) {
@@ -260,6 +250,8 @@ public class EventServiceImpl implements EventService {
             throw new BadRequestException("Sự kiện này chưa thêm vào thùng rác");
         }
         //xóa cấu hình cũ
+        // xóa expert assign
+        expertAssignRepository.deleteExpertAssignByCategoryRound_Round_HackathonEvent_EventId(event.getEventId());
         //xóa evaluation criteria
         evaluationCriteriaRepository.deleteEvaluationCriteriaByRound_HackathonEvent_EventId(event.getEventId());
         //xóa category_round

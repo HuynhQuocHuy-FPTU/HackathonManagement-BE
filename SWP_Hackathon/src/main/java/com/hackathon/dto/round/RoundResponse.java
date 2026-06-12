@@ -1,8 +1,11 @@
 package com.hackathon.dto.round;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.hackathon.dto.category.CategoryExpertAssignResponseDTO;
 import com.hackathon.dto.criteria.EvaluationCriteriaRequestDTO;
 import com.hackathon.dto.criteria.EvaluationCriteriaResponseDTO;
+import com.hackathon.entity.Round;
+import com.hackathon.entity.enums.RoundStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -41,5 +44,24 @@ public class RoundResponse {
 
     private Integer orderIndex;
 
+    private RoundStatus status;
+
     private List<EvaluationCriteriaResponseDTO> customCriteriaDetatils;
+    private List<CategoryExpertAssignResponseDTO>
+    experts;
+
+
+    public RoundResponse(Round round, List<EvaluationCriteriaResponseDTO> criteriaList, List<CategoryExpertAssignResponseDTO> experts){
+        this.roundId = round.getRoundId();
+        this.roundName = round.getRoundName();
+        this.startDate = round.getStartTime();
+        this.endDate = round.getEndTime();
+        this.eventID = round.getHackathonEvent().getEventId();
+        this.orderIndex = round.getOrderIndex();
+        this.status = round.getStatus();
+        this.advancementRule = round.getAdvancementRule();
+        this.customCriteriaDetatils = criteriaList;
+        this.experts = experts;
+    }
+
 }

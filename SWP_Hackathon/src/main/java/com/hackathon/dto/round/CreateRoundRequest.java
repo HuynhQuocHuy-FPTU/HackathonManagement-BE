@@ -1,6 +1,7 @@
 package com.hackathon.dto.round;
 
 
+import com.hackathon.dto.category.CategoryExpertAssignRequestDTO;
 import com.hackathon.dto.criteria.EvaluationCriteriaRequestDTO;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -24,8 +25,8 @@ public class CreateRoundRequest {
     @NotBlank(message = "Advancement rule is required")
     private String advancementRule;
 
-    @NotEmpty(message = "List Category is required")
-    private List<String> appliedListCategoryNames;
+//    @NotEmpty(message = "List Category is required")
+//    private List<String> appliedListCategoryNames;
 
     @NotNull(message = "Criteria_Set is required")
     private Integer criteriaSetId;
@@ -35,5 +36,7 @@ public class CreateRoundRequest {
     private Integer orderIndex;
 
     private List<EvaluationCriteriaRequestDTO> customCriteriaDetatils;
+
+    private List<CategoryExpertAssignRequestDTO> categoryExperts;
 
 }
