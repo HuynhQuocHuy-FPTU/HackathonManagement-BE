@@ -8,15 +8,15 @@ import com.hackathon.entity.enums.EventStatus;
 import com.hackathon.entity.enums.TeamStatus;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.*;
+import com.hackathon.security.CustomUserDetails;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
-import static javax.management.Query.or;
 
 @Service
 @RequiredArgsConstructor
@@ -28,59 +28,47 @@ public class TeamServiceImpl implements TeamService {
     private final TeamMemberRepository teamMemberRepository;
     private final RegistrationRepository registrationRepository;
     private final NotificationRepository notificationRepository;
-
-    //FUNCTION 1:Create Team
-    //BR: Khi tao team phai co tieu thieu it nhat 1 thanh vien (bao gom leader va 1 thanh vien khac)
     private static final int MAX_TEAM_SIZE = 5;
 
+    //FUNCTION 1:Create Team
+    //BR: Khi tao team phai co tieu thieu it nhat 1 thanh vien duoc moi (bao gom leader va 1 thanh vien khac)
     @Transactional
     @Override
-    public TeamResponse createTeam(CreateTeamRequest request) {
-        //Check Deadline Registration createTeam
+    public TeamResponse createTeam(CreateTeamRequest request, CustomUserDetails userDetail) {
+        // 1. Check Deadline Registration createTeam
         checkTeamRegistrationWindow();
 
-        // 1. Lay thong tin cua leader(Nguoi tao tem se duoc gan role la leader)
-        // (Bo sung sau, sua lai khi co account)
-        String leaderEmail = getCurrentUserEmail();
-        Account leader = accRepository.findByEmail(request.getTeamName());
-        if (leader == null) {
-            throw new BadRequestException("Account not found");
+        // 2.1 Lay thong tin cua leader(Nguoi tao tem se duoc gan role la leader)
+        Account leader = userDetail.getAccount();
+        if (request.getMemberEmails() == null) {
+            throw new BadRequestException("Member email list is required");
         }
 
-        // 2. Check member list
-        if (request.getMemberEmails() == null || request.getMemberEmails().isEmpty()) {
+        List<String> cleanEmails = new ArrayList<>();
+        // 2.3  Check duplicate member and loc email
+        Set<String> set = request.getMemberEmails().stream()
+                .filter(email -> email != null && !email.trim().isEmpty())
+                .map(String::trim)
+                .collect(Collectors.toSet());
+        // 2.4 Check member list
+        if (set.size() <1 ) {
             throw new BadRequestException("Team must at least 1 member besides leader");
         }
 
-        // Check duplicate member
-        Set<String> set = new HashSet<>(request.getMemberEmails());
-        for (String email : request.getMemberEmails()) {
-            if (email != null) {
-                set.add(email.trim());
-            }
-        }
-        if (set.size() != request.getMemberEmails().size()) {
-            throw new BadRequestException("Duplicate members");
-        }
-        // Check Email cua Leader vs Email cua listMember
-        if (set.contains(leaderEmail)) {
+        //2.5 Check Email cua Leader vs Email cua listMember
+        if (set.contains(leader.getEmail())) {
             throw new BadRequestException("The leader cannot add email addresses to the list of members");
-        }
-
-        // Check Team toi da 5 member (leader + 4 member)
-        int totalMember = 1 + request.getMemberEmails().size();
-        if (totalMember > MAX_TEAM_SIZE) {
-            throw new BadRequestException("Team size exceeds the maximum allowed size of " + MAX_TEAM_SIZE);
         }
 
         //3. Create Team
         Team team = new Team();
         team.setTeamName(request.getTeamName());
         team.setStatus(TeamStatus.PENDING);
-        team.setTeamSize(totalMember);
+        team.setTeamSize(1);
         Team saveTeam = teamRepository.save(team);
 
         List<TeamResponse.MemberInfo> listMember = new ArrayList<>();
+        List<String> invitedEmails = new ArrayList<>();
 
         //4. Luu thong tin Leader
         TeamMember leaderMember = new TeamMember();
@@ -90,43 +78,37 @@ public class TeamServiceImpl implements TeamService {
         teamMemberRepository.save(leaderMember);
 
         //5. Tạo object, save info of leader vao ListMember
-        TeamResponse.MemberInfo leaderInfo = new TeamResponse.MemberInfo(leader.getStudent().getStudentCode(), leader.getStudent().getStudentName(), leader.getStudent().getAccount().getEmail());
+        TeamResponse.MemberInfo leaderInfo = new TeamResponse.MemberInfo(
+                leader.getStudent().getStudentCode()
+                , leader.getStudent().getStudentName()
+                , leader.getStudent().getAccount().getEmail());
         listMember.add(leaderInfo);
 
-        //6. Luu cac thong tin member vao ListMember
+        //6. Tao loi moi gui toi cac thah vien
         for (String memberEmail : set) {
-            Account memberAccount = accRepository.findByEmail(memberEmail.trim());
-            if (memberAccount == null || memberAccount.getEmail().isEmpty()) {
-                throw new RuntimeException("Member Account not found");
-            }
-            //Luu thong tin Member
-            TeamMember studentMember = new TeamMember();
-            studentMember.setTeam(saveTeam);
-            studentMember.setIsLeader(false);
-            studentMember.setStudent(memberAccount.getStudent());
-            teamMemberRepository.save(studentMember);
-
-            //Map DTO
-            TeamResponse.MemberInfo memberInfo = new TeamResponse.MemberInfo(memberAccount.getStudent().getStudentCode(), memberAccount.getStudent().getStudentName(), memberAccount.getStudent().getAccount().getEmail());
-            listMember.add(memberInfo);
+            Account memberAccount = accRepository.findByEmail(memberEmail.trim()).orElseThrow(() -> new BadRequestException("Member Account not found"));
+            Notification invite = new Notification();
+            invite.setAccount(memberAccount);
+            invite.setTeam(saveTeam);
+            invite.setTitle("Invitation to join Team " + saveTeam.getTeamName());
+            invite.setMessage("You have been invited by " + leader.getStudent().getStudentName() +
+                    " to join their team");
+            notificationRepository.save(invite);
+            invitedEmails.add(memberEmail);
         }
 
-        //6. Return TeamResponse
-        return new TeamResponse(saveTeam.getTeamId(), saveTeam.getTeamName(), leaderInfo, listMember, saveTeam.getCreateAt());
 
-
+        //8. Return TeamResponse
+        return new TeamResponse(saveTeam.getTeamId(), saveTeam.getTeamName(), leaderInfo, listMember, saveTeam.getCreateAt(), invitedEmails);
     }
+
 
     //FUNCTION 2:UPDATE INFORMATION ABOUT TEAM AS NAME
     @Override
     @Transactional
-    public TeamResponse updateInfo(CreateTeamRequest request) {
+    public TeamResponse updateInfo(CreateTeamRequest request, CustomUserDetails userDetails) {
         //1. Lấy thông tin người dùng hiện đang đăng nhập từ JWT/OAuth2.
-        String email = getCurrentUserEmail();
-        Account currentUser = accRepository.findByEmail(email);
-        if (currentUser == null) {
-            throw new BadRequestException("Account not found");
-        }
+        Account currentUser = userDetails.getAccount();
 
         // 2. Check leader(Check account student đang login có phải là leader ko )
         TeamMember leader = teamMemberRepository.findByStudent_AccountAndIsLeaderTrue(currentUser).orElseThrow(() -> new BadRequestException("Only Leader can update info"));
@@ -158,13 +140,11 @@ public class TeamServiceImpl implements TeamService {
     //FUNCTION 3: RỜI TEAM
     //BR-03: Member chỉ được phép Leave team trước khi chốt danh sách 24 giờ
     @Override
-    public void leaveTeam(Integer teamId) {
+    public void leaveTeam(Integer teamId, CustomUserDetails userDetails) {
         //1. Lấy thông tin người dùng hiện đang đăng nhập từ JWT/OAuth2.
-        String email = getCurrentUserEmail();
-        Account currentUser = accRepository.findByEmail(email);
-        if (currentUser == null) {
-            throw new BadRequestException("Account not found");
-        }
+//        String email = getCurrentUserEmail();
+//        Account currentUser = accRepository.findByEmail(email).orElseThrow(() -> new BadRequestException("Account not found"));
+        Account currentUser = userDetails.getAccount();
         Team team = teamRepository.findById(teamId).orElseThrow(() -> new RuntimeException("Team not found"));
 
         //2. Check Student co thuoc team ko or con trong nhom ko
@@ -187,12 +167,16 @@ public class TeamServiceImpl implements TeamService {
         } else {
             //Th2: Neu Team ch gui don dang ky cuoc thi, van co the roi nhom nhung truoc khi cong dk Team dong truoc 24h
             List<HackathonEvent> event = eventRepository.findByStatus(EventStatus.ACTIVE);
+            if (event.isEmpty()) {
+                throw new BadRequestException("No active hackathon event found to check deadline");
+            }
             LocalDateTime lockTime = event.getFirst().getRegistrationDeadline().minusHours(24);
             if (LocalDateTime.now().isAfter(lockTime)) {
                 throw new BadRequestException("Cannot leave team within 24 hours before deadline");
             }
 
         }
+        // Xoa
         teamMemberRepository.delete(teamMember);
 
         //5. Cập nhật lại số lượng thành viên của nhóm
@@ -204,13 +188,12 @@ public class TeamServiceImpl implements TeamService {
     //FUNCTION 4: CHẤP NHẬN LỜI MỜI
     // Chuyen quyen leader
     @Override
-    public void acceptInvite(Integer teamId, Long notificationId) {
+    @Transactional(dontRollbackOn = BadRequestException.class) // Khong roll Back khi dinh loi xu ly tb hong
+    public void acceptInvite(Integer teamId, Long notificationId, CustomUserDetails userDetails) {
         //1. Lấy thông tin người dùng hiện đang đăng nhập từ JWT/OAuth2.
-        String email = getCurrentUserEmail();
-        Account currentUser = accRepository.findByEmail(email);
-        if (currentUser == null) {
-            throw new BadRequestException("Account not found");
-        }
+//        String email = getCurrentUserEmail();
+//        Account currentUser = accRepository.findByEmail(email).orElseThrow(() -> new BadRequestException("Account not found"));
+        Account currentUser = userDetails.getAccount();
 
         //2. Kiem tra team gui loi moi con ton tai khong
         Team team = teamRepository.findById(teamId).orElseThrow(() -> new BadRequestException("Team does not exits"));
@@ -248,14 +231,13 @@ public class TeamServiceImpl implements TeamService {
         }
 
         // 6. Check so luong thanh vien hien tai cua nhom
-        int currentSize= Optional.ofNullable(team.getTeamSize()).orElse(0);
-        if (currentSize  >= 5) {
+        int currentSize = Optional.ofNullable(team.getTeamSize()).orElse(0);
+        if (currentSize >= 5) {
 
             notification.setTitle("INVALID. Team Invitation to " + team.getTeamName());
             notification.setMessage("This invitation is no longer valid because the team is full.");
             notification.setRead(true);
             notificationRepository.save(notification);
-
             throw new BadRequestException("Team '" + team.getTeamName() + "' has reached the maximum size.");
         }
 
@@ -284,9 +266,8 @@ public class TeamServiceImpl implements TeamService {
 
         // 11. Check All Team, neu du 5 thanh vien , vo hieu hoa loi moi con lai
         if (team.getTeamSize() == 5) {
-            // Tìm tất cả thông báo chứa "teamId=X" của cuộc thi này
-            List<Notification> otherInvites = notificationRepository.findAllByTeam( team);
-
+            List<Notification> otherInvites = notificationRepository.findAllByTeam(team);
+            // Bỏ qua không cập nhật đè lên thông báo thành công của chính mình vừa xử lý ở trên
             for (Notification oldNoti : otherInvites) {
                 if (oldNoti.getId().equals(notification.getId())) {
                     continue;
@@ -308,12 +289,6 @@ public class TeamServiceImpl implements TeamService {
 
     }
 
-
-    // Sua lai khi co ham login de lay thong tin ng dang nhap
-    @Override
-    public String getCurrentUserEmail() {
-        return "";
-    }
 
     @Override
     public void checkTeamRegistrationWindow() {

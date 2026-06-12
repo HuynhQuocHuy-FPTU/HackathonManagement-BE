@@ -23,7 +23,6 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
     private final  CriteriaSetRepository criteriaSetRepository;
     private final CriteriaDetailRepository criteriaDetailRepository;
 
-
     //1.Lay all thong tin trong Set
     @Override
     public List<CriteriaSetResponseDTO> getAllCriteriaSets() {
@@ -37,7 +36,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
                 .toList();
     }
 
-    // 2.  Lay tat ca thong tin trong bo tieu chi goc(template) va tieu chi chi tiet trong template
+    // 3.  Lay tat ca thong tin trong bo tieu chi goc(template) va tieu chi chi tiet trong template
     @Override
     @Transactional
     public List<CriteriaSetDetailResponseDTO> getAllCriteriaSetDetail() {
@@ -67,7 +66,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
         }).toList();
     }
 
-    //3. Lay tat ca thong tin trong tieu chi chi tiet(detail) hien thi
+    //2. Lay tat ca thong tin trong tieu chi chi tiet(detail) hien thi
     @Override
     public List<CriteriaDetailResponseDTO> getAllCriteriaDetail() {
 

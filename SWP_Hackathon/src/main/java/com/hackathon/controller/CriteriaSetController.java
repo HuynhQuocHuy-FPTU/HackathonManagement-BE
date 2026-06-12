@@ -26,7 +26,7 @@ public class CriteriaSetController {
         List<CriteriaSetResponseDTO> list =  criteriaSetService.getAllCriteriaSets();
         return ResponseEntity.ok(ApiResponse.success(list, "Get All criteria-set successfully"));
     }
-   //2. get  bo tiey chi chi tiet (criteria-detail)
+   //2. Lay all thong tin trong bo tiey chi chi tiet (criteria-detail)
     @GetMapping("criteria-detail")
     public ResponseEntity<ApiResponse<List<CriteriaDetailResponseDTO>>> getCriteriaSet() {
         List<CriteriaDetailResponseDTO> list = criteriaSetService.getAllCriteriaDetail();

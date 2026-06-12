@@ -18,6 +18,8 @@ public class TeamResponse {
     private MemberInfo leader; // Thông tin riêng của Leader
     private List<MemberInfo> members;// Danh sách các thành viên còn lại
     private LocalDateTime createAt;
+    private List<String> invitedEmails;      // PENDING INVITES
+
 
 
     @Getter
