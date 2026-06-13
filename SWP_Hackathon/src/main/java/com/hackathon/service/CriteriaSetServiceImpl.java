@@ -1,11 +1,15 @@
 package com.hackathon.service;
 
 import com.hackathon.dto.criteria.*;
+import com.hackathon.entity.Account;
 import com.hackathon.entity.CriteriaDetail;
 import com.hackathon.entity.CriteriaSet;
+import com.hackathon.entity.EventCoordinator;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.CriteriaDetailRepository;
 import com.hackathon.repository.CriteriaSetRepository;
+import com.hackathon.repository.EventCoordinatorRepository;
+import com.hackathon.security.CustomUserDetails;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +28,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
 
     private final CriteriaSetRepository criteriaSetRepository;
     private final CriteriaDetailRepository criteriaDetailRepository;
+    private final EventCoordinatorRepository eventCoordinatorRepository;
 
     // 1. Get all bo tieu chi hien co(criteria-set)
     @Override
@@ -107,11 +112,17 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
 
     //5. Tao CriteriaSet
     @Override
-    public CriteriaSetResponseDTO createCriteriaSet(CriteriaSetRequestDTO request) {
+    public CriteriaSetResponseDTO createCriteriaSet(CriteriaSetRequestDTO request, CustomUserDetails userDetails) {
+        // Check Coordinator mới là người được tạo
+        Account eventCoordinator = userDetails.getAccount();
+        EventCoordinator coordinator = eventCoordinatorRepository.findById(eventCoordinator.getAccountId())
+                .orElseThrow(() -> new BadRequestException("Bạn không có quyền truy cập vào bộ tiêu chí để thực hiện thao tác tạo bộ tiêu chí."));
+
         // 1. Tao CriteriaSet
         CriteriaSet criteriaSet = new CriteriaSet();
         criteriaSet.setCriteriaSetName(request.getCriteriaSetName());
         criteriaSet.setMaxScore(request.getMaxScore());
+        criteriaSet.setEventCoordinator(eventCoordinator.getEventCoordinator());
 
         // 2.Tao 1 list de luu Criteria-detail
         List<CriteriaDetail> list = new ArrayList<>();
@@ -138,7 +149,12 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
     // 6. Update CriteriaSet(Có thể thêm xóa , sữa các tiêu chí chi tiết , nhưng không được xóa tiêu chí cha)
     @Override
     @Transactional
-    public CriteriaSetResponseDTO updateCriteriaSet(CriteriaSetRequestDTO request) {
+    public CriteriaSetResponseDTO updateCriteriaSet(CriteriaSetRequestDTO request, CustomUserDetails userDetails) {
+        // Check Coordinator mới là người được tạo
+        Account eventCoordinator = userDetails.getAccount();
+        EventCoordinator coordinator = eventCoordinatorRepository.findById(eventCoordinator.getAccountId())
+                .orElseThrow(() -> new BadRequestException("Bạn không có quyền truy cập vào bộ tiêu chí để thực hiện thao tác cập nhật dữ liệu bộ tiêu chí"));
+
         //1. Lay bo tieu chi can update
         CriteriaSet criteriaSet = criteriaSetRepository
                 .findByCriteriaSetId(request.getCriteriaSetId());
@@ -201,7 +217,13 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
 
     // 7. Xoa bo tieu chi
     @Override
-    public void deleteCriteriaSet(Integer criteriaSetId) {
+    public void deleteCriteriaSet(Integer criteriaSetId, CustomUserDetails userDetails) {
+        // Check Coordinator mới là người được tạo
+        Account eventCoordinator = userDetails.getAccount();
+        EventCoordinator coordinator = eventCoordinatorRepository.findById(eventCoordinator.getAccountId())
+                .orElseThrow(() -> new BadRequestException("Bạn không có quyền truy cập vào bộ tiêu chí để thực hiện thao tác xóa dữ liệu bộ tiêu chí"));
+
+
         CriteriaSet criteriaSet = criteriaSetRepository.findByCriteriaSetId(criteriaSetId);
         if (criteriaSet == null) {
             throw new RuntimeException("CriteriaSet not found with id: " + criteriaSetId);

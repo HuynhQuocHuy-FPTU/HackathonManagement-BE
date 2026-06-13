@@ -5,9 +5,11 @@ import com.hackathon.dto.criteria.CriteriaDetailResponseDTO;
 import com.hackathon.dto.criteria.CriteriaSetRequestDTO;
 import com.hackathon.dto.criteria.CriteriaSetResponseDTO;
 import com.hackathon.exception.ApiResponse;
+import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.CriteriaSetService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -48,21 +50,21 @@ public class CriteriaSetController {
     }
     //5. Tao CriteriaSet
     @PostMapping("/creata-criteriaSet")
-    public ResponseEntity<ApiResponse<CriteriaSetResponseDTO>> createCriteriaSet(@RequestBody  CriteriaSetRequestDTO request){
-            CriteriaSetResponseDTO create = criteriaSetService.createCriteriaSet(request);
+    public ResponseEntity<ApiResponse<CriteriaSetResponseDTO>> createCriteriaSet(@RequestBody CriteriaSetRequestDTO request, @AuthenticationPrincipal CustomUserDetails user){
+            CriteriaSetResponseDTO create = criteriaSetService.createCriteriaSet(request, user);
             return ResponseEntity.ok(ApiResponse.success(create,"Tạo bộ tiêu chí thành công"));
     }
     // 6. Update CriteriaSet
     @PostMapping("/update-criteriaSet")
-    public ResponseEntity<ApiResponse<CriteriaSetResponseDTO>> updateCriteriaSet(@RequestBody  CriteriaSetRequestDTO request){
-        CriteriaSetResponseDTO update = criteriaSetService.updateCriteriaSet(request);
+    public ResponseEntity<ApiResponse<CriteriaSetResponseDTO>> updateCriteriaSet(@RequestBody  CriteriaSetRequestDTO request, @AuthenticationPrincipal CustomUserDetails user){
+        CriteriaSetResponseDTO update = criteriaSetService.updateCriteriaSet(request , user);
         return ResponseEntity.ok(ApiResponse.success(update,"Cập nhật bộ tiêu chí thành công"));
     }
 
     // 7. Xoa bo tieu chi
     @PostMapping("/delete-criteriaSet/{criteriaSetId}")
-    public ResponseEntity<ApiResponse<Void>> deleteCriteriaSet(@PathVariable Integer criteriaSetId){
-          criteriaSetService.deleteCriteriaSet(criteriaSetId);
+    public ResponseEntity<ApiResponse<Void>> deleteCriteriaSet(@PathVariable Integer criteriaSetId, @AuthenticationPrincipal CustomUserDetails user){
+          criteriaSetService.deleteCriteriaSet(criteriaSetId, user);
         return ResponseEntity.ok(ApiResponse.success(null,"Xóa bộ tiêu chí thành công"));
     }
 
