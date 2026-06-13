@@ -1,5 +1,6 @@
 package com.hackathon.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hackathon.entity.enums.EventStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -33,6 +34,7 @@ public class EventCoordinator {
 
     // 1 eventCoordinator - N Criteria_SET
     @OneToMany(mappedBy = "eventCoordinator", cascade = CascadeType.ALL,orphanRemoval = true)
+    @JsonIgnore
     private List<CriteriaSet>criteriaSets = new ArrayList<>();
 
 
