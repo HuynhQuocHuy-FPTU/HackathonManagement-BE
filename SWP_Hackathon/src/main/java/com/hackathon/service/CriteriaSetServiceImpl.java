@@ -114,30 +114,20 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
     @Override
     public CriteriaSetResponseDTO createCriteriaSet(CriteriaSetRequestDTO request, CustomUserDetails userDetails) {
         // Check Coordinator mới là người được tạo
-
-//        Account eventCoordinator = userDetails.getAccount();
-//        EventCoordinator coordinator = eventCoordinatorRepository.findById(eventCoordinator.getAccountId())
-//                .orElseThrow(() -> new BadRequestException("Bạn không có quyền truy cập vào bộ tiêu chí để thực hiện thao tác tạo bộ tiêu chí."));
-
-//        if (userDetails == null) {
-//            throw new RuntimeException("User chưa đăng nhập");
-//        }
-//
-
-        Account eventCoordinator = userDetails.getAccount();
-        EventCoordinator coordinator = eventCoordinatorRepository.findByAccount_AccountId(eventCoordinator.getAccountId())
+        Account account = userDetails.getAccount();
+        EventCoordinator coordinator = eventCoordinatorRepository.findByAccount_AccountId(account.getAccountId())
                 .orElseThrow(() -> new BadRequestException("Bạn không có quyền truy cập vào bộ tiêu chí..."));
 
+        // CriteriaSetName không được trùng
+        String name = request.getCriteriaSetName().trim();
+        if (criteriaSetRepository.existsByCriteriaSetName(name)) {
+            throw new BadRequestException("Tên bộ tiêu chí không được phép trùng.");
+        }
 
-//        // Thử tìm trong DB bằng account_id
-//        var testCoordinator = eventCoordinatorRepository.findByAccount_AccountId(eventCoordinator.getAccountId());
-//        System.out.println("5. Tìm Coordinator theo Account ID trong DB có thấy không?: " + testCoordinator.isPresent());
-//        System.out.println("------------------------");
         // 1. Tao CriteriaSet
         CriteriaSet criteriaSet = new CriteriaSet();
-        criteriaSet.setCriteriaSetName(request.getCriteriaSetName());
+        criteriaSet.setCriteriaSetName(name);
         criteriaSet.setMaxScore(request.getMaxScore());
-//        criteriaSet.setEventCoordinator(account.getEventCoordinator());
         criteriaSet.setEventCoordinator(coordinator);
 
         // 2.Tao 1 list de luu Criteria-detail
@@ -153,10 +143,8 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
         criteriaSet.setCriteriaDetails(list);
         // 3. Luu du lieu xuong DB
         CriteriaSet saved = criteriaSetRepository.save(criteriaSet);
-
-        // Load lại list thực tế vừa lưu thành công , để cập nhật lại ID
-//        List<CriteriaDetail> savedDetails = criteriaDetailRepository.findByCriteriaSet_CriteriaSetId(saved.getCriteriaSetId());
-        List<CriteriaDetail> savedDetails = saved.getCriteriaDetails();        // 4. Tra du lieu ve DTO
+        List<CriteriaDetail> savedDetails = saved.getCriteriaDetails();
+        // 4. Tra du lieu ve DTO
         return mapToResponse(saved, savedDetails);
 
     }
@@ -173,6 +161,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
                         .orElseThrow(() -> new BadRequestException(
                                 "Bạn không có quyền truy cập vào bộ tiêu chí để thực hiện thao tác cập nhật dữ liệu bộ tiêu chí"
                         ));
+
         //1. Lay bo tieu chi can update
         CriteriaSet criteriaSet = criteriaSetRepository
                 .findByCriteriaSetId(request.getCriteriaSetId());

@@ -7,4 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface CriteriaSetRepository extends JpaRepository<CriteriaSet, Integer> {
     CriteriaSet findByCriteriaSetId(Integer criteriaSetId);
 
+    boolean existsByCriteriaSetName(String  name);
 }
