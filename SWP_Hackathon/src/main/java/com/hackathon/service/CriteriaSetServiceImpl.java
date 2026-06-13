@@ -113,11 +113,17 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
     //5. Tao CriteriaSet
     @Override
     public CriteriaSetResponseDTO createCriteriaSet(CriteriaSetRequestDTO request, CustomUserDetails userDetails) {
-        // Check Coordinator mới là người được tạo
+//        // Check Coordinator mới là người được tạo
+//        Account eventCoordinator = userDetails.getAccount();
+//        EventCoordinator coordinator = eventCoordinatorRepository.findById(eventCoordinator.getAccountId())
+//                .orElseThrow(() -> new BadRequestException("Bạn không có quyền truy cập vào bộ tiêu chí để thực hiện thao tác tạo bộ tiêu chí."));
         Account eventCoordinator = userDetails.getAccount();
-        EventCoordinator coordinator = eventCoordinatorRepository.findById(eventCoordinator.getAccountId())
-                .orElseThrow(() -> new BadRequestException("Bạn không có quyền truy cập vào bộ tiêu chí để thực hiện thao tác tạo bộ tiêu chí."));
 
+        EventCoordinator coordinator =
+                eventCoordinatorRepository.findByAccount_AccountId(eventCoordinator.getAccountId())
+                        .orElseThrow(() -> new BadRequestException(
+                                "Bạn không có quyền truy cập vào bộ tiêu chí"
+                        ));
         // 1. Tao CriteriaSet
         CriteriaSet criteriaSet = new CriteriaSet();
         criteriaSet.setCriteriaSetName(request.getCriteriaSetName());

@@ -38,15 +38,28 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/**",
+                                //Ngan comment
+//                                "/api/**",
+                                "/api/account/register",   // N Them de test
+                                "/api/account/login",      //  N them de test
+                                "/api/account/resend-verification", //N them
                                 "/error",
                                 "/verify-email",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**"
                         ).permitAll()
+
+                        //(N them requestMathchers) Chỉ cho phép tài khoản có quyền/role là COORDINATOR được gọi POST/PUT/DELETE vào criteriaSet
+//                        .requestMatchers("/api/v1/criteriaSet/**").hasAuthority("EVENTCOORDINATOR")
+                                .requestMatchers("/api/v1/criteriaSet/**")
+                                .hasRole("EVENTCOORDINATOR")
+
                         .anyRequest().authenticated()
+
+
                 )
+
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
