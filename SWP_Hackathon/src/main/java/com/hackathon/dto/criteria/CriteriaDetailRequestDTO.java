@@ -11,8 +11,11 @@ import java.math.BigDecimal;
 @Setter
 public class CriteriaDetailRequestDTO {
     private Integer criteriaId;
+
+    @NotBlank(message = "Criteria Set Name is required")
     private String criteriaName;
-    @NotNull(message = "Weight is required")
+
+    @NotBlank(message = "Weight is required")
     @Min(value = 0, message = "Weight must be greater than or equal to 0")
     private BigDecimal weight;
 

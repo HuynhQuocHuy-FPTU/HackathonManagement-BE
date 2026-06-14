@@ -49,7 +49,7 @@ public class CriteriaSetController {
         return ResponseEntity.ok(ApiResponse.success(list,"Get all info of Criteria-Detail by CriteriaSet"));
     }
     //5. Tao CriteriaSet
-    @PostMapping("/creata-criteriaSet")
+    @PostMapping("/create-criteriaSet")
     public ResponseEntity<ApiResponse<CriteriaSetResponseDTO>> createCriteriaSet(@RequestBody CriteriaSetRequestDTO request, @AuthenticationPrincipal CustomUserDetails user){
         System.out.println("USER DETAILS = " + user); // 🔥 thêm dòng này
             CriteriaSetResponseDTO create = criteriaSetService.createCriteriaSet(request, user);

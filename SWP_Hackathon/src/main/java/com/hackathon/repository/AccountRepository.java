@@ -14,4 +14,6 @@ public interface AccountRepository extends JpaRepository<Account, Integer> {
 
     java.util.Optional<Account> findByVerificationToken(String verificationToken);
 
+//    boolean exitsByStudent_StudentIdAndLea
+
 }
