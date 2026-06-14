@@ -3,5 +3,6 @@ package com.hackathon.entity.enums;
 public enum TeamStatus {
     PENDING,
     APPROVED,
-    REJECTED
+    REJECTED,
+    DRAFT // vừa tạo, chưa đăng ký
 }

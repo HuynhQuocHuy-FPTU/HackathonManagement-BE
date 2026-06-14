@@ -16,7 +16,7 @@ import java.util.List;
 
 
 @RestController
-@RequestMapping("/api/v1/criteriaSet")
+@RequestMapping("/api/criteriaSet")
 
 public class CriteriaSetController {
     @Autowired

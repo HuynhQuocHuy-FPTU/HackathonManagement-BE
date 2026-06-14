@@ -6,6 +6,8 @@ import com.hackathon.dto.team.TeamResponse;
 
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.EventStatus;
+import com.hackathon.entity.enums.NotificationStatus;
+import com.hackathon.entity.enums.NotificationType;
 import com.hackathon.entity.enums.TeamStatus;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.*;
@@ -16,7 +18,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 
 @Service
@@ -31,6 +32,7 @@ public class TeamServiceImpl implements TeamService {
     private final NotificationRepository notificationRepository;
     private static final int MAX_TEAM_SIZE = 5;
     private static final long LOCK_BEFORE_DEADLINE_HOURS = 24;
+    private final StudentRepository studentRepository;
 
 
     @Override
@@ -66,30 +68,18 @@ public class TeamServiceImpl implements TeamService {
     @Override
     public TeamResponse createTeam(CreateTeamRequest request, CustomUserDetails userDetail) {
         // 1. Check Deadline Registration createTeam(BR-7)
-        HackathonEvent event = checkTeamRegistrationWindow(request.getEventId());
+        HackathonEvent event = eventRepository.findByStatus(EventStatus.ACTIVE).getFirst();
+        HackathonEvent checkDeadline = checkTeamRegistrationWindow(event.getEventId());
 
         // 2. Lay thong tin cua leader(Nguoi tao tem se duoc gan role la leader)
         Account leaderAccount = userDetail.getAccount();
-        if (request.getMemberEmails() == null) {
-            throw new BadRequestException("Member email list is required");
-        }
 
-        // 2.1 BR: bắt buộc mời ít nhất 1 người khác
+        // 3. BR: bắt buộc mời ít nhất 1 người khác
         if (request.getMemberEmails() == null || request.getMemberEmails().isEmpty()) {
             throw new BadRequestException("Khi tạo đội, bạn bắt buộc phải mời ít nhất 1 thành viên khác tham gia!");
         }
 
-        //2.2. Check xem account này có tham gia team khác không
-        boolean alreadyInTeam =
-                teamMemberRepository.existsByStudent(
-                        leaderAccount.getStudent());
-
-        if (alreadyInTeam) {
-            throw new BadRequestException(
-                    "Bạn đã thuộc một team khác!");
-        }
-
-        // 2.3  Check duplicate member and loc email
+        // 3.2  Check duplicate member and loc email
         Set<String> cleanEmails = new HashSet<>();
         for (String email : request.getMemberEmails()) {
             if (email != null && !email.isBlank()) {
@@ -101,19 +91,27 @@ public class TeamServiceImpl implements TeamService {
             throw new BadRequestException("Danh sách email mời vào nhóm không hợp lệ!");
         }
 
-        //2.5 Check Email cua Leader vs Email cua listMember
-        if (cleanEmails.contains(leaderAccount.getEmail().toLowerCase())) {
+        //3.3 Check Email cua Leader vs Email cua listMember
+        if (cleanEmails.contains(leaderAccount.getEmail())) {
             throw new BadRequestException("Bạn là Trưởng nhóm, không cần tự mời chính mình!");
         }
 
-        //3. Create Team
+
+        //3.1 Check xem account này có tham gia team khác không
+        boolean alreadyInTeam =
+                teamMemberRepository.existsByStudent(
+                        leaderAccount.getStudent());
+        if (alreadyInTeam) {
+            throw new BadRequestException("Bạn đã thuộc một team khác!");
+        }
+
+
+        //4. Create Team
         Team team = new Team();
         team.setTeamName(request.getTeamName());
         team.setStatus(TeamStatus.PENDING);
         team.setTeamSize(1);
         Team saveTeam = teamRepository.save(team);
-        List<TeamResponse.MemberInfo> listMember = new ArrayList<>();
-        List<String> invitedEmails = new ArrayList<>();
 
         //4. Luu thong tin Leader
         TeamMember leaderMember = new TeamMember();
@@ -122,11 +120,13 @@ public class TeamServiceImpl implements TeamService {
         leaderMember.setStudent(leaderAccount.getStudent());
         teamMemberRepository.save(leaderMember);
 
+        List<TeamResponse.MemberInfo> listMember = new ArrayList<>();
+        List<String> invitedEmails = new ArrayList<>();
         //5. Tạo object, save info of leader vao ListMember
         TeamResponse.MemberInfo leaderInfo = new TeamResponse.MemberInfo(
                 leaderAccount.getStudent().getStudentCode()
                 , leaderAccount.getStudent().getStudentName()
-                , leaderAccount.getStudent().getAccount().getEmail());
+                , leaderAccount.getEmail());
         listMember.add(leaderInfo);
 
         //6. Tao loi moi gui toi cac thah vien
@@ -136,6 +136,8 @@ public class TeamServiceImpl implements TeamService {
             invite.setAccount(memberAccount);
             invite.setTeam(saveTeam);
             invite.setEvent(event);// Thông tin này là thông tin ẩn để lưu team này được tạo bởi event nào
+            invite.setType(NotificationType.TEAM_INVITATION);
+            invite.setStatus(NotificationStatus.PENDING);
             invite.setTitle("Lời mời tham gia Team " + saveTeam.getTeamName());
             invite.setMessage("Bạn được mời bởi " + leaderAccount.getStudent().getStudentName() +
                     " để tạo đội cùng tham gia cuộc thi Hackathon.");
@@ -150,57 +152,73 @@ public class TeamServiceImpl implements TeamService {
     //FUNCTION 2:UPDATE INFORMATION ABOUT TEAM AS NAME
     @Override
     @Transactional
-    public void updateInfo(CreateTeamRequest request, CustomUserDetails userDetails) {
-        // 1.Check deadline(chi duoc update truoc khi het han dk tao team )
-        HackathonEvent event = checkTeamRegistrationWindow(request.getEventId());
+    public String updateInfo(CustomUserDetails userDetails, String teamName) {
 
-        // 2. Lấy thông tin người dùng hiện đang đăng nhập từ JWT/OAuth2.
+        // 1. Lấy thông tin người dùng hiện đang đăng nhập từ JWT/OAuth2.
         Account currentAccount = userDetails.getAccount();
 
+        //2. Check account nay co tham gia Team này không
+        TeamMember currentMember = teamMemberRepository.findByStudent(currentAccount.getStudent())
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin nhóm! Bạn hiện chưa tham gia bất kỳ Team nào."));
+
         // 3. Check leader(Check account student đang login có phải là leader ko )
-        TeamMember leaderMember = teamMemberRepository.findByStudentAndIsLeader(currentAccount.getStudent(), true)
-                .orElseThrow(() -> new BadRequestException("Chỉ Leader mới có quyền cập nhật thông tin của nhóm."));
-        if (!leaderMember.getStudent().getStudentCode().equals(currentAccount.getStudent().getStudentCode())) {
+        if (!currentMember.getIsLeader()) {
             throw new BadRequestException("Bạn không phải Trưởng nhóm, không có quyền đổi tên đội này!");
         }
-        // 4. Get team
-        Team team = leaderMember.getTeam();
+
+        // 4. Check Team này đã được phê duyệt đội chưa
+        Team team = currentMember.getTeam();
+        if (team.getStatus() == TeamStatus.APPROVED) {
+            throw new BadRequestException("Bạn không được phép thay đổi tên nhóm khi đã gửi đơn đăng ký Team thành công.");
+        }
+        // 5.Check deadline(chi duoc update truoc khi het han dk tao team )
+        HackathonEvent event = eventRepository.findByStatus(EventStatus.ACTIVE).getFirst();
+        Optional<Registration> registration = registrationRepository.findByTeamAndHackathonEvent_EventId(team, event.getEventId());
+
+        //6. Nếu đã nộp đơn đăng ký cuộc thi này rồi (PENDING hoặc APPROVED) thì khóa, không cho sửa tên nhóm
+        if (registration.isPresent()) {
+            Registration reg = registration.get();
+            if (reg.getStatus() == TeamStatus.PENDING || reg.getStatus() == TeamStatus.APPROVED) {
+                throw new BadRequestException("Đội đã nộp đơn đăng ký tham gia cuộc thi, không thể thay đổi tên nhóm vào lúc này!");
+            }
+        }
+        checkTeamRegistrationWindow(event.getEventId());
+
         // 5. Validate team name
-        if (request.getTeamName() == null
-                || request.getTeamName().isBlank()) {
+        if (teamName == null
+                || teamName.isBlank()) {
             throw new BadRequestException(
-                    "Tên đội mới không hợp lệ!");
+                    "Tên đội mới không được để trống!");
         }
-
-        String cleanName = request.getTeamName().trim();
-
+        String cleanName = teamName.trim();
         if (cleanName.equalsIgnoreCase(team.getTeamName())) {
-            return;
+            return team.getTeamName();
         }
-
         // 6. Update
         team.setTeamName(cleanName);
         teamRepository.save(team);
-
+        return team.getTeamName();
     }
 
     //FUNCTION 3: RỜI TEAM
     //BR-03: Member chỉ được phép Leave team trước khi chốt danh sách 24 giờ
+
+    @Transactional
     @Override
-    public void leaveTeam(TeamRequest request, CustomUserDetails userDetails) {
+    public void leaveTeam(CustomUserDetails userDetails) {
         //1. Lấy thông tin người dùng hiện đang đăng nhập từ JWT/OAuth2.
         Account currentUser = userDetails.getAccount();
-        Team team = teamRepository.findById(request.getTeamId()).orElseThrow(() -> new RuntimeException("Team not found"));
+        Student student = currentUser.getStudent();
+        //1.1 Check Student có đang thuộc Team nào không
+        TeamMember teamMember = teamMemberRepository.findByStudent(student)
+                .orElseThrow(() -> new BadRequestException("Bạn hiện không tham gia bất kỳ đội nào!"));
 
-        //2. Check Student co thuoc team ko or con trong nhom ko
-        TeamMember teamMember = teamMemberRepository.findByTeamAndStudent(request.getTeamId(), currentUser.getStudent())
-                .orElseThrow(() -> new RuntimeException("Bạn không phải là thành viên chính thức ủa Team này."));
-
-        //3. Leader khong duoc phep roi khoi nhom , truoc khi chuyen quyen leader cho nguoi khac
+        //2. Leader khong duoc phep roi khoi nhom , truoc khi chuyen quyen leader cho nguoi khac
         if (teamMember.getIsLeader()) {
             throw new BadRequestException("Leader không được phép rời Team trước khi chuyển quyền cho thành viên khác.");
         }
 
+        Team team = teamMember.getTeam();
         // 4. Check Team này đã được phê duyệt đội chưa
         if (team.getStatus() == TeamStatus.APPROVED) {
             throw new BadRequestException("Bạn không được phép rời Team , bởi vì Team này đã đăng ký thông tin thành viên thành công với ban tổ chức rồi.");
@@ -208,40 +226,91 @@ public class TeamServiceImpl implements TeamService {
 
         //  5. Check thoi han duoc roi khoi team
         // check Team da dang ky event ch
-
-        Optional<Registration> registration = registrationRepository.findByTeamAndHackathonEvent_EventId(team, request.getEventId());
+        HackathonEvent event = eventRepository.findByStatus(EventStatus.ACTIVE).getFirst();
+        Optional<Registration> registrationEvent = registrationRepository.findByTeamAndHackathonEvent_EventId(team, event.getEventId());
 
         //Th1: Neu team da gui don dang ky cuoc thi  roi, thi khong duoc phep roi Team
-        if (registration.isPresent()) {
-            Registration registrationList = registration.get();
-            if (registrationList.getStatus() == TeamStatus.PENDING || registrationList.getStatus() == TeamStatus.APPROVED) {
+        if (registrationEvent.isPresent()) {
+            Registration registration = registrationEvent.get();
+            if (registration.getStatus() == TeamStatus.PENDING || registration.getStatus() == TeamStatus.APPROVED) {
                 throw new BadRequestException("Team đã nộp đơn đăng ký, bạn không thể rời khỏi team .");
-            } else {
-                //Th2. Team ch gửi đơn đk , thi check thời hạn được phép rời khỏi Team
-                checkTeamRegistrationWindow(request.getEventId());
             }
 
         }
+        //Th2. Team ch gửi đơn đk , thi check thời hạn được phép rời khỏi Team
+        checkTeamRegistrationWindow(event.getEventId());
+
 
         // Xoa
         teamMemberRepository.delete(teamMember);
 
-        //5. Cập nhật lại số lượng thành viên của nhóm
-        team.setTeamSize(team.getTeamSize() - 1);
+        //5. Cập nhật lại số lượng thành viên thực tế trong DB
+        team.setTeamSize(Math.max(0, team.getTeamSize() - 1));
         teamRepository.save(team);
+
     }
 
+    //FUNCTION 4: CHUYỂN QUYỀN LEADER(Chỉ mới gửi lời mời đến thành viên muốn chuyển quyền )
     @Override
     public void transferLeader(TeamRequest request, CustomUserDetails userDetails) {
-        // 1.CheckDeadline
-        checkTeamRegistrationWindow(request.getEventId());
-    }
 
-    //FUNCTION 4: CHUYỂN QUYỀN LEADER
+        // 2. Check Team
+        Account currentUser = userDetails.getAccount();
+        TeamMember teamMember = teamMemberRepository.findByStudent(currentUser.getStudent())
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin nhóm.Bạn hiện chưa tham gia bất kỳ Team nào."));
+
+        //3. Check Team đã được phê duyệt chưa(xem lại bussiness rule)
+        Team team = teamMember.getTeam();
+        if (team.getStatus() == TeamStatus.APPROVED) {
+            throw new BadRequestException("Team đã được phê duyệt bạn không được phép đổi Leader");
+        }
+
+        //4. Check Leader có thuộc Team ko
+        if (!teamMember.getIsLeader()) {
+            throw new BadRequestException("Chỉ Leader hiện tại mới được quyền chuyển quyền Trưởng nhóm.");
+        }
+
+        // 5.CheckDeadline
+        HackathonEvent event = eventRepository.findByStatus(EventStatus.ACTIVE).getFirst();
+        Optional<Registration> registrationEvent = registrationRepository.findByTeamAndHackathonEvent_EventId(team, event.getEventId());
+        checkTeamRegistrationWindow(event.getEventId());
+        if (registrationEvent.isPresent()) {
+            Registration registration = registrationEvent.get();
+            if (registration.getStatus() == TeamStatus.PENDING || registration.getStatus() == TeamStatus.APPROVED) {
+                throw new BadRequestException("Đội đã nộp đơn đăng ký tham gia cuộc thi, không thể chuyển quyền Leader vào lúc này!");
+            }
+        }
+
+        //5. Check Student được chuyển quyền có thuộc Team ko
+        Student newLeader = studentRepository.findByStudentCode(request.getStudentCode());
+        if (newLeader == null) {
+            throw new BadRequestException("Không tìm thấy sinh viên được chọn.");
+        }
+        //6. Check Student được chuyển quyền có thuộc  team này không
+        boolean isStudent = teamMemberRepository.existsByTeamAndStudent(team, newLeader);
+        if (!isStudent) {
+            throw new BadRequestException("Sinh viên không thuộc Team này.");
+        }
+
+        //6. Check leader không tự chuyển quyền cho mình
+        if (currentUser.getStudent().getStudentCode().equalsIgnoreCase(newLeader.getStudentCode())) {
+            throw new BadRequestException("Bạn đang là Leader của team. Bạn không thể tự chuyển quyền cho chính mình.");
+        }
+
+        // 8. Tạo thông báo gửi lời mời
+        Notification inviteTransfer = new Notification();
+        inviteTransfer.setAccount(newLeader.getAccount());
+        inviteTransfer.setTeam(team);
+        inviteTransfer.setType(NotificationType.LEADER_TRANSFER_REQUEST);
+        inviteTransfer.setTitle("TRANSFER LEADER. Lời mời làm trưởng nhóm!");
+        inviteTransfer.setMessage("Bạn được mời làm trưởng nhóm " + team.getTeamName());
+        inviteTransfer.setStatus(NotificationStatus.PENDING);
+        notificationRepository.save(inviteTransfer);
+
+    }
 
 
     //FUNCTION 5: CHẤP NHẬN LỜI MỜI
-    // Chuyen quyen leader
     @Override
     @Transactional(dontRollbackOn = BadRequestException.class) // Khong roll Back khi dinh loi xu ly tb hong
     public void acceptInvite(Integer teamId, Long notificationId, CustomUserDetails userDetails) {

@@ -1,5 +1,6 @@
 package com.hackathon.dto.team;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,8 +11,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TeamRequest {
-    private Integer eventId;
-    private Integer teamId;
     private String teamName;
+    @NotBlank(message = "StudentCode is required")
     private String studentCode;
 }

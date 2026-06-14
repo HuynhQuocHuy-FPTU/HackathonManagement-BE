@@ -6,15 +6,15 @@ import com.hackathon.entity.Category;
 import com.hackathon.entity.HackathonEvent;
 import com.hackathon.entity.Round;
 import com.hackathon.entity.enums.EventStatus;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Builder
 public class EventResponse {
     private Integer eventId;

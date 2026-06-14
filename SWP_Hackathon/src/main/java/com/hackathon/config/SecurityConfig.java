@@ -43,6 +43,8 @@ public class SecurityConfig {
                                 "/api/account/register",   // N Them de test
                                 "/api/account/login",      //  N them de test
                                 "/api/account/resend-verification", //N them
+                                "/api/events",//N
+                                "/api/events/*",//N
                                 "/error",
                                 "/verify-email",
                                 "/swagger-ui/**",
@@ -52,8 +54,9 @@ public class SecurityConfig {
 
                         //(N them requestMathchers) Chỉ cho phép tài khoản có quyền/role là COORDINATOR được gọi POST/PUT/DELETE vào criteriaSet
 //                        .requestMatchers("/api/v1/criteriaSet/**").hasAuthority("EVENTCOORDINATOR")
-                                .requestMatchers("/api/v1/criteriaSet/**")
-                                .hasRole("EVENTCOORDINATOR")
+                                .requestMatchers("/api/criteriaSet/**")
+                                .hasAuthority("EVENTCOORDINATOR")
+
 
                         .anyRequest().authenticated()
 

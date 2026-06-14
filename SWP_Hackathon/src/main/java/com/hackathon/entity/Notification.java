@@ -1,5 +1,7 @@
 package com.hackathon.entity;
 
+import com.hackathon.entity.enums.NotificationStatus;
+import com.hackathon.entity.enums.NotificationType;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -17,6 +19,15 @@ public class Notification {
     private String message;
     private boolean isRead;
     private LocalDateTime createdAt;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)// moi bo sung
+    private NotificationType type;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)// moi bo sung
+    private NotificationStatus status;
+
     //N Notification - 1 Account
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_Id", nullable = false )
