@@ -40,13 +40,13 @@ public class SecurityConfig {
                         .requestMatchers(
                                 //Ngan comment
 //                                "/api/**",
-                                "/api/account/register",   // N Them de test
-                                "/api/account/login",      //  N them de test
-                                "/api/account/resend-verification", //N them
-                                "/api/events",//N
-                                "/api/events/*",//N
+                                "/api/account/**",   // N Them de test
+//                                "/api/account/login",      //  N them de test
+//                                "/api/account/resend-verification", //N them
+//                                "/api/events",//N
+//                                "/api/events/*",//N
                                 "/error",
-                                "/verify-email",
+//                                "/verify-email",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**"

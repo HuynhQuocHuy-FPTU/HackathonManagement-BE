@@ -4,6 +4,7 @@ import com.hackathon.dto.team.CreateTeamRequest;
 import com.hackathon.dto.team.TeamRequest;
 import com.hackathon.dto.team.TeamResponse;
 
+import com.hackathon.email.MailRequest;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.EventStatus;
 import com.hackathon.entity.enums.NotificationStatus;
@@ -35,7 +36,7 @@ public class TeamServiceImpl implements TeamService {
     private static final int MAX_TEAM_SIZE = 5;
     private static final long LOCK_BEFORE_DEADLINE_HOURS = 24;
     private final StudentRepository studentRepository;
-    private final JavaMailSender mailSender;
+    private final EmailService emailService;
 
     @Override
     public HackathonEvent checkTeamRegistrationWindow(Integer eventId) {
@@ -309,33 +310,37 @@ public class TeamServiceImpl implements TeamService {
         inviteTransfer.setStatus(NotificationStatus.PENDING);
         notificationRepository.save(inviteTransfer);
 
-        // =========================================================================
-        // TIẾN HÀNH GỬI EMAIL TỰ ĐỘNG NGAY SAU KHI LƯU DB THÀNH CÔNG
-        // =========================================================================
+        // 9. Gửi lời mời
         try {
-            // Khởi tạo một đối tượng tin nhắn thư đơn giản
-            SimpleMailMessage message = new SimpleMailMessage();
+            MailRequest mailRequest = new MailRequest();
+            mailRequest.setTo(newLeader.getAccount().getEmail());
+            mailRequest.setSubject("FPT HACKATHON. Lời mời nhận chức Leader cho cuộc thi "+ event.getEventName()+
+                    "của Team "+ team.getTeamName());
+            Map<String, Object> props = new HashMap<>();
+            props.put("studentName" , newLeader.getStudentName());
+            props.put("teamName", team.getTeamName());
+            mailRequest.setProps(props);
+            emailService.sendEmail(mailRequest, "emails/transfer-template");
+            mailRequest.setContent("");
 
-            // Điền Email của người nhận (Bốc từ thực thể Account của thành viên mới)
-            message.setTo(newLeader.getAccount().getEmail());
 
-            // Tiêu đề hiển thị trên hòm thư
-            message.setSubject("[Hackathon] Lời mời nhận chức Trưởng nhóm: " + team.getTeamName());
 
-            // Nội dung chi tiết bức thư
-            message.setText("Chào " + newLeader.getStudentName().trim()+ ",\n\n"
-                    + "Bạn nhận được một lời mời tiếp quản vị trí Trưởng nhóm (Leader) từ đội \"" + team.getTeamName() + "\".\n"
-                    + "Vui lòng truy cập hệ thống Hackathon, vào mục Thông báo để xem chi tiết và bấm đồng ý nhận quyền.\n\n"
-                    + "Trân trọng,\n"
-                    + "Hệ thống quản lý Hackathon.");
-
-            // Kích hoạt lệnh gửi thư đi qua môi trường mạng internet
-            mailSender.send(message);
+//
+//            // Tiêu đề hiển thị trên hòm thư
+//            message.setSubject("[Hackathon] Lời mời nhận chức Trưởng nhóm: " + team.getTeamName());
+//
+//            // Nội dung chi tiết bức thư
+//            message.setText("Chào " + newLeader.getStudentName().trim()+ ",\n\n"
+//                    + "Bạn nhận được một lời mời tiếp quản vị trí Trưởng nhóm (Leader) từ đội \"" + team.getTeamName() + "\".\n"
+//                    + "Vui lòng truy cập hệ thống Hackathon, vào mục Thông báo để xem chi tiết và bấm đồng ý nhận quyền.\n\n"
+//                    + "Trân trọng,\n"
+//                    + "Hệ thống quản lý Hackathon.");
+//
+//            // Kích hoạt lệnh gửi thư đi qua môi trường mạng internet
             System.out.println("==> Đã gửi Email thông báo thành công tới: " + newLeader.getAccount().getEmail());
 
         } catch (Exception e) {
-            // Nếu mất mạng hoặc Gmail cấu hình sai, hệ thống chỉ ghi log lỗi ra màn hình Console chứ không làm sập luồng API
-            System.err.println("==> Lỗi gửi email phát sinh: " + e.getMessage());
+            System.err.println("==> Lỗi gửi email chuyển quyền leader: " + e.getMessage());
         }
     }
 
