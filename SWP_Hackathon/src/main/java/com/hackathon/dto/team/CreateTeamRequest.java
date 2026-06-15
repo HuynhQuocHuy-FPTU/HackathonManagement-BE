@@ -13,7 +13,6 @@ import java.util.List;
 @Getter
 @Setter
 public class CreateTeamRequest {
-//   private Integer teamId;
     @NotBlank(message = "Team name is required")
     private String teamName;
 
