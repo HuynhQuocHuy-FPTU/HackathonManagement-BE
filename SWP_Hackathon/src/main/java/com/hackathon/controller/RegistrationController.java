@@ -1,12 +1,14 @@
 package com.hackathon.controller;
 
 import com.hackathon.dto.event.EventResponse;
+import com.hackathon.dto.notification.NotificationResponse;
 import com.hackathon.dto.team.CreateTeamRequest;
 import com.hackathon.dto.team.TeamRequest;
 import com.hackathon.dto.team.TeamResponse;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.EventService;
+import com.hackathon.service.NotificationService;
 import com.hackathon.service.TeamService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +26,8 @@ public class RegistrationController {
     private EventService eventService;
     @Autowired
     private TeamService teamService;
+    @Autowired
+    private NotificationService notificationService;
 
     //View General Information about hackathon
     @GetMapping("/events")
@@ -80,6 +84,7 @@ public class RegistrationController {
         return ResponseEntity.ok(ApiResponse.success(null, "Rời Team thành công"));
     }
 
+
     // Transfer Leader
     @PutMapping("/registration/teams/transfer-leader")
     @PreAuthorize("hasRole('STUDENT')")
@@ -90,16 +95,23 @@ public class RegistrationController {
         return ResponseEntity.ok(ApiResponse.success(null, "Gửi lời mời chuyển quyền Trưởng nhóm thành công!"));
     }
 
-    //Accept Invite
-    @PostMapping("/registration/teams/{teamId}/accept-invite/{notiId}")
-    @PreAuthorize("hasRole('STUDENT')")
-    public ResponseEntity<ApiResponse<Void>> acceptInvite(
-            @PathVariable Integer teamId, @PathVariable Long notiId, @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        teamService.acceptInvite(teamId, notiId, userDetails);
-        return ResponseEntity.ok(
-                ApiResponse.success(null, "Chấp nhận lời mời thành công"
-                )
-        );
+    // View Invite
+    @GetMapping("/notifications/{notiId}")
+    public ResponseEntity<ApiResponse<NotificationResponse>> getNotificationDetail(
+            @PathVariable("notiId") Long notiId, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        NotificationResponse data = notificationService.getInfoNotificationInvite(userDetails, notiId);
+        return ResponseEntity.ok(ApiResponse.success(data, "Lấy thông tin lời mời thành công"));
+
     }
+
+    @GetMapping("/notifications/{notiId}/accept")
+    public ResponseEntity<ApiResponse<String>> acceptInvitation(
+            @PathVariable Long notiId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        teamService.acceptGeneralInvite(notiId, userDetails);
+        return ResponseEntity.ok(ApiResponse.success("Xử lý chấp nhận yêu cầu thành công!", "Hệ thống đã ghi nhận trạng thái mới."));
+    }
+
+
 }

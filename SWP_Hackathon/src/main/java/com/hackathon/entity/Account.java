@@ -16,6 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
+@Builder
 @Table(name="Account")
 public class Account {
     @Id
@@ -75,4 +76,6 @@ public class Account {
 
     @Column(name = "Verification_Token_Expiry")
     private LocalDateTime verificationTokenExpiry;
+
+
 }

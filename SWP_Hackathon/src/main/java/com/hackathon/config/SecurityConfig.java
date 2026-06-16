@@ -40,11 +40,12 @@ public class SecurityConfig {
                         .requestMatchers(
                                 //Ngan comment
 //                                "/api/**",
-                                "/api/account/**",   // N Them de test
-//                                "/api/account/login",      //  N them de test
-//                                "/api/account/resend-verification", //N them
-//                                "/api/events",//N
-//                                "/api/events/*",//N
+//                                "/api/account/**",   // N Them de test
+                                "/api/account/login",      //  N them de test
+                                "/api/account/resend-verification", //N them
+                                "/api/notifications/**",
+                                "/api/events",//N
+                                "/api/events/*",//N
                                 "/error",
 //                                "/verify-email",
                                 "/swagger-ui/**",
@@ -56,8 +57,6 @@ public class SecurityConfig {
 //                        .requestMatchers("/api/v1/criteriaSet/**").hasAuthority("EVENTCOORDINATOR")
                                 .requestMatchers("/api/criteriaSet/**")
                                 .hasAuthority("EVENTCOORDINATOR")
-
-
                         .anyRequest().authenticated()
 
 

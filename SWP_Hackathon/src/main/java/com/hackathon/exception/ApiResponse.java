@@ -18,13 +18,13 @@ public class ApiResponse<T> {
         airResponse.message= message;
         return airResponse;
     }
-    public static <T> ApiResponse <T>error(Object errors, String message){
-        ApiResponse<T> airResponse = new ApiResponse<T>();
-        airResponse.status=false;
-        airResponse.errors=errors;
-        airResponse.message= message;
-        return airResponse;
-    }
+//    public static <T> ApiResponse <T>error(Object errors, String message){
+//        ApiResponse<T> airResponse = new ApiResponse<T>();
+//        airResponse.status=false;
+//        airResponse.errors=errors;
+//        airResponse.message= message;
+//        return airResponse;
+//    }
 
 
 }

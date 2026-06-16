@@ -13,6 +13,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor@Entity
+@Builder
 @Table(name = "CriteriaDetail")
 public class CriteriaDetail {
     @Id

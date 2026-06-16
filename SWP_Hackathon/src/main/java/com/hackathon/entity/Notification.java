@@ -1,5 +1,6 @@
 package com.hackathon.entity;
 
+import com.hackathon.entity.enums.InvitationAction;
 import com.hackathon.entity.enums.NotificationStatus;
 import com.hackathon.entity.enums.NotificationType;
 import jakarta.persistence.*;
@@ -26,7 +27,9 @@ public class Notification {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)// moi bo sung
+    // Check trạng thái của lời mời
     private NotificationStatus status;
+
 
     //N Notification - 1 Account
     @ManyToOne(fetch = FetchType.LAZY)

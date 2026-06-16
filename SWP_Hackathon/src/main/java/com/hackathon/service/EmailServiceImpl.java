@@ -83,6 +83,7 @@ public class EmailServiceImpl implements EmailService {
 
         } catch (Exception e) {
             System.out.println("Gửi Email thất bại tới: " + request.getTo() + e.getMessage());
+            throw new MessagingException("Lỗi gửi email: " + e.getMessage(), e);
 
         }
     }

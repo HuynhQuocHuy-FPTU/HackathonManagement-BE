@@ -9,6 +9,11 @@ import java.util.ArrayList;
 import java.util.List;
 @Data
 @Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
 @Table(name ="EventCoordinator" )
 public class EventCoordinator {
     @Id

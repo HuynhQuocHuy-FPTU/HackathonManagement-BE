@@ -16,8 +16,8 @@ public class CreateTeamRequest {
     @NotBlank(message = "Team name is required")
     private String teamName;
 
-    @NotBlank(message = "Member list is required")
+    @NotNull(message = "Member list is required")
     @Size(min = 1, message = "Team must have at least 1 member besides leader")
-    private List<String> memberEmails;
+    private List<@NotBlank @Email String> memberEmails;
 
 }

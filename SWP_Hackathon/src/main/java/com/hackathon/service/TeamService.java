@@ -4,8 +4,9 @@ import com.hackathon.dto.team.CreateTeamRequest;
 import com.hackathon.dto.team.TeamRequest;
 import com.hackathon.dto.team.TeamResponse;
 import com.hackathon.entity.HackathonEvent;
+import com.hackathon.entity.Notification;
 import com.hackathon.security.CustomUserDetails;
-
+import org.springframework.stereotype.Service;
 public interface TeamService {
     HackathonEvent checkTeamRegistrationWindow(Integer eventId);
 
@@ -15,9 +16,11 @@ public interface TeamService {
 
     void transferLeader(TeamRequest request, CustomUserDetails userDetails);
 
-    void acceptInvite(Integer teamId, Long notificationId, CustomUserDetails userDetails);
+    void acceptInvite( Notification notification, CustomUserDetails userDetails);
 
     void leaveTeam(CustomUserDetails userDetails);
 
+    void acceptGeneralInvite(Long notificationId, CustomUserDetails userDetails);
 
+    void acceptLeaderTransfer(Notification notification);
 }
