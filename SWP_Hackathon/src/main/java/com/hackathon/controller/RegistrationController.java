@@ -59,6 +59,8 @@ public class RegistrationController {
         );
     }
 
+
+
     //Create Team
     @PostMapping("/events/registration/teams")
     @PreAuthorize("hasRole('STUDENT')")
@@ -75,7 +77,7 @@ public class RegistrationController {
         return ResponseEntity.ok(ApiResponse.success(teamName, "Cập nhật thông tim Team thành công"));
     }
 
-   // Out Team
+    // Out Team
     @PostMapping("/registration/teams/leave")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<Void>> leaveTeam(
@@ -96,14 +98,16 @@ public class RegistrationController {
     }
 
 
-//     View Invite
+    //     View Invite
     @GetMapping("/notifications/{notiId}")
     public ResponseEntity<ApiResponse<NotificationResponse>> getNotificationDetail(
             @PathVariable("notiId") Long notiId, @AuthenticationPrincipal CustomUserDetails userDetails) {
         NotificationResponse data = notificationService.getInfoNotificationInvite(userDetails, notiId);
         return ResponseEntity.ok(ApiResponse.success(data, "Lấy thông tin lời mời thành công"));
 
+
     }
+    // Accept invite
 
     @GetMapping("/notifications/{notiId}/accept")
     public ResponseEntity<ApiResponse<String>> acceptInvitation(
@@ -113,5 +117,34 @@ public class RegistrationController {
         return ResponseEntity.ok(ApiResponse.success("Xử lý chấp nhận yêu cầu thành công!", "Hệ thống đã ghi nhận trạng thái mới."));
     }
 
+    //  Reject Invite
+    @GetMapping("/notifications/{notiId}/reject")
+    public ResponseEntity<ApiResponse<String>> rejectInvitation(
+            @PathVariable Long notiId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        teamService.rejectGeneralInvite(notiId, userDetails);
+        return ResponseEntity.ok(ApiResponse.success("Xử lý từ chối yêu cầu thành công!", "Hệ thống đã ghi nhận trạng thái mới."));
+
+
+    }
+
+    // View Team
+    @PostMapping("/members/{teamId}")
+    public ResponseEntity<ApiResponse<TeamResponse>> getTeamMembers(
+             @PathVariable Integer teamId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        TeamResponse response = teamService.getTeamMember(teamId, userDetails);
+        return ResponseEntity.ok(ApiResponse.success(response,"Xem thành viên trong đội thành công"));
+    }
+
+    // Registration event
+    @PostMapping("/register-event")
+    public ResponseEntity<ApiResponse<Void>>registrationEvent(@Valid @RequestBody CreateTeamRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        teamService.registerEvent(request, userDetails);
+        return ResponseEntity.ok(ApiResponse.success(null,"Đăng ký sự kiện thành công"));
+    }
 
 }

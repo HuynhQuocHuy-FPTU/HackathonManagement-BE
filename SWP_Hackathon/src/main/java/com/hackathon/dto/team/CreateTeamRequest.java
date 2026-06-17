@@ -14,6 +14,8 @@ import java.util.List;
 @Setter
 public class CreateTeamRequest {
     private Integer eventId;
+    private Integer teamId;
+
 
     @NotBlank(message = "Team name is required")
     private String teamName;

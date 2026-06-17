@@ -29,5 +29,8 @@ public class TeamResponse {
         private String studentCode;
         private String fullName;
         private String email;
+//        private boolean isLeader;
+
+
     }
 }
