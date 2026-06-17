@@ -2,9 +2,14 @@ package com.hackathon.config;
 
 import com.hackathon.security.CustomUserDetailsService;
 import com.hackathon.security.JwtAuthFilter;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -37,14 +42,25 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        //các API công khai ai cũng vào được
                         .requestMatchers(
-                                "/api/**",
+                                "/api/account/login",
+                                "/api/account/register",
                                 "/error",
                                 "/verify-email",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/v3/api-docs/**"
+                                "/v3/api-docs/**",
+                                "/api/events/public/**",
+                                "/api/events/*/detail"
                         ).permitAll()
+                        //Chỉ event coordinator mới có quyền tạo event
+                        .requestMatchers(HttpMethod.POST, "/api/events").hasRole("EVENTCOORDINATOR")
+                        .requestMatchers(HttpMethod.PUT, "/api/events/**").hasRole("EVENTCOORDINATOR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/events/**").hasRole("EVENTCOORDINATOR")
+                        .requestMatchers(HttpMethod.PATCH, "/api/events/**").hasRole("EVENTCOORDINATOR")
+
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
@@ -68,5 +84,19 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public OpenAPI customOpenAPI() {
+        final String securitySchemeName = "bearerAuth";
+        return new OpenAPI()
+                .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
+                .components(new Components()
+                        .addSecuritySchemes(securitySchemeName,
+                                new SecurityScheme()
+                                        .name(securitySchemeName)
+                                        .type(SecurityScheme.Type.HTTP)
+                                        .scheme("bearer")
+                                        .bearerFormat("JWT")));
     }
 }

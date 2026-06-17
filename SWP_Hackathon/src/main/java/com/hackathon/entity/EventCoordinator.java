@@ -6,9 +6,10 @@ import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Builder
 @Entity
 @Table(name ="EventCoordinator" )
@@ -19,7 +20,7 @@ public class EventCoordinator {
     private int coordinatorId;
     @Column(name = "Coordinator_Name", columnDefinition = "NVARCHAR(50)", nullable = false)
     private String coordinatorName;
-    @Column(name="Department", nullable = false)
+    @Column(name="Department")
     private String department;
 
     // 1 ACCOUNT - 1 EVENT COORDINATOR

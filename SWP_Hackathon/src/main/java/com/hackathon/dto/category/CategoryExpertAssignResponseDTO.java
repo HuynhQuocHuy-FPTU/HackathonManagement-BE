@@ -1,17 +1,16 @@
 package com.hackathon.dto.category;
 
 import com.hackathon.dto.expert.ExpertAssignmentResponseDTO;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
 
-@Data
+
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Setter
+@Getter
 public class CategoryExpertAssignResponseDTO {
 
     private Integer categoryId;

@@ -2,14 +2,16 @@ package com.hackathon.service;
 
 import com.hackathon.dto.category.CategoryExpertAssignRequestDTO;
 import com.hackathon.dto.category.CategoryExpertAssignResponseDTO;
+import com.hackathon.dto.expert.ExpertAssginmentRequestDTO;
 import com.hackathon.dto.expert.ExpertAssignmentResponseDTO;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.AccountStatus;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.AccountRepository;
+import com.hackathon.repository.CategoryRoundRepository;
 import com.hackathon.repository.ExpertAssignRepository;
 import com.hackathon.repository.ExpertRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -18,97 +20,133 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
-public class ExpertAssignServiceImpl implements ExpertAssignService{
+@RequiredArgsConstructor
+public class ExpertAssignServiceImpl implements ExpertAssignService {
 
-    @Autowired
-    private ExpertRepository expertRepository;
+    private final ExpertRepository expertRepository;
+    private final AccountRepository accountRepository;
+    private final ExpertAssignRepository expertAssignRepository;
+    private final CategoryRoundRepository categoryRoundRepository;
 
-    @Autowired
-    private AccountRepository accountRepository;
-
-    @Autowired
-    private ExpertAssignRepository expertAssignRepository;
+    // =========================================================
+    // ASSIGN EXPERTS
+    // =========================================================
 
     @Override
-    public void assignExpertsToCategoryRound(List<CategoryRound> saveCateRound, List<CategoryExpertAssignRequestDTO> requests) {
-        if(requests == null || requests.isEmpty()){
+    public void assignExpertsToCategoryRound(List<CategoryRound> saveCateRound,
+                                             List<CategoryExpertAssignRequestDTO> requests,
+                                             Round round) {
+        if (requests == null || requests.isEmpty()) {
             return;
         }
-        List<ExpertAssign> allAssignements = new ArrayList<>();
 
-        for(CategoryExpertAssignRequestDTO cateExpertAssign : requests){
-            // kiểm tra xem category này đã được áp dụng chưa
-            CategoryRound cateRound = saveCateRound.stream().filter(cr -> cr.getCategory().getCategoryId() == cateExpertAssign.getCategoryId())
-                    .findFirst()
-                    .orElseThrow(() -> new BadRequestException("Category này chưa áp dụng vào round"));
-            if(cateExpertAssign.getExperts() != null && !cateExpertAssign.getExperts().isEmpty()){
-                for(var expertRequest : cateExpertAssign.getExperts()){
-                    Expert expert = expertRepository.findById(expertRequest.getExpertId()).orElseThrow(() -> new BadRequestException("Không tìm thấy expert với id: " + expertRequest.getExpertId()));
+        // 1. Gom tất cả expertId từ toàn bộ request — tránh N+1 query
+        List<Integer> expertIds = requests.stream()
+                .filter(r -> r.getExperts() != null)
+                .flatMap(r -> r.getExperts().stream())
+                .map(ExpertAssginmentRequestDTO::getExpertId)
+                .distinct()
+                .toList();
 
-                    Account expertAccount = expert.getAccount();
-                    if(expertAccount != null && expertAccount.getStatus().equals(AccountStatus.INACTIVE)){
-                        expertAccount.setStatus(AccountStatus.ACTIVE);
-                        accountRepository.save(expertAccount);
-                    }
-                    ExpertAssign assign = ExpertAssign.builder()
-                            .categoryRound(cateRound)
-                            .expert(expert)
-                            .role(expertRequest.getRole())
-                            .build();
-                    allAssignements.add(assign);
+        Map<Integer, Expert> expertMap = expertRepository.findAllById(expertIds)
+                .stream()
+                .collect(Collectors.toMap(Expert::getExpertId, e -> e));
+
+        // 2. Kích hoạt lại tài khoản INACTIVE (xử lý trên RAM, batch save cuối)
+        List<Account> accountsToActivate = expertMap.values().stream()
+                .map(Expert::getAccount)
+                .filter(acc -> acc != null && acc.getStatus().equals(AccountStatus.INACTIVE))
+                .toList();
+
+        if (!accountsToActivate.isEmpty()) {
+            accountsToActivate.forEach(acc -> acc.setStatus(AccountStatus.ACTIVE));
+            accountRepository.saveAll(accountsToActivate);
+        }
+
+        // 3. Duyệt từng category trong request và tạo ExpertAssign
+        List<ExpertAssign> allAssignments = new ArrayList<>();
+
+        for (CategoryExpertAssignRequestDTO cateExpertAssign : requests) {
+            if (cateExpertAssign.getExperts() == null || cateExpertAssign.getExperts().isEmpty()) {
+                continue;
+            }
+
+            Integer requestId = cateExpertAssign.getCategoryId();
+            CategoryRound cateRound = categoryRoundRepository
+                    .findCategoryRoundByCategoryAndRound(requestId, round.getRoundId())
+                    .orElseThrow(() -> new BadRequestException("Không tìm thấy CategoryRound với categoryId: " + requestId));
+
+            for (var expertRequest : cateExpertAssign.getExperts()) {
+                Expert expert = expertMap.get(expertRequest.getExpertId());
+                if (expert == null) {
+                    throw new BadRequestException("Không tìm thấy expert với id: " + expertRequest.getExpertId());
                 }
+
+                ExpertAssign assign = ExpertAssign.builder()
+                        .categoryRound(cateRound)
+                        .expert(expert)
+                        .role(expertRequest.getRole())
+                        .build();
+
+                allAssignments.add(assign);
             }
         }
-        if(!allAssignements.isEmpty()){
-            expertAssignRepository.saveAll(allAssignements);
+
+        // 4. Lưu tất cả assignment 1 lần duy nhất
+        if (!allAssignments.isEmpty()) {
+            expertAssignRepository.saveAll(allAssignments);
         }
     }
 
+    // =========================================================
+    // GET EXPERTS BY ROUND
+    // =========================================================
+
     @Override
     public List<CategoryExpertAssignResponseDTO> getExpertAssignmentsByRound(Round round) {
-        //1. Khởi tạo list để lưu kết quả
-        List<CategoryExpertAssignResponseDTO> expertResponses = new ArrayList<>();
-        // nếu round null trả về list rỗng
-        if(round == null){
-            return expertResponses;
-        }
-        //2. Lấy các expert assign thuộc về round này
-        List<ExpertAssign> assigns = expertAssignRepository.findByCategoryRound_Round_RoundId(round.getRoundId());
-
-        if(assigns == null || assigns.isEmpty()){
-            return expertResponses;
+        if (round == null) {
+            return new ArrayList<>();
         }
 
-        //3. Biến List thành map lưu theo từng category
-        Map<Category, List<ExpertAssign>> groupByCategory = assigns.stream().collect(Collectors.groupingBy(assign -> assign.getCategoryRound().getCategory()));
+        // 1. Lấy tất cả assignment thuộc round này
+        List<ExpertAssign> assigns = expertAssignRepository
+                .findByCategoryRound_Round_RoundId(round.getRoundId());
 
-        //4. Duyệt từng nhóm trong Map
-        for(Map.Entry<Category, List<ExpertAssign>> entry : groupByCategory.entrySet()){
-            Category category = entry.getKey();
-            //danh sách chứa các expert DTO thuộc riêng về category
-            List<ExpertAssignmentResponseDTO> expertDTOs = new ArrayList<>();
-
-            for(ExpertAssign assign : assigns){
-                Expert expert = assign.getExpert();
-
-                //chuyển expert entity sang response
-                ExpertAssignmentResponseDTO expertDTO = ExpertAssignmentResponseDTO.builder()
-                        .expertId(expert.getExpertId())
-                        .expertName(expert.getExpertName())
-                        .role(assign.getRole())
-                        .build();
-
-                //lưu expert này vào danh dách của Category
-                expertDTOs.add(expertDTO);
-            }
-
-            CategoryExpertAssignResponseDTO cateExpertAssign = CategoryExpertAssignResponseDTO.builder()
-                    .categoryId(category.getCategoryId())
-                    .experts(expertDTOs).build();
-
-            expertResponses.add(cateExpertAssign);
+        if (assigns == null || assigns.isEmpty()) {
+            return new ArrayList<>();
         }
 
-        return expertResponses;
+        // 2. Group theo Category
+        Map<Category, List<ExpertAssign>> groupByCategory = assigns.stream()
+                .collect(Collectors.groupingBy(assign -> assign.getCategoryRound().getCategory()));
+
+        // 3. Duyệt từng nhóm Category, chỉ lấy expert của đúng category đó
+        return groupByCategory.entrySet().stream()
+                .map(entry -> {
+                    Category category = entry.getKey();
+
+                    List<ExpertAssignmentResponseDTO> expertDTOs = entry.getValue().stream()
+                            .map(assign -> ExpertAssignmentResponseDTO.builder()
+                                    .expertId(assign.getExpert().getExpertId())
+                                    .expertName(assign.getExpert().getExpertName())
+                                    .role(assign.getRole())
+                                    .build())
+                            .toList();
+
+                    return CategoryExpertAssignResponseDTO.builder()
+                            .categoryId(category.getCategoryId())
+                            .experts(expertDTOs)
+                            .build();
+                })
+                .toList();
+    }
+
+    // =========================================================
+    // DELETE
+    // =========================================================
+
+    @Override
+    public void deleteByEventId(Integer eventId) {
+        expertAssignRepository.deleteByEventId(eventId);
     }
 }

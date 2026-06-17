@@ -10,14 +10,14 @@ import org.springframework.context.ConfigurableApplicationContext;
 public class HackathonApplication {
 
     public static void main(String[] args) {
-//        SpringApplication.run(HackathonApplication.class, args);
-        ConfigurableApplicationContext context =
-                SpringApplication.run(HackathonApplication.class, args);
-
-        DatabaseService databaseService =
-                context.getBean(DatabaseService.class);
-
-        databaseService.createDatabase();
+        SpringApplication.run(HackathonApplication.class, args);
+//        ConfigurableApplicationContext context =
+//                SpringApplication.run(HackathonApplication.class, args);
+//
+//        DatabaseService databaseService =
+//                context.getBean(DatabaseService.class);
+//
+//        databaseService.createDatabase();
     }
 
 }

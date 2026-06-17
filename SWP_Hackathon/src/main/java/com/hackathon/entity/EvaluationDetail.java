@@ -1,11 +1,15 @@
 package com.hackathon.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
 
-@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
 @Entity
 @Table(name = "EvaluationDetail")
 public class EvaluationDetail {
@@ -20,11 +24,13 @@ public class EvaluationDetail {
 
     // 1 evaluation - N evaluation detail
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinColumn(name = "Evaluation_ID", nullable = false)
     private Evaluation evaluation;
 
     // 1 evaluationCriteria - N evaluation_detail
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinColumn(name = "Evaluation_Criteria_ID", nullable = false)
     private EvaluationCriteria evaluationCriteria;
 

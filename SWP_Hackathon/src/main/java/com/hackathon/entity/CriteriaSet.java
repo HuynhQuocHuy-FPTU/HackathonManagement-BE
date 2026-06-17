@@ -8,9 +8,10 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Builder
 @Entity
 @Table(name = "CriteriaSet")
@@ -26,6 +27,7 @@ public class CriteriaSet {
 
     // 1 eventCoordinator - N Criteria_SET
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinColumn(name = "Coordinator_ID", nullable = false)
     private EventCoordinator eventCoordinator;
 

@@ -1,4 +1,4 @@
-package com.hackathon.service;
+package com.hackathon.service.event;
 
 import com.hackathon.dto.event.CreateEventRequest;
 
@@ -12,11 +12,12 @@ public interface EventService {
 
     public EventResponse createEvent(CreateEventRequest request) throws BadRequestException;
     public void publishEvent(Integer eventID);
-    public void updateEvent(UpdateEventRequest request);
+    public EventResponse updateEvent(UpdateEventRequest request, Integer eventId);
     public void deleteEvent(Integer eventID);
     public List<EventResponse> getDeletedEvents();
     public void restoreEvent(Integer eventId);
     public void permanentlyDeleteEvent(Integer eventId);
+//    public List<EventResponse> searchEventByName(String eventName);
 
     // Information about HackathonEvent Detail
     public EventResponse  getEventDetail(Integer eventID);
@@ -24,4 +25,8 @@ public interface EventService {
     public List<EventResponse>searchByEventName(String eventName);
     //General Information about HackathonEVent
     public List<EventResponse> getAllEvent();
+
+    public List<EventResponse> getPublicEvents();
+
+    public List<EventResponse> searchPublicEvents(String eventName);
 }

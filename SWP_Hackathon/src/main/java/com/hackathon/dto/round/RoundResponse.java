@@ -46,9 +46,10 @@ public class RoundResponse {
 
     private RoundStatus status;
 
+    private LocalDateTime submissionDeadline;
+
     private List<EvaluationCriteriaResponseDTO> customCriteriaDetatils;
-    private List<CategoryExpertAssignResponseDTO>
-    experts;
+    private List<CategoryExpertAssignResponseDTO> categoryExperts;
 
 
     public RoundResponse(Round round, List<EvaluationCriteriaResponseDTO> criteriaList, List<CategoryExpertAssignResponseDTO> experts){
@@ -61,7 +62,7 @@ public class RoundResponse {
         this.status = round.getStatus();
         this.advancementRule = round.getAdvancementRule();
         this.customCriteriaDetatils = criteriaList;
-        this.experts = experts;
+        this.categoryExperts = experts;
     }
 
 }

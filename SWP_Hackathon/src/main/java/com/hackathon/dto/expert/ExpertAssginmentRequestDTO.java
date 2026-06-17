@@ -3,15 +3,14 @@ package com.hackathon.dto.expert;
 import com.hackathon.entity.enums.ExpertRole;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
+
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Setter
+@Getter
 public class ExpertAssginmentRequestDTO {
     @NotNull(message = "Expert id is required")
     private Integer expertId;

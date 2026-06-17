@@ -1,5 +1,6 @@
 package com.hackathon.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hackathon.entity.enums.RoundStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -8,9 +9,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Builder
 @Entity
 @Table(name = "Round")
@@ -18,7 +21,7 @@ public class Round {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "Round_ID")
-    private int roundId;
+    private Integer roundId;
     @Column(name = "Round_Name", columnDefinition = "NVARCHAR(50)", nullable = false)
     private String roundName;
     @Column(name = "Start_Time", nullable = false)
@@ -29,21 +32,24 @@ public class Round {
     private String advancementRule;
     @Column(name = "Order_Index", nullable = false)
     private Integer orderIndex;
+    @Column(name = "Submission_Deadline", nullable = false)
+    private LocalDateTime submissionDeadline;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private RoundStatus status;
 
     // 1 round - N category_round
-    @OneToMany(mappedBy = "round")
+    @OneToMany(mappedBy = "round", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CategoryRound> categoryRounds = new ArrayList<>();
 
     // 1 hackathon - N round
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinColumn(name = "Event_ID", nullable = false)
     private HackathonEvent hackathonEvent;
 
     //1 Round - N Evaluation Criteria
-    @OneToMany(mappedBy = "round")
+    @OneToMany(mappedBy = "round", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<EvaluationCriteria> evaluationCriterias = new ArrayList<>();
 
     // 1 CriteriaSet - N round

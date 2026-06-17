@@ -1,5 +1,6 @@
 package com.hackathon.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hackathon.entity.enums.ExpertRole;
 import jakarta.persistence.*;
 import lombok.*;
@@ -7,9 +8,11 @@ import lombok.*;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+
 @NoArgsConstructor
 @AllArgsConstructor
+@Setter
+@Getter
 @Builder
 @Entity
 @Table(name = "Expert_Assign")
@@ -25,6 +28,7 @@ public class ExpertAssign {
 
     //1 expert - N expertAssgin
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinColumn(name = "Expert_ID", nullable = false)
     private Expert expert;
 
@@ -34,6 +38,7 @@ public class ExpertAssign {
 
     //1  Category_round - N expertAssign
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinColumn(name = "Category_Round_ID",nullable = false)
     private CategoryRound categoryRound;
 

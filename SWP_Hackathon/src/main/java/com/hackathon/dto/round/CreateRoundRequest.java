@@ -6,12 +6,15 @@ import com.hackathon.dto.criteria.EvaluationCriteriaRequestDTO;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
 public class CreateRoundRequest {
     @NotBlank(message = "Round name is required")
     private String roundName;
@@ -31,6 +34,9 @@ public class CreateRoundRequest {
 
     @NotNull(message = "Order index is required")
     private Integer orderIndex;
+
+    @NotNull(message = "Submission deadline is required")
+    private LocalDateTime submissionDeadline;
 
     private List<EvaluationCriteriaRequestDTO> customCriteriaDetatils;
 

@@ -1,13 +1,13 @@
 package com.hackathon.dto.event;
 
 import com.hackathon.dto.category.CreateCategoryRequest;
+import com.hackathon.dto.category.UpdateCategoryRequest;
 import com.hackathon.dto.round.CreateRoundRequest;
+import com.hackathon.dto.round.UpdateRoundRequest;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,11 +15,12 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-
+@Setter
+@Getter
 public class UpdateEventRequest {
 
-    @NotNull(message = "Event ID is required for updating")
-    private Integer eventID;
+//    @NotNull(message = "Event ID is required for updating")
+//    private Integer eventID;
 
     @NotBlank(message = "Event name is required")
     private String eventName;
@@ -54,7 +55,7 @@ public class UpdateEventRequest {
     @NotNull(message = "Registration deadline is required")
     private LocalDateTime registrationDeadline;
 
-    private List<CreateCategoryRequest> categories;
-    private List<CreateRoundRequest> rounds;
+    private List<UpdateCategoryRequest> categories;
+    private List<UpdateRoundRequest> rounds;
 
 }

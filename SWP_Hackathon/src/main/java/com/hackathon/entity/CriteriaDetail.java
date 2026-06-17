@@ -8,9 +8,10 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Builder
 @Entity
 @Table(name = "CriteriaDetail")
@@ -28,6 +29,7 @@ public class CriteriaDetail {
 
     // 1 Criteria_set - N Criteria Detail
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinColumn(name = "CriteriaSet_Id", nullable = false)
     private CriteriaSet criteriaSet;
 

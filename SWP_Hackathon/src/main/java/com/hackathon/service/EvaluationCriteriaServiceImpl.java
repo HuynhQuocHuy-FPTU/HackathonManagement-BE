@@ -18,6 +18,7 @@ import com.hackathon.entity.Round;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 //Class nay duoc dung de luu lai tieu chi cham diem da duoc chinh sua or custom tu tieu chi mau
 
@@ -44,11 +45,11 @@ public class EvaluationCriteriaServiceImpl implements EvaluationCriteriaService 
         //tạo EvaluationCriteria để snapshot dữ liệu()
         EvaluationCriteria evaluationCriteria = new EvaluationCriteria();
         evaluationCriteria.setRound(round);
-        evaluationCriteria.setCriteriaDetail(tempCriteriaDetail);
         evaluationCriteria.setCriteriaName(tempCriteriaDetail.getCriteriaName());
 
         //custom
         evaluationCriteria.setWeight(BigDecimal.valueOf(request.getCustomWeight()));
+        evaluationCriteria.setDescription(request.getDescription());
 
         //lưu xuống DB
         EvaluationCriteria saveEvaluationCriteria = evaluationCriteriaRepository.save(evaluationCriteria);
@@ -60,9 +61,27 @@ public class EvaluationCriteriaServiceImpl implements EvaluationCriteriaService 
     @Override
     public EvaluationCriteriaResponseDTO mapToResponse(EvaluationCriteria evaluationCriteria) {
         return EvaluationCriteriaResponseDTO.builder()
-                .criteriaDetailId(evaluationCriteria.getEvaluationCriteriaId())
-                .customWeight(evaluationCriteria.getEvaluationCriteriaId()).criteriaDetailName(evaluationCriteria.getCriteriaName())
+                .evaluationCriteriaId(evaluationCriteria.getEvaluationCriteriaId())
+                .customWeight(evaluationCriteria.getWeight())
+                .criteriaDetailName(evaluationCriteria.getCriteriaName())
                 .description(evaluationCriteria.getDescription())
                 .build();
+    }
+
+    @Override
+    public List<EvaluationCriteriaResponseDTO> getEvaluationCirteriaResponse(Round round) {
+
+        if(round == null){
+            return new ArrayList<>();
+        }
+        //1. Lấy dữ liệu từ Repository theo id của round
+        List<EvaluationCriteria> evaluationCriterias = evaluationCriteriaRepository.findByRound_RoundId(round.getRoundId());
+        //2. Nếu dưới db không có dữ liệu thì trả về mảng rỗng
+        if(evaluationCriterias == null || evaluationCriterias.isEmpty()){
+            return new ArrayList<>();
+        }
+
+        //3. Sử dụng Stream API để map taonf bộ danh sách entity sang response
+        return evaluationCriterias.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 }

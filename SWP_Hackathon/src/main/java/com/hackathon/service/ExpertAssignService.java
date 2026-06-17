@@ -9,7 +9,9 @@ import com.hackathon.entity.Round;
 import java.util.List;
 
 public interface ExpertAssignService {
-    public void assignExpertsToCategoryRound(List<CategoryRound> saveCateRound, List<CategoryExpertAssignRequestDTO> requests);
+    public void assignExpertsToCategoryRound(List<CategoryRound> saveCateRound, List<CategoryExpertAssignRequestDTO> requests, Round round);
 
     List<CategoryExpertAssignResponseDTO> getExpertAssignmentsByRound(Round round);
+
+    void deleteByEventId(Integer eventId);
 }
