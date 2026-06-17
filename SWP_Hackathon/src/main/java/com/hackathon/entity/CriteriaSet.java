@@ -8,7 +8,11 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+@Builder
 @Entity
 @Table(name = "CriteriaSet")
 public class CriteriaSet {
@@ -16,13 +20,14 @@ public class CriteriaSet {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "CriteriaSet_ID")
     private int criteriaSetId;
-    @Column(name = "CriteriaSet_Name")
+    @Column(name = "CriteriaSet_Name", columnDefinition = "NVARCHAR(255)")
     private String criteriaSetName;
-    @Column(name = "Max_Score", precision = 10, scale = 2, nullable = false)
-    private BigDecimal maxScore;
+    @Column(name = "Max_Score", nullable = false)
+    private int maxScore;
 
     // 1 eventCoordinator - N Criteria_SET
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinColumn(name = "Coordinator_ID", nullable = false)
     private EventCoordinator eventCoordinator;
 

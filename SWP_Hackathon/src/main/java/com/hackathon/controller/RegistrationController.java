@@ -2,7 +2,7 @@ package com.hackathon.controller;
 
 import com.hackathon.dto.event.EventResponse;
 import com.hackathon.exception.ApiResponse;
-import com.hackathon.service.EventService;
+import com.hackathon.service.event.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

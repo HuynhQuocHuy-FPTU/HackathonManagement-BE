@@ -1,11 +1,16 @@
 package com.hackathon.entity;
 
+import com.hackathon.entity.enums.ExpertType;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
-@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+@Builder
 @Entity
 @Table(name = "Expert")
 public class Expert {
@@ -15,6 +20,14 @@ public class Expert {
     private int expertId;
     @Column(name = "Expert_Name", columnDefinition = "NVARCHAR(50)", nullable = false)
     private String expertName;
+    @Column(name = "Department", columnDefinition = "NVARCHAR(255)")
+    private String department;
+    @Column(name = "Type")
+    @Enumerated(EnumType.STRING)
+    private ExpertType type;
+    @Column(name = "Work_Place", columnDefinition = "NVARCHAR(255)")
+    private String workplace;
+
 
     //1 Account - 1 Expert
     @OneToOne(fetch = FetchType.LAZY)

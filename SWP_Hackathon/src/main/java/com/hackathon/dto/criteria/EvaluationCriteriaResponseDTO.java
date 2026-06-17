@@ -1,18 +1,20 @@
 package com.hackathon.dto.criteria;
 
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
+import java.math.BigDecimal;
 
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Builder
 public class EvaluationCriteriaResponseDTO {
 
-    private int criteriaDetailId;
+    private Integer evaluationCriteriaId;
 
-    private double customWeight;
+    private BigDecimal customWeight;
 
     private String criteriaDetailName;
 

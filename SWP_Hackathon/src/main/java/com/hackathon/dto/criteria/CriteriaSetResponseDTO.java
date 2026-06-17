@@ -13,6 +13,6 @@ import java.math.BigDecimal;
 public class CriteriaSetResponseDTO {
     private Integer criteriaSetId;
     private String criteriaName;
-    private BigDecimal maxScore;
+    private Integer maxScore;
 
 }

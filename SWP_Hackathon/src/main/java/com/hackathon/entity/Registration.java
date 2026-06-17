@@ -1,5 +1,6 @@
 package com.hackathon.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hackathon.entity.enums.TeamStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -7,7 +8,10 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
-@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
 @Entity
 @Table(name = "Registration")
 public class Registration {
@@ -24,11 +28,13 @@ public class Registration {
 
     //N Registration - 1 Team
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinColumn(name = "Team_ID", nullable = false)
     private Team team;
 
     // 1 HackathonEvent - N Registration
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinColumn(name = "Event_ID", nullable = false)
     private HackathonEvent hackathonEvent;
 }

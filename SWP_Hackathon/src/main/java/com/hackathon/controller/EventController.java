@@ -3,7 +3,7 @@ package com.hackathon.controller;
 import com.hackathon.dto.event.CreateEventRequest;
 import com.hackathon.dto.event.EventResponse;
 import com.hackathon.dto.event.UpdateEventRequest;
-import com.hackathon.service.EventService;
+import com.hackathon.service.event.EventService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,25 +18,49 @@ import java.util.List;
 public class EventController {
     @Autowired
     private EventService eventService;
+
+    // =========================================================
+    // PUBLIC ENDPOINTS (Dành cho Guest/Student/Admin)
+    // =========================================================
+
+    @GetMapping("/public")
+    public ResponseEntity<List<EventResponse>> getPublicEvents() {
+        return ResponseEntity.ok(eventService.getPublicEvents());
+    }
+
+    @GetMapping("/public/search")
+    public ResponseEntity<List<EventResponse>> searchPublicEvents(@RequestParam String name) {
+        return ResponseEntity.ok(eventService.searchPublicEvents(name));
+    }
+
+    @GetMapping("/{eventId}/detail")
+    public ResponseEntity<EventResponse> getPublicEventDetail(@PathVariable Integer eventId) {
+        return ResponseEntity.ok(eventService.getEventDetail(eventId));
+    }
+
+
+    // =========================================================
+    // COORDINATOR ENDPOINTS (Dành cho quản trị viên)
+    // =========================================================
     @PostMapping
     public ResponseEntity<EventResponse> createEvent(@Valid @RequestBody CreateEventRequest request) {
         EventResponse response = eventService.createEvent(request);
         return new ResponseEntity<>(response,HttpStatus.CREATED);
     }
 
-    @PatchMapping("/{eventId}/publish")
+    @PutMapping("/publish/{eventId}")
     public ResponseEntity<String> publishEvent(@PathVariable Integer eventId){
         eventService.publishEvent(eventId);
         return ResponseEntity.ok("Sự kiện đã được công khai thành công");
     }
-    @PatchMapping("/{eventId}/delete")
+    @PutMapping("/delete/{eventId}")
     public ResponseEntity<String> deleteEvent(@PathVariable Integer eventId){
         eventService.deleteEvent(eventId);
         return ResponseEntity.ok("Sự kiện đã được xóa thành công và chuyển vào thùng rác");
     }
-    @PutMapping("/{eventId}/update")
-    public ResponseEntity<String> updateEvent(@Valid @RequestBody UpdateEventRequest request){
-        eventService.updateEvent(request);
+    @PutMapping("/update/{eventId}")
+    public ResponseEntity<String> updateEvent(@Valid @RequestBody UpdateEventRequest request, @PathVariable Integer eventId){
+        eventService.updateEvent(request, eventId);
         return ResponseEntity.ok("Sự kiện đã được update thành công");
     }
 
@@ -46,16 +70,27 @@ public class EventController {
         return ResponseEntity.ok(responses);
     }
 
-    @PatchMapping("/{eventId}/restore")
+    @PutMapping("/restore/{eventId}")
     public ResponseEntity<String> restoreEvent(@PathVariable Integer eventId){
         eventService.restoreEvent(eventId);
         return ResponseEntity.ok("Khôi phục event thành công! Trạng thái đã được cập nhật");
     }
 
-    @DeleteMapping("/{eventId}/permanently")
+    @DeleteMapping("/permanently/{eventId}")
     public ResponseEntity<String> permanentlyDeleteEvent(@PathVariable Integer eventId){
         eventService.permanentlyDeleteEvent(eventId);
         return ResponseEntity.ok("Đã xóa vĩnh viễn event");
     }
+    @GetMapping("/search")
+    public ResponseEntity<List<EventResponse>> searchEvents(@RequestParam(required = false) String name) {
+
+        return ResponseEntity.ok(eventService.searchByEventName(name));
+    }
+
+    @GetMapping("/{eventId}")
+    public ResponseEntity<EventResponse> getEventDetail(@PathVariable Integer eventId) {
+        return ResponseEntity.ok(eventService.getEventDetail(eventId));
+    }
+
 
 }

@@ -10,7 +10,11 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+@Builder
 @Entity
 @Table(name="Account")
 public class Account {
@@ -19,13 +23,13 @@ public class Account {
     @Column(name = "Account_ID")
     private int accountId;
 
-    @Column(name = "Account_Name", nullable = false, columnDefinition = "NVARCHAR(255)")
+    @Column(name = "Account_Name", columnDefinition = "NVARCHAR(255)")
     private String accountName;
 
     @Column(name = "Password", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String password;
 
-    @Column(name = "Phone", nullable = false, columnDefinition = "VARCHAR(10)")
+    @Column(name = "Phone", columnDefinition = "VARCHAR(10)")
     private String phone;
 
     @Column(name = "Email", nullable = false, columnDefinition = "VARCHAR(255)", unique = true)
@@ -39,7 +43,7 @@ public class Account {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
-    @Column(name = "Updated_At", nullable = false)
+    @Column(name = "Updated_At")
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
@@ -71,4 +75,7 @@ public class Account {
 
     @Column(name = "Verification_Token_Expiry")
     private LocalDateTime verificationTokenExpiry;
+
+//    @Column(name = "Is_Password_Changed", nullable = false)
+//    private boolean isPasswordChanged;
 }
