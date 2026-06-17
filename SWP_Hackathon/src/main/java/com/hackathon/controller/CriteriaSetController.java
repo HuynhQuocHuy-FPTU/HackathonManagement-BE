@@ -51,7 +51,7 @@ public class CriteriaSetController {
     //5. Tao CriteriaSet
     @PostMapping("/create-criteriaSet")
     public ResponseEntity<ApiResponse<CriteriaSetResponseDTO>> createCriteriaSet(@RequestBody CriteriaSetRequestDTO request, @AuthenticationPrincipal CustomUserDetails user){
-        System.out.println("USER DETAILS = " + user); // 🔥 thêm dòng này
+        System.out.println("USER DETAILS = " + user);
             CriteriaSetResponseDTO create = criteriaSetService.createCriteriaSet(request, user);
             return ResponseEntity.ok(ApiResponse.success(create,"Tạo bộ tiêu chí thành công"));
     }

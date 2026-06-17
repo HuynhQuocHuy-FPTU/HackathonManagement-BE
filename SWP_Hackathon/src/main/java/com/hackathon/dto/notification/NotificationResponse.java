@@ -1,7 +1,4 @@
 package com.hackathon.dto.notification;
-
-import com.hackathon.entity.enums.InvitationAction;
-import com.hackathon.entity.enums.NotificationStatus;
 import com.hackathon.entity.enums.NotificationType;
 import lombok.*;
 
@@ -19,9 +16,6 @@ public class NotificationResponse {
 
     private NotificationType type;
 
-//    private NotificationStatus status;
-
     private String teamName;
 
-//    private InvitationAction action;
 }

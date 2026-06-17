@@ -8,7 +8,10 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 
 public interface TeamRepository extends JpaRepository<Team, Integer> {
-//     boolean existsByTeamNameIgnoreCase(String teamName);
-//
-//     boolean existsByTeamNameIgnoreCaseAndTeamIdNot(String teamName, int teamId);
+     boolean existsByTeamNameIgnoreCase(String teamName);
+@Query("SELECT COUNT(t) > 0 FROM Team t " +
+        "JOIN t.registrations r " +
+        "WHERE LOWER(t.teamName) = LOWER(:teamName) AND r.hackathonEvent.eventId= :eventId")
+boolean existsTeamNameInEvent(@Param("teamName") String teamName, @Param("eventId") Integer eventId);
+
 }

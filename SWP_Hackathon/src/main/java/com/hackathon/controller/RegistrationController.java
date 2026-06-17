@@ -75,7 +75,7 @@ public class RegistrationController {
         return ResponseEntity.ok(ApiResponse.success(teamName, "Cập nhật thông tim Team thành công"));
     }
 
-    // Out Team
+   // Out Team
     @PostMapping("/registration/teams/leave")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<Void>> leaveTeam(
@@ -96,7 +96,7 @@ public class RegistrationController {
     }
 
 
-    // View Invite
+//     View Invite
     @GetMapping("/notifications/{notiId}")
     public ResponseEntity<ApiResponse<NotificationResponse>> getNotificationDetail(
             @PathVariable("notiId") Long notiId, @AuthenticationPrincipal CustomUserDetails userDetails) {

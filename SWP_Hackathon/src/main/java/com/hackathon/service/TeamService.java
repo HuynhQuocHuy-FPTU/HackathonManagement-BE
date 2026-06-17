@@ -14,13 +14,15 @@ public interface TeamService {
 
     String updateInfo(CustomUserDetails userDetails, String teamName);
 
-    void transferLeader(TeamRequest request, CustomUserDetails userDetails);
-
-    void acceptInvite( Notification notification, CustomUserDetails userDetails);
+    void acceptInvite(Notification notification, CustomUserDetails userDetails);
 
     void leaveTeam(CustomUserDetails userDetails);
 
+    void transferLeader(TeamRequest request, CustomUserDetails userDetails);
+
     void acceptGeneralInvite(Long notificationId, CustomUserDetails userDetails);
 
-    void acceptLeaderTransfer(Notification notification);
+    void acceptLeaderTransfer(Notification notification,CustomUserDetails userDetails);
+
+
 }
