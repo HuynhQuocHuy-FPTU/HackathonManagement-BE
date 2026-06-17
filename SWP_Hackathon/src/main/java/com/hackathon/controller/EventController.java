@@ -59,9 +59,9 @@ public class EventController {
         return ResponseEntity.ok("Sự kiện đã được xóa thành công và chuyển vào thùng rác");
     }
     @PutMapping("/update/{eventId}")
-    public ResponseEntity<String> updateEvent(@Valid @RequestBody UpdateEventRequest request, @PathVariable Integer eventId){
-        eventService.updateEvent(request, eventId);
-        return ResponseEntity.ok("Sự kiện đã được update thành công");
+    public ResponseEntity<EventResponse> updateEvent(@Valid @RequestBody UpdateEventRequest request, @PathVariable Integer eventId){
+        EventResponse response = eventService.updateEvent(request, eventId);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/trash")

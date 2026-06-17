@@ -155,9 +155,16 @@ public class EventServiceImpl implements EventService {
 
         // 4. Xử lý Categories (thêm / sửa / xóa)
         List<Category> freshCategories = categoryService.updateCategories(request.getCategories(), updatedEvent);
-        updatedEvent.getCategories().clear();
         if (freshCategories != null) {
-            updatedEvent.getCategories().addAll(freshCategories);
+            for (Category cat : freshCategories) {
+                cat.setHackathonEvent(updatedEvent); // <--- BẮT BUỘC: Gán event cho category
+
+            }
+            updatedEvent.setCategories(freshCategories); // Thêm vào list của event
+        }
+
+        if(freshCategories.isEmpty()){
+            System.out.println("category = 0");
         }
         updatedEvent = eventRepository.saveAndFlush(updatedEvent);
 // Dùng trực tiếp freshCategories — đáng tin hơn updatedEvent.getCategories()
