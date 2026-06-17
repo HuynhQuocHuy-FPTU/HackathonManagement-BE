@@ -52,7 +52,8 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
                                 "/api/events/public/**",
-                                "/api/events/*/detail"
+                                "/api/events/*/detail",
+                                "/api/events/all"
                         ).permitAll()
                         //Chỉ event coordinator mới có quyền tạo event
                         .requestMatchers(HttpMethod.POST, "/api/events").hasRole("EVENTCOORDINATOR")

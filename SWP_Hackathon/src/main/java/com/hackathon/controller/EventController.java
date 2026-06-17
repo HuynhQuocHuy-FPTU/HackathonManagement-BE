@@ -92,5 +92,9 @@ public class EventController {
         return ResponseEntity.ok(eventService.getEventDetail(eventId));
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<EventResponse>> getAllEvent(){
+        return ResponseEntity.ok(eventService.getAllEvent());
+    }
 
 }
