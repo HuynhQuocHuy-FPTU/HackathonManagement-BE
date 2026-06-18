@@ -18,6 +18,10 @@ import java.util.List;
 public class EventController {
     @Autowired
     private EventService eventService;
+    // =========================================================
+    // PUBLIC ENDPOINTS (Dành cho Guest/Student/Admin)
+    // =========================================================
+
     @PostMapping
     public ResponseEntity<EventResponse> createEvent(@Valid @RequestBody CreateEventRequest request) {
         EventResponse response = eventService.createEvent(request);
