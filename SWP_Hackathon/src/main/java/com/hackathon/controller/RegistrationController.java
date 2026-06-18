@@ -91,7 +91,7 @@ public class RegistrationController {
     @PutMapping("/registration/teams/transfer-leader")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<Void>> transferLeader(
-            @RequestBody TeamRequest request,
+           @Valid @RequestBody TeamRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         teamService.transferLeader(request, userDetails);
         return ResponseEntity.ok(ApiResponse.success(null, "Gửi lời mời chuyển quyền Trưởng nhóm thành công!"));
@@ -110,6 +110,7 @@ public class RegistrationController {
     // Accept invite
 
     @GetMapping("/notifications/{notiId}/accept")
+    @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<String>> acceptInvitation(
             @PathVariable Long notiId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -119,6 +120,7 @@ public class RegistrationController {
 
     //  Reject Invite
     @GetMapping("/notifications/{notiId}/reject")
+    @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<String>> rejectInvitation(
             @PathVariable Long notiId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -129,7 +131,7 @@ public class RegistrationController {
     }
 
     // View Team
-    @PostMapping("/members/{teamId}")
+    @GetMapping("/members/{teamId}")
     public ResponseEntity<ApiResponse<TeamResponse>> getTeamMembers(
              @PathVariable Integer teamId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -140,6 +142,7 @@ public class RegistrationController {
 
     // Registration event
     @PostMapping("/register-event")
+    @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<Void>>registrationEvent(@Valid @RequestBody CreateTeamRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 

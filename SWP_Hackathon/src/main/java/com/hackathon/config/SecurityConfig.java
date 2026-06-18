@@ -52,9 +52,7 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**"
                         ).permitAll()
-
-                        //(N them requestMathchers) Chỉ cho phép tài khoản có quyền/role là COORDINATOR được gọi POST/PUT/DELETE vào criteriaSet
-//                        .requestMatchers("/api/v1/criteriaSet/**").hasAuthority("EVENTCOORDINATOR")
+                        //CriteriaSet chỉ có Coordinator là người có quyền truy cập
                                 .requestMatchers("/api/criteriaSet/**")
                                 .hasAuthority("EVENTCOORDINATOR")
                         .anyRequest().authenticated()

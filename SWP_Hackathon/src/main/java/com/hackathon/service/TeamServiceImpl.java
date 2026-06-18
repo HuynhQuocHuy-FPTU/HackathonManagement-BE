@@ -258,6 +258,17 @@ public class TeamServiceImpl implements TeamService {
         if (cleanName.equalsIgnoreCase(team.getTeamName())) {
             return team.getTeamName();
         }
+
+//        boolean existsDuplicate = registrationRepository
+//                .existsByHackathonEvent_EventIdAndTeam_TeamNameAndTeam_IdNot(
+//                        event.getEventId(),
+//                        cleanName,
+//                        team.getTeamId()
+//                );
+//
+//        if (existsDuplicate) {
+//            throw new BadRequestException("Tên nhóm đã tồn tại trong cuộc thi này!");
+//        }
         // 6. Update
         team.setTeamName(cleanName);
         teamRepository.save(team);
