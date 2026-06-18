@@ -5,6 +5,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,6 +27,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     // TỐI ƯU: Sử dụng UserDetailsService thay vì chọc trực tiếp vào AccountRepository
     private final CustomUserDetailsService userDetailsService;
+
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
 
     @Override
     protected void doFilterInternal(
@@ -77,6 +81,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             // Nếu có bất kỳ lỗi gì (Token bị sửa đổi, hết hạn, hoặc User bị xóa khỏi DB),
             // ta ngó lơ nó đi. Request sẽ bị đánh dấu là "Chưa đăng nhập" (Unauthenticated)
             // và Spring Security sẽ tự động ném ra lỗi 403 hoặc 401.
+            log.error("Lỗi xác thực JWT: {}", ignored.getMessage());
+
         }
 
         // 9. Cho phép Request đi tiếp tới Filter tiếp theo hoặc tới Controller

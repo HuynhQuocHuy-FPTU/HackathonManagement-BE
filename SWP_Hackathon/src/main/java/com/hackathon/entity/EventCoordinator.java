@@ -7,7 +7,11 @@ import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
-@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+@Builder
 @Entity
 @Builder
 @NoArgsConstructor
@@ -22,11 +26,8 @@ public class EventCoordinator {
     private int coordinatorId;
     @Column(name = "Coordinator_Name", columnDefinition = "NVARCHAR(50)", nullable = false)
     private String coordinatorName;
-    @Column(name="Department", nullable = false)
+    @Column(name="Department")
     private String department;
-    @Column(name="Status")
-    @Enumerated(EnumType.STRING)
-    private EventStatus status;
 
     // 1 ACCOUNT - 1 EVENT COORDINATOR
     @OneToOne(fetch = FetchType.LAZY)

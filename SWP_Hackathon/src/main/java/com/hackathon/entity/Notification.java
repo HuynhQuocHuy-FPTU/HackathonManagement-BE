@@ -4,11 +4,14 @@ import com.hackathon.entity.enums.InvitationAction;
 import com.hackathon.entity.enums.NotificationStatus;
 import com.hackathon.entity.enums.NotificationType;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
 @Entity
 public class Notification {
     @Id

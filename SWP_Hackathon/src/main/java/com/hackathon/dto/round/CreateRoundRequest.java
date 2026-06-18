@@ -1,16 +1,20 @@
 package com.hackathon.dto.round;
 
 
+import com.hackathon.dto.category.CategoryExpertAssignRequestDTO;
 import com.hackathon.dto.criteria.EvaluationCriteriaRequestDTO;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
 public class CreateRoundRequest {
     @NotBlank(message = "Round name is required")
     private String roundName;
@@ -21,21 +25,21 @@ public class CreateRoundRequest {
     @NotNull(message = "End date is required")
     private LocalDateTime endDate;
 
-    @NotNull(message = "Event ID is required")
-    private Integer eventID;
     @NotBlank(message = "Advancement rule is required")
     private String advancementRule;
 
-    @NotEmpty(message = "List Category is required")
-    private List<String> appliedListCategoryNames;
 
     @NotNull(message = "Criteria_Set is required")
     private Integer criteriaSetId;
 
-
     @NotNull(message = "Order index is required")
     private Integer orderIndex;
 
+    @NotNull(message = "Submission deadline is required")
+    private LocalDateTime submissionDeadline;
+
     private List<EvaluationCriteriaRequestDTO> customCriteriaDetatils;
+
+    private List<CategoryExpertAssignRequestDTO> categoryExperts;
 
 }

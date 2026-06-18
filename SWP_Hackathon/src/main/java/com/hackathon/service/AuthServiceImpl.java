@@ -1,5 +1,6 @@
 package com.hackathon.service;
 
+import com.hackathon.dto.auth.InviteAccountRequest;
 import com.hackathon.dto.auth.LoginRequest;
 import com.hackathon.dto.auth.AuthResponse;
 import com.hackathon.entity.Account;
@@ -130,4 +131,5 @@ public class AuthServiceImpl implements AuthService {
                 .role(account.getRole())
                 .build();
     }
+
 }

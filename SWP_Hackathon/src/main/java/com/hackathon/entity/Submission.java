@@ -1,5 +1,6 @@
 package com.hackathon.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hackathon.entity.enums.SubmissionStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -7,7 +8,10 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
 @Entity
 @Table(name="Submission")
 public class Submission {
@@ -34,11 +38,13 @@ public class Submission {
 
     // 1 TEAM - N SUBMISSION
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinColumn(name = "Team_ID",nullable = false)
     private Team team;
 
     //1 categoryRound- N submission
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinColumn(name = "Category_Round_ID",nullable = false)
     private CategoryRound categoryRound;
 }

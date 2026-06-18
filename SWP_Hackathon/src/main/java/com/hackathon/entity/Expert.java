@@ -6,11 +6,12 @@ import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
-@Data
-@Entity
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Builder
+@Entity
 @Table(name = "Expert")
 public class Expert {
     @Id
@@ -26,6 +27,8 @@ public class Expert {
     private ExpertType type;
     @Column(name = "Work_Place", columnDefinition = "NVARCHAR(255)")
     private String workplace;
+
+
     //1 Account - 1 Expert
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name ="Account_ID", unique = true, nullable = false)

@@ -1,5 +1,6 @@
 package com.hackathon.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hackathon.entity.enums.EventStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -7,20 +8,24 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+@Builder
 @Entity
 public class HackathonEvent {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "Event_ID")
     private int eventId;
-    @Column(name = "Event_Name", columnDefinition = "NVARCHAR(50)", nullable = false)
+    @Column(name = "Event_Name", columnDefinition = "NVARCHAR(255)", nullable = false)
     private String eventName;
     @Column(name = "Start_Date", nullable = false)
     private LocalDateTime startDate;
     @Column(name = "End_Date", nullable = false)
     private LocalDateTime endDate;
-    @Column(name = "Title", columnDefinition = "VARCHAR(50)", nullable = false)
+    @Column(name = "Title", columnDefinition = "VARCHAR(255)", nullable = false)
     private String title;
     @Column(name = "Address", columnDefinition = "NVARCHAR(255)", nullable = false)
     private String address;
@@ -50,6 +55,7 @@ public class HackathonEvent {
 
     // 1 EventCoordinator - N HackathonEvent
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinColumn(name = "Coordinator_ID", nullable = false)
     private EventCoordinator eventCoordinator;
 

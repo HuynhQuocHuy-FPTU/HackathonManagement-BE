@@ -1,7 +1,11 @@
 package com.hackathon.service;
 
+import com.hackathon.dto.category.UpdateCategoryRequest;
 import com.hackathon.dto.round.CreateRoundRequest;
 import com.hackathon.dto.round.RoundResponse;
+import com.hackathon.dto.round.UpdateRoundRequest;
+import com.hackathon.entity.CategoryRound;
+import com.hackathon.entity.HackathonEvent;
 import com.hackathon.entity.Round;
 import com.hackathon.exception.BadRequestException;
 
@@ -9,6 +13,16 @@ import java.util.List;
 
 
 public interface RoundService {
-    public Round createRound(CreateRoundRequest request) throws BadRequestException;
-    public RoundResponse mapToResponse(Round round, List<String> appliedCategoryName);
+    public Round createRound(CreateRoundRequest request, int eventId) throws BadRequestException;
+    public RoundResponse mapToResponse(Round round);
+
+    public Round updateSingleRound(UpdateRoundRequest roundRequest, List<Round> currentRounds, Integer eventId);
+
+    public List<Round> deleteRoundsExcluding(List<UpdateRoundRequest> roundRequests, List<Round> currentRounds);
+
+    void deleteByEventId(Integer eventId);
+
+    List<Round> findAllByEventId(Integer eventId);
+
+
 }

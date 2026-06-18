@@ -8,12 +8,12 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-
+@NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor@Entity
 @Builder
+@Entity
 @Table(name = "CriteriaDetail")
 public class CriteriaDetail {
     @Id
@@ -24,14 +24,17 @@ public class CriteriaDetail {
     private String criteriaName;
     @Column(name = "Weight", precision = 10, scale = 2, nullable = false)
     private BigDecimal weight;
-    @Column(name = "Description",columnDefinition = "NVARCHAR(1000)")
+    @Column(name = "Description" , columnDefinition = "NVARCHAR(1000)")
     private String description;
 
     // 1 Criteria_set - N Criteria Detail
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "CriteriaSet_Id", nullable = false)
     @JsonIgnore
+    @JoinColumn(name = "CriteriaSet_Id", nullable = false)
     private CriteriaSet criteriaSet;
+
+
+
 
 
 }

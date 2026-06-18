@@ -8,9 +8,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Builder
 @Entity
 @Table(name="Student")
@@ -23,7 +24,7 @@ public class Student {
     private String studentCode;
     @Column(name = "Student_Name", columnDefinition = "NVARCHAR(50)" ,nullable = false)
     private String studentName;
-    @Column(name = "Address", columnDefinition = "NVARCHAR(255)" )
+    @Column(name = "Address", columnDefinition = "NVARCHAR(255)")
     private String address;
     @Column(name = "Major", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String major;

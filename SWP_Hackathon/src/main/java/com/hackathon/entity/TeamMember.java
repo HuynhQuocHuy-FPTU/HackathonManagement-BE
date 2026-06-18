@@ -4,7 +4,10 @@ import com.hackathon.entity.enums.TeamStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
-@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
 @Entity
 @Table(name = "TeamMember")
 public class TeamMember {

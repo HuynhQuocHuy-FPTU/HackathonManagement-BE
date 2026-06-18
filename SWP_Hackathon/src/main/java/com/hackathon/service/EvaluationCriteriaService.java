@@ -10,4 +10,6 @@ import java.util.List;
 public interface EvaluationCriteriaService {
         public EvaluationCriteria createEvaluationCritera(EvaluationCriteriaRequestDTO request, int criteriaSetId, Round round);
         public EvaluationCriteriaResponseDTO mapToResponse(EvaluationCriteria evaluationCriteria);
+
+        List<EvaluationCriteriaResponseDTO> getEvaluationCirteriaResponse(Round round);
 }

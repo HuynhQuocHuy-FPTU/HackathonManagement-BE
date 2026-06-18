@@ -8,28 +8,27 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-
-@Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
+@Getter
+@Setter
 @Builder
+@Entity
 @Table(name = "CriteriaSet")
 public class CriteriaSet {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "CriteriaSet_ID")
     private int criteriaSetId;
-    @Column(name = "CriteriaSet_Name")
+    @Column(name = "CriteriaSet_Name", columnDefinition = "NVARCHAR(255)")
     private String criteriaSetName;
     @Column(name = "Max_Score", nullable = false)
     private int maxScore;
 
     // 1 eventCoordinator - N Criteria_SET
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "Coordinator_ID", nullable = false)
     @JsonIgnore
+    @JoinColumn(name = "Coordinator_ID", nullable = false)
     private EventCoordinator eventCoordinator;
 
     // 1 Criteria_set - N Criteria Detail
@@ -37,10 +36,12 @@ public class CriteriaSet {
     @JsonIgnore
     private List<CriteriaDetail> criteriaDetails = new ArrayList<>();
 
-//    //1 Criteria_Set - N round
-//    @OneToMany(mappedBy = "criteriaSet", cascade = CascadeType.ALL,orphanRemoval = true)
-//    @JsonIgnore
-//    private List<Round> rounds = new ArrayList<>();
+
+
+    //1 Criteria_Set - N round
+    @OneToMany(mappedBy = "criteriaSet", cascade = CascadeType.ALL,orphanRemoval = true)
+    @JsonIgnore
+    private List<Round> rounds = new ArrayList<>();
 
 
 

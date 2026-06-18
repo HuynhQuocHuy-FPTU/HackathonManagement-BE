@@ -2,11 +2,16 @@ package com.hackathon.repository;
 
 import com.hackathon.entity.Team;
 import org.springframework.data.jpa.repository.JpaRepository;
+<<<<<<< HEAD
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
+=======
+import org.springframework.stereotype.Repository;
+>>>>>>> 9531c5707e665b72c6b01f18dd63c66d5df8fca1
 
+@Repository
 public interface TeamRepository extends JpaRepository<Team, Integer> {
      boolean existsByTeamNameIgnoreCase(String teamName);
 @Query("SELECT COUNT(t) > 0 FROM Team t " +
