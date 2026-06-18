@@ -1,5 +1,6 @@
 package com.hackathon.entity;
 
+import com.hackathon.entity.enums.TeamStatus;
 import jakarta.persistence.*;
 import lombok.*;
 

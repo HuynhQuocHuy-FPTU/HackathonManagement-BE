@@ -2,10 +2,11 @@ package com.hackathon.config;
 
 import com.hackathon.security.CustomUserDetailsService;
 import com.hackathon.security.JwtAuthFilter;
+
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
-import io.swagger.v3.oas.models.security.SecurityScheme;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -44,8 +45,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         //các API công khai ai cũng vào được
                         .requestMatchers(
-                                "/api/account/login",
-                                "/api/account/register",
+                                "/api/account/**",   // N Them de test
+                                "/api/account/login",      //  N them de test
+                                "/api/account/resend-verification", //N them
+                                "/api/notifications/**",
+                                "/api/events",//N
+                                "/api/events/*",//N
                                 "/error",
                                 "/verify-email",
                                 "/swagger-ui/**",
@@ -55,6 +60,11 @@ public class SecurityConfig {
                                 "/api/events/*/detail",
                                 "/api/events/all"
                         ).permitAll()
+                        //CriteriaSet chỉ có Coordinator là người có quyền truy cập
+                        .requestMatchers("/api/criteriaSet/**")
+                        .hasRole("EVENTCOORDINATOR")
+                        .requestMatchers("/api/notifications/**").authenticated()
+                        .requestMatchers("/api/events/registration/**").hasRole("STUDENT")
                         //Chỉ event coordinator mới có quyền tạo event
                         .requestMatchers(HttpMethod.POST, "/api/events").hasRole("EVENTCOORDINATOR")
                         .requestMatchers(HttpMethod.PUT, "/api/events/**").hasRole("EVENTCOORDINATOR")

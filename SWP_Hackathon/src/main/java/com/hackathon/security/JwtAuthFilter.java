@@ -74,6 +74,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                     // Lưu vào Context của Spring, thông báo: "Người này đã xác thực thành công!"
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+
                 }
             }
         } catch (Exception ignored) {

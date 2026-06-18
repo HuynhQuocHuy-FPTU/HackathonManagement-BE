@@ -27,7 +27,7 @@ public class RegisterServiceImpl implements RegisterService {
     private final AccountRepository accountRepository;
     private final StudentRepository studentRepository;
     private final PasswordEncoder passwordEncoder;
-    private final EmailService emailService;
+    private final EmailServiceImpl emailServiceImpl;
 
     @Value("${app.verification .expiration-hours:24}")
     private int verificationExpirationHours;
@@ -68,7 +68,7 @@ public class RegisterServiceImpl implements RegisterService {
         student.setStatus(StudentStatus.STUDYING);
         student.setAccount(account);
         studentRepository.save(student);
-        emailService.sendVerificationEmail(account.getEmail(), verificationToken);
+        emailServiceImpl.sendVerificationEmail(account.getEmail(), verificationToken);
     }
 
     @Override
@@ -109,7 +109,7 @@ public class RegisterServiceImpl implements RegisterService {
         account.setVerificationToken(token);
         account.setVerificationTokenExpiry(LocalDateTime.now().plusHours(verificationExpirationHours));
         accountRepository.save(account);
-        emailService.sendVerificationEmail(account.getEmail(), token);
+        emailServiceImpl.sendVerificationEmail(account.getEmail(), token);
     }
 
 }

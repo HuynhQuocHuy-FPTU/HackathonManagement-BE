@@ -1,0 +1,51 @@
+<table>
+    <tr>
+        <td>
+            <table>
+                <tr>
+                    <td>
+                        FPT HACKATHON
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        Xin chào <strong th:text="${studentName}">Sinh viên</strong>,
+                        Bạn vừa nhận được lời mời từ <span th:text="${leaderName}">Trưởng nhóm</span> (<span th:text="${email}">email</span>).
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        Đội thi: <span th:text="${teamName}">Tên Đội</span>
+                        Nội dung: Bạn được mời tham gia đội <span th:text="${teamName}">Tên Đội</span>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        Vui lòng chọn:
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        <a th:href="'http://localhost:8080/api/notifications/' + ${notificationId} + '/accept'">
+                            CHẤP NHẬN
+                        </a>
+
+                        <a th:href="'http://localhost:8080/api/notifications/' + ${notificationId} + '/reject'">
+                            TỪ CHỐI
+                        </a>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        © 2026 FPT Hackathon System
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>

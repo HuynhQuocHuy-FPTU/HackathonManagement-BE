@@ -2,18 +2,19 @@ package com.hackathon.dto.event;
 
 import com.hackathon.dto.category.CategoryResponse;
 import com.hackathon.dto.round.RoundResponse;
+import com.hackathon.entity.Category;
 import com.hackathon.entity.HackathonEvent;
+import com.hackathon.entity.Round;
 import com.hackathon.entity.enums.EventStatus;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
-@Data
+
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Builder
 public class EventResponse {
     private Integer eventId;
@@ -50,6 +51,7 @@ public class EventResponse {
         this.status = event.getStatus();
         this.createdAt = event.getCreateAt();
         this.updateAt = event.getUpdateAt();
+
         this.categories = categories;
         this.rounds = rounds;
     }

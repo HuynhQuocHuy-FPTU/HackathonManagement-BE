@@ -10,6 +10,7 @@ import com.hackathon.repository.CriteriaDetailRepository;
 import com.hackathon.repository.EvaluationCriteriaRepository;
 import com.hackathon.repository.RoundRepository;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,14 +24,13 @@ import java.util.stream.Collectors;
 //Class nay duoc dung de luu lai tieu chi cham diem da duoc chinh sua or custom tu tieu chi mau
 
 @Service
+@RequiredArgsConstructor
+
 public class EvaluationCriteriaServiceImpl implements EvaluationCriteriaService {
 
-    @Autowired
-    private EvaluationCriteriaRepository evaluationCriteriaRepository;
-    @Autowired
-    private RoundRepository roundRepository;
-    @Autowired
-    private CriteriaDetailRepository criteriaDetailRepository;
+    private final EvaluationCriteriaRepository evaluationCriteriaRepository;
+    private final RoundRepository roundRepository;
+    private final CriteriaDetailRepository criteriaDetailRepository;
 
     @Override
     public EvaluationCriteria createEvaluationCritera(EvaluationCriteriaRequestDTO request, int criteriaSetId, Round round) {

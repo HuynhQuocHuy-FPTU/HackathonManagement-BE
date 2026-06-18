@@ -41,4 +41,6 @@ public class Team {
     // 1 TEAM - N SUBMISSION
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL,orphanRemoval = true)
     private List< Submission> submissions = new ArrayList<>();
+
+
 }
