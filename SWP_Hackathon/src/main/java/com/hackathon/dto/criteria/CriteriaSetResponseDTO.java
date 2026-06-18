@@ -13,16 +13,11 @@ import java.util.List;
 @Builder
 public class CriteriaSetResponseDTO {
     private Integer criteriaSetId;
-<<<<<<< HEAD
     private String criteriaSetName;
-    private Integer maxScore;
+    private int maxScore;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<CriteriaDetailResponseDTO> criteriaDetails;
-
-=======
     private String criteriaName;
-    private Integer maxScore;
->>>>>>> 9531c5707e665b72c6b01f18dd63c66d5df8fca1
 
 }

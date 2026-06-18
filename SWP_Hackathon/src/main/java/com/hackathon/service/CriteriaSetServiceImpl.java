@@ -10,18 +10,12 @@ import com.hackathon.repository.CriteriaDetailRepository;
 import com.hackathon.repository.CriteriaSetRepository;
 import com.hackathon.repository.EventCoordinatorRepository;
 import com.hackathon.security.CustomUserDetails;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-<<<<<<< HEAD
 import java.util.ArrayList;
 import java.util.HashSet;
-=======
-import java.math.BigDecimal;
->>>>>>> 9531c5707e665b72c6b01f18dd63c66d5df8fca1
 import java.util.List;
 import java.util.Set;
 
@@ -61,11 +55,8 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
 
             dto.setCriteriaSetId(set.getCriteriaSetId());
             dto.setCriteriaSetName(set.getCriteriaSetName());
-<<<<<<< HEAD
             dto.setMaxScore(set.getMaxScore());
-=======
-            dto.setWeight(BigDecimal.valueOf(set.getMaxScore()));
->>>>>>> 9531c5707e665b72c6b01f18dd63c66d5df8fca1
+//            dto.setWeight(BigDecimal.valueOf(set.getMaxScore()));
 
             List<CriteriaDetailResponseDTO> details = set.getCriteriaDetails()
                     .stream()

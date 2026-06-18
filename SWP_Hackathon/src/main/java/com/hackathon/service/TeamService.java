@@ -5,23 +5,27 @@ import com.hackathon.dto.team.TeamRequest;
 import com.hackathon.dto.team.TeamResponse;
 import com.hackathon.entity.HackathonEvent;
 import com.hackathon.entity.Notification;
+import com.hackathon.entity.Team;
 import com.hackathon.security.CustomUserDetails;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 public interface TeamService {
-    HackathonEvent checkTeamRegistrationWindow(Integer eventId);
+    //    HackathonEvent checkEventRegistrationWindow(Integer eventId);
+    void checkEventRegistrationWindow(Team team);
 
     TeamResponse createTeam(CreateTeamRequest request, CustomUserDetails userDetails);
+
+    TeamResponse  sendTeamInvitation(CreateTeamRequest request,CustomUserDetails userDetails);
 
     String updateInfo(CustomUserDetails userDetails, String teamName);
 
     void acceptInvite(Notification notification, CustomUserDetails userDetails);
 
-    void leaveTeam(CustomUserDetails userDetails);
+    void leaveTeam(CustomUserDetails userDetails, Integer teamId);
 
-    void transferLeader(TeamRequest request, CustomUserDetails userDetails);
+    void transferLeader(Integer teamId, TeamRequest request, CustomUserDetails userDetails);
 
     void acceptGeneralInvite(Long notificationId, CustomUserDetails userDetails);
 
@@ -35,6 +39,6 @@ public interface TeamService {
 
     TeamResponse getTeamMember(Integer teamId, CustomUserDetails userDetails);
 
-    void registerEvent(CreateTeamRequest request, CustomUserDetails userDetails);
+    void registerEvent(Integer eventId, CustomUserDetails userDetails);
 
 }

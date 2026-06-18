@@ -29,35 +29,35 @@ public class RegistrationController {
     @Autowired
     private NotificationService notificationService;
 
-    //View General Information about hackathon
-    @GetMapping("/events")
-    public ResponseEntity<ApiResponse<List<EventResponse>>> getAllEvent() {
-        List<EventResponse> list = eventService.getAllEvent();
-        return ResponseEntity.ok(ApiResponse.success(list, "Get all events thành công"));
-    }
-
-
-    //View all information detail about hackathon(click Event show details)
-    @GetMapping("/events/{eventId}")
-    public ResponseEntity<ApiResponse<EventResponse>> getEventDetail(@PathVariable Integer eventId) {
-        EventResponse list = eventService.getEventDetail(eventId);
-        return ResponseEntity.ok(ApiResponse.success(list, "Get all event details thành công"));
-    }
-
-    //Search HackathonEvent By EventName
-    @GetMapping("/events/search")
-    public ResponseEntity<ApiResponse<List<EventResponse>>> searchHackathonEvent(@RequestParam("eventName") String name) {
-        List<EventResponse> list = eventService.searchByEventName(name);
-        if (list.isEmpty()) {
-            return ResponseEntity.ok(
-                    ApiResponse.success(list, "Không tìm thấy sự kiện phù hợp")
-            );
-        }
-
-        return ResponseEntity.ok(
-                ApiResponse.success(list, "Tìm kiếm thành công")
-        );
-    }
+//    //View General Information about hackathon
+//    @GetMapping("/events")
+//    public ResponseEntity<ApiResponse<List<EventResponse>>> getAllEvent() {
+//        List<EventResponse> list = eventService.getAllEvent();
+//        return ResponseEntity.ok(ApiResponse.success(list, "Get all events thành công"));
+//    }
+//
+//
+//    //View all information detail about hackathon(click Event show details)
+//    @GetMapping("/events/{eventId}")
+//    public ResponseEntity<ApiResponse<EventResponse>> getEventDetail(@PathVariable Integer eventId) {
+//        EventResponse list = eventService.getEventDetail(eventId);
+//        return ResponseEntity.ok(ApiResponse.success(list, "Get all event details thành công"));
+//    }
+//
+//    //Search HackathonEvent By EventName
+//    @GetMapping("/events/search")
+//    public ResponseEntity<ApiResponse<List<EventResponse>>> searchHackathonEvent(@RequestParam("eventName") String name) {
+//        List<EventResponse> list = eventService.searchByEventName(name);
+//        if (list.isEmpty()) {
+//            return ResponseEntity.ok(
+//                    ApiResponse.success(list, "Không tìm thấy sự kiện phù hợp")
+//            );
+//        }
+//
+//        return ResponseEntity.ok(
+//                ApiResponse.success(list, "Tìm kiếm thành công")
+//        );
+//    }
 
 
 
@@ -78,22 +78,22 @@ public class RegistrationController {
     }
 
     // Out Team
-    @PostMapping("/registration/teams/leave")
+    @PostMapping("/{teamId}/leave")
     @PreAuthorize("hasRole('STUDENT')")
-    public ResponseEntity<ApiResponse<Void>> leaveTeam(
+    public ResponseEntity<ApiResponse<Void>> leaveTeam(@PathVariable Integer teamId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        teamService.leaveTeam(userDetails);
+        teamService.leaveTeam(userDetails, teamId);
         return ResponseEntity.ok(ApiResponse.success(null, "Rời Team thành công"));
     }
 
 
     // Transfer Leader
-    @PutMapping("/registration/teams/transfer-leader")
+    @PutMapping("/registration/teams/{teamId}/transfer-leader")
     @PreAuthorize("hasRole('STUDENT')")
-    public ResponseEntity<ApiResponse<Void>> transferLeader(
+    public ResponseEntity<ApiResponse<Void>> transferLeader(@PathVariable Integer teamId,
            @Valid @RequestBody TeamRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        teamService.transferLeader(request, userDetails);
+        teamService.transferLeader(teamId,request, userDetails);
         return ResponseEntity.ok(ApiResponse.success(null, "Gửi lời mời chuyển quyền Trưởng nhóm thành công!"));
     }
 
@@ -141,13 +141,27 @@ public class RegistrationController {
     }
 
     // Registration event
-    @PostMapping("/register-event")
+    @PostMapping("/{eventId}/register-event")
     @PreAuthorize("hasRole('STUDENT')")
-    public ResponseEntity<ApiResponse<Void>>registrationEvent(@Valid @RequestBody CreateTeamRequest request,
+    public ResponseEntity<ApiResponse<Void>>registrationEvent(@Valid@PathVariable Integer eventId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        teamService.registerEvent(request, userDetails);
+        teamService.registerEvent(eventId, userDetails);
         return ResponseEntity.ok(ApiResponse.success(null,"Đăng ký sự kiện thành công"));
+    }
+
+    // Mời thêm thành viên vào Team đã có
+    @PostMapping("/events/registration/teams/invite")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<TeamResponse>> sendInvitation(
+            @Valid @RequestBody CreateTeamRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (request.getTeamId() == null) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.success(null, "MISSING_TEAM_ID"));
+        }
+        TeamResponse response = teamService.sendTeamInvitation(request, userDetails);
+        return ResponseEntity.ok(ApiResponse.success(response, "Đã gửi lời mời thành công"));
     }
 
 }

@@ -43,34 +43,36 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                                //các API công khai ai cũng vào được
-                                .requestMatchers(
-                                        "/api/account/**",   // N Them de test
-                                        "/api/account/login",      //  N them de test
-                                        "/api/account/resend-verification", //N them
-                                        "/api/notifications/**",
-                                        "/api/events",//N
-                                        "/api/events/*",//N
-                                        "/error",
-                                        "/verify-email",
-                                        "/swagger-ui/**",
-                                        "/swagger-ui.html",
-                                        "/v3/api-docs/**",
-                                        "/api/events/public/**",
-                                        "/api/events/*/detail",
-                                        "/api/events/all"
-                                ).permitAll()
-                                //CriteriaSet chỉ có Coordinator là người có quyền truy cập
-                                .requestMatchers("/api/criteriaSet/**")
-                                .hasRole("EVENTCOORDINATOR")
-                                //Chỉ event coordinator mới có quyền tạo event
-                                .requestMatchers(HttpMethod.POST, "/api/events").hasRole("EVENTCOORDINATOR")
-                                .requestMatchers(HttpMethod.PUT, "/api/events/**").hasRole("EVENTCOORDINATOR")
-                                .requestMatchers(HttpMethod.DELETE, "/api/events/**").hasRole("EVENTCOORDINATOR")
-                                .requestMatchers(HttpMethod.PATCH, "/api/events/**").hasRole("EVENTCOORDINATOR")
+                        //các API công khai ai cũng vào được
+                        .requestMatchers(
+                                "/api/account/**",   // N Them de test
+                                "/api/account/login",      //  N them de test
+                                "/api/account/resend-verification", //N them
+                                "/api/notifications/**",
+                                "/api/events",//N
+                                "/api/events/*",//N
+                                "/error",
+                                "/verify-email",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",
+                                "/api/events/public/**",
+                                "/api/events/*/detail",
+                                "/api/events/all"
+                        ).permitAll()
+                        //CriteriaSet chỉ có Coordinator là người có quyền truy cập
+                        .requestMatchers("/api/criteriaSet/**")
+                        .hasRole("EVENTCOORDINATOR")
+                        .requestMatchers("/api/notifications/**").authenticated()
+                        .requestMatchers("/api/events/registration/**").hasRole("STUDENT")
+                        //Chỉ event coordinator mới có quyền tạo event
+                        .requestMatchers(HttpMethod.POST, "/api/events").hasRole("EVENTCOORDINATOR")
+                        .requestMatchers(HttpMethod.PUT, "/api/events/**").hasRole("EVENTCOORDINATOR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/events/**").hasRole("EVENTCOORDINATOR")
+                        .requestMatchers(HttpMethod.PATCH, "/api/events/**").hasRole("EVENTCOORDINATOR")
 
-                                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                                .anyRequest().authenticated()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

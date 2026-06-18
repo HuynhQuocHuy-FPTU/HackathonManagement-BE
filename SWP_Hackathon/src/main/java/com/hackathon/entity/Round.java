@@ -52,10 +52,10 @@ public class Round {
     @OneToMany(mappedBy = "round", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<EvaluationCriteria> evaluationCriterias = new ArrayList<>();
 
-//    // 1 CriteriaSet - N round
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "CriteriaSet_ID", nullable = false)
-//    private CriteriaSet criteriaSet;
+    // 1 CriteriaSet - N round
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "CriteriaSet_ID", nullable = false)
+    private CriteriaSet criteriaSet;
 
 
 

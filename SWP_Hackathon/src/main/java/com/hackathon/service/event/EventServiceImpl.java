@@ -366,4 +366,81 @@ public class EventServiceImpl implements EventService {
 
     }
 
+//    @Override
+//    public EventResponse getEventDetail(Integer eventId) {
+//        HackathonEvent event = eventRepository.findById(eventId).orElseThrow(() -> new BadRequestException("Not found event"));
+//
+//        List<CategoryResponse> categories = event.getCategories().stream()
+//                .map(category -> CategoryResponse.builder()
+//                        .categoryName(category.getCategoryName()).build()).toList();
+//
+//        List<RoundResponse> rounds = event.getRounds()
+//                .stream()
+//                .map(round -> RoundResponse.builder()
+//                        .roundName(round.getRoundName())
+//                        .startDate(round.getStartTime())
+//                        .endDate(round.getEndTime())
+//                        .advancementRule(round.getAdvancementRule())
+//                        .build())
+//                .toList();
+//        return EventResponse.builder()
+//                .eventName(event.getEventName())
+//                .startDate(event.getStartDate())
+//                .endDate(event.getEndDate())
+//                .title(event.getTitle())
+//                .address(event.getAddress())
+//                .season(event.getSeason())
+//                .description(event.getDescription())
+//                .maxTeam(event.getMaxTeam())
+//                .maxTeamSize(event.getMaxTeamSize())
+//                .minTeamSize(event.getMinTeamSize())
+//                .registrationDeadline(event.getRegistrationDeadline())
+//                .status(event.getStatus())
+//                .createdAt(event.getCreateAt())
+//                .updateAt(event.getUpdateAt())
+//                .categories(categories)
+//                .rounds(rounds)
+//                .build();
+//    }
+//
+
+//    @Override
+//    public List<EventResponse> searchByEventName(String eventName) {
+//        List<HackathonEvent> events =
+//                eventRepository.findByEventNameContainingIgnoreCase(eventName);
+//
+//        return events.stream()
+//                .map(event -> EventResponse.builder()
+//                        .eventName(event.getEventName())
+//                        .title(event.getTitle())
+//                        .season(event.getSeason())
+//                        .address(event.getAddress())
+//                        .description(event.getDescription())
+//                        .maxTeam(event.getMaxTeam())
+//                        .maxTeamSize(event.getMaxTeamSize())
+//                        .minTeamSize(event.getMinTeamSize())
+//                        .status(event.getStatus())
+//                        .startDate(event.getStartDate())
+//                        .endDate(event.getEndDate())
+//                        .registrationDeadline(event.getRegistrationDeadline())
+//                        .build())
+//                .toList();
+//    }
+//
+//    @Override
+//    public List<EventResponse> getAllEvent() {
+//        List<HackathonEvent> events = eventRepository.findAll();
+//        return events.stream()
+//                .map(event -> EventResponse.builder()
+//                        .eventName(event.getEventName())
+//                        .title(event.getTitle())
+//                        .season(event.getSeason())
+//                        .status(event.getStatus())
+//                        .startDate(event.getStartDate())
+//                        .endDate(event.getEndDate())
+//                        .registrationDeadline(event.getRegistrationDeadline())
+//                        .build())
+//                .toList();
+//    }
+
 }

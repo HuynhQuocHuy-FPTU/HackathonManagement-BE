@@ -17,7 +17,7 @@ public class CreateTeamRequest {
     private Integer teamId;
 
 
-    @NotBlank(message = "Team name is required")
+//    @NotBlank(message = "Team name is required")
     private String teamName;
 
     @NotNull(message = "Member list is required")

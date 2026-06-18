@@ -13,11 +13,6 @@ import java.util.List;
 @Setter
 @Builder
 @Entity
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-@Getter
-@Setter
 @Table(name ="EventCoordinator" )
 public class EventCoordinator {
     @Id

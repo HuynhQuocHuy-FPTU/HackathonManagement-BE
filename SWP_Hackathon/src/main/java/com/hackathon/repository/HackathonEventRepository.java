@@ -11,12 +11,8 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-<<<<<<< HEAD
-import java.util.Optional;
 
-=======
 @Repository
->>>>>>> 9531c5707e665b72c6b01f18dd63c66d5df8fca1
 public interface HackathonEventRepository extends JpaRepository<HackathonEvent, Integer> {
     @Modifying
     @Transactional
