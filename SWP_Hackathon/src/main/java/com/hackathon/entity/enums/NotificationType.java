@@ -4,6 +4,7 @@ public enum NotificationType {
     TEAM_INVITATION,
     TEAM_ACCEPTED,
     TEAM_REJECTED,
+    LEADER_TRANSFER_REQUEST,
 
     ROUND_OPENED,
     ROUND_CLOSED,

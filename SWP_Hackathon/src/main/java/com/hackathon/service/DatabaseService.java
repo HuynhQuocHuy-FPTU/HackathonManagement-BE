@@ -1,14 +1,17 @@
 package com.hackathon.service;
 
+
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.AccountRole;
 import com.hackathon.entity.enums.AccountStatus;
 import com.hackathon.entity.enums.StudentStatus;
 import com.hackathon.repository.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +22,8 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
+
 public class DatabaseService {
     @Autowired
     private CriteriaSetRepository criteriaSetRepository;
@@ -38,6 +43,7 @@ public class DatabaseService {
     @Autowired
     private StudentRepository studentRepository;
 
+
     @Autowired
     private PasswordEncoder passwordEncoder;
 
@@ -45,6 +51,15 @@ public class DatabaseService {
     public void createDatabase(){
 
         //create account dưới database
+//        Account acc1 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("nguyenvan30498@gmail.com").accountName("vanvan834").phone("0976352891").status(AccountStatus.ACTIVE).password("123456").role(AccountRole.EVENTCOORDINATOR).build());
+//
+//        Account acc2 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("tranhoa456@gmail.com").password("123456").accountName("hoahoa").phone("0983452324").status(AccountStatus.ACTIVE).role(AccountRole.EXPERT).build());
+//
+//        Account acc3 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("lehuyen4238@gmail.com").password("123456").accountName("huyenhuyen").phone("097635235").status(AccountStatus.ACTIVE).role(AccountRole.EXPERT).build());
+//
+//        Account acc4 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("lehoa345@gmail.com").password("123456").accountName("lehoa").phone("0126789354").status(AccountStatus.ACTIVE).role(AccountRole.STUDENT).build());
+//
+//        Account acc5 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("nguyenha@gmail.com").password("123456").accountName("haha234").phone("0976336472").status(AccountStatus.ACTIVE).role(AccountRole.STUDENT).build());
         if (!accountRepository.existsByEmail("admin@hackathon.com")) {
             accountRepository.save(Account.builder()
                     .createdAt(LocalDateTime.now())
@@ -52,11 +67,11 @@ public class DatabaseService {
                     .accountName("System Admin")
                     .phone("0123456789")
                     .status(AccountStatus.ACTIVE)
-                    .password(passwordEncoder.encode("Admin@123")) // 🎯 Mật khẩu đã được băm an toàn
+                    .password(passwordEncoder.encode("Admin@123")) //  Mật khẩu đã được băm an toàn
                     .role(AccountRole.ADMIN)
 //                    .isPasswordChanged(true) // Admin tối cao thì gán luôn true để không bị ép đổi pass
                     .build());
-            System.out.println("🚀 Đã khởi tạo tài khoản Admin: admin@hackathon.com / Mật khẩu: Admin@123");
+            System.out.println("Đã khởi tạo tài khoản Admin: admin@hackathon.com / Mật khẩu: Admin@123");
         }
         Account acc1 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("nguyenvan30498@gmail.com").accountName("vanvan834").phone("0976352891").status(AccountStatus.ACTIVE).password(passwordEncoder.encode("123456")).role(AccountRole.EVENTCOORDINATOR).build());
 
@@ -116,3 +131,5 @@ public class DatabaseService {
 
     }
 }
+
+

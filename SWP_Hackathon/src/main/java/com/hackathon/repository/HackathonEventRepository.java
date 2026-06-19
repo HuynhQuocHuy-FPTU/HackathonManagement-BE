@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+
 @Repository
 public interface HackathonEventRepository extends JpaRepository<HackathonEvent, Integer> {
     @Modifying

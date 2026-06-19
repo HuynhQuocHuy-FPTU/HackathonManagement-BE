@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Lời Mời Chuyển Quyền Trưởng Nhóm</title>
+</head>
+<body>
+
+<h2>FPT HACKATHON</h2>
+
+<p>
+    Xin chào <strong th:text="${studentName}">Sinh viên</strong>,
+</p>
+
+<p>
+    Bạn vừa nhận được một lời mời chuyển giao vị trí Trưởng nhóm (Leader)
+    từ tài khoản
+    <strong th:text="${leaderName}">Cựu Leader</strong>
+    (<span th:text="${email}">email@fpt.edu.vn</span>).
+</p>
+
+<p>
+    <strong>Đội thi:</strong>
+    <span th:text="${teamName}">Tên Đội</span>
+</p>
+
+<p>
+    <strong>Nội dung:</strong>
+    Bạn được mời làm trưởng nhóm cho đội
+    <span th:text="${teamName}">Tên Đội</span>
+    tham gia cuộc thi Hackathon.
+    Vui lòng phản hồi yêu cầu này.
+</p>
+
+<p>
+    Vui lòng đưa ra quyết định của bạn bằng cách bấm vào một trong hai lựa chọn dưới đây:
+</p>
+
+<p>
+    <a th:href="'http://localhost:8080/api/notifications/' + ${notiId} + '/accept'">
+        CHẤP NHẬN
+    </a>
+
+    &nbsp;&nbsp;&nbsp;
+
+    <a th:href="'http://localhost:8080/api/notifications/' + ${notiId} + '/reject'">
+        TỪ CHỐI
+    </a>
+</p>
+
+<p>
+    * Lưu ý: Lời mời này chỉ có hiệu lực trước khi ban tổ chức tiến hành
+    phê duyệt danh sách đội thi chính thức. Hành động này sẽ không thể hoàn tác
+    sau khi đã bấm phản hồi.
+</p>
+
+<p>
+     2026 Hệ thống quản lý FPT Hackathon. Toàn quyền bảo lưu.
+</p>
+
+</body>
+</html>
+```
