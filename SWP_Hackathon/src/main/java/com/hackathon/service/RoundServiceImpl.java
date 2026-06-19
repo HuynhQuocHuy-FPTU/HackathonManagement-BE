@@ -70,6 +70,7 @@ public class RoundServiceImpl implements RoundService{
         round.setStartTime(request.getStartDate());
         round.setEndTime(request.getEndDate());
         round.setAdvancementRule(request.getAdvancementRule());
+        round.setTopN(request.getTopN());
         round.setSubmissionDeadline(request.getSubmissionDeadline());
         round.setStatus(RoundStatus.UPCOMING);
         round.setOrderIndex(request.getOrderIndex());
@@ -137,6 +138,7 @@ public class RoundServiceImpl implements RoundService{
             saveRound.setStartTime(roundRequest.getStartDate());
             saveRound.setEndTime(roundRequest.getEndDate());
             saveRound.setAdvancementRule(roundRequest.getAdvancementRule());
+            saveRound.setTopN(roundRequest.getTopN());
             saveRound.setOrderIndex(roundRequest.getOrderIndex());
             saveRound.setSubmissionDeadline(roundRequest.getSubmissionDeadline());
             saveRound.setCriteriaSet(criteriaSet);

@@ -14,6 +14,4 @@ public class CreateTeamRequest {
     private Integer eventID;
     @NotBlank(message = "Team name is required")
     private String teamName;
-
-
 }

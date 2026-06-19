@@ -18,5 +18,4 @@ import java.util.List;
 @Setter
 public class UpdateRoundRequest extends CreateRoundRequest {
     private Integer roundId;
-
 }
