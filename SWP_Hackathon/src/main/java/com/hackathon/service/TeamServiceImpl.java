@@ -1,6 +1,7 @@
 package com.hackathon.service;
 
 import com.hackathon.dto.team.CreateTeamRequest;
+import com.hackathon.dto.team.TeamDetailResponse;
 import com.hackathon.dto.team.TeamRequest;
 import com.hackathon.dto.team.TeamResponse;
 
@@ -28,11 +29,12 @@ public class TeamServiceImpl implements TeamService {
     private final TeamMemberRepository teamMemberRepository;
     private final RegistrationRepository registrationRepository;
     private final NotificationRepository notificationRepository;
+    private final StudentRepository studentRepository;
+    private final EmailService emailService;
     private static final int MAX_TEAM_SIZE = 5;
     private static final long LOCK_BEFORE_DEADLINE_HOURS = 24;
     private static final long INVITATION_EXPIRE_HOURS = 3;
-    private final StudentRepository studentRepository;
-    private final EmailService emailService;
+
 
 
     // Nếu Đội đã nộp đơn và thời gian hiện tại cách thời gian đk event dưới 24 giờ -> CHẶN
@@ -194,8 +196,6 @@ public class TeamServiceImpl implements TeamService {
             throw new BadRequestException("Thông tin tài khoản leader không hợp lệ.");
         }
 
-        System.out.println("USER ĐANG GỌI: " + userDetails.getUsername() + " - Roles: " + userDetails.getAuthorities());
-
         TeamMember teamMember = teamMemberRepository.findByTeam_TeamIdAndStudent(request.getTeamId(), leaderAcc.getStudent())
                 .orElseThrow(() -> new BadRequestException("Bạn hiện không tham gia hoặc không phải thành viên của đội này!"));
 
@@ -225,7 +225,6 @@ public class TeamServiceImpl implements TeamService {
         if (cleanEmails.contains(leaderAcc.getEmail().trim())) {
             throw new BadRequestException("Bạn là Trưởng nhóm, không cần tự mời chính mình!");
         }
-
 
         //6. Tao loi moi gui toi cac thah vien
         List<String> successfulInvites = new ArrayList<>();
@@ -285,7 +284,13 @@ public class TeamServiceImpl implements TeamService {
 
         }
         //8. Return TeamResponse
-        return this.getTeamMember(team.getTeamId(), userDetails);
+        return  TeamResponse.builder()
+                .teamId(team.getTeamId())
+                .teamName(team.getTeamName())
+                .createAt(team.getCreateAt())
+                .invitedEmails(successfulInvites).build();
+
+
     }
 
 
@@ -399,16 +404,6 @@ public class TeamServiceImpl implements TeamService {
 
         // 5.CheckDeadline
         this.checkEventRegistrationWindow(team);
-//        List<Registration> registrations = registrationRepository.findByTeam(team);
-//        if (registrations != null && !registrations.isEmpty()) {
-//            boolean hasActiveRegistration = registrations.stream()
-//                    .anyMatch(regis -> regis.getStatus() == TeamStatus.PENDING
-//                            || regis.getStatus() == TeamStatus.APPROVED);
-//
-//            if (hasActiveRegistration) {
-//                throw new BadRequestException("Đội đã nộp đơn đăng ký tham gia cuộc thi (đang chờ duyệt hoặc đã duyệt), không thể chuyển quyền Leader vào lúc này!");
-//            }
-//        }
 
         //5. Check Student được chuyển quyền có thuộc Team ko
         Student newLeader = studentRepository.findByStudentCode(request.getStudentCode());
@@ -796,7 +791,7 @@ public class TeamServiceImpl implements TeamService {
     }
 
     @Override
-    public TeamResponse getTeamMember(Integer teamId, CustomUserDetails userDetails) {
+    public TeamDetailResponse getTeamMember(Integer teamId, CustomUserDetails userDetails) {
         //1. Check team có tồn tại không
         Team team = teamRepository.findById(teamId).orElseThrow(() -> new BadRequestException("Team không tồn tại"));
         //2. Check account đang đăng nhập có đag  là thành viên của Team đó hay không
@@ -805,17 +800,15 @@ public class TeamServiceImpl implements TeamService {
                 .orElseThrow(() -> new BadRequestException("Sinh viên hiện tại không thuộc Team này. Không được phép xem danh sách Team này."));
         //3. Lấy danh sách teamMember
         List<TeamMember> teamMembers = teamMemberRepository.findByTeam(team);
-        TeamResponse.MemberInfo leaderInfo = null;
-        List<TeamResponse.MemberInfo> officialMembers = new ArrayList<>();
+        TeamDetailResponse.MemberInfo leaderInfo = null;
+        List<TeamDetailResponse.MemberInfo> officialMembers = new ArrayList<>();
 
         for (TeamMember member : teamMembers) {
-            TeamResponse.MemberInfo info = new TeamResponse.MemberInfo(
+            TeamDetailResponse.MemberInfo info = new TeamDetailResponse.MemberInfo(
                     member.getStudent().getStudentCode(),
                     member.getStudent().getStudentName(),
                     member.getStudent().getAccount().getEmail()
             );
-
-            // Phân loại dựa vào bảng trung gian TeamMember
             if (member.getIsLeader()) {
                 leaderInfo = info;
             } else {
@@ -823,21 +816,28 @@ public class TeamServiceImpl implements TeamService {
             }
         }
 
-        // 4. Lấy danh sách các email lời mời đang chờ (PENDING)
-        List<Notification> pendingInvites = notificationRepository.findByTeamAndTypeAndStatus(team, NotificationType.TEAM_INVITATION, NotificationStatus.PENDING);
-        List<String> pendingEmails = new ArrayList<>();
-        for (Notification invite : pendingInvites) {
-            pendingEmails.add(invite.getAccount().getEmail());
+
+        // 4. Lấy danh sách các email đã gửi lời mời
+        List<TeamDetailResponse.InviteInfo> inviteInfo = new ArrayList<>();
+        // Chỉ khi người đang xem là LEADER  thì mới xem được lời mời
+        if (teamMember.getIsLeader()) {
+            List<Notification> invites = notificationRepository.findByTeamAndType(team, NotificationType.TEAM_INVITATION);
+            for (Notification invite : invites) {
+                inviteInfo.add(new TeamDetailResponse.InviteInfo(
+                        invite.getAccount().getEmail(),
+                        invite.getStatus().name()
+                ));
+            }
         }
 
         // 4. Đóng gói dữ liệu trả về cho Frontend
-        return new TeamResponse(
+        return new TeamDetailResponse(
                 team.getTeamId(),
                 team.getTeamName(),
                 leaderInfo,
                 officialMembers,
                 team.getCreateAt(),
-                pendingEmails
+                inviteInfo
         );
 
     }

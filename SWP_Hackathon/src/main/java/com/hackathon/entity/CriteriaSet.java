@@ -23,7 +23,7 @@ public class CriteriaSet {
     @Column(name = "CriteriaSet_Name", columnDefinition = "NVARCHAR(255)")
     private String criteriaSetName;
     @Column(name = "Max_Score", nullable = false)
-    private int maxScore;
+    private Integer maxScore;
 
     // 1 eventCoordinator - N Criteria_SET
     @ManyToOne(fetch = FetchType.LAZY)
