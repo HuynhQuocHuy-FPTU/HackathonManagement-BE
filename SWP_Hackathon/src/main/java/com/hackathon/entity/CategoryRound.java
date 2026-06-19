@@ -38,4 +38,8 @@ public class CategoryRound {
     @OneToMany(mappedBy = "categoryRound", cascade = CascadeType.ALL,orphanRemoval = true)
     private List<ExpertAssign> expertAssigns = new ArrayList<>();
 
+    //1 Category Round - N Participant
+    @OneToMany(mappedBy = "categoryRound", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Participant> participants;
+
 }

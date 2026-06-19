@@ -1,4 +1,5 @@
 package com.hackathon.dto.criteria;
+import com.hackathon.entity.enums.CriteriaType;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
@@ -17,8 +18,11 @@ public class EvaluationCriteriaRequestDTO {
     // Trọng số không được nhỏ hơn 0.0 (0%)
     @DecimalMin(value = "0.0", message = "Trọng số phải lớn hơn hoặc bằng 0")
     // Trọng số không được phép vượt quá 1.0 (100%)
-    @DecimalMax(value = "1.0", message = "Trọng số không được vượt quá 1.0 (100%)")
-    private Double customWeight;
+    @DecimalMax(value = "100.0", message = "Trọng số không được vượt quá 100%")
+    private BigDecimal customWeight;
+
+    @NotBlank(message = "Criteria type is required")
+    private CriteriaType type;
 
     @NotBlank(message = "Description is required")
     private String description;

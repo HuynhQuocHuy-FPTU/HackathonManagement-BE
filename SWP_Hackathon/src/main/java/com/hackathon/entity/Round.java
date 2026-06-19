@@ -37,6 +37,8 @@ public class Round {
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private RoundStatus status;
+    @Column(name = "Top_N", nullable = false)
+    private Integer topN;
 
     // 1 round - N category_round
     @OneToMany(mappedBy = "round", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -1,6 +1,7 @@
 package com.hackathon.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.hackathon.entity.enums.CriteriaType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,6 +27,10 @@ public class EvaluationCriteria {
     private BigDecimal weight;
     @Column(name = "Description", columnDefinition = "NVARCHAR(1000)")
     private String description;
+
+    @Column(name = "Criteria_Type")
+    @Enumerated(EnumType.STRING)
+    private CriteriaType type;
 
 
 //    @ManyToOne(fetch = FetchType.LAZY)

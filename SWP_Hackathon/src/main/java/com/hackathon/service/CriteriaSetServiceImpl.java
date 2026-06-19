@@ -11,9 +11,12 @@ import com.hackathon.repository.CriteriaSetRepository;
 import com.hackathon.repository.EventCoordinatorRepository;
 import com.hackathon.security.CustomUserDetails;
 import jakarta.transaction.Transactional;
+import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -62,6 +65,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
                             d.getCriteriaId(),
                             d.getCriteriaName(),
                             d.getWeight(),
+                            d.getCriteriaType(),
                             d.getDescription()
                     ))
                     .toList();
@@ -82,6 +86,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
                         cri.getCriteriaId(),
                         cri.getCriteriaName(),
                         cri.getWeight(),
+                        cri.getCriteriaType(),
                         cri.getDescription()
                 ))
                 .toList();
@@ -129,13 +134,22 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
 
         // 2.Tao 1 list de luu Criteria-detail
         List<CriteriaDetail> list = new ArrayList<>();
+        BigDecimal totalWeight = BigDecimal.ZERO;
+        BigDecimal hundred = new BigDecimal("100");
         for (CriteriaDetailRequestDTO dto : request.getCriteriaDetails()) {
             CriteriaDetail detail = new CriteriaDetail();
             detail.setCriteriaName(dto.getCriteriaName());
             detail.setWeight(dto.getWeight());
             detail.setDescription(dto.getDescription());
+            detail.setCriteriaType(dto.getType());
             detail.setCriteriaSet(criteriaSet);
+            detail.setCriteriaType(dto.getType());
             list.add(detail);
+            totalWeight.add(dto.getWeight());
+        }
+
+        if(totalWeight.compareTo(hundred) != 0){
+                throw new BadRequestException("Tổng trọng số phải bằng 100");
         }
         criteriaSet.setCriteriaDetails(list);
         // 3. Luu du lieu xuong DB
@@ -210,6 +224,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
             detail.setCriteriaName(dto.getCriteriaName());
             detail.setWeight(dto.getWeight());
             detail.setDescription(dto.getDescription());
+            detail.setCriteriaType(dto.getType());
             detail.setCriteriaSet(criteriaSet);
             updateList.add(detail);
         }
@@ -250,6 +265,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
             dto.setCriteriaId(detail.getCriteriaId());
             dto.setCriteriaName(detail.getCriteriaName());
             dto.setWeight(detail.getWeight());
+            dto.setType(detail.getCriteriaType());
             dto.setDescription(detail.getDescription());
             listDetails.add(dto);
         }
