@@ -1,6 +1,7 @@
 package com.hackathon.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.hackathon.entity.enums.CriteriaType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,7 +27,9 @@ public class CriteriaDetail {
     private BigDecimal weight;
     @Column(name = "Description" , columnDefinition = "NVARCHAR(1000)")
     private String description;
-
+    @Column(name = "Criteria_Type", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private CriteriaType criteriaType;
     // 1 Criteria_set - N Criteria Detail
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnore

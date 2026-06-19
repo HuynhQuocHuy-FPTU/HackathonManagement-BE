@@ -28,6 +28,8 @@ public class CreateRoundRequest {
     @NotBlank(message = "Advancement rule is required")
     private String advancementRule;
 
+    @NotNull(message = "Top N is required")
+    private Integer topN;
 
     @NotNull(message = "Criteria_Set is required")
     private Integer criteriaSetId;

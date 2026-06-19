@@ -38,4 +38,10 @@ public class Evaluation {
     // 1 Evaluation - N Evaluation Detail
     @OneToMany(mappedBy = "evaluation", cascade = CascadeType.ALL,orphanRemoval = true)
     private List<EvaluationDetail> evaluationDetails= new ArrayList<>();
+
+    // N Evaluation - 1 Participant
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
+    @JoinColumn(name = "Participant_ID", nullable = false)
+    private Participant participant;
 }

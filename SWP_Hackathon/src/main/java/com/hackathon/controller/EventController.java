@@ -3,6 +3,9 @@ package com.hackathon.controller;
 import com.hackathon.dto.event.CreateEventRequest;
 import com.hackathon.dto.event.EventResponse;
 import com.hackathon.dto.event.UpdateEventRequest;
+import com.hackathon.dto.expert.ExpertInfoResponse;
+import com.hackathon.service.ExpertService;
+import com.hackathon.service.ExpertServiceImpl;
 import com.hackathon.service.event.EventService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +21,9 @@ import java.util.List;
 public class EventController {
     @Autowired
     private EventService eventService;
+
+    @Autowired
+    private ExpertService expertService;
 
     // =========================================================
     // PUBLIC ENDPOINTS (Dành cho Guest/Student/Admin)
@@ -95,6 +101,11 @@ public class EventController {
     @GetMapping("/all")
     public ResponseEntity<List<EventResponse>> getAllEvent(){
         return ResponseEntity.ok(eventService.getAllEvent());
+    }
+
+    @GetMapping("/experts")
+    public ResponseEntity<List<ExpertInfoResponse>> getAllExperts(){
+        return ResponseEntity.ok(expertService.getAllExperts());
     }
 
 }
