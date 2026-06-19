@@ -3,6 +3,7 @@ package com.hackathon.controller;
 import com.hackathon.dto.event.EventResponse;
 import com.hackathon.dto.notification.NotificationResponse;
 import com.hackathon.dto.team.CreateTeamRequest;
+import com.hackathon.dto.team.TeamDetailResponse;
 import com.hackathon.dto.team.TeamRequest;
 import com.hackathon.dto.team.TeamResponse;
 import com.hackathon.exception.ApiResponse;
@@ -132,11 +133,11 @@ public class RegistrationController {
 
     // View Team
     @GetMapping("/members/{teamId}")
-    public ResponseEntity<ApiResponse<TeamResponse>> getTeamMembers(
+    public ResponseEntity<ApiResponse<TeamDetailResponse>> getTeamMembers(
              @PathVariable Integer teamId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        TeamResponse response = teamService.getTeamMember(teamId, userDetails);
+        TeamDetailResponse response = teamService.getTeamMember(teamId, userDetails);
         return ResponseEntity.ok(ApiResponse.success(response,"Xem thành viên trong đội thành công"));
     }
 
