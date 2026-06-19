@@ -1,6 +1,7 @@
 package com.hackathon.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.hackathon.entity.enums.RegistrationStatus;
 import com.hackathon.entity.enums.TeamStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -24,7 +25,7 @@ public class Registration {
     private LocalDateTime registrationDate;
     @Column(name="Status", nullable = false)
     @Enumerated(EnumType.STRING)
-    private TeamStatus status;
+    private RegistrationStatus status;
 
     //N Registration - 1 Team
     @ManyToOne(fetch = FetchType.LAZY)

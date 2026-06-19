@@ -3,11 +3,16 @@ package com.hackathon.controller;
 import com.hackathon.dto.event.CreateEventRequest;
 import com.hackathon.dto.event.EventResponse;
 import com.hackathon.dto.event.UpdateEventRequest;
+import com.hackathon.dto.team.TeamResponse;
+import com.hackathon.exception.ApiResponse;
+import com.hackathon.security.CustomUserDetails;
+import com.hackathon.service.RegistrationEventService;
 import com.hackathon.service.event.EventService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,6 +23,8 @@ import java.util.List;
 public class EventController {
     @Autowired
     private EventService eventService;
+    @Autowired
+    private RegistrationEventService registrationEventService;
 
     // =========================================================
     // PUBLIC ENDPOINTS (Dành cho Guest/Student/Admin)
@@ -45,42 +52,45 @@ public class EventController {
     @PostMapping
     public ResponseEntity<EventResponse> createEvent(@Valid @RequestBody CreateEventRequest request) {
         EventResponse response = eventService.createEvent(request);
-        return new ResponseEntity<>(response,HttpStatus.CREATED);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @PutMapping("/publish/{eventId}")
-    public ResponseEntity<String> publishEvent(@PathVariable Integer eventId){
+    public ResponseEntity<String> publishEvent(@PathVariable Integer eventId) {
         eventService.publishEvent(eventId);
         return ResponseEntity.ok("Sự kiện đã được công khai thành công");
     }
+
     @PutMapping("/delete/{eventId}")
-    public ResponseEntity<String> deleteEvent(@PathVariable Integer eventId){
+    public ResponseEntity<String> deleteEvent(@PathVariable Integer eventId) {
         eventService.deleteEvent(eventId);
         return ResponseEntity.ok("Sự kiện đã được xóa thành công và chuyển vào thùng rác");
     }
+
     @PutMapping("/update/{eventId}")
-    public ResponseEntity<EventResponse> updateEvent(@Valid @RequestBody UpdateEventRequest request, @PathVariable Integer eventId){
+    public ResponseEntity<EventResponse> updateEvent(@Valid @RequestBody UpdateEventRequest request, @PathVariable Integer eventId) {
         EventResponse response = eventService.updateEvent(request, eventId);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/trash")
-    public ResponseEntity<List<EventResponse>> getDeletedEvents(){
+    public ResponseEntity<List<EventResponse>> getDeletedEvents() {
         List<EventResponse> responses = eventService.getDeletedEvents();
         return ResponseEntity.ok(responses);
     }
 
     @PutMapping("/restore/{eventId}")
-    public ResponseEntity<String> restoreEvent(@PathVariable Integer eventId){
+    public ResponseEntity<String> restoreEvent(@PathVariable Integer eventId) {
         eventService.restoreEvent(eventId);
         return ResponseEntity.ok("Khôi phục event thành công! Trạng thái đã được cập nhật");
     }
 
     @DeleteMapping("/permanently/{eventId}")
-    public ResponseEntity<String> permanentlyDeleteEvent(@PathVariable Integer eventId){
+    public ResponseEntity<String> permanentlyDeleteEvent(@PathVariable Integer eventId) {
         eventService.permanentlyDeleteEvent(eventId);
         return ResponseEntity.ok("Đã xóa vĩnh viễn event");
     }
+
     @GetMapping("/search")
     public ResponseEntity<List<EventResponse>> searchEvents(@RequestParam(required = false) String name) {
 
@@ -93,8 +103,14 @@ public class EventController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<EventResponse>> getAllEvent(){
+    public ResponseEntity<List<EventResponse>> getAllEvent() {
         return ResponseEntity.ok(eventService.getAllEvent());
     }
 
+    // Xem ds Team phe duyet
+    @GetMapping("/{eventId}/approveTeam")
+    public ResponseEntity<ApiResponse<List<TeamResponse>>> getTeamsForApproval(@PathVariable Integer eventId, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        List<TeamResponse> list = registrationEventService.getTeamsForApproval(eventId,userDetails);
+        return ResponseEntity.ok(ApiResponse.success(list,"Lấy danh sách phê duyệt Team thành công."));
+    }
 }

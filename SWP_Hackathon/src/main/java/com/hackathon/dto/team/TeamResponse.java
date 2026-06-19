@@ -1,5 +1,6 @@
 package com.hackathon.dto.team;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.hackathon.entity.enums.NotificationStatus;
 import lombok.*;
 
@@ -11,6 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class TeamResponse {
     private Integer teamId;
     private String teamName;
@@ -22,10 +24,20 @@ public class TeamResponse {
     @Getter
     @Setter
     @AllArgsConstructor
+    @Builder
     public static class MemberInfo {
         private String studentCode;
         private String fullName;
         private String email;
+        private String major;
+    }
+    @Getter
+    @Setter
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class EventInfo {
+        private Integer eventId;
+        private String eventName;
     }
 
 }
