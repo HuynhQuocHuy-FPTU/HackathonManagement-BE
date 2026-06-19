@@ -1,5 +1,6 @@
 package com.hackathon.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hackathon.entity.enums.ParticipantStatus;
 import jakarta.persistence.*;
 
@@ -30,7 +31,9 @@ public class Participant {
     @OneToOne
     private Registration registration;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
+    @JoinColumn(name = "CategoryRound_ID")
     private CategoryRound categoryRound;
 
     @OneToMany(mappedBy = "participant", cascade = CascadeType.ALL, orphanRemoval = true)

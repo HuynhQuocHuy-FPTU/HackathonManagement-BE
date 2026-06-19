@@ -46,10 +46,10 @@ public class EvaluationCriteriaServiceImpl implements EvaluationCriteriaService 
         EvaluationCriteria evaluationCriteria = new EvaluationCriteria();
         evaluationCriteria.setRound(round);
         evaluationCriteria.setCriteriaName(tempCriteriaDetail.getCriteriaName());
-
         //custom
-        evaluationCriteria.setWeight(BigDecimal.valueOf(request.getCustomWeight()));
+        evaluationCriteria.setWeight(request.getCustomWeight());
         evaluationCriteria.setDescription(request.getDescription());
+        evaluationCriteria.setType(request.getType());
 
         //lưu xuống DB
         EvaluationCriteria saveEvaluationCriteria = evaluationCriteriaRepository.save(evaluationCriteria);
@@ -64,6 +64,7 @@ public class EvaluationCriteriaServiceImpl implements EvaluationCriteriaService 
                 .evaluationCriteriaId(evaluationCriteria.getEvaluationCriteriaId())
                 .customWeight(evaluationCriteria.getWeight())
                 .criteriaDetailName(evaluationCriteria.getCriteriaName())
+                .type(evaluationCriteria.getType())
                 .description(evaluationCriteria.getDescription())
                 .build();
     }

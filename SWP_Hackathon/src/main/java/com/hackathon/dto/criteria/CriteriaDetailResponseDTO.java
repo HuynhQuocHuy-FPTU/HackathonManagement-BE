@@ -1,5 +1,6 @@
 package com.hackathon.dto.criteria;
 
+import com.hackathon.entity.enums.CriteriaType;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -25,6 +26,8 @@ public class CriteriaDetailResponseDTO {
     @NotBlank(message = "Weight is required")
     @Min(value = 0, message = "Weight must be greater than or equal to 0")
     private BigDecimal weight;
+
+    private CriteriaType type;
 
     private String description;
 
