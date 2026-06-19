@@ -23,7 +23,6 @@ import java.util.*;
 @RequiredArgsConstructor
 
 public class TeamServiceImpl implements TeamService {
-    private final HackathonEventRepository eventRepository;
     private final TeamRepository teamRepository;
     private final AccountRepository accRepository;
     private final TeamMemberRepository teamMemberRepository;
@@ -36,7 +35,6 @@ public class TeamServiceImpl implements TeamService {
     private static final long INVITATION_EXPIRE_HOURS = 3;
 
 
-
     // Nếu Đội đã nộp đơn và thời gian hiện tại cách thời gian đk event dưới 24 giờ -> CHẶN
     // Check đơn đăng ký và thời hạn 24h của Team dựa trên Event đã gửi đơn.
     // Nếu như chưa dk thì có quyền thay đổi tùy thích
@@ -46,7 +44,7 @@ public class TeamServiceImpl implements TeamService {
             boolean isPastDeadline = registrations.stream()
                     .anyMatch(regis -> {
                         // Chỉ cần đơn đó hợp lệ (PENDING/APPROVED)
-                        if (regis.getStatus() == TeamStatus.PENDING || regis.getStatus() == TeamStatus.APPROVED) {
+                        if (regis.getStatus() == RegistrationStatus.PENDING || regis.getStatus() == RegistrationStatus.APPROVED) {
                             HackathonEvent event = regis.getHackathonEvent();
                             if (event != null && event.getRegistrationDeadline() != null) {
                                 // CHECK: Nếu thời gian hiện tại đã vượt qua (Deadline - LOCK_HOURS)
@@ -140,10 +138,11 @@ public class TeamServiceImpl implements TeamService {
         List<TeamResponse.MemberInfo> listMember = new ArrayList<>();
         List<String> invitedEmails = new ArrayList<>();
         //5. Tạo object, save info of leader vao ListMember
-        TeamResponse.MemberInfo leaderInfo = new TeamResponse.MemberInfo(
-                leaderAccount.getStudent().getStudentCode()
-                , leaderAccount.getStudent().getStudentName()
-                , leaderAccount.getEmail());
+        TeamResponse.MemberInfo leaderInfo = TeamResponse.MemberInfo.builder()
+                .studentCode(leaderAccount.getStudent().getStudentCode())
+                .fullName(leaderAccount.getStudent().getStudentName())
+                .email(leaderAccount.getEmail())
+                .major(leaderAccount.getStudent().getMajor()).build();
         listMember.add(leaderInfo);
 
         //6. Tao loi moi gui toi cac thah vien
@@ -284,7 +283,7 @@ public class TeamServiceImpl implements TeamService {
 
         }
         //8. Return TeamResponse
-        return  TeamResponse.builder()
+        return TeamResponse.builder()
                 .teamId(team.getTeamId())
                 .teamName(team.getTeamName())
                 .createAt(team.getCreateAt())
@@ -324,7 +323,7 @@ public class TeamServiceImpl implements TeamService {
         List<Registration> registration = registrationRepository.findByTeam(team);
         if (registration != null && !registration.isEmpty()) {
             boolean hasActiveRegister = registration.stream().anyMatch(regis ->
-                    regis.getStatus().equals(TeamStatus.APPROVED) || regis.getStatus().equals(TeamStatus.PENDING));
+                    regis.getStatus().equals(RegistrationStatus.APPROVED) || regis.getStatus().equals(RegistrationStatus.PENDING));
             if (hasActiveRegister) {
                 throw new BadRequestException("Bạn không được phép thay đổi tên nhóm khi đã gửi đơn đăng ký Team.");
             }
@@ -807,7 +806,8 @@ public class TeamServiceImpl implements TeamService {
             TeamDetailResponse.MemberInfo info = new TeamDetailResponse.MemberInfo(
                     member.getStudent().getStudentCode(),
                     member.getStudent().getStudentName(),
-                    member.getStudent().getAccount().getEmail()
+                    member.getStudent().getAccount().getEmail(),
+                    member.getStudent().getMajor()
             );
             if (member.getIsLeader()) {
                 leaderInfo = info;
@@ -839,72 +839,6 @@ public class TeamServiceImpl implements TeamService {
                 team.getCreateAt(),
                 inviteInfo
         );
-
-    }
-
-    @Override
-    @Transactional
-    public void registerEvent(Integer eventId, CustomUserDetails userDetails) {
-        // Check thời hạn đăng ký cuộc thi
-        HackathonEvent event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin về sự kiện này."));
-        if (LocalDateTime.now().isBefore(event.getStartDate())) {
-            throw new BadRequestException("Cuộc thi chưa mở cổng đăng ký! Vui lòng quay lại sau.");
-        }
-        if (LocalDateTime.now().isAfter(event.getEndDate())) {
-            throw new BadRequestException("Đã quá hạn đăng ký tham gia cuộc thi này!");
-        }
-
-        //1. Check Team
-        //2. Check leader
-        Account currentAccount = userDetails.getAccount();
-        TeamMember leaderRecord = teamMemberRepository.findByStudentAndIsLeader(userDetails.getAccount().getStudent(), true)
-                .orElseThrow(() -> new BadRequestException("Bạn không phải là Leader của đội nào, không thể đăng ký!"));
-
-        Team team = leaderRecord.getTeam();
-        if (leaderRecord.getStudent().getStudentId() != (currentAccount.getStudent().getStudentId())) {
-            throw new BadRequestException("Bạn không phải là Leader, bạn không được phép đăng ký event");
-
-        }
-
-        //3. Check status hiện tại của Team(Draf, pending, approve)
-        Optional<Registration> registrationEvent = registrationRepository.findByTeamAndHackathonEvent_EventId(team, event.getEventId());
-
-        if (registrationEvent.isPresent()) {
-            Registration reg = registrationEvent.get();
-
-            if (reg.getStatus().equals(TeamStatus.PENDING)) {
-                throw new BadRequestException("Đội của bạn đã gửi đơn cho sự kiện này rồi. Xin hãy chờ phê duyệt!");
-            }
-            if (reg.getStatus().equals(TeamStatus.APPROVED)) {
-                throw new BadRequestException("Đội của bạn đã được phê duyệt cho sự kiện này rồi.");
-            }
-            if (team.getStatus().equals(TeamStatus.REJECTED)) {
-                throw new BadRequestException("Đội của bạn đã bị từ chối.Vui lòng kiểm tra lại thông tin đăng ký.");
-            }
-        }
-        //4.Check số lượng thành viên
-        int countMember = team.getTeamSize();
-        if (countMember < event.getMinTeamSize()) {
-            throw new BadRequestException("Bạn không thể đăng ký cuộc thi. Số lượng thành viên tối thiểu bắt buộc phải lớn hơn hoặc bằng " + event.getMinTeamSize() +
-                    " .Thành viên chính thức hiện tại bạn đang sở hữu là " + countMember);
-        }
-        if (countMember > event.getMaxTeamSize()) {
-            throw new BadRequestException("Bạn không thể đăng ký cuộc thi. Số lượng thành viên tối đa của cuộc thi này là: " + event.getMaxTeamSize() +
-                    " .Thành viên chính thức hiện tại bạn đang sở hữu là " + countMember);
-        }
-
-        // 5. Tạo bảng registration để lưu thông tin đăng ký
-        Registration registration = new Registration();
-        registration.setHackathonEvent(event);
-        registration.setTeam(team);
-        registration.setRegistrationDate(LocalDateTime.now());
-        registration.setStatus(TeamStatus.PENDING);
-        registrationRepository.save(registration);
-
-        team.setStatus(TeamStatus.PENDING);
-        teamRepository.save(team);
-
 
     }
 

@@ -27,6 +27,7 @@ public class TeamDetailResponse {
         private String studentCode;
         private String fullName;
         private String email;
+        private String major;
     }
 
     @Getter
