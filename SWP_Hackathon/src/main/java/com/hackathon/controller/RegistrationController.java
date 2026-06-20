@@ -3,11 +3,13 @@ package com.hackathon.controller;
 import com.hackathon.dto.event.EventResponse;
 import com.hackathon.dto.notification.NotificationResponse;
 import com.hackathon.dto.team.CreateTeamRequest;
+import com.hackathon.dto.team.TeamDetailResponse;
 import com.hackathon.dto.team.TeamRequest;
 import com.hackathon.dto.team.TeamResponse;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.NotificationService;
+import com.hackathon.service.RegistrationEventService;
 import com.hackathon.service.TeamService;
 import com.hackathon.service.event.EventService;
 import jakarta.validation.Valid;
@@ -17,17 +19,16 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/api")
 public class RegistrationController {
     @Autowired
-    private EventService eventService;
-    @Autowired
     private TeamService teamService;
     @Autowired
     private NotificationService notificationService;
+    @Autowired
+    private RegistrationEventService registrationEventService;
 
 //    //View General Information about hackathon
 //    @GetMapping("/events")
@@ -132,11 +133,11 @@ public class RegistrationController {
 
     // View Team
     @GetMapping("/members/{teamId}")
-    public ResponseEntity<ApiResponse<TeamResponse>> getTeamMembers(
+    public ResponseEntity<ApiResponse<TeamDetailResponse>> getTeamMembers(
              @PathVariable Integer teamId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        TeamResponse response = teamService.getTeamMember(teamId, userDetails);
+        TeamDetailResponse response = teamService.getTeamMember(teamId, userDetails);
         return ResponseEntity.ok(ApiResponse.success(response,"Xem thành viên trong đội thành công"));
     }
 
@@ -146,7 +147,7 @@ public class RegistrationController {
     public ResponseEntity<ApiResponse<Void>>registrationEvent(@Valid@PathVariable Integer eventId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        teamService.registerEvent(eventId, userDetails);
+        registrationEventService.registerEvent(eventId, userDetails);
         return ResponseEntity.ok(ApiResponse.success(null,"Đăng ký sự kiện thành công"));
     }
 

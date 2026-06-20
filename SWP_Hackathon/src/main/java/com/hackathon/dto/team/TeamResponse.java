@@ -1,9 +1,8 @@
 package com.hackathon.dto.team;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.hackathon.entity.enums.NotificationStatus;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -12,25 +11,33 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class TeamResponse {
     private Integer teamId;
     private String teamName;
     private MemberInfo leader; // Thông tin riêng của Leader
     private List<MemberInfo> members;// Danh sách các thành viên còn lại
     private LocalDateTime createAt;
-    private List<String> invitedEmails;      // PENDING INVITES
-
-
+    private List<String> invitedEmails;
 
     @Getter
     @Setter
     @AllArgsConstructor
+    @Builder
     public static class MemberInfo {
         private String studentCode;
         private String fullName;
         private String email;
-//        private boolean isLeader;
-
-
+        private String major;
     }
+    @Getter
+    @Setter
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class EventInfo {
+        private Integer eventId;
+        private String eventName;
+    }
+
 }

@@ -10,5 +10,5 @@ import java.util.List;
 
 public interface NotificationRepository extends JpaRepository<Notification,Long> {
     List<Notification> findByTeam(Team team);
-    List<Notification> findByTeamAndTypeAndStatus(Team team, NotificationType type, NotificationStatus status);
+    List<Notification> findByTeamAndType(Team team, NotificationType type);
 }
