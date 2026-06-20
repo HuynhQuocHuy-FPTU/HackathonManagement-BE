@@ -4,6 +4,7 @@ import com.hackathon.dto.event.CreateEventRequest;
 import com.hackathon.dto.event.EventResponse;
 import com.hackathon.dto.event.UpdateEventRequest;
 import com.hackathon.dto.expert.ExpertInfoResponse;
+import com.hackathon.dto.registration.RegistrationResponse;
 import com.hackathon.dto.team.TeamResponse;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
@@ -25,7 +26,6 @@ import java.util.List;
 public class EventController {
     @Autowired
     private EventService eventService;
-
     @Autowired
     private ExpertService expertService;
     @Autowired
@@ -114,10 +114,6 @@ public class EventController {
         return ResponseEntity.ok(expertService.getAllExperts());
     }
 
-    @GetMapping("/{eventId}/approveTeam")
-    public ResponseEntity<ApiResponse<List<TeamResponse>>> getTeamsForApproval(@PathVariable Integer eventId, @AuthenticationPrincipal CustomUserDetails userDetails) {
-        List<TeamResponse> list = registrationEventService.getTeamsForApproval(eventId,userDetails);
-        return ResponseEntity.ok(ApiResponse.success(list,"Lấy danh sách phê duyệt Team thành công."));
-    }
+
 
 }

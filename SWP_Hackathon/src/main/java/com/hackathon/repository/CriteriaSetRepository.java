@@ -9,6 +9,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface CriteriaSetRepository extends JpaRepository<CriteriaSet, Integer> {
     CriteriaSet findByCriteriaSetId(Integer criteriaSetId);
-
+boolean existsByCriteriaSetNameAndCriteriaSetIdNot(String name, Integer criteriaSetId);
     boolean existsByCriteriaSetName(String  name);
 }

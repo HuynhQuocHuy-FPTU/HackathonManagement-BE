@@ -18,6 +18,5 @@ public class CriteriaSetResponseDTO {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<CriteriaDetailResponseDTO> criteriaDetails;
-    private String criteriaName;
 
 }
