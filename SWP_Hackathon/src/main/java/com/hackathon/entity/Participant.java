@@ -3,10 +3,15 @@ package com.hackathon.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hackathon.entity.enums.ParticipantStatus;
 import jakarta.persistence.*;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
-
+@NoArgsConstructor
+@AllArgsConstructor
+@Setter
+@Getter
+@Builder
 @Entity
 public class Participant {
     @Id

@@ -1,8 +1,10 @@
 package com.hackathon.service;
 
+import com.hackathon.dto.TeamSelectionDTO;
 import com.hackathon.dto.team.TeamResponse;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.AccountRole;
+import com.hackathon.entity.enums.ParticipantStatus;
 import com.hackathon.entity.enums.RegistrationStatus;
 import com.hackathon.entity.enums.TeamStatus;
 import com.hackathon.exception.BadRequestException;
@@ -25,6 +27,7 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
     private final RegistrationRepository registrationRepository;
     private final TeamRepository teamRepository;
     private final AccountRepository accountRepository;
+    private final ParticipantService participantService;
     //    private final NotificationRepository notificationRepository;
 
     //1. Leader đại diện Team đăng ký cuộc thi
@@ -34,10 +37,10 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
         // Check thời hạn đăng ký cuộc thi
         HackathonEvent event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin về sự kiện này."));
-        if (LocalDateTime.now().isBefore(event.getStartDate())) {
-            throw new BadRequestException("Cuộc thi chưa mở cổng đăng ký! Vui lòng quay lại sau.");
-        }
-        if (LocalDateTime.now().isAfter(event.getEndDate())) {
+//        if (LocalDateTime.now().isBefore(event.getStartDate())) {
+//            throw new BadRequestException("Cuộc thi chưa mở cổng đăng ký! Vui lòng quay lại sau.");
+//        }
+        if (LocalDateTime.now().isAfter(event.getRegistrationDeadline())) {
             throw new BadRequestException("Đã quá hạn đăng ký tham gia cuộc thi này!");
         }
 
@@ -142,5 +145,54 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
             return pendingList;
     }
 
+    //Coordinator duyệt Registration — chuyển trạng thái sang APPROVED.
 
+    @Override
+    @Transactional
+    public Registration approveRegistration(Integer registrationId) {
+        Registration registration = registrationRepository.findById(registrationId)
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy Registration: " + registrationId));
+
+        if (registration.getStatus() != RegistrationStatus.PENDING) {
+            throw new BadRequestException("Chỉ có thể duyệt Registration ở trạng thái PENDING");
+        }
+        //Cập nhật trạng thái Registration
+        registration.setStatus(RegistrationStatus.APPROVED);
+        registration = registrationRepository.save(registration);
+
+        //cập nhật trạng thái của team
+        Team team = registration.getTeam();
+        if (team != null) {
+            team.setStatus(TeamStatus.BUSY);
+        }
+
+        //tạo participant lưu các team đã được approve trước
+        participantService.saveParticipant(registration);
+
+        return registration;
+    }
+
+    //Coordinator từ chối Registration - Chuyển trạng thái sang REJECTED
+    @Override
+    @Transactional
+    public Registration rejectRegistration(Integer registrationId) {
+        Registration registration = registrationRepository.findById(registrationId)
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy Registration: " + registrationId));
+
+        if (registration.getStatus() != RegistrationStatus.PENDING) {
+            throw new BadRequestException("Chỉ có thể từ chối Registration ở trạng thái PENDING");
+        }
+
+        registration.setStatus(RegistrationStatus.REJECTED);
+        registration = registrationRepository.save(registration);
+        return registration;
+    }
+
+    @Override
+    public List<TeamSelectionDTO> getApprovedRegistrations(Integer eventId) {
+        //1. Lấy danh sách registration đã approve
+        List<Registration> registrations =  registrationRepository.findByHackathonEvent_EventIdAndStatus(eventId, RegistrationStatus.APPROVED);
+        //2. Map sang DTO
+        return registrations.stream().map(reg -> new TeamSelectionDTO(reg.getRegistrationId(), reg.getTeam().getTeamName())).toList();
+    }
 }

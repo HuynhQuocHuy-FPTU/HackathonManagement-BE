@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Component
 public interface RoundRepository extends JpaRepository<Round, Integer> {
@@ -19,4 +20,6 @@ public interface RoundRepository extends JpaRepository<Round, Integer> {
     List<Round> findByStatus(RoundStatus status);
 
     List<Round> findByStatusNot(RoundStatus status);
+
+    Optional<Round> findFirstByHackathonEvent_EventIdOrderByOrderIndexAsc(int hackathonEventEventId);
 }

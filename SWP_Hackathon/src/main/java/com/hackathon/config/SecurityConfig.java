@@ -45,34 +45,57 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         //các API công khai ai cũng vào được
                         .requestMatchers(
-                                "/api/account/**",   // N Them de test
-                                "/api/account/login",      //  N them de test
-                                "/api/account/resend-verification", //N them
+//                                "/api/account/**",   // N Them de test
+//                                "/api/account/login",      //  N them de test
+//                                "/api/account/resend-verification", //N them
+//                                "/api/notifications/**",
+//                                "/api/events",//N
+//                                "/api/events/*",//N
+//                                "/error",
+//                                "/verify-email",
+//                                "/swagger-ui/**",
+//                                "/swagger-ui.html",
+//                                "/v3/api-docs/**",
+//                                "/api/events/public/**",
+//                                "/api/events/*/detail",
+//                                "/api/events/all"
+                                "/api/account/**",
                                 "/api/notifications/**",
-                                "/api/events",//N
-                                "/api/events/*",//N
-                                "/error",
-                                "/verify-email",
+                                "/api/events/all",
+                                "/api/events/detail/**",
+                                "/api/events/search-all",
                                 "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/v3/api-docs/**",
-                                "/api/events/public/**",
-                                "/api/events/*/detail",
-                                "/api/events/all"
+                                "/v3/api-docs/**"
                         ).permitAll()
-                        //CriteriaSet chỉ có Coordinator là người có quyền truy cập
-                        .requestMatchers("/api/criteriaSet/**")
-                        .hasRole("EVENTCOORDINATOR")
-                        .requestMatchers("/api/notifications/**").authenticated()
-                        .requestMatchers("/api/events/registration/**").hasRole("STUDENT")
-                        //Chỉ event coordinator mới có quyền tạo event
-                        .requestMatchers(HttpMethod.POST, "/api/events").hasRole("EVENTCOORDINATOR")
-                        .requestMatchers(HttpMethod.PUT, "/api/events/**").hasRole("EVENTCOORDINATOR")
-                        .requestMatchers(HttpMethod.DELETE, "/api/events/**").hasRole("EVENTCOORDINATOR")
-                        .requestMatchers(HttpMethod.PATCH, "/api/events/**").hasRole("EVENTCOORDINATOR")
+//                        //CriteriaSet chỉ có Coordinator là người có quyền truy cập
+//                        .requestMatchers("/api/criteriaSet/**")
+//                        .hasRole("EVENTCOORDINATOR")
+//                        .requestMatchers("/api/notifications/**").authenticated()
+//                        .requestMatchers("/api/events/registration/**").hasRole("STUDENT")
+//                        //Chỉ event coordinator mới có quyền tạo event
+//                        .requestMatchers(HttpMethod.POST, "/api/events").hasRole("EVENTCOORDINATOR")
+//                        .requestMatchers(HttpMethod.PUT, "/api/events/**").hasRole("EVENTCOORDINATOR")
+//                        .requestMatchers(HttpMethod.DELETE, "/api/events/**").hasRole("EVENTCOORDINATOR")
+//                        .requestMatchers(HttpMethod.PATCH, "/api/events/**").hasRole("EVENTCOORDINATOR")
+//                        //admin
+//                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+//                        .anyRequest().authenticated()
+                                .requestMatchers("/api/criteriaSet/**").hasRole("EVENTCOORDINATOR")
+                                .requestMatchers(HttpMethod.PATCH, "/api/events/*/approve", "/api/events/*/reject").hasRole("EVENTCOORDINATOR")
+                                .requestMatchers(HttpMethod.GET, "/api/events/*/approved-teams").hasRole("EVENTCOORDINATOR")
+                                .requestMatchers(HttpMethod.PUT, "/api/events/*/draw-results").hasRole("EVENTCOORDINATOR")
+                                .requestMatchers(HttpMethod.POST, "/api/events/**").hasRole("EVENTCOORDINATOR")
+                                .requestMatchers(HttpMethod.PUT, "/api/events/**").hasRole("EVENTCOORDINATOR")
+                                .requestMatchers(HttpMethod.DELETE, "/api/events/**").hasRole("EVENTCOORDINATOR")
+                                .requestMatchers(HttpMethod.PATCH, "/api/events/**").hasRole("EVENTCOORDINATOR")
 
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .anyRequest().authenticated()
+                                // 3. API dành cho Admin
+                                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                                // 4. API dành cho Student
+                                .requestMatchers("/api/teams/**").hasRole("STUDENT")
+
+                                .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
