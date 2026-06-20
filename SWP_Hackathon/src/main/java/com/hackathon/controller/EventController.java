@@ -39,7 +39,7 @@ public class EventController {
         return ResponseEntity.ok(eventService.searchPublicEvents(name));
     }
 
-    @GetMapping("/{eventId}/detail")
+    @GetMapping("/detail/{eventId}")
     public ResponseEntity<EventResponse> getPublicEventDetail(@PathVariable Integer eventId) {
         return ResponseEntity.ok(eventService.getEventDetail(eventId));
     }
