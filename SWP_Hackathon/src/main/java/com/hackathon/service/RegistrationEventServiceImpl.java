@@ -34,10 +34,7 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
         // Check thời hạn đăng ký cuộc thi
         HackathonEvent event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin về sự kiện này."));
-        if (LocalDateTime.now().isBefore(event.getStartDate())) {
-            throw new BadRequestException("Cuộc thi chưa mở cổng đăng ký! Vui lòng quay lại sau.");
-        }
-        if (LocalDateTime.now().isAfter(event.getEndDate())) {
+        if (LocalDateTime.now().isAfter(event.getRegistrationDeadline())) {
             throw new BadRequestException("Đã quá hạn đăng ký tham gia cuộc thi này!");
         }
 
@@ -70,7 +67,8 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
             }
         }
         //4.Check số lượng thành viên
-        int countMember = team.getTeamSize();
+        int countMember = team.getTeamSize() ;
+
         if (countMember < event.getMinTeamSize()) {
             throw new BadRequestException("Bạn không thể đăng ký cuộc thi. Số lượng thành viên tối thiểu bắt buộc phải lớn hơn hoặc bằng " + event.getMinTeamSize() +
                     " .Thành viên chính thức hiện tại bạn đang sở hữu là " + countMember);
@@ -79,6 +77,7 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
             throw new BadRequestException("Bạn không thể đăng ký cuộc thi. Số lượng thành viên tối đa của cuộc thi này là: " + event.getMaxTeamSize() +
                     " .Thành viên chính thức hiện tại bạn đang sở hữu là " + countMember);
         }
+
 
         // 5. Tạo bảng registration để lưu thông tin đăng ký
         Registration registration = new Registration();

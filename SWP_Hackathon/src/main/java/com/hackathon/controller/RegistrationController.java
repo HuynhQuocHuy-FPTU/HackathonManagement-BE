@@ -1,6 +1,5 @@
 package com.hackathon.controller;
 
-import com.hackathon.dto.event.EventResponse;
 import com.hackathon.dto.notification.NotificationResponse;
 import com.hackathon.dto.team.CreateTeamRequest;
 import com.hackathon.dto.team.TeamDetailResponse;
@@ -11,7 +10,6 @@ import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.NotificationService;
 import com.hackathon.service.RegistrationEventService;
 import com.hackathon.service.TeamService;
-import com.hackathon.service.event.EventService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -29,38 +27,6 @@ public class RegistrationController {
     private NotificationService notificationService;
     @Autowired
     private RegistrationEventService registrationEventService;
-
-//    //View General Information about hackathon
-//    @GetMapping("/events")
-//    public ResponseEntity<ApiResponse<List<EventResponse>>> getAllEvent() {
-//        List<EventResponse> list = eventService.getAllEvent();
-//        return ResponseEntity.ok(ApiResponse.success(list, "Get all events thành công"));
-//    }
-//
-//
-//    //View all information detail about hackathon(click Event show details)
-//    @GetMapping("/events/{eventId}")
-//    public ResponseEntity<ApiResponse<EventResponse>> getEventDetail(@PathVariable Integer eventId) {
-//        EventResponse list = eventService.getEventDetail(eventId);
-//        return ResponseEntity.ok(ApiResponse.success(list, "Get all event details thành công"));
-//    }
-//
-//    //Search HackathonEvent By EventName
-//    @GetMapping("/events/search")
-//    public ResponseEntity<ApiResponse<List<EventResponse>>> searchHackathonEvent(@RequestParam("eventName") String name) {
-//        List<EventResponse> list = eventService.searchByEventName(name);
-//        if (list.isEmpty()) {
-//            return ResponseEntity.ok(
-//                    ApiResponse.success(list, "Không tìm thấy sự kiện phù hợp")
-//            );
-//        }
-//
-//        return ResponseEntity.ok(
-//                ApiResponse.success(list, "Tìm kiếm thành công")
-//        );
-//    }
-
-
 
     //Create Team
     @PostMapping("/events/registration/teams")
@@ -101,6 +67,7 @@ public class RegistrationController {
 
     //     View Invite
     @GetMapping("/notifications/{notiId}")
+    @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<NotificationResponse>> getNotificationDetail(
             @PathVariable("notiId") Long notiId, @AuthenticationPrincipal CustomUserDetails userDetails) {
         NotificationResponse data = notificationService.getInfoNotificationInvite(userDetails, notiId);
@@ -110,7 +77,7 @@ public class RegistrationController {
     }
     // Accept invite
 
-    @GetMapping("/notifications/{notiId}/accept")
+    @PostMapping("/notifications/{notiId}/accept")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<String>> acceptInvitation(
             @PathVariable Long notiId,
@@ -120,7 +87,7 @@ public class RegistrationController {
     }
 
     //  Reject Invite
-    @GetMapping("/notifications/{notiId}/reject")
+    @PostMapping("/notifications/{notiId}/reject")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<String>> rejectInvitation(
             @PathVariable Long notiId,

@@ -25,16 +25,31 @@ public class NotificationServiceImpl implements NotificationService {
         Notification listNoti = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin về lời mời."));
 
-//        //2. Check account này có khớp vs account được nhận thông báo không
-//        Account currentUser = userDetails.getAccount();
-//        if (!currentUser.getEmail().equals(listNoti.getAccount().getEmail())) {
-//            throw new BadRequestException("Bạn không có quyền truy cập vào thông báo này, vì tài khoản đăng nhập không hợp lệ");
-//        }
-        //3. Check lời mời này được  phản hồi chưa
-        if (listNoti.getStatus().equals(NotificationStatus.ACCEPTED) || listNoti.getStatus().equals(NotificationStatus.REJECTED)) {
-            throw new BadRequestException("Yêu cầu đã được xử lý, bạn không được phép truy cập.");
+        // 2. Kiểm tra Role của người dùng hiện tại
+        boolean isStudent = userDetails.getAuthorities().stream()
+                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_STUDENT"));
+
+        boolean isCoordinator = userDetails.getAuthorities().stream()
+                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_COORDINATOR"));
+
+        Account currentUser = userDetails.getAccount();
+        // 3. kiểm tra quyền truy cập
+        if (isStudent) {
+            // Nếu là STUDENT: Bắt buộc tài khoản nhận thông báo phải khớp với tài khoản đang đăng nhập
+            if (!currentUser.getEmail().equals(listNoti.getAccount().getEmail())) {
+                throw new BadRequestException("Bạn không có quyền truy cập vào thông báo này.");
+            }
+
+            // Nếu là STUDENT: Lời mời đã xử lý thì không cho vào nữa để tránh bấm lại
+            if (listNoti.getStatus() == NotificationStatus.ACCEPTED || listNoti.getStatus() == NotificationStatus.REJECTED) {
+                throw new BadRequestException("Yêu cầu này đã được xử lý trước đó.");
+            }
+
+        } else if (isCoordinator) {
+            // Nếu là COORDINATOR: Được quyền xem TẤT CẢ thông báo để hỗ trợ kỹ thuật và kiểm tra hệ thống.
+        } else {
+            throw new BadRequestException("Tài khoản của bạn không có quyền thực hiện hành động này.");
         }
-        //4. Check lời mời còn hạn không
 
         return NotificationResponse.builder()
                 .notificationId(listNoti.getId())
