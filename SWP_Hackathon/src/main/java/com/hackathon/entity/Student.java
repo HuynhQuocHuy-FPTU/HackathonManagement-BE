@@ -26,6 +26,8 @@ public class Student {
     private String studentName;
     @Column(name = "Address", columnDefinition = "NVARCHAR(255)")
     private String address;
+//    @Column(name = "University_Name" , nullable = false,columnDefinition = "NVARCHAR(255)")
+//    private  String universityName;
     @Column(name = "Major", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String major;
     @Column(name = "Start_Date", nullable = false )
@@ -33,6 +35,8 @@ public class Student {
     @Column(name = "Status", nullable = false)
     @Enumerated(EnumType.STRING)
     private StudentStatus status;
+
+
 
     //1 account - 1 student
     @OneToOne(fetch = FetchType.LAZY)
