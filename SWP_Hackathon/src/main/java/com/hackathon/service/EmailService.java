@@ -7,4 +7,5 @@ public interface EmailService {
     void sendEmail(MailRequest request, String templateName) throws MessagingException;
     void sendTemporaryPasswordEmail(String toEmail, String tempPassword, String fullName);
     void sendVerificationEmail(String toEmail, String token);
+    void sendForgotPasswordEmail(String toEmail, String otp);
 }

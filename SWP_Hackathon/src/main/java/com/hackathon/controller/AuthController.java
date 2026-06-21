@@ -1,11 +1,7 @@
 package com.hackathon.controller;
 
-import com.hackathon.dto.auth.LoginRequest;
-import com.hackathon.dto.auth.RefreshTokenRequest;
-import com.hackathon.dto.auth.RegisterRequest;
-import com.hackathon.dto.auth.ResendVerificationRequest;
+import com.hackathon.dto.auth.*;
 import com.hackathon.dto.common.ApiResponse;
-import com.hackathon.dto.auth.AuthResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.AuthService;
 import com.hackathon.service.RegisterService;
@@ -73,5 +69,17 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.fail("Chưa đăng nhập"));
         }
         return ResponseEntity.ok(ApiResponse.ok("Thông tin tài khoản", authService.getCurrentUser(userDetails)));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request.getEmail());
+        return ResponseEntity.ok(ApiResponse.ok("Nếu email tồn tại trong hệ thống, mã OTP đã được gửi đến email của bạn."));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok(ApiResponse.ok("Đặt lại mật khẩu thành công. Bạn có thể đăng nhập với mật khẩu mới."));
     }
 }
