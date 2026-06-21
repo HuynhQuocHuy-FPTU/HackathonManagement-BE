@@ -76,6 +76,12 @@ public class Account {
     @Column(name = "Verification_Token_Expiry")
     private LocalDateTime verificationTokenExpiry;
 
+    @Column(name = "Reset_Password_Otp", columnDefinition = "VARCHAR(6)")
+    private String resetPasswordOtp;
+
+    @Column(name = "Reset_Password_Otp_Expiry")
+    private LocalDateTime resetPasswordOtpExpiry;
+
 //    @Column(name = "Is_Password_Changed", nullable = false)
 //    private boolean isPasswordChanged;
 }
