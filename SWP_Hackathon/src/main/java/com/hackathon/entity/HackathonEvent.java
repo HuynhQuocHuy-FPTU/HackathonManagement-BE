@@ -48,6 +48,8 @@ public class HackathonEvent {
     private LocalDateTime createAt;
     @Column(name = "Update_At", nullable = true)
     private LocalDateTime updateAt;
+    @Column(name = "Banner_Url", nullable = true)
+    private String bannerUrl;
 
     // 1 HACKATHON - N CATEGORY
     @OneToMany(mappedBy = "hackathonEvent", cascade = CascadeType.ALL, orphanRemoval = true)
