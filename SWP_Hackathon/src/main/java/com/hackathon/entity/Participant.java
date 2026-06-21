@@ -21,7 +21,7 @@ public class Participant {
     @Column(name = "Disqualification_Reason")
     private String disqualificationReason;
 
-    @Enumerated
+    @Enumerated(EnumType.STRING)
     private ParticipantStatus status;
 
     @Column(name = "Total_Score")

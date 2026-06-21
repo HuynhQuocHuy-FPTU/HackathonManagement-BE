@@ -121,7 +121,7 @@ public class DatabaseService {
         criteriaDetailRepository.save(CriteriaDetail.builder().criteriaSet(criteriaSet2).criteriaName("Giao diện người dùng đẹp mắt").description("Đẹp mắt, dễ sử dụng, thân thiện").criteriaType(CriteriaType.SUBMISSION).weight(new BigDecimal(15)).build());
 
         criteriaDetailRepository.save(CriteriaDetail.builder().criteriaSet(criteriaSet2).criteriaName("Trải nghiệm người dùng").description("Mượt mà, ít lỗi, dễ tiếp cận").criteriaType(CriteriaType.PRESENTATION).weight(new BigDecimal(15)).build());
-
+//
         criteriaDetailRepository.save(CriteriaDetail.builder().criteriaSet(criteriaSet2).criteriaName("Trình bày và demo").description("Logic, rõ ràng, trả lời tất cả câu hỏi của ban giám khảo").criteriaType(CriteriaType.PRESENTATION).weight(new BigDecimal(25)).build());
 //        for (int i = 1; i <= 15; i++) {
 //            String email = "student" + i + "@fpt.edu.vn";

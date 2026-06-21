@@ -16,28 +16,20 @@ import java.util.List;
 @Getter
 @Setter
 public class CreateRoundRequest {
-    @NotBlank(message = "Round name is required")
     private String roundName;
 
-    @NotNull(message = "Start date is required")
     private LocalDateTime startDate;
 
-    @NotNull(message = "End date is required")
     private LocalDateTime endDate;
 
-    @NotBlank(message = "Advancement rule is required")
     private String advancementRule;
 
-    @NotNull(message = "Top N is required")
     private Integer topN;
 
-    @NotNull(message = "Criteria_Set is required")
     private Integer criteriaSetId;
 
-    @NotNull(message = "Order index is required")
     private Integer orderIndex;
 
-    @NotNull(message = "Submission deadline is required")
     private LocalDateTime submissionDeadline;
 
     private List<EvaluationCriteriaRequestDTO> customCriteriaDetatils;

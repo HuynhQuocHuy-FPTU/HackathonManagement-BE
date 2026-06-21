@@ -64,17 +64,18 @@ public class EventServiceImpl implements EventService {
 
         // 3. Khởi tạo Event mới
         HackathonEvent event = new HackathonEvent();
-        event.setEventName(request.getEventName());
-        event.setStartDate(request.getStartDate());
-        event.setEndDate(request.getEndDate());
-        event.setSeason(generateSeason(request.getStartDate()));
-        event.setTitle(request.getTitle());
-        event.setAddress(request.getAddress());
-        event.setDescription(request.getDescription());
-        event.setMaxTeam(request.getMaxTeam());
-        event.setMaxTeamSize(request.getMaxTeamSize());
-        event.setMinTeamSize(request.getMinTeamSize());
-        event.setRegistrationDeadline(request.getRegistrationDeadline());
+        if (request.getEventName() != null) event.setEventName(request.getEventName());
+        if (request.getStartDate() != null) event.setStartDate(request.getStartDate());
+        if (request.getEndDate() != null) event.setEndDate(request.getEndDate());
+        if (request.getStartDate() != null) event.setSeason(generateSeason(request.getStartDate()));
+        if (request.getTitle() != null) event.setTitle(request.getTitle());
+        if (request.getAddress() != null) event.setAddress(request.getAddress());
+        if (request.getDescription() != null) event.setDescription(request.getDescription());
+        if (request.getMaxTeam() != null) event.setMaxTeam(request.getMaxTeam());
+        if (request.getMaxTeamSize() != null) event.setMaxTeamSize(request.getMaxTeamSize());
+        if (request.getMinTeamSize() != null) event.setMinTeamSize(request.getMinTeamSize());
+        if (request.getRegistrationDeadline() != null) event.setRegistrationDeadline(request.getRegistrationDeadline());
+
         event.setEventCoordinator(coordinator);
         event.setCreateAt(LocalDateTime.now());
         event.setStatus(EventStatus.DRAFT);
@@ -134,17 +135,17 @@ public class EventServiceImpl implements EventService {
         }
 
         // 2. Cập nhật thông tin cơ bản
-        event.setEventName(request.getEventName());
-        event.setStartDate(request.getStartDate());
-        event.setEndDate(request.getEndDate());
-        event.setSeason(generateSeason(request.getStartDate()));
-        event.setTitle(request.getTitle());
-        event.setAddress(request.getAddress());
-        event.setDescription(request.getDescription());
-        event.setMaxTeam(request.getMaxTeam());
-        event.setMaxTeamSize(request.getMaxTeamSize());
-        event.setMinTeamSize(request.getMinTeamSize());
-        event.setRegistrationDeadline(request.getRegistrationDeadline());
+        if (request.getEventName() != null) event.setEventName(request.getEventName());
+        if (request.getTitle() != null) event.setTitle(request.getTitle());
+        if (request.getAddress() != null) event.setAddress(request.getAddress());
+        if (request.getDescription() != null) event.setDescription(request.getDescription());
+        if (request.getStartDate() != null) event.setStartDate(request.getStartDate());
+        if (request.getEndDate() != null) event.setEndDate(request.getEndDate());
+        if (request.getMaxTeam() != null) event.setMaxTeam(request.getMaxTeam());
+        if (request.getMaxTeamSize() != null) event.setMaxTeamSize(request.getMaxTeamSize());
+        if (request.getMinTeamSize() != null) event.setMinTeamSize(request.getMinTeamSize());
+        if (request.getRegistrationDeadline() != null) event.setRegistrationDeadline(request.getRegistrationDeadline());
+
         event.setUpdateAt(LocalDateTime.now());
 
         HackathonEvent updatedEvent = eventRepository.save(event);
@@ -161,10 +162,6 @@ public class EventServiceImpl implements EventService {
 
             }
             updatedEvent.setCategories(freshCategories); // Thêm vào list của event
-        }
-
-        if(freshCategories.isEmpty()){
-            System.out.println("category = 0");
         }
         updatedEvent = eventRepository.saveAndFlush(updatedEvent);
 // Dùng trực tiếp freshCategories — đáng tin hơn updatedEvent.getCategories()
@@ -191,16 +188,21 @@ public class EventServiceImpl implements EventService {
                 List<CategoryRound> categoryRounds = new ArrayList<>();
                 if (!finalCategories.isEmpty()) {
                     categoryRounds = categoryRoundService.createCategoryRound(finalCategories, savedRound);
-                    log.info(">>> [DEBUG] categoryRounds created = {}", categoryRounds.size());
-                    if (categoryRounds.isEmpty()) {
-                        throw new BadRequestException("Không tạo được bản ghi CategoryRound cho round: " + savedRound.getRoundId());
-                    }
+//                    log.info(">>> [DEBUG] categoryRounds created = {}", categoryRounds.size());
+//                    if (categoryRounds.isEmpty()) {
+//                        throw new BadRequestException("Không tạo được bản ghi CategoryRound cho round: " + savedRound.getRoundId());
+//                    }
                 }
 
-                expertAssignService.assignExpertsToCategoryRound(categoryRounds, roundRequest.getCategoryExperts(), savedRound);
+                if (roundRequest.getCategoryExperts() != null && !roundRequest.getCategoryExperts().isEmpty()) {
+                    expertAssignService.assignExpertsToCategoryRound(
+                            categoryRounds,
+                            roundRequest.getCategoryExperts(),
+                            savedRound
+                    );
+                }
                 updatedRounds.add(savedRound);
             }
-
             updatedEvent.getRounds().clear();
             updatedEvent.getRounds().addAll(updatedRounds);
             updatedEvent = eventRepository.save(updatedEvent);

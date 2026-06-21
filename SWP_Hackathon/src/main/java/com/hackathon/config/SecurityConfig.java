@@ -54,6 +54,8 @@ public class SecurityConfig {
                                 "/v3/api-docs/**"
                         ).permitAll()
                                 .requestMatchers("/api/criteriaSet/**").hasRole("EVENTCOORDINATOR")
+                                .requestMatchers(HttpMethod.GET,"/api/participants/teams/**").hasRole("EXPERT")
+                                .requestMatchers(HttpMethod.PUT, "/api/participants/teams/disqualify").hasAnyRole("ADMIN", "EVENTCOORDINATOR")
                                 .requestMatchers(HttpMethod.PATCH, "/api/events/*/approve", "/api/events/*/reject").hasRole("EVENTCOORDINATOR")
                                 .requestMatchers(HttpMethod.GET, "/api/events/*/approved-teams").hasRole("EVENTCOORDINATOR")
                                 .requestMatchers(HttpMethod.PUT, "/api/events/*/draw-results").hasRole("EVENTCOORDINATOR")

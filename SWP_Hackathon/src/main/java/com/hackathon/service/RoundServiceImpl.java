@@ -56,7 +56,10 @@ public class RoundServiceImpl implements RoundService{
         //1. Get hackathon event & criteria set
         HackathonEvent event = eventRepository.findById(eventId).orElseThrow(() -> new
                 RuntimeException("Not found event with ID: " + eventId));
-        CriteriaSet criteriaSet = criteriaSetRepository.findById(request.getCriteriaSetId()).orElseThrow(() -> new BadRequestException("Không tìm thấy criteria set ") );
+        if(request.getCriteriaSetId() != null){
+            CriteriaSet criteriaSet = criteriaSetRepository.findById(request.getCriteriaSetId()).orElseThrow(() -> new BadRequestException("Không tìm thấy criteria set ") );
+        }
+
 
         //lấy round đã tạo rồi dưới database lên
         List<Round> currentRounds = roundRepository.findAllByHackathonEvent_EventId(eventId);
@@ -75,26 +78,32 @@ public class RoundServiceImpl implements RoundService{
         round.setSubmissionDeadline(request.getSubmissionDeadline());
         round.setStatus(RoundStatus.UPCOMING);
         round.setOrderIndex(request.getOrderIndex());
-        round.setCriteriaSet(criteriaSet);
+        if(request.getCriteriaSetId() != null){
+            CriteriaSet criteriaSet = criteriaSetRepository.findById(request.getCriteriaSetId()).orElseThrow(() -> new BadRequestException("Không tìm thấy criteria set ") );
+            round.setCriteriaSet(criteriaSet);
+        }
         round.setHackathonEvent(event);
 
         //4. Save DB
         Round savedRound = roundRepository.save(round);
 
-        //5. Custom criteria
-        BigDecimal totalWeight = BigDecimal.ZERO;
-        BigDecimal hundred = new BigDecimal("100");
-        if (request.getCustomCriteriaDetatils() != null && !request.getCustomCriteriaDetatils().isEmpty()) {
-            for (EvaluationCriteriaRequestDTO customCriteria : request.getCustomCriteriaDetatils()) {
+        if(request.getCriteriaSetId() != null){
+            //5. Custom criteria
+            BigDecimal totalWeight = BigDecimal.ZERO;
+            BigDecimal hundred = new BigDecimal("100");
+            if (request.getCustomCriteriaDetatils() != null && !request.getCustomCriteriaDetatils().isEmpty()) {
+                for (EvaluationCriteriaRequestDTO customCriteria : request.getCustomCriteriaDetatils()) {
                     evaluationCriteriaService.createEvaluationCritera(customCriteria, request.getCriteriaSetId(), savedRound);
-                totalWeight = totalWeight.add(customCriteria.getCustomWeight());
+                    totalWeight = totalWeight.add(customCriteria.getCustomWeight());
                 }
-            evaluationCriteriaRepository.flush();
-            if(totalWeight.compareTo(hundred) != 0){
-                throw new BadRequestException("Tổng trọng số phải bằng 100");
+                evaluationCriteriaRepository.flush();
+                if(totalWeight.compareTo(hundred) != 0){
+                    throw new BadRequestException("Tổng trọng số phải bằng 100");
+                }
             }
-            }else {
+            else {
                 throw new BadRequestException("Danh sách tiêu chí không được để trống.");
+            }
         }
             return roundRepository.findById(savedRound.getRoundId()).orElse(savedRound);
     }
@@ -137,11 +146,10 @@ public class RoundServiceImpl implements RoundService{
             // 3. Kiểm tra dòng thời gian so với các round khác trong cùng Event
             roundValidator.validateTimelineByOrderIndexUpdate(roundRequest, currentRounds);
 
-            // 4. Lấy CriteriaSet tương ứng
-            CriteriaSet criteriaSet = criteriaSetRepository.findById(roundRequest.getCriteriaSetId())
-                    .orElseThrow(() -> new BadRequestException("Không tìm thấy criteria set"));
 
-            // 5. Cập nhật thông tin round
+
+
+            // 4. Cập nhật thông tin round
             saveRound.setRoundName(roundRequest.getRoundName());
             saveRound.setStartTime(roundRequest.getStartDate());
             saveRound.setEndTime(roundRequest.getEndDate());
@@ -149,7 +157,13 @@ public class RoundServiceImpl implements RoundService{
             saveRound.setTopN(roundRequest.getTopN());
             saveRound.setOrderIndex(roundRequest.getOrderIndex());
             saveRound.setSubmissionDeadline(roundRequest.getSubmissionDeadline());
-            saveRound.setCriteriaSet(criteriaSet);
+            // 5. Lấy CriteriaSet tương ứng
+            if(roundRequest.getCriteriaSetId() != null){
+                CriteriaSet criteriaSet = criteriaSetRepository.findById(roundRequest.getCriteriaSetId())
+                        .orElseThrow(() -> new BadRequestException("Không tìm thấy criteria set"));
+                saveRound.setCriteriaSet(criteriaSet);
+
+            }
 
             // 6. Xóa các tiêu chí cũ trước khi chèn lại tiêu chí mới từ request
             if (saveRound.getEvaluationCriterias() != null && !saveRound.getEvaluationCriterias().isEmpty()) {
@@ -164,21 +178,23 @@ public class RoundServiceImpl implements RoundService{
         }
 
         // 7. Chèn lại Custom Criteria mới từ request (áp dụng cho cả sửa lẫn tạo mới)
-        BigDecimal totalWeight = BigDecimal.ZERO;
-        BigDecimal hundred = new BigDecimal("100");
-        if (roundRequest.getCustomCriteriaDetatils() != null && !roundRequest.getCustomCriteriaDetatils().isEmpty()) {
-            for (EvaluationCriteriaRequestDTO customCriteria : roundRequest.getCustomCriteriaDetatils()) {
-                evaluationCriteriaService.createEvaluationCritera(customCriteria, roundRequest.getCriteriaSetId(), saveRound);
-                BigDecimal weight = customCriteria.getCustomWeight() != null ? customCriteria.getCustomWeight() : BigDecimal.ZERO;
-                totalWeight = totalWeight.add(weight);
+        if(roundRequest.getCriteriaSetId() != null){
+            BigDecimal totalWeight = BigDecimal.ZERO;
+            BigDecimal hundred = new BigDecimal("100");
+            if (roundRequest.getCustomCriteriaDetatils() != null && !roundRequest.getCustomCriteriaDetatils().isEmpty()) {
+                for (EvaluationCriteriaRequestDTO customCriteria : roundRequest.getCustomCriteriaDetatils()) {
+                    evaluationCriteriaService.createEvaluationCritera(customCriteria, roundRequest.getCriteriaSetId(), saveRound);
+                    BigDecimal weight = customCriteria.getCustomWeight() != null ? customCriteria.getCustomWeight() : BigDecimal.ZERO;
+                    totalWeight = totalWeight.add(weight);
+                }
+                // Ép đồng bộ tiêu chí mới xuống DB ngay lập tức
+                evaluationCriteriaRepository.flush();
+                if(totalWeight.compareTo(hundred) != 0){
+                    throw new BadRequestException("Tổng trọng số phải bằng 100");
+                }
+            }else {
+                throw new BadRequestException("Danh sách tiêu chí không được để trống.");
             }
-            // Ép đồng bộ tiêu chí mới xuống DB ngay lập tức
-            evaluationCriteriaRepository.flush();
-            if(totalWeight.compareTo(hundred) != 0){
-                throw new BadRequestException("Tổng trọng số phải bằng 100");
-            }
-        }else {
-            throw new BadRequestException("Danh sách tiêu chí không được để trống.");
         }
         // 8. Lưu và trả về round đã đồng bộ
         return roundRepository.saveAndFlush(saveRound);
