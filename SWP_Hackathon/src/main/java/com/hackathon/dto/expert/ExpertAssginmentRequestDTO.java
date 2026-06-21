@@ -12,8 +12,6 @@ import lombok.*;
 @Setter
 @Getter
 public class ExpertAssginmentRequestDTO {
-    @NotNull(message = "Expert id is required")
     private Integer expertId;
-    @NotEmpty(message = "Expert role is required")
     private ExpertRole role;
 }

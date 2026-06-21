@@ -71,10 +71,11 @@ public class ExpertAssignServiceImpl implements ExpertAssignService {
                 continue;
             }
 
-            Integer requestId = cateExpertAssign.getCategoryId();
-            CategoryRound cateRound = categoryRoundRepository
-                    .findCategoryRoundByCategoryAndRound(requestId, round.getRoundId())
-                    .orElseThrow(() -> new BadRequestException("Không tìm thấy CategoryRound với categoryId: " + requestId));
+            Integer index = cateExpertAssign.getCategoryId();
+            if (index == null || index < 0 || index >= saveCateRound.size()) {
+                throw new BadRequestException("Index category không hợp lệ hoặc không tồn tại: " + index);
+            }
+            CategoryRound cateRound = saveCateRound.get(index);
 
             for (var expertRequest : cateExpertAssign.getExperts()) {
                 Expert expert = expertMap.get(expertRequest.getExpertId());

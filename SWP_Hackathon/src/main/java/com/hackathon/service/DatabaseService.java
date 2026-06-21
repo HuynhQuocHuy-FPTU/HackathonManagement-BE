@@ -2,10 +2,7 @@ package com.hackathon.service;
 
 
 import com.hackathon.entity.*;
-import com.hackathon.entity.enums.AccountRole;
-import com.hackathon.entity.enums.AccountStatus;
-import com.hackathon.entity.enums.CriteriaType;
-import com.hackathon.entity.enums.StudentStatus;
+import com.hackathon.entity.enums.*;
 import com.hackathon.repository.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -48,6 +45,15 @@ public class DatabaseService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private HackathonEventRepository eventRepository;
+
+    @Autowired
+    private RegistrationRepository registrationRepository;
+
+    @Autowired
+    private TeamRepository teamRepository;
+
 
     public void createDatabase(){
 
@@ -84,9 +90,9 @@ public class DatabaseService {
         expertRepository.save(Expert.builder().expertName("Lê Huyền").department("Khoa kĩ thuật").account(acc3).build());
 
         //create student
-        studentRepository.save(Student.builder().studentCode("SE192345").studentName("Lê Hòa").major("Software engineer").status(StudentStatus.STUDYING).startDate(LocalDateTime.now()).build());
+        studentRepository.save(Student.builder().studentCode("SE192345").studentName("Lê Hòa").major("Software engineer").status(StudentStatus.STUDYING).startDate(LocalDateTime.now()).account(acc4).build());
 
-        studentRepository.save(Student.builder().studentCode("SE190934").studentName("Nguyễn Hà").status(StudentStatus.STUDYING).startDate(LocalDateTime.now()).major("Software engineer").build());
+        studentRepository.save(Student.builder().studentCode("SE190934").studentName("Nguyễn Hà").status(StudentStatus.STUDYING).startDate(LocalDateTime.now()).major("Software engineer").account(acc5).build());
 
         // tạo criteria set dưới database
         CriteriaSet criteriaSet1 = criteriaSetRepository.save(CriteriaSet.builder().criteriaSetName("Đánh giá ý tưởng và thiết kế/ nguyên mẫu").maxScore(100).eventCoordinator(eventCoordinator1).build());
@@ -115,8 +121,56 @@ public class DatabaseService {
         criteriaDetailRepository.save(CriteriaDetail.builder().criteriaSet(criteriaSet2).criteriaName("Giao diện người dùng đẹp mắt").description("Đẹp mắt, dễ sử dụng, thân thiện").criteriaType(CriteriaType.SUBMISSION).weight(new BigDecimal(15)).build());
 
         criteriaDetailRepository.save(CriteriaDetail.builder().criteriaSet(criteriaSet2).criteriaName("Trải nghiệm người dùng").description("Mượt mà, ít lỗi, dễ tiếp cận").criteriaType(CriteriaType.PRESENTATION).weight(new BigDecimal(15)).build());
-
+//
         criteriaDetailRepository.save(CriteriaDetail.builder().criteriaSet(criteriaSet2).criteriaName("Trình bày và demo").description("Logic, rõ ràng, trả lời tất cả câu hỏi của ban giám khảo").criteriaType(CriteriaType.PRESENTATION).weight(new BigDecimal(25)).build());
+//        for (int i = 1; i <= 15; i++) {
+//            String email = "student" + i + "@fpt.edu.vn";
+//
+//            // Tạo Account trước
+//            Account acc = accountRepository.save(Account.builder()
+//                    .createdAt(LocalDateTime.now())
+//                    .email(email)
+//                    .accountName("Student_" + i)
+//                    .password(passwordEncoder.encode("123456"))
+//                    .status(AccountStatus.ACTIVE)
+//                    .role(AccountRole.STUDENT)
+//                    .build());
+//
+//            // Tạo Student
+//            Student student = studentRepository.save(Student.builder()
+//                    .studentCode("SE" + (190000 + i))
+//                    .studentName("Sinh Viên " + i)
+//                    .major("Software Engineer")
+//                    .status(StudentStatus.STUDYING)
+//                    .startDate(LocalDateTime.now())
+//                    .account(acc)
+//                    .build());
+//
+//            // 2. Gom mỗi 3 sinh viên thành 1 Team (tổng sẽ có 5 team)
+//            if (i % 3 == 0) {
+//                Team team = teamRepository.save(Team.builder()
+//                        .teamName("Nhóm " + (i / 3))
+//                        .teamSize(3)
+//                        .status(TeamStatus.DRAFT) // Đảm bảo bạn có Enum này
+//                        .build());
+//
+//                // Lấy lại 3 sinh viên cuối cùng để thêm vào team (ví dụ minh họa)
+//                // Lưu ý: Trong thực tế bạn nên lưu list các student vừa tạo vào 1 danh sách
+//
+//                // Tạo TeamMember (Leader là người đầu tiên trong nhóm)
+//                // ... (Logic add TeamMember tại đây)
+//
+//                // 3. Tạo Registration cho team đó với một Event (ví dụ eventId = 1)
+//                HackathonEvent event = eventRepository.findById(1).orElse(null); // Giả sử event đã có
+//                if (event != null) {
+//                    registrationRepository.save(Registration.builder()
+//                            .team(team)
+//                            .hackathonEvent(event)
+//                            .status(RegistrationStatus.PENDING)
+//                            .build());
+//                }
+//            }
+//        }
     }
 }
 

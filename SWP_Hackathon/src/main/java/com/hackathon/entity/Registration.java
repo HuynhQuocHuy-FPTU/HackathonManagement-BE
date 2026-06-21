@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Getter
 @Setter
+@Builder
 @Entity
 @Table(name = "Registration")
 public class Registration {
@@ -39,8 +40,5 @@ public class Registration {
     @JoinColumn(name = "Event_ID", nullable = false)
     private HackathonEvent hackathonEvent;
 
-    //1 Registration - 1 CategoryRound
-    @OneToOne
-    private CategoryRound categoryRound;
 
 }

@@ -19,40 +19,29 @@ import java.util.List;
 @Getter
 public class UpdateEventRequest {
 
-//    @NotNull(message = "Event ID is required for updating")
-//    private Integer eventID;
-
-    @NotBlank(message = "Event name is required")
     private String eventName;
 
-    @NotNull(message = "Start date is required")
     private LocalDateTime startDate;
 
-    @NotNull(message = "End date is required")
     private LocalDateTime endDate;
 
-    @NotBlank(message = "Title is required")
     private String title;
 
-    @NotBlank(message = "Address is required")
     private String address;
 
-    @NotBlank(message = "Description is required")
     private String description;
 
-    @NotNull(message = "Max team is required")
     @Min(value = 1, message = "Max team must be at least 1")
     private Integer maxTeam;
 
-    @NotNull(message = "Max team size is required")
     @Min(value = 1, message = "Max team size must be at least 1")
     private Integer maxTeamSize;
 
-    @NotNull(message = "Min team size is required")
+
     @Min(value = 1, message = "Min team size must be at least 1")
     private Integer minTeamSize;
 
-    @NotNull(message = "Registration deadline is required")
+
     private LocalDateTime registrationDeadline;
 
     private List<UpdateCategoryRequest> categories;

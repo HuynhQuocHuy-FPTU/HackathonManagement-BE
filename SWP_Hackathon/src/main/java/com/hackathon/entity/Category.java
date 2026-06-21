@@ -17,7 +17,7 @@ public class Category {
     @GeneratedValue(strategy  = GenerationType.IDENTITY)
     @Column(name="Category_ID")
     private Integer categoryId;
-    @Column(name = "Category_Name", columnDefinition = "NVARCHAR(255)", nullable = false)
+    @Column(name = "Category_Name", columnDefinition = "NVARCHAR(255)", nullable = true)
     private String categoryName;
 
     //1 CATEGORY - N CATEGORY_ROUND

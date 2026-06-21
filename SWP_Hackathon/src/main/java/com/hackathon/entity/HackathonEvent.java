@@ -21,33 +21,35 @@ public class HackathonEvent {
     private int eventId;
     @Column(name = "Event_Name", columnDefinition = "NVARCHAR(255)", nullable = false)
     private String eventName;
-    @Column(name = "Start_Date", nullable = false)
+    @Column(name = "Start_Date", nullable = true)
     private LocalDateTime startDate;
-    @Column(name = "End_Date", nullable = false)
+    @Column(name = "End_Date", nullable = true)
     private LocalDateTime endDate;
-    @Column(name = "Title", columnDefinition = "VARCHAR(255)", nullable = false)
+    @Column(name = "Title", columnDefinition = "NVARCHAR(255)", nullable = true)
     private String title;
-    @Column(name = "Address", columnDefinition = "NVARCHAR(255)", nullable = false)
+    @Column(name = "Address", columnDefinition = "NVARCHAR(255)", nullable = true)
     private String address;
-    @Column(name = "Description", columnDefinition = "NVARCHAR(500)", nullable = false)
+    @Column(name = "Description", columnDefinition = "NVARCHAR(500)", nullable = true)
     private String description;
-    @Column(name = "Season", columnDefinition = "NVARCHAR(100)", nullable = false)
+    @Column(name = "Season", columnDefinition = "NVARCHAR(100)", nullable = true)
     private String season;
-    @Column(name = "Status", nullable = false)
+    @Column(name = "Status", nullable = true)
     @Enumerated(EnumType.STRING)
     private EventStatus status;
-    @Column(name = "Max_Team")
+    @Column(name = "Max_Team", nullable = true)
     private Integer maxTeam;
-    @Column(name = "Max_Team_Size", nullable = false)
+    @Column(name = "Max_Team_Size", nullable = true)
     private Integer maxTeamSize;
-    @Column(name = "Min_Team_Size", nullable = false)
+    @Column(name = "Min_Team_Size", nullable = true)
     private Integer minTeamSize;
-    @Column(name ="Registration_Dealine", nullable = false)
+    @Column(name ="Registration_Dealine", nullable = true)
     private LocalDateTime registrationDeadline;
     @Column(name = "Create_At", nullable = false)
     private LocalDateTime createAt;
-    @Column(name = "Update_At")
+    @Column(name = "Update_At", nullable = true)
     private LocalDateTime updateAt;
+    @Column(name = "Banner_Url", nullable = true)
+    private String bannerUrl;
 
     // 1 HACKATHON - N CATEGORY
     @OneToMany(mappedBy = "hackathonEvent", cascade = CascadeType.ALL, orphanRemoval = true)

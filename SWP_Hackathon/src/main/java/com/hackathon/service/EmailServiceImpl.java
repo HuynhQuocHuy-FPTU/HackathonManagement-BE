@@ -64,6 +64,40 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    public void sendForgotPasswordEmail(String toEmail, String otp) {
+        String resetUrl = frontendUrl + "/reset-password";
+        String subject = "[Hackathon System] Yêu cầu đặt lại mật khẩu";
+        String body = """
+                Xin chào,
+                
+                Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản của mình.
+                Vui lòng sử dụng mã xác thực sau để hoàn thành quá trình đặt lại mật khẩu:
+                %s
+                
+                Mã xác thực có hiệu lực trong 15 phút.
+                
+                Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.
+                
+                Trân trọng,
+                Ban tổ chức Hackathon
+                """.formatted(otp);
+
+        if (!StringUtils.hasText(mailUsername)) {
+            if (devLogLink) {
+                log.info("=== DEV: Forgot password link for {} ===\n{}", toEmail, resetUrl);
+            }
+            return;
+        }
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(mailUsername);
+        message.setTo(toEmail);
+        message.setSubject(subject);
+        message.setText(body);
+        mailSender.send(message);
+    }
+
+    @Override
     public void sendTemporaryPasswordEmail(String toEmail, String tempPassword, String fullName) {
         String loginUrl = frontendUrl + "/login";
         String subject = "[Hackathon System] Thông tin cấp tài khoản thành viên mới";

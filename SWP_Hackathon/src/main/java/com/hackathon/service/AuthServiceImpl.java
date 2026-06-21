@@ -3,6 +3,7 @@ package com.hackathon.service;
 import com.hackathon.dto.auth.InviteAccountRequest;
 import com.hackathon.dto.auth.LoginRequest;
 import com.hackathon.dto.auth.AuthResponse;
+import com.hackathon.dto.auth.ResetPasswordRequest;
 import com.hackathon.entity.Account;
 import com.hackathon.entity.RefreshToken;
 import com.hackathon.entity.enums.AccountStatus;
@@ -16,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,13 +31,15 @@ public class AuthServiceImpl implements AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final EmailService emailService;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
     public AuthResponse login(LoginRequest request) {
         String email = request.getEmail().trim().toLowerCase();
         Account account = accountRepository.findByEmail(email)
-                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Email hoặc mật khẩu không đúng"));
+                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Email không đúng"));
 
         if (account.getStatus() == AccountStatus.INACTIVE) {
             throw new ApiException(HttpStatus.FORBIDDEN,
@@ -51,8 +55,13 @@ public class AuthServiceImpl implements AuthService {
             );
         } catch (DisabledException e) {
             throw new ApiException(HttpStatus.FORBIDDEN, "Tài khoản chưa được kích hoạt");
+        } catch (Exception e) {
+            System.out.println("====== DEBUG LỖI ĐĂNG NHẬP ======");
+            System.out.println("Loại Exception: " + e.getClass().getName());
+            System.out.println("Message: " + e.getMessage());
+            System.out.println("=================================");
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "Mật khẩu không đúng");
         }
-
         return buildAuthResponse(account);
     }
 
@@ -106,6 +115,50 @@ public class AuthServiceImpl implements AuthService {
                 .email(account.getEmail())
                 .role(account.getRole())
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public void forgotPassword(String email) {
+        Account account = accountRepository.findByEmail(email.trim().toLowerCase())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Không tìm thấy tài khoản với email này"));
+
+        // Tạo mã OTP 6 số ngẫu nhiên
+        String otp = String.format("%06d", new java.util.Random().nextInt(999999));
+
+        account.setResetPasswordOtp(otp);
+        account.setResetPasswordOtpExpiry(LocalDateTime.now().plusMinutes(15));
+        accountRepository.save(account);
+        // Gửi OTP qua mail
+        emailService.sendForgotPasswordEmail(account.getEmail(), otp);
+    }
+
+    @Override
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        Account account = accountRepository.findByEmail(request.getEmail().trim().toLowerCase())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Không tìm thấy tài khoản với email này"));
+
+        if (account.getResetPasswordOtp() == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Tài khoản không có yêu cầu đổi mật khẩu nào đang chờ xử lý.");
+        }
+
+        if (!account.getResetPasswordOtp().equals(request.getOtp())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Mã xác thực không chính xác.");
+        }
+
+        if (account.getResetPasswordOtpExpiry().isBefore(LocalDateTime.now())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Mã xác thực đã hết hạn. Vui lòng yêu cầu lại.");
+        }
+
+        // Đổi pass và xóa dữ liệu OTP
+        account.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        account.setResetPasswordOtp(null);
+        account.setResetPasswordOtpExpiry(null);
+        accountRepository.save(account);
+
+        // Buộc người dùng phải đăng nhập lại bằng mật khẩu mới trên tất cả thiết bị
+        refreshTokenRepository.revokeAllByAccount(account);
     }
 
     private AuthResponse buildAuthResponse(Account account) {
