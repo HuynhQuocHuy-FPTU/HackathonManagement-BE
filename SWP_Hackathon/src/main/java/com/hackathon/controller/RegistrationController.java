@@ -3,6 +3,7 @@ package com.hackathon.controller;
 import com.hackathon.dto.TeamSelectionDTO;
 import com.hackathon.dto.event.EventResponse;
 import com.hackathon.dto.notification.NotificationResponse;
+import com.hackathon.dto.registration.RegistrationResponse;
 import com.hackathon.dto.team.CreateTeamRequest;
 import com.hackathon.dto.team.TeamDetailResponse;
 import com.hackathon.dto.team.TeamRequest;
@@ -35,42 +36,6 @@ public class RegistrationController {
     @Autowired
     private RegistrationEventService registrationEventService;
 
-//    //View General Information about hackathon
-//    @GetMapping("/events")
-//    public ResponseEntity<ApiResponse<List<EventResponse>>> getAllEvent() {
-//        List<EventResponse> list = eventService.getAllEvent();
-//        return ResponseEntity.ok(ApiResponse.success(list, "Get all events thành công"));
-//    }
-//
-//
-//    //View all information detail about hackathon(click Event show details)
-//    @GetMapping("/events/{eventId}")
-//    public ResponseEntity<ApiResponse<EventResponse>> getEventDetail(@PathVariable Integer eventId) {
-//        EventResponse list = eventService.getEventDetail(eventId);
-//        return ResponseEntity.ok(ApiResponse.success(list, "Get all event details thành công"));
-//    }
-//
-//    //Search HackathonEvent By EventName
-//    @GetMapping("/events/search")
-//    public ResponseEntity<ApiResponse<List<EventResponse>>> searchHackathonEvent(@RequestParam("eventName") String name) {
-//        List<EventResponse> list = eventService.searchByEventName(name);
-//        if (list.isEmpty()) {
-//            return ResponseEntity.ok(
-//                    ApiResponse.success(list, "Không tìm thấy sự kiện phù hợp")
-//            );
-//        }
-//
-//        return ResponseEntity.ok(
-//                ApiResponse.success(list, "Tìm kiếm thành công")
-//        );
-//    }
-
-    @GetMapping("/{eventId}/approveTeam-detail")
-    @PreAuthorize("hasRole('EVENTCOORDINATOR')")
-    public ResponseEntity<ApiResponse<List<TeamResponse>>> getTeamsForApproval(@PathVariable Integer eventId, @AuthenticationPrincipal CustomUserDetails userDetails) {
-        List<TeamResponse> list = registrationEventService.getTeamsForApproval(eventId,userDetails);
-        return ResponseEntity.ok(ApiResponse.success(list,"Lấy danh sách phê duyệt Team thành công."));
-    }
     // Registration event
     @PostMapping("/{eventId}/register-event")
     @PreAuthorize("hasRole('STUDENT')")
@@ -120,6 +85,18 @@ public class RegistrationController {
     }
 
 
+
+    @GetMapping("/{eventId}/pendingTeam")
+    public ResponseEntity<ApiResponse<List<RegistrationResponse>>> getTeamsForApproval(@PathVariable Integer eventId, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        List<RegistrationResponse> list = registrationEventService.getTeamsForApproval(eventId,userDetails);
+        return ResponseEntity.ok(ApiResponse.success(list,"Lấy danh sách phê duyệt Team thành công."));
+    }
+
+    @GetMapping("/{registrationId}/pendingTeam-detail")
+    public ResponseEntity<ApiResponse<RegistrationResponse>> getTeamsDeatilForApproval(@PathVariable Integer registrationId, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        RegistrationResponse list = registrationEventService.getTeamsDetailForApproval(registrationId,userDetails);
+        return ResponseEntity.ok(ApiResponse.success(list,"Lấy danh sách phê duyệt Team thành công."));
+    }
 
 
 }

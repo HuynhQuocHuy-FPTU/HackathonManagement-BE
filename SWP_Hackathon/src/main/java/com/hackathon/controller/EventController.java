@@ -117,7 +117,7 @@ public class EventController {
     public ResponseEntity<List<ExpertInfoResponse>> getAllExperts(){
         return ResponseEntity.ok(expertService.getAllExperts());
     }
-    @GetMapping("/{eventId}/categories")
+    @GetMapping("/categories/{eventId}")
     public ResponseEntity<ApiResponse<List<CategoryResponse>>> getCategoriesOfEvent(@PathVariable Integer eventId){
         List<CategoryResponse> categoryResponses = categoryService.getAllCategories(eventId);
         return ResponseEntity.ok(ApiResponse.success(categoryResponses, "Các categories thuộc về event"));

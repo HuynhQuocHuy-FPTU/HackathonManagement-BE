@@ -32,7 +32,6 @@ public class TeamController {
         return ResponseEntity.ok(ApiResponse.success(team, "Tạo Team thành công"));
     }
 
-
     //Update infor Team
     @PreAuthorize("hasRole('STUDENT')")
     @PutMapping("/update/teams-name")
@@ -49,11 +48,12 @@ public class TeamController {
         teamService.leaveTeam(userDetails, teamId);
         return ResponseEntity.ok(ApiResponse.success(null, "Rời Team thành công"));
     }
+
     // Transfer Leader
     @PutMapping("/{teamId}/transfer-leader")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<Void>> transferLeader(@PathVariable Integer teamId,
-                                                            @Valid @RequestBody TeamRequest request,
+                                                            @Valid @RequestBody TeamRequest request ,
                                                             @AuthenticationPrincipal CustomUserDetails userDetails) {
         teamService.transferLeader(teamId,request, userDetails);
         return ResponseEntity.ok(ApiResponse.success(null, "Gửi lời mời chuyển quyền Trưởng nhóm thành công!"));
@@ -61,12 +61,14 @@ public class TeamController {
 
     //     View Invite
     @GetMapping("/notifications/{notiId}")
+    @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<NotificationResponse>> getNotificationDetail(
             @PathVariable("notiId") Long notiId, @AuthenticationPrincipal CustomUserDetails userDetails) {
         NotificationResponse data = notificationService.getInfoNotificationInvite(userDetails, notiId);
         return ResponseEntity.ok(ApiResponse.success(data, "Lấy thông tin lời mời thành công"));
-    }
 
+
+    }
 
     // Accept invite
     @PostMapping("/notifications/{notiId}/accept")
@@ -85,6 +87,8 @@ public class TeamController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         teamService.rejectGeneralInvite(notiId, userDetails);
         return ResponseEntity.ok(ApiResponse.success("Xử lý từ chối yêu cầu thành công!", "Hệ thống đã ghi nhận trạng thái mới."));
+
+
     }
 
     // View Team

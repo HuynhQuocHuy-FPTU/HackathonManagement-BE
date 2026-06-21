@@ -1,6 +1,7 @@
 package com.hackathon.service;
 
 import com.hackathon.dto.TeamSelectionDTO;
+import com.hackathon.dto.registration.RegistrationResponse;
 import com.hackathon.dto.team.TeamResponse;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.AccountRole;
@@ -97,52 +98,34 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
 
     //2. Lấy thông tin của all Team đk event để Coordinator phê duyệt
     @Override
-    public List<TeamResponse>  getTeamsForApproval(Integer evenId, CustomUserDetails userDetails) {
+    public List<RegistrationResponse> getTeamsForApproval(Integer evenId, CustomUserDetails userDetails) {
         Account currentAccount = userDetails.getAccount();
         if (userDetails == null || userDetails.getAccount() == null) {
             throw new BadRequestException("Người dùng chưa đăng nhập tài khoản  hoặc phiên làm việc hết hạn.");
         }
-        if (currentAccount.getRole() != AccountRole.EVENTCOORDINATOR){
+        if (currentAccount.getRole() != AccountRole.EVENTCOORDINATOR) {
             throw new BadRequestException("Bạn không phải là EventCoordinator nên không được phép truy cập tính năng phê duyệt thành viên này.");
         }
+        HackathonEvent event = eventRepository.findById(evenId).orElseThrow(
+                () -> new BadRequestException("Không tìm thấy thông tin về sự kiện này."));
 
         // 2. Lấy ds Team đang chờ phê duyệt PENDING
         List<Registration> pendingRegistrations = registrationRepository
                 .findByHackathonEvent_EventIdAndStatus(evenId, RegistrationStatus.PENDING);
 
-        List<TeamResponse> pendingList = new ArrayList<>();
-        for (Registration regis: pendingRegistrations ){
+        List<RegistrationResponse> pendingList = new ArrayList<>();
+        for (Registration regis : pendingRegistrations) {
             Team team = regis.getTeam();
-            List<TeamMember> teamMembers = teamMemberRepository.findByTeam(team);
-            TeamResponse.MemberInfo leaderInfo = null;
-            List<TeamResponse.MemberInfo> officialMembers = new ArrayList<>();
-            for (TeamMember member : teamMembers) {
-                TeamResponse.MemberInfo info = new TeamResponse.MemberInfo(
-                        member.getStudent().getStudentCode(),
-                        member.getStudent().getStudentName(),
-                        member.getStudent().getAccount().getEmail(),
-                        member.getStudent().getMajor()
-                );
-
-                if (member.getIsLeader()) {
-                    leaderInfo = info;
-                } else {
-                    officialMembers.add(info);
-                }
-            }
-
-            TeamResponse response = TeamResponse.builder()
-                    .teamId(team.getTeamId())
-                    .teamName(team.getTeamName())
-                    .leader(leaderInfo)
-                    .members(officialMembers)
-                    .createAt(team.getCreateAt())
+            RegistrationResponse reponse = RegistrationResponse.builder()
+                    .registrationId(regis.getRegistrationId())
+                    .teamId(regis.getTeam().getTeamId())
+                    .teamName(regis.getTeam().getTeamName())
                     .build();
-
-            pendingList.add(response);
+            pendingList.add(reponse);
 
         }
-            return pendingList;
+
+        return pendingList;
     }
 
     //Coordinator duyệt Registration — chuyển trạng thái sang APPROVED.
@@ -195,4 +178,56 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
         //2. Map sang DTO
         return registrations.stream().map(reg -> new TeamSelectionDTO(reg.getRegistrationId(), reg.getTeam().getTeamName())).toList();
     }
+
+    @Override
+    public RegistrationResponse getTeamsDetailForApproval(Integer registrationId, CustomUserDetails userDetails) {
+        Account currentAccount = userDetails.getAccount();
+        if (userDetails == null || userDetails.getAccount() == null) {
+            throw new BadRequestException("Người dùng chưa đăng nhập tài khoản  hoặc phiên làm việc hết hạn.");
+        }
+        if (currentAccount.getRole() != AccountRole.EVENTCOORDINATOR) {
+            throw new BadRequestException("Bạn không phải là EventCoordinator nên không được phép truy cập tính năng phê duyệt thành viên này.");
+        }
+
+        // 2. Lấy thông tin Team đang chờ phê duyệt PENDING
+        Registration regis = registrationRepository.findById(registrationId)
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy đơn đăng ký"));
+
+        Team team = regis.getTeam();
+        int count = team.getTeamSize();
+        RegistrationResponse.MemberInfo leader = null;
+        List<RegistrationResponse.MemberInfo> members = new ArrayList<>();
+
+        if (team != null) {
+            List<TeamMember> teamMembers = teamMemberRepository.findByTeam(team);
+            for (TeamMember memberInfo : teamMembers) {
+                RegistrationResponse.MemberInfo info = new RegistrationResponse.MemberInfo(
+                        memberInfo.getStudent().getStudentCode(),
+                        memberInfo.getStudent().getStudentName(),
+//                        memberInfo.getStudent().getUniversityName(),
+                        memberInfo.getStudent().getMajor(),
+                        memberInfo.getStudent().getAccount().getEmail()
+                );
+                if (memberInfo.getIsLeader()) {
+                    leader = info;
+                } else {
+                    members.add(info);
+                }
+
+            }
+
+        }
+
+        return new RegistrationResponse(
+                regis.getRegistrationId(),
+                regis.getHackathonEvent().getEventName(),
+                team.getTeamId(),
+                team.getTeamName(),
+                regis.getRegistrationDate(),
+                count,
+                leader,
+                members
+        );
+    }
+
 }
