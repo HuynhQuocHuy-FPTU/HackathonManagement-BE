@@ -38,7 +38,7 @@ public class RegistrationController {
     }
 
     @GetMapping("/{registrationId}/approveTeam-detail")
-    public ResponseEntity<ApiResponse<RegistrationResponse>> getTeamsDeatilForApproval(@PathVariable Integer registrationId, @AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<ApiResponse<RegistrationResponse>> getTeamsDetailForApproval(@PathVariable Integer registrationId, @AuthenticationPrincipal CustomUserDetails userDetails) {
         RegistrationResponse list = registrationEventService.getTeamsDetailForApproval(registrationId,userDetails);
         return ResponseEntity.ok(ApiResponse.success(list,"Lấy danh sách phê duyệt Team thành công."));
     }
