@@ -17,10 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 
 @Service
@@ -126,6 +123,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
             throw new BadRequestException("Tên bộ tiêu chí không được phép trùng.");
         }
 
+
         // 1. Tao CriteriaSet
         CriteriaSet criteriaSet = new CriteriaSet();
         criteriaSet.setCriteriaSetName(name);
@@ -148,8 +146,8 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
             totalWeight.add(dto.getWeight());
         }
 
-        if(totalWeight.compareTo(hundred) != 0){
-                throw new BadRequestException("Tổng trọng số phải bằng 100");
+        if (totalWeight.compareTo(hundred) != 0) {
+            throw new BadRequestException("Tổng trọng số phải bằng 100");
         }
         criteriaSet.setCriteriaDetails(list);
         // 3. Luu du lieu xuong DB
@@ -172,6 +170,16 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
                         .orElseThrow(() -> new BadRequestException(
                                 "Bạn không có quyền truy cập vào bộ tiêu chí để thực hiện thao tác cập nhật dữ liệu bộ tiêu chí"
                         ));
+        // Kiểm tra tên bộ tiêu chí không được null hoặc rỗng
+        if (request.getCriteriaSetName() == null || request.getCriteriaSetName().trim().isEmpty()) {
+            throw new BadRequestException("Tên bộ tiêu chí không được để trống.");
+        }
+        // CriteriaSetName không được trùng
+        String name = request.getCriteriaSetName().trim();
+        boolean isNameExist = criteriaSetRepository.existsByCriteriaSetNameAndCriteriaSetIdNot(name, request.getCriteriaSetId());
+        if (isNameExist) {
+            throw new BadRequestException("Tên bộ tiêu chí đã tồn tại trong hệ thống.");
+        }
 
         //1. Lay bo tieu chi can update
         CriteriaSet criteriaSet = criteriaSetRepository
@@ -179,12 +187,25 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
         if (criteriaSet == null) {
             throw new RuntimeException("CriteriaSet not found with id: " + request.getCriteriaSetId());
         }
+        if (request.getMaxScore() == null || request.getMaxScore() != 100) {
+            throw new BadRequestException("Điểm tối đa (Max Score) của bộ tiêu chí bắt buộc phải bằng 100!");
+        }
 
         //2.Update info of criteria set
-        criteriaSet.setCriteriaSetName(request.getCriteriaSetName());
-        criteriaSet.setMaxScore(request.getMaxScore());
-        CriteriaSet saved = criteriaSetRepository.save(criteriaSet);
+        boolean isCriteriaSetChanged = false;
+        if ((criteriaSet.getCriteriaSetName() == null && request.getCriteriaSetName() != null) ||
+                (criteriaSet.getCriteriaSetName() != null && !criteriaSet.getCriteriaSetName().equals(request.getCriteriaSetName()))) {
+            criteriaSet.setCriteriaSetName(request.getCriteriaSetName());
+            isCriteriaSetChanged = true;
+        }
 
+        if ((criteriaSet.getMaxScore() == null && request.getMaxScore() != null) ||
+                (criteriaSet.getMaxScore() != null && !criteriaSet.getMaxScore().equals(request.getMaxScore()))) {
+            criteriaSet.setMaxScore(request.getMaxScore());
+            isCriteriaSetChanged = true;
+        }
+        // Nếu có đổi thì mới save, không thì giữ nguyên
+        CriteriaSet savedCriteriaSet = isCriteriaSetChanged ? criteriaSetRepository.save(criteriaSet) : criteriaSet;
         //2.1 Lay ds criteria-detail thong qua ID cua Set(DB)
         List<CriteriaDetail> listDetail = criteriaDetailRepository.findByCriteriaSet_CriteriaSetId(request.getCriteriaSetId());
 
@@ -192,46 +213,97 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
         // 3.2 Dùng Set để lưu các tiêu chí Detail thong qua id
         // Lấy ID từ request để check tiêu chí nào đã bị xóa
         Set<Integer> set = new HashSet<>();
+        BigDecimal totalWeight = BigDecimal.ZERO;
+        BigDecimal hundred = new BigDecimal("100");
         for (CriteriaDetailRequestDTO dto : request.getCriteriaDetails()) {
             if (dto.getCriteriaId() != null) {
                 set.add(dto.getCriteriaId());
             }
+            if (dto.getCriteriaName() == null || dto.getCriteriaName().trim().isEmpty()) {
+                throw new BadRequestException("Tên tiêu chí không được để trống!");
+            }
+            if (dto.getWeight() == null) {
+                throw new BadRequestException("Trọng số (Weight) của tiêu chí không được để trống!");
+            }
+            if (dto.getType() == null) {
+                throw new BadRequestException("Loại tiêu chí  không được để trống!");
+            }
+            totalWeight = totalWeight.add(dto.getWeight());
         }
-        //
+        if (totalWeight.compareTo(hundred) != 0) {
+            throw new BadRequestException("Tổng các trọng số thành phần sau khi sửa đổi phải bằng 100. Hiện tại là: " + totalWeight);
+        }
+        // xóa những tiêu chí mà ng dùng xóa bỏ khỏi ds
         List<CriteriaDetail> deleteList = new ArrayList<>();
         for (CriteriaDetail criDetail : listDetail) {
             if (!set.contains(criDetail.getCriteriaId())) {
                 deleteList.add(criDetail);
             }
         }
-        criteriaDetailRepository.deleteAll(deleteList);
-
+        if (!deleteList.isEmpty()) {
+            criteriaDetailRepository.deleteAll(deleteList);
+        }
         //2.2 Update info Of Criteria-detail(cũ or mới thêm )
 
         List<CriteriaDetail> updateList = new ArrayList<>();
         for (CriteriaDetailRequestDTO dto : request.getCriteriaDetails()) {
-            CriteriaDetail detail;
             // Check tiêu chí đó có hay chưa để thêm mới or update
+            CriteriaDetail detail = null;
             if (dto.getCriteriaId() != null) {
-                detail = criteriaDetailRepository.findById(dto.getCriteriaId())
-                        .orElseThrow(() -> new BadRequestException("Không tìm thấy tiêu chí nào!!!"));
+
+                for (CriteriaDetail d : listDetail) {
+                    if (d.getCriteriaId() == (dto.getCriteriaId())) {
+                        detail = d;
+                        break;
+                    }
+                }
+
+                if (detail == null) {
+                    throw new BadRequestException("Không tìm thấy tiêu chí nào với ID: " + dto.getCriteriaId());
+                }
+
+                // Thực hiện check thay đổi thủ công (Không dùng Objects.equals)
+                boolean isNameChanged = (detail.getCriteriaName() == null && dto.getCriteriaName() != null) ||
+                        (detail.getCriteriaName() != null && !detail.getCriteriaName().equals(dto.getCriteriaName()));
+
+                boolean isWeightChanged = (detail.getWeight() == null && dto.getWeight() != null) ||
+                        (detail.getWeight() != null && !detail.getWeight().equals(dto.getWeight()));
+
+                boolean isDescChanged = (detail.getDescription() == null && dto.getDescription() != null) ||
+                        (detail.getDescription() != null && !detail.getDescription().equals(dto.getDescription()));
+
+                boolean isTypeChanged = (detail.getCriteriaType() == null && dto.getType() != null) ||
+                        (detail.getCriteriaType() != null && !detail.getCriteriaType().equals(dto.getType()));
+
+                // Chỉ thực hiện thay đổi khi người dùng thực sự có sửa đổi nội dung ô nhập liệu
+                if (isNameChanged || isWeightChanged || isDescChanged || isTypeChanged) {
+                    detail.setCriteriaName(dto.getCriteriaName());
+                    detail.setWeight(dto.getWeight());
+                    detail.setDescription(dto.getDescription());
+                    detail.setCriteriaType(dto.getType());
+                    // Chỉ cập nhật type nếu trên request thực sự có truyền dữ liệu mới lên
+                    detail.setCriteriaType(dto.getType());
+                    updateList.add(detail); // Thêm vào danh sách để cập nhật dữ liệu xuống DB
+                } else {
+                    updateList.add(detail); // Giữ nguyên, không đổi dữ liệu thì Hibernate tự động bỏ qua lệnh Update
+                }
 
             } else {
                 detail = new CriteriaDetail();
                 detail.setCriteriaSet(criteriaSet);
-
+                detail.setCriteriaName(dto.getCriteriaName());
+                detail.setWeight(dto.getWeight());
+                detail.setDescription(dto.getDescription());
+                detail.setCriteriaType(dto.getType());
+                detail.setCriteriaSet(criteriaSet);
+                updateList.add(detail);
             }
-            detail.setCriteriaName(dto.getCriteriaName());
-            detail.setWeight(dto.getWeight());
-            detail.setDescription(dto.getDescription());
-            detail.setCriteriaType(dto.getType());
-            detail.setCriteriaSet(criteriaSet);
-            updateList.add(detail);
         }
 
         //Save
         List<CriteriaDetail> finalSavedDetails = criteriaDetailRepository.saveAll(updateList);
-        return mapToResponse(saved, finalSavedDetails);
+        return mapToResponse(savedCriteriaSet, finalSavedDetails);
+
     }
 
     // 7. Xoa bo tieu chi

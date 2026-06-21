@@ -79,6 +79,10 @@ public class TeamServiceImpl implements TeamService {
         if (!existingTeams.isEmpty()) {
             for (TeamMember teamMember : existingTeams) {
                 TeamStatus teamStatus = teamMember.getTeam().getStatus();
+                if (teamMember.getIsLeader()) {
+                    throw new BadRequestException(
+                            "Bạn đang là Leader, không thể tạo Team mới. Vui lòng chuyển quyền hoặc giải tán team trước khi tạo team mới.");
+                }
 
                 if (teamStatus == TeamStatus.DRAFT) {
                     throw new BadRequestException("Bạn không thể tạo Team mới do bạn đang tham gia một team khác. " +
@@ -91,6 +95,7 @@ public class TeamServiceImpl implements TeamService {
                 }
             }
         }
+
 
         // 3. BR: bắt buộc mời ít nhất 1 người khác
         if (request.getMemberEmails() == null || request.getMemberEmails().isEmpty()) {
@@ -114,6 +119,18 @@ public class TeamServiceImpl implements TeamService {
             throw new BadRequestException("Bạn là Trưởng nhóm, không cần tự mời chính mình!");
         }
 
+        //3.4   Check account được gửi mail nếu ko có role Là STUDENT thì ko được phép nhập
+        Map<String, Account> memberAccountMap = new HashMap<>();
+        for(String memberEmail : cleanEmails){
+            Account checkAcc = accRepository.findByEmail(memberEmail)
+                    .orElseThrow(() -> new BadRequestException("Tài khoản với email " + memberEmail + " không tồn tại trên hệ thống."));
+            if(checkAcc.getRole() != AccountRole.STUDENT){
+                throw new BadRequestException("Email " + memberEmail + " không hợp lệ. Bạn chỉ có thể mời tài khoản có vai trò là STUDENT.");
+            }
+            memberAccountMap.put(memberEmail, checkAcc);
+        }
+
+
         //3.4 Check trùng tên Nhóm
         boolean existName = teamRepository.existsByTeamNameIgnoreCase(request.getTeamName().trim());
         if (existName) {
@@ -122,7 +139,7 @@ public class TeamServiceImpl implements TeamService {
 
         //4. Create Team
         Team team = new Team();
-        team.setTeamName(request.getTeamName());
+        team.setTeamName(request.getTeamName().trim());
         team.setStatus(TeamStatus.DRAFT);
         team.setTeamSize(1);
         Team saveTeam = teamRepository.save(team);
@@ -147,14 +164,13 @@ public class TeamServiceImpl implements TeamService {
 
         //6. Tao loi moi gui toi cac thah vien
         for (String memberEmail : cleanEmails) {
-            Account memberAccount = accRepository.findByEmail(memberEmail.trim())
-                    .orElseThrow(() -> new BadRequestException("Member Account not found"));
+            Account account = memberAccountMap.get(memberEmail);
             Notification invite = new Notification();
-            invite.setAccount(memberAccount);
+            invite.setAccount(account);
             invite.setTeam(saveTeam);
             invite.setType(NotificationType.TEAM_INVITATION);
             invite.setStatus(NotificationStatus.PENDING);
-            invite.setTitle("INVITE TEAM " + saveTeam.getTeamName());
+            invite.setTitle("INVITE TEAM " + saveTeam.getTeamName().trim());
             invite.setMessage("Bạn được mời bởi " + leaderAccount.getStudent().getStudentName() +
                     " để tạo đội  tham gia cuộc thi Hackathon.");
             Notification savedNoti = notificationRepository.save(invite);
@@ -164,15 +180,15 @@ public class TeamServiceImpl implements TeamService {
             // 2. Send Email per member
             try {
                 MailRequest mailRequest = new MailRequest();
-                mailRequest.setTo(memberAccount.getEmail());
+                mailRequest.setTo(account.getEmail());
                 mailRequest.setSubject("FPT HACKATHON - Team Invitation: " + saveTeam.getTeamName());
 
                 Map<String, Object> props = new HashMap<>();
-                props.put("studentName", memberAccount.getStudent().getStudentName());
-                props.put("teamName", saveTeam.getTeamName());
+                props.put("studentName", account.getStudent().getStudentName());
+                props.put("teamName", saveTeam.getTeamName().trim());
                 props.put("leaderName", leaderAccount.getStudent().getStudentName());
                 props.put("email", leaderAccount.getEmail());
-                props.put("receiverEmail", memberAccount.getEmail());
+                props.put("receiverEmail", account.getEmail());
                 props.put("notificationId", savedNoti.getId());
                 mailRequest.setProps(props);
                 emailService.sendEmail(mailRequest, "invitation");
@@ -196,7 +212,7 @@ public class TeamServiceImpl implements TeamService {
         }
 
         TeamMember teamMember = teamMemberRepository.findByTeam_TeamIdAndStudent(request.getTeamId(), leaderAcc.getStudent())
-                .orElseThrow(() -> new BadRequestException("Bạn hiện không tham gia hoặc không phải thành viên của đội này!"));
+                .orElseThrow(() -> new BadRequestException("Bạn không có quyền mời thành viên (Bạn không phải Leader hoặc không thuộc đội này"));
 
         if (!teamMember.getIsLeader()) {
             throw new BadRequestException("Bạn không phải leader, bạn không được phép mời thành viên khác.");
@@ -236,6 +252,12 @@ public class TeamServiceImpl implements TeamService {
             Account memberAccount = accRepository.findByEmail(memberEmail.trim())
                     .orElseThrow(() -> new BadRequestException("Không tìm thấy tài khoản của email: " + leaderAcc.getEmail()));
             List<TeamMember> studentTeams = teamMemberRepository.findByStudent(memberAccount.getStudent());
+
+            // Chặn gửi mail đến những ng ko có role là Studnet
+            if(memberAccount.getRole() != AccountRole.STUDENT){
+                throw new BadRequestException("Bạn không được phép gửi mail đến những tài khoản không phải là STUDENT.");
+            }
+
             for (TeamMember tm : studentTeams) {
                 if (tm.getTeam().getStatus() != TeamStatus.FINISHED) {
                     // Check trùng event
@@ -247,6 +269,7 @@ public class TeamServiceImpl implements TeamService {
                         throw new BadRequestException("Sinh viên hiện đang bận ở đội khác.");
                     }
                 }
+
             }
 
             Notification invite = new Notification();
@@ -261,7 +284,6 @@ public class TeamServiceImpl implements TeamService {
             successfulInvites.add(memberEmail);
 
             //7. Gui loi moi den cac thnah vien
-            // 2. Send Email per member
             try {
                 MailRequest mailRequest = new MailRequest();
                 mailRequest.setTo(memberAccount.getEmail());
@@ -754,8 +776,6 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     public void rejectTeamInvite(Notification notification, CustomUserDetails userDetails) {
-        System.out.println("===== rejectGeneralInvite START =====");
-
         //1. Tim tb hoac loi moi tuong ung
         //2. Kiem tra Team loi moi con ton tai khong
         Team team = teamRepository.findById(notification.getTeam().getTeamId())

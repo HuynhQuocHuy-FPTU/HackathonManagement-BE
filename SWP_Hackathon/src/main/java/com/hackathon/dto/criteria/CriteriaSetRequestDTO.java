@@ -18,7 +18,7 @@ import java.util.List;
 public class CriteriaSetRequestDTO {
     private Integer criteriaSetId;
 
-    @NotNull(message = "Criteria Set Name is required")
+    @NotBlank(message = "Criteria Set Name is required")
     private String criteriaSetName;
 
     @NotNull(message = "MaxScore is required")

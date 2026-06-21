@@ -36,6 +36,5 @@ public interface TeamService {
 
     TeamDetailResponse getTeamMember(Integer teamId, CustomUserDetails userDetails);
 
-//    void registerEvent(Integer eventId, CustomUserDetails userDetails);
 
 }

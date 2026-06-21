@@ -11,7 +11,6 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TeamRequest {
-//    private String teamName;
     @NotBlank(message = "StudentCode is required")
     private String studentCode;
 }
