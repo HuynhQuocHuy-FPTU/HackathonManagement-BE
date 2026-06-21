@@ -21,4 +21,6 @@ public interface CategoryRoundRepository extends JpaRepository<CategoryRound, In
     @Transactional
     @Query("SELECT cr FROM CategoryRound cr WHERE cr.category.categoryId = :cateId AND cr.round.roundId = :roundId")
     Optional<CategoryRound> findCategoryRoundByCategoryAndRound(@Param("cateId") Integer cateId, @Param("roundId") Integer roundId);
+
+    Optional<CategoryRound> findCategoryRoundByCategory_CategoryIdAndRound_RoundId(Integer categoryCategoryId, Integer roundRoundId);
 }

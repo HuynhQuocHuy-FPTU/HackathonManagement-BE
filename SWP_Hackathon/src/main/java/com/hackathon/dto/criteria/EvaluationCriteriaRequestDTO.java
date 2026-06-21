@@ -14,6 +14,8 @@ public class EvaluationCriteriaRequestDTO {
     @NotNull(message = "Criteria detail id is required")
     private Integer criteriaDetailId;
 
+    private String criteriaName;
+
     @NotNull(message = "Custom weight is required")
     // Trọng số không được nhỏ hơn 0.0 (0%)
     @DecimalMin(value = "0.0", message = "Trọng số phải lớn hơn hoặc bằng 0")

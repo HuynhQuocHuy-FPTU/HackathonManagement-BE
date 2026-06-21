@@ -22,22 +22,22 @@ public class Round {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "Round_ID")
     private Integer roundId;
-    @Column(name = "Round_Name", columnDefinition = "NVARCHAR(50)", nullable = false)
+    @Column(name = "Round_Name", columnDefinition = "NVARCHAR(50)", nullable = true)
     private String roundName;
-    @Column(name = "Start_Time", nullable = false)
+    @Column(name = "Start_Time", nullable = true)
     private LocalDateTime startTime;
-    @Column(name = "End_Time", nullable = false)
+    @Column(name = "End_Time", nullable = true)
     private LocalDateTime endTime;
-    @Column(name = "Advancement_Rule", nullable = false)
+    @Column(name = "Advancement_Rule", nullable = true)
     private String advancementRule;
-    @Column(name = "Order_Index", nullable = false)
+    @Column(name = "Order_Index", nullable = true)
     private Integer orderIndex;
-    @Column(name = "Submission_Deadline", nullable = false)
+    @Column(name = "Submission_Deadline", nullable = true)
     private LocalDateTime submissionDeadline;
-    @Column(nullable = false)
+    @Column(nullable = true)
     @Enumerated(EnumType.STRING)
     private RoundStatus status;
-    @Column(name = "Top_N", nullable = false)
+    @Column(name = "Top_N", nullable = true)
     private Integer topN;
 
     // 1 round - N category_round
@@ -56,7 +56,7 @@ public class Round {
 
     // 1 CriteriaSet - N round
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "CriteriaSet_ID", nullable = false)
+    @JoinColumn(name = "CriteriaSet_ID")
     private CriteriaSet criteriaSet;
 
 

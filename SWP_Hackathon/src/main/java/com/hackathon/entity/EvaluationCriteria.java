@@ -21,14 +21,14 @@ public class EvaluationCriteria {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "Evaluation_Criteria_ID")
     private int evaluationCriteriaId;
-    @Column(name = "Criteria_Name", columnDefinition = "NVARCHAR(255)", nullable = false)
+    @Column(name = "Criteria_Name", columnDefinition = "NVARCHAR(255)", nullable = true)
     private String criteriaName;
-    @Column(name = "Weight", precision = 10, scale = 2, nullable = false)
+    @Column(name = "Weight", precision = 10, scale = 2,nullable = true)
     private BigDecimal weight;
-    @Column(name = "Description", columnDefinition = "NVARCHAR(1000)")
+    @Column(name = "Description", columnDefinition = "NVARCHAR(1000)", nullable = true)
     private String description;
 
-    @Column(name = "Criteria_Type")
+    @Column(name = "Criteria_Type", nullable = true)
     @Enumerated(EnumType.STRING)
     private CriteriaType type;
 

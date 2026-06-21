@@ -16,4 +16,11 @@ public interface ExpertAssignRepository extends JpaRepository<ExpertAssign, Inte
     @Transactional
     @Query("DELETE FROM ExpertAssign ea WHERE ea.categoryRound.round.hackathonEvent.eventId = :eventId")
     void deleteByEventId(@Param("eventId") Integer eventId) ;
+
+    @Query("SELECT ex FROM ExpertAssign ex " +
+            "JOIN ex.categoryRound cr " +
+            "JOIN cr.round r " +
+            "WHERE ex.expert.expertId = :expertId " +
+            "AND r.hackathonEvent.eventId = :eventId")
+    List<ExpertAssign> findExpertAssignments(@Param("expertId") Integer expertId, @Param("eventId") Integer eventId);
 }

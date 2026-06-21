@@ -13,9 +13,7 @@ import java.util.List;
 @Setter
 @Getter
 public class CategoryExpertAssignRequestDTO {
-    @NotNull(message = "Category id is required")
     private Integer categoryId;
 
-    @NotEmpty(message = "Experts is required")
     private List<ExpertAssginmentRequestDTO> experts;
 }

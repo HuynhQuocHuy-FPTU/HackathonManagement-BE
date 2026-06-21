@@ -1,3 +1,4 @@
+
 package com.hackathon.config;
 
 import com.hackathon.security.CustomUserDetailsService;
@@ -49,27 +50,48 @@ public class SecurityConfig {
                                 "/api/account/login",      //  N them de test
                                 "/api/account/resend-verification", //N them
                                 "/api/notifications/**",
-                                "/api/events",//N
-                                "/api/events/*",//N
                                 "/error",
                                 "/verify-email",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
-                                "/api/events/public/**",
-                                "/api/events/*/detail",
-                                "/api/events/all"
+                                "/api/events/public/**"
                         ).permitAll()
-                        //CriteriaSet chỉ có Coordinator là người có quyền truy cập
+                        //expert
+                        .requestMatchers(HttpMethod.GET,"/api/participants/teams/**").hasRole("EXPERT")
+
+                        .requestMatchers("/api/notifications/**").authenticated()
+                        // Dành cho STUDENT (Đăng ký sự kiện & Mời thành viên)
+                        .requestMatchers(HttpMethod.POST, "/api/registrations/*/register-event").hasRole("STUDENT")
+                        .requestMatchers(HttpMethod.POST, "/api/registrations/teams/invite").hasRole("STUDENT")
+
+                        .requestMatchers("/api/teams/**").hasRole("STUDENT")
+                        //Chỉ event coordinator
+                        // 1. tất cả các API thay đổi dữ liệu sự kiện (POST, PUT, DELETE, PATCH)
+                        .requestMatchers("/api/events/create", "/api/events/publish/**",
+                                        "/api/events/delete/**", "/api/events/update/**",
+                                        "/api/events/restore/**", "/api/events/permanently/**")
+                                .hasRole("EVENTCOORDINATOR")
+
+                        // 2. các API xem danh sách sự kiện (GET)
+                        .requestMatchers("/api/events/trash", "/api/events/experts",
+                                        "/api/events/all", "/api/events/search-all")
+                                .hasRole("EVENTCOORDINATOR")
                         .requestMatchers("/api/criteriaSet/**")
                         .hasRole("EVENTCOORDINATOR")
-                        .requestMatchers("/api/notifications/**").authenticated()
-                        .requestMatchers("/api/events/registration/**").hasRole("STUDENT")
-                        //Chỉ event coordinator mới có quyền tạo event
-                        .requestMatchers(HttpMethod.POST, "/api/events").hasRole("EVENTCOORDINATOR")
-                        .requestMatchers(HttpMethod.PUT, "/api/events/**").hasRole("EVENTCOORDINATOR")
-                        .requestMatchers(HttpMethod.DELETE, "/api/events/**").hasRole("EVENTCOORDINATOR")
-                        .requestMatchers(HttpMethod.PATCH, "/api/events/**").hasRole("EVENTCOORDINATOR")
+
+                        .requestMatchers(HttpMethod.GET,"/api/participants/teams/**").hasRole("EXPERT")
+                        .requestMatchers(HttpMethod.GET,"/api/participants/teams/disqualify").hasRole("EVENTCOORDINATOR")
+
+
+
+                        // Dành cho COORDINATOR (Quản lý duyệt đơn)
+                        .requestMatchers(HttpMethod.GET, "/api/registrations/*/approveTeam-detail").hasRole("EVENTCOORDINATOR")
+                        .requestMatchers(HttpMethod.GET, "/api/registrations/*/approved-teams").hasRole("EVENTCOORDINATOR")
+                        .requestMatchers(HttpMethod.PATCH, "/api/registrations/*/approve").hasRole("EVENTCOORDINATOR")
+                        .requestMatchers(HttpMethod.PATCH, "/api/registrations/*/reject").hasRole("EVENTCOORDINATOR")
+                        .requestMatchers(HttpMethod.GET, "/api/registrations/*/pendingTeam").hasRole("EVENTCOORDINATOR")
+                        .requestMatchers(HttpMethod.GET, "/api/registrations/*/pendingTeam-detail").hasRole("EVENTCOORDINATOR")
 
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface CategoryRepository extends JpaRepository<Category, Integer> {
@@ -18,4 +19,6 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
     public void deleteByEventId(@Param("eventId") Integer eventId);
 
     List<Category> findAllByHackathonEvent_EventId(int hackathonEventEventId);
+
+    Optional<Category> findCategoryByCategoryIdAndHackathonEvent_EventId(Integer categoryId, int hackathonEventEventId);
 }

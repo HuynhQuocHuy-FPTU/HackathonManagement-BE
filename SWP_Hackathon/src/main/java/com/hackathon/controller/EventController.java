@@ -1,13 +1,14 @@
 package com.hackathon.controller;
 
+import com.hackathon.dto.category.CategoryResponse;
 import com.hackathon.dto.event.CreateEventRequest;
 import com.hackathon.dto.event.EventResponse;
 import com.hackathon.dto.event.UpdateEventRequest;
 import com.hackathon.dto.expert.ExpertInfoResponse;
-import com.hackathon.dto.registration.RegistrationResponse;
 import com.hackathon.dto.team.TeamResponse;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
+import com.hackathon.service.CategoryService;
 import com.hackathon.service.ExpertService;
 import com.hackathon.service.RegistrationEventService;
 import com.hackathon.service.event.EventService;
@@ -26,10 +27,13 @@ import java.util.List;
 public class EventController {
     @Autowired
     private EventService eventService;
+
     @Autowired
     private ExpertService expertService;
     @Autowired
     private RegistrationEventService registrationEventService;
+    @Autowired
+    private CategoryService categoryService;
 
     // =========================================================
     // PUBLIC ENDPOINTS (Dành cho Guest/Student/Admin)
@@ -45,7 +49,7 @@ public class EventController {
         return ResponseEntity.ok(eventService.searchPublicEvents(name));
     }
 
-    @GetMapping("/{eventId}/detail")
+    @GetMapping("/public/detail/{eventId}")
     public ResponseEntity<EventResponse> getPublicEventDetail(@PathVariable Integer eventId) {
         return ResponseEntity.ok(eventService.getEventDetail(eventId));
     }
@@ -54,7 +58,7 @@ public class EventController {
     // =========================================================
     // COORDINATOR ENDPOINTS (Dành cho quản trị viên)
     // =========================================================
-    @PostMapping
+    @PostMapping("/create")
     public ResponseEntity<EventResponse> createEvent(@Valid @RequestBody CreateEventRequest request) {
         EventResponse response = eventService.createEvent(request);
         return new ResponseEntity<>(response,HttpStatus.CREATED);
@@ -93,13 +97,13 @@ public class EventController {
         eventService.permanentlyDeleteEvent(eventId);
         return ResponseEntity.ok("Đã xóa vĩnh viễn event");
     }
-    @GetMapping("/search")
+    @GetMapping("/search-all")
     public ResponseEntity<List<EventResponse>> searchEvents(@RequestParam(required = false) String name) {
 
         return ResponseEntity.ok(eventService.searchByEventName(name));
     }
 
-    @GetMapping("/{eventId}")
+    @GetMapping("/detail/{eventId}")
     public ResponseEntity<EventResponse> getEventDetail(@PathVariable Integer eventId) {
         return ResponseEntity.ok(eventService.getEventDetail(eventId));
     }
@@ -113,7 +117,10 @@ public class EventController {
     public ResponseEntity<List<ExpertInfoResponse>> getAllExperts(){
         return ResponseEntity.ok(expertService.getAllExperts());
     }
-
-
+    @GetMapping("/categories/{eventId}")
+    public ResponseEntity<ApiResponse<List<CategoryResponse>>> getCategoriesOfEvent(@PathVariable Integer eventId){
+        List<CategoryResponse> categoryResponses = categoryService.getAllCategories(eventId);
+        return ResponseEntity.ok(ApiResponse.success(categoryResponses, "Các categories thuộc về event"));
+    }
 
 }

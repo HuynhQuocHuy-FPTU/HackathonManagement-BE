@@ -1,5 +1,6 @@
 package com.hackathon.repository;
 
+import com.hackathon.dto.TeamSelectionDTO;
 import com.hackathon.entity.Registration;
 import com.hackathon.entity.Team;
 import com.hackathon.entity.enums.RegistrationStatus;
@@ -20,4 +21,10 @@ public interface RegistrationRepository extends JpaRepository<Registration, Inte
 
     List<Registration> findByHackathonEvent_EventIdAndStatus(Integer eventId, RegistrationStatus status);
 //    boolean existsByHackathonEvent_EventIdAndTeam_TeamNameAndTeam_IdNot(Integer eventId, String teamName, Integer teamId);
+
+    Optional<Registration> findByRegistrationId(Integer registrationId);
+
+    Optional<Registration> findRegistrationByRegistrationIdAndHackathonEvent_EventId(int registrationId, int hackathonEventEventId);
+
+
 }

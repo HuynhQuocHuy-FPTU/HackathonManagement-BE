@@ -11,9 +11,7 @@ import lombok.*;
 @Builder
 public class UpdateCategoryRequest {
 
-    @NotNull(message = "Category id is required")
     private Integer categoryId;
 
-    @NotBlank(message = "Category name is required")
     private String categoryName;
 }
