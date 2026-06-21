@@ -8,13 +8,15 @@ import com.hackathon.entity.Notification;
 import com.hackathon.entity.Team;
 import com.hackathon.security.CustomUserDetails;
 
+import java.util.List;
+
 public interface TeamService {
     //    HackathonEvent checkEventRegistrationWindow(Integer eventId);
     void checkEventRegistrationWindow(Team team);
 
     TeamResponse createTeam(CreateTeamRequest request, CustomUserDetails userDetails);
 
-    TeamResponse  sendTeamInvitation(CreateTeamRequest request,CustomUserDetails userDetails);
+    TeamResponse sendTeamInvitation(CreateTeamRequest request, CustomUserDetails userDetails);
 
     String updateInfo(CustomUserDetails userDetails, String teamName);
 
@@ -35,6 +37,8 @@ public interface TeamService {
     void rejectTeamInvite(Notification notification, CustomUserDetails userDetails);
 
     TeamDetailResponse getTeamMember(Integer teamId, CustomUserDetails userDetails);
+
+    List<TeamDetailResponse> getTeamForAdmin(CustomUserDetails userDetails);
 
 
 }

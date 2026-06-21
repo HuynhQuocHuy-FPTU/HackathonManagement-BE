@@ -148,7 +148,6 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
                 RegistrationResponse.MemberInfo info = new RegistrationResponse.MemberInfo(
                         memberInfo.getStudent().getStudentCode(),
                         memberInfo.getStudent().getStudentName(),
-//                        memberInfo.getStudent().getUniversityName(),
                         memberInfo.getStudent().getMajor(),
                         memberInfo.getStudent().getAccount().getEmail()
                 );

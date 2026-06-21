@@ -1,5 +1,6 @@
 package com.hackathon.service;
 
+import com.hackathon.dto.registration.RegistrationResponse;
 import com.hackathon.dto.team.CreateTeamRequest;
 import com.hackathon.dto.team.TeamDetailResponse;
 import com.hackathon.dto.team.TeamRequest;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -32,7 +34,7 @@ public class TeamServiceImpl implements TeamService {
     private final EmailService emailService;
     private static final int MAX_TEAM_SIZE = 5;
     private static final long LOCK_BEFORE_DEADLINE_HOURS = 24;
-    private static final long INVITATION_EXPIRE_HOURS = 3;
+    private static final long INVITATION_EXPIRE_DAYS = 3;
 
 
     // Nếu Đội đã nộp đơn và thời gian hiện tại cách thời gian đk event dưới 24 giờ -> CHẶN
@@ -64,8 +66,6 @@ public class TeamServiceImpl implements TeamService {
 
     //FUNCTION 1:Create Team
     //BR: Khi tao team phai co tieu thieu it nhat 1 thanh vien duoc moi (bao gom leader va 1 thanh vien khac)
-    //BR-07: Sau khi hết hạn đăng ký không được xóa hoặc thay đổi thành viên
-    //BR-08: Lời mời/Tạo team phải thực hiện trước khi chốt danh sách 24 giờ
 
     @Transactional
     @Override
@@ -121,10 +121,10 @@ public class TeamServiceImpl implements TeamService {
 
         //3.4   Check account được gửi mail nếu ko có role Là STUDENT thì ko được phép nhập
         Map<String, Account> memberAccountMap = new HashMap<>();
-        for(String memberEmail : cleanEmails){
+        for (String memberEmail : cleanEmails) {
             Account checkAcc = accRepository.findByEmail(memberEmail)
                     .orElseThrow(() -> new BadRequestException("Tài khoản với email " + memberEmail + " không tồn tại trên hệ thống."));
-            if(checkAcc.getRole() != AccountRole.STUDENT){
+            if (checkAcc.getRole() != AccountRole.STUDENT) {
                 throw new BadRequestException("Email " + memberEmail + " không hợp lệ. Bạn chỉ có thể mời tài khoản có vai trò là STUDENT.");
             }
             memberAccountMap.put(memberEmail, checkAcc);
@@ -177,7 +177,6 @@ public class TeamServiceImpl implements TeamService {
             invitedEmails.add(memberEmail);
 
             //7. Gui loi moi den cac thnah vien
-            // 2. Send Email per member
             try {
                 MailRequest mailRequest = new MailRequest();
                 mailRequest.setTo(account.getEmail());
@@ -254,7 +253,7 @@ public class TeamServiceImpl implements TeamService {
             List<TeamMember> studentTeams = teamMemberRepository.findByStudent(memberAccount.getStudent());
 
             // Chặn gửi mail đến những ng ko có role là Studnet
-            if(memberAccount.getRole() != AccountRole.STUDENT){
+            if (memberAccount.getRole() != AccountRole.STUDENT) {
                 throw new BadRequestException("Bạn không được phép gửi mail đến những tài khoản không phải là STUDENT.");
             }
 
@@ -548,12 +547,12 @@ public class TeamServiceImpl implements TeamService {
         if (LocalDateTime.now().isAfter(expiredAt)) {
             // Neu loi moi het han , thi vo hieu hoa loi moi(cap nhat trang thai thong bao)
             notification.setTitle("EXPIRED. Lời mời tham gia : " + team.getTeamName() + " hết hạn.");
-            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_HOURS + " ngày");
+            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_DAYS + " ngày");
             notification.setStatus(NotificationStatus.EXPIRED);
             notificationRepository.save(notification);
             throw new BadRequestException("Lời mời tham gia của bạn hết hạn");
         }
-        //5.Kiểm tra xem sinh viên này có bị TRÙNG cuộc thi (Event) không
+        //5.Kiểm tra xem sinh viên này có bị TRÙNG cuộc thi  không
         List<TeamMember> userCurrentTeams = teamMemberRepository.findByStudent(inviteAccount.getStudent());
         if (userCurrentTeams != null && !userCurrentTeams.isEmpty()) {
             // Lấy trước danh sách các đơn đăng ký (giải đấu) của Team mới chuẩn bị gia nhập
@@ -657,7 +656,7 @@ public class TeamServiceImpl implements TeamService {
         if (LocalDateTime.now().isAfter(expiredAt)) {
             // Neu loi moi het han , thi vo hieu hoa loi moi(cap nhat trang thai thong bao)
             notification.setTitle("EXPIRED. Lời mời tham gia : " + team.getTeamName() + " hết hạn.");
-            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_HOURS + " ngày");
+            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_DAYS + " ngày");
             notification.setStatus(NotificationStatus.EXPIRED);
             notificationRepository.save(notification);
             throw new BadRequestException("Lời mời tham gia của bạn hết hạn");
@@ -761,7 +760,7 @@ public class TeamServiceImpl implements TeamService {
         if (LocalDateTime.now().isAfter(expiredAt)) {
             // Neu loi moi het han , thi vo hieu hoa loi moi(cap nhat trang thai thong bao)
             notification.setTitle("EXPIRED. Lời mời tham gia : " + team.getTeamName() + " hết hạn.");
-            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_HOURS + " ngày");
+            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_DAYS + " ngày");
             notification.setStatus(NotificationStatus.EXPIRED);
             notificationRepository.save(notification);
             throw new BadRequestException("Lời mời tham gia của bạn hết hạn");
@@ -797,7 +796,7 @@ public class TeamServiceImpl implements TeamService {
         if (LocalDateTime.now().isAfter(expiredAt)) {
             // Neu loi moi het han , thi vo hieu hoa loi moi(cap nhat trang thai thong bao)
             notification.setTitle("EXPIRED. Lời mời tham gia : " + team.getTeamName() + " hết hạn.");
-            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_HOURS + " ngày");
+            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_DAYS + " ngày");
             notification.setStatus(NotificationStatus.EXPIRED);
             notificationRepository.save(notification);
             throw new BadRequestException("Lời mời tham gia của bạn hết hạn");
@@ -851,16 +850,48 @@ public class TeamServiceImpl implements TeamService {
         }
 
         // 4. Đóng gói dữ liệu trả về cho Frontend
-        return new TeamDetailResponse(
-                team.getTeamId(),
-                team.getTeamName(),
-                leaderInfo,
-                officialMembers,
-                team.getCreateAt(),
-                inviteInfo
-        );
-
+        return TeamDetailResponse.builder()
+                .teamId(team.getTeamId())
+                .teamName(team.getTeamName())
+                .leader(leaderInfo)
+                .members(officialMembers).createAt(team.getCreateAt()).invitations(inviteInfo)
+                .build();
     }
+
+    @Override
+    public List<TeamDetailResponse> getTeamForAdmin(CustomUserDetails userDetails) {
+        //1. Check admin
+        Account account = userDetails.getAccount();
+        if (account.getRole() != AccountRole.ADMIN) {
+            throw new BadRequestException("Bạn không phải là Admin, bạn không được phép xem danh sách này.");
+        }
+
+        //2. Lấy list team
+        List<Team> listTeam = teamRepository.findAll();
+        List<TeamDetailResponse.MemberInfo> members = new ArrayList<>();
+        TeamDetailResponse.MemberInfo leader = null;
+        return listTeam.stream().map(team -> {
+            String leaderName = team.getTeamMembers().stream()
+                    .filter(TeamMember::getIsLeader) // Lọc người có isLeader == true
+                    .map(tm -> tm.getStudent().getStudentName())
+                    .findFirst()
+                    .orElse("Chưa có Leader");
+            TeamDetailResponse.MemberInfo leaderInfo = TeamDetailResponse.MemberInfo.builder()
+                    .fullName(leaderName)
+                    .build();
+            int size = team.getTeamMembers() != null ? team.getTeamMembers().size() : 0;
+            String statusStr = team.getStatus().name();
+            return TeamDetailResponse.builder()
+                    .teamId(team.getTeamId())
+                    .teamName(team.getTeamName())
+                    .leader(leaderInfo)
+                    .createAt(team.getCreateAt())
+                    .sizeTeam(size)
+                    .status(statusStr)
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
 
 }
 

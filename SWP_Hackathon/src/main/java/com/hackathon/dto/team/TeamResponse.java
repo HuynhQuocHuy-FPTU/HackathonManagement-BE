@@ -31,13 +31,6 @@ public class TeamResponse {
         private String email;
         private String major;
     }
-    @Getter
-    @Setter
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class EventInfo {
-        private Integer eventId;
-        private String eventName;
-    }
+
 
 }
