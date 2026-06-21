@@ -75,6 +75,7 @@ public class EventServiceImpl implements EventService {
         if (request.getMaxTeamSize() != null) event.setMaxTeamSize(request.getMaxTeamSize());
         if (request.getMinTeamSize() != null) event.setMinTeamSize(request.getMinTeamSize());
         if (request.getRegistrationDeadline() != null) event.setRegistrationDeadline(request.getRegistrationDeadline());
+        if (request.getBannerUrl() != null) event.setBannerUrl(request.getBannerUrl());
 
         event.setEventCoordinator(coordinator);
         event.setCreateAt(LocalDateTime.now());
