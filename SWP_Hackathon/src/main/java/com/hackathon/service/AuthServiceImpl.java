@@ -92,7 +92,6 @@ public class AuthServiceImpl implements AuthService {
                 .refreshToken(refreshTokenValue)
                 .expiresIn(jwtService.getAccessExpirationMs() / 1000)
                 .accountId(account.getAccountId())
-                .accountName(account.getAccountName())
                 .email(account.getEmail())
                 .role(account.getRole())
                 .build();
@@ -156,8 +155,8 @@ public class AuthServiceImpl implements AuthService {
                 .accessToken(accessToken)
                 .refreshToken(refreshTokenValue)
                 .expiresIn(jwtService.getAccessExpirationMs() / 1000)
+                .fullName(accountRepository.findFullNameByEmail(account.getEmail()).orElse(null))
                 .accountId(account.getAccountId())
-                .accountName(account.getAccountName())
                 .email(account.getEmail())
                 .role(account.getRole())
                 .build();
