@@ -61,7 +61,6 @@ public class DatabaseService {
             accountRepository.save(Account.builder()
                     .createdAt(LocalDateTime.now())
                     .email("admin@hackathon.com")
-                    .accountName("System Admin")
                     .phone("0123456789")
                     .status(AccountStatus.ACTIVE)
                     .password(passwordEncoder.encode("Admin@123"))
@@ -70,15 +69,15 @@ public class DatabaseService {
                     .build());
             System.out.println("Đã khởi tạo tài khoản Admin: admin@hackathon.com / Mật khẩu: Admin@123");
         }
-        Account acc1 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("nguyenvan30498@gmail.com").accountName("vanvan834").phone("0976352891").status(AccountStatus.ACTIVE).password(passwordEncoder.encode("123456")).role(AccountRole.EVENTCOORDINATOR).build());
+        Account acc1 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("nguyenvan30498@gmail.com").phone("0976352891").status(AccountStatus.ACTIVE).password(passwordEncoder.encode("123456")).role(AccountRole.EVENTCOORDINATOR).build());
 
-        Account acc2 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("tranhoa456@gmail.com").password(passwordEncoder.encode("123456")).accountName("hoahoa").phone("0983452324").status(AccountStatus.ACTIVE).role(AccountRole.EXPERT).build());
+        Account acc2 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("tranhoa456@gmail.com").password(passwordEncoder.encode("123456")).phone("0983452324").status(AccountStatus.ACTIVE).role(AccountRole.EXPERT).build());
 
-        Account acc3 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("lehuyen4238@gmail.com").password(passwordEncoder.encode("123456")).accountName("huyenhuyen").phone("097635235").status(AccountStatus.ACTIVE).role(AccountRole.EXPERT).build());
+        Account acc3 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("lehuyen4238@gmail.com").password(passwordEncoder.encode("123456")).phone("097635235").status(AccountStatus.ACTIVE).role(AccountRole.EXPERT).build());
 
-        Account acc4 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("lehoa345@gmail.com").password(passwordEncoder.encode("123456")).accountName("lehoa").phone("0126789354").status(AccountStatus.ACTIVE).role(AccountRole.STUDENT).build());
+        Account acc4 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("lehoa345@gmail.com").password(passwordEncoder.encode("123456")).phone("0126789354").status(AccountStatus.ACTIVE).role(AccountRole.STUDENT).build());
 
-        Account acc5 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("nguyenha@gmail.com").password(passwordEncoder.encode("123456")).accountName("haha234").phone("0976336472").status(AccountStatus.ACTIVE).role(AccountRole.STUDENT).build());
+        Account acc5 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("nguyenha@gmail.com").password(passwordEncoder.encode("123456")).phone("0976336472").status(AccountStatus.ACTIVE).role(AccountRole.STUDENT).build());
 
 
         //Create eventcoordiantor
@@ -130,7 +129,7 @@ public class DatabaseService {
 //            Account acc = accountRepository.save(Account.builder()
 //                    .createdAt(LocalDateTime.now())
 //                    .email(email)
-//                    .accountName("Student_" + i)
+//                    .("Student_" + i)
 //                    .password(passwordEncoder.encode("123456"))
 //                    .status(AccountStatus.ACTIVE)
 //                    .role(AccountRole.STUDENT)

@@ -23,9 +23,6 @@ public class Account {
     @Column(name = "Account_ID")
     private int accountId;
 
-    @Column(name = "Account_Name", columnDefinition = "NVARCHAR(255)")
-    private String accountName;
-
     @Column(name = "Password", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String password;
 
@@ -42,6 +39,9 @@ public class Account {
     @Column(name = "Created_At", nullable = false, updatable = false)
     @CreationTimestamp
     private LocalDateTime createdAt;
+
+    @Column(name = "Avatar_Url", columnDefinition = "NVARCHAR(255)")
+    private String avatarUrl;
 
     @Column(name = "Updated_At")
     @UpdateTimestamp
