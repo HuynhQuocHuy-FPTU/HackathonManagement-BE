@@ -25,11 +25,11 @@ public class Notification {
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING)// moi bo sung
+    @Enumerated(EnumType.STRING)
     private NotificationType type;
 
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING)// moi bo sung
+    @Enumerated(EnumType.STRING)
     // Check trạng thái của lời mời
     private NotificationStatus status;
 
