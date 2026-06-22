@@ -22,6 +22,9 @@ public class TeamDetailResponse {
     private List<InviteInfo> invitations;
     private int sizeTeam;
     private String status;
+    private String categoryName;
+    private Integer expertId;
+    private String roundName;
 
 
     @Getter
@@ -35,6 +38,8 @@ public class TeamDetailResponse {
         private String fullName;
         private String email;
         private String major;
+        private String university;
+        private String avatarUrl;
     }
 
     @Getter

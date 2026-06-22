@@ -40,5 +40,8 @@ public class Registration {
     @JoinColumn(name = "Event_ID", nullable = false)
     private HackathonEvent hackathonEvent;
 
+    @OneToOne
+    private Participant participant;
+
 
 }

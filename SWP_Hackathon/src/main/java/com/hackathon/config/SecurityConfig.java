@@ -59,8 +59,14 @@ public class SecurityConfig {
                         ).permitAll()
                         //expert
                         .requestMatchers(HttpMethod.GET,"/api/participants/teams/**").hasRole("EXPERT")
-
                         .requestMatchers("/api/notifications/**").authenticated()
+
+                        // API DÀNH CHO EVENT , EXPERT, COORDINATOR
+                        .requestMatchers(HttpMethod.GET, "/api/teams/expert/**")
+                        .hasAnyRole("EXPERT", "ADMIN", "EVENTCOORDINATOR")
+                        .requestMatchers(HttpMethod.GET, "/api/teams/*/detail")
+                        .hasAnyRole("ADMIN", "EXPERT", "EVENTCOORDINATOR")
+
                         // Dành cho STUDENT (Đăng ký sự kiện & Mời thành viên)
                         .requestMatchers(HttpMethod.POST, "/api/registrations/*/register-event").hasRole("STUDENT")
                         .requestMatchers(HttpMethod.POST, "/api/registrations/teams/invite").hasRole("STUDENT")
@@ -82,7 +88,6 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.GET,"/api/participants/teams/**").hasRole("EXPERT")
                         .requestMatchers(HttpMethod.GET,"/api/participants/teams/disqualify").hasRole("EVENTCOORDINATOR")
-
 
 
                         // Dành cho COORDINATOR (Quản lý duyệt đơn)

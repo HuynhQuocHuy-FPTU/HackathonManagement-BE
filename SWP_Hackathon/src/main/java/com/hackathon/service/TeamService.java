@@ -40,5 +40,8 @@ public interface TeamService {
 
     List<TeamDetailResponse> getTeamForAdmin(CustomUserDetails userDetails);
 
+    TeamDetailResponse getTeamDetail(Integer  teamId, CustomUserDetails userDetails);
+
+    List<TeamDetailResponse> getTeamInfor(Integer expertId, CustomUserDetails userDetails);
 
 }
