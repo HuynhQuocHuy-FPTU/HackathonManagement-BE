@@ -5,6 +5,8 @@ import com.hackathon.entity.Account;
 import com.hackathon.entity.CriteriaDetail;
 import com.hackathon.entity.CriteriaSet;
 import com.hackathon.entity.EventCoordinator;
+import com.hackathon.entity.enums.AuditAction;
+import com.hackathon.entity.enums.AuditEntityType;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.CriteriaDetailRepository;
 import com.hackathon.repository.CriteriaSetRepository;
@@ -27,6 +29,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
     private final CriteriaSetRepository criteriaSetRepository;
     private final CriteriaDetailRepository criteriaDetailRepository;
     private final EventCoordinatorRepository eventCoordinatorRepository;
+    private final AuditService auditService;
 
     // 1. Get all bo tieu chi hien co(criteria-set)
     @Override
@@ -153,6 +156,13 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
         // 3. Luu du lieu xuong DB
         CriteriaSet saved = criteriaSetRepository.save(criteriaSet);
         List<CriteriaDetail> savedDetails = saved.getCriteriaDetails();
+        auditService.saveLog(
+                account,
+                AuditAction.CREATE_CRITERIA,
+                AuditEntityType.CRITERIA,
+                criteriaSet.getCriteriaSetId(),
+                "Create criteria " + criteriaSet.getCriteriaSetName()
+        );
         // 4. Tra du lieu ve DTO
         return mapToResponse(saved, savedDetails);
 
@@ -299,7 +309,13 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
                 updateList.add(detail);
             }
         }
-
+        auditService.saveLog(
+                userDetails.getAccount(),
+                AuditAction.UPDATE_CRITERIA,
+                AuditEntityType.CRITERIA,
+                criteriaSet.getCriteriaSetId(),
+                "Update criteria " + criteriaSet.getCriteriaSetName()
+        );
         //Save
         List<CriteriaDetail> finalSavedDetails = criteriaDetailRepository.saveAll(updateList);
         return mapToResponse(savedCriteriaSet, finalSavedDetails);
@@ -321,8 +337,15 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
         if (criteriaSet == null) {
             throw new RuntimeException("CriteriaSet not found with id: " + criteriaSetId);
         }
-        criteriaSetRepository.delete(criteriaSet);
 
+        criteriaSetRepository.delete(criteriaSet);
+        auditService.saveLog(
+                userDetails.getAccount(),
+                AuditAction.DELETE_CRITERIA,
+                AuditEntityType.CRITERIA,
+                criteriaSet.getCriteriaSetId(),
+                "Deleted criteria " + criteriaSet.getCriteriaSetName()
+        );
     }
 
     private CriteriaSetResponseDTO mapToResponse(CriteriaSet criteriaSet, List<CriteriaDetail> details) {

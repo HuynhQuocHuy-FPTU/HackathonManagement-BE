@@ -30,6 +30,7 @@ public class TeamServiceImpl implements TeamService {
     private final NotificationRepository notificationRepository;
     private final StudentRepository studentRepository;
     private final EmailService emailService;
+    private final AuditService auditService;
     private static final int MAX_TEAM_SIZE = 5;
     private static final long LOCK_BEFORE_DEADLINE_HOURS = 24;
     private static final long INVITATION_EXPIRE_HOURS = 3;
@@ -198,6 +199,13 @@ public class TeamServiceImpl implements TeamService {
             }
 
         }
+        auditService.saveLog(
+                leaderAccount,
+                AuditAction.CREATE_TEAM,
+                AuditEntityType.TEAM,
+                team.getTeamId(),
+                "Create team " + team.getTeamName()
+        );
         //8. Return TeamResponse
         return new TeamResponse(saveTeam.getTeamId(), saveTeam.getTeamName(), leaderInfo, listMember, saveTeam.getCreateAt(), invitedEmails);
     }
@@ -372,7 +380,15 @@ public class TeamServiceImpl implements TeamService {
         // 6. Update
         team.setTeamName(cleanName);
         teamRepository.save(team);
+        auditService.saveLog(
+                currentAccount,
+                AuditAction.UPDATE_EVENT,
+                AuditEntityType.EVENT,
+                team.getTeamId(),
+                "Update team " + team.getTeamName()
+        );
         return team.getTeamName();
+
     }
 
     //FUNCTION 3: RỜI TEAM
@@ -399,6 +415,13 @@ public class TeamServiceImpl implements TeamService {
         checkEventRegistrationWindow(team);
         // Xoa
         teamMemberRepository.delete(teamMember);
+        auditService.saveLog(
+                currentUser,
+                AuditAction.UPDATE_TEAM,
+                AuditEntityType.TEAM,
+                team.getTeamId(),
+                "Leave team " + team.getTeamName()
+        );
 
         //5. Cập nhật lại số lượng thành viên thực tế trong DB
         team.setTeamSize(Math.max(0, team.getTeamSize() - 1));
@@ -473,6 +496,13 @@ public class TeamServiceImpl implements TeamService {
         } catch (Exception e) {
             System.out.println("==> Lỗi gửi email chuyển quyền leader: " + e.getMessage());
         }
+        auditService.saveLog(
+                currentUser,
+                AuditAction.UPDATE_EVENT,
+                AuditEntityType.EVENT,
+                team.getTeamId(),
+                "Transfer leader " + team.getTeamName() + "leader mới: " + newLeader
+        );
     }
 
     //FUNCTION 5: HÀM XỬ LÝ CHẤP NHẬN LỜI MỜI CHO TRANSFER, INVITE TEAM

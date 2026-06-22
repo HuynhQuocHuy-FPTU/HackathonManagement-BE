@@ -3,6 +3,8 @@ package com.hackathon.service;
 import com.hackathon.dto.ExpertAssignedGroupDTO;
 import com.hackathon.dto.ParticipantResponseDTO;
 import com.hackathon.entity.*;
+import com.hackathon.entity.enums.AuditAction;
+import com.hackathon.entity.enums.AuditEntityType;
 import com.hackathon.entity.enums.ParticipantStatus;
 import com.hackathon.entity.enums.TeamStatus;
 import com.hackathon.exception.BadRequestException;
@@ -29,6 +31,7 @@ public class ParticipantServiceImpl implements ParticipantService{
     private final ParticipantRepository participantRepository;
     private final TeamRepository teamRepository;
     private final DisqualifyValidator disqualifyValidator;
+    private final AuditService auditService;
 
     public List<ExpertAssignedGroupDTO> getAssignParticipants(Integer eventId){
 
@@ -48,7 +51,10 @@ public class ParticipantServiceImpl implements ParticipantService{
         return assigns.stream().map(this::buildGroup).toList();
     }
     public void disqualifyTeam(Integer eventId, Integer teamId, String reason) {
+        CustomUserDetails userDetails =
+                (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
+        Account account = userDetails.getAccount();
         // 1. Lấy toàn bộ Participant của Team này trong Event này
         List<Participant> participants = participantRepository
                 .findParticipantByRegistration_Team_TeamIdAndRegistration_HackathonEvent_EventId(teamId, eventId);
@@ -67,6 +73,7 @@ public class ParticipantServiceImpl implements ParticipantService{
         Team team = participants.get(0).getRegistration().getTeam();
         team.setStatus(TeamStatus.DRAFT); // điều chỉnh đúng tên enum thật
         teamRepository.save(team);
+        auditService.saveLog(account, AuditAction.DISQUALIFY_TEAM, AuditEntityType.PARTICIPANT, participants.get(0).getId(), team.getTeamName() );
 
     }
 
