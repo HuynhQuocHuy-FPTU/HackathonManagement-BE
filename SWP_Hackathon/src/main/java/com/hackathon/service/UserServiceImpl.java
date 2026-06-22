@@ -25,7 +25,7 @@ public class UserServiceImpl implements UserService {
                 .refreshToken(null)
                 .expiresIn(0)
                 .accountId(account.getAccountId())
-                .accountName(account.getAccountName())
+                .fullName(account.getAccountName())
                 .email(account.getEmail())
                 .role(account.getRole())
                 .build();
@@ -81,7 +81,7 @@ public class UserServiceImpl implements UserService {
                 .refreshToken(null)
                 .expiresIn(0)
                 .accountId(account.getAccountId())
-                .accountName(account.getAccountName())
+                .fullName(account.getAccountName())
                 .email(account.getEmail())
                 .role(account.getRole())
                 .build();

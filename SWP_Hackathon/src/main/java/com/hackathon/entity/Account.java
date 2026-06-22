@@ -43,6 +43,9 @@ public class Account {
     @Column(name = "Avatar_Url", columnDefinition = "NVARCHAR(255)")
     private String avatarUrl;
 
+    @Column(name = "Account_Name", columnDefinition = "NVARCHAR(255)")
+    private String accountName;
+
     @Column(name = "Updated_At")
     @UpdateTimestamp
     private LocalDateTime updatedAt;
@@ -67,7 +70,9 @@ public class Account {
     private List<Notification> notifications;
 
     // 1 account - N Auditlog
-    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(
+            mappedBy = "account",
+            fetch = FetchType.LAZY)
     private List<AuditLog> auditLogs;
 
     @Column(name = "Verification_Token", columnDefinition = "VARCHAR(255)")
