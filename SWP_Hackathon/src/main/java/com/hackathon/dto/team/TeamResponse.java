@@ -1,7 +1,6 @@
 package com.hackathon.dto.team;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.hackathon.entity.enums.NotificationStatus;
 import lombok.*;
 
 import java.time.LocalDateTime;

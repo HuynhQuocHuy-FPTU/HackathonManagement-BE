@@ -49,7 +49,6 @@ public class RegisterServiceImpl implements RegisterService {
         String verificationToken = UUID.randomUUID().toString();
 
         Account account = new Account();
-        account.setAccountName(request.getStudentName());
         account.setEmail(request.getEmail().trim().toLowerCase());
         account.setPhone(request.getPhone());
         account.setPassword(passwordEncoder.encode(request.getPassword()));

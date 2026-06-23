@@ -32,6 +32,7 @@ public class EventResponse {
     private EventStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updateAt;
+    private String bannerUrl;
     private List<CategoryResponse> categories;
     private List<RoundResponse> rounds;
 
@@ -51,6 +52,7 @@ public class EventResponse {
         this.status = event.getStatus();
         this.createdAt = event.getCreateAt();
         this.updateAt = event.getUpdateAt();
+        this.bannerUrl = event.getBannerUrl();
 
         this.categories = categories;
         this.rounds = rounds;

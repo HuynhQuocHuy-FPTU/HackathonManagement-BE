@@ -4,15 +4,13 @@ import com.hackathon.dto.TeamSelectionDTO;
 import com.hackathon.dto.registration.RegistrationResponse;
 import com.hackathon.dto.team.TeamResponse;
 import com.hackathon.entity.*;
-import com.hackathon.entity.enums.AccountRole;
-import com.hackathon.entity.enums.ParticipantStatus;
-import com.hackathon.entity.enums.RegistrationStatus;
-import com.hackathon.entity.enums.TeamStatus;
+import com.hackathon.entity.enums.*;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.*;
 import com.hackathon.security.CustomUserDetails;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -27,9 +25,9 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
     private final TeamMemberRepository teamMemberRepository;
     private final RegistrationRepository registrationRepository;
     private final TeamRepository teamRepository;
-    private final AccountRepository accountRepository;
     private final ParticipantService participantService;
-    //    private final NotificationRepository notificationRepository;
+    private final AuditService auditService;
+    private final NotificationService notificationService;
 
     //1. Leader đại diện Team đăng ký cuộc thi
     @Override
@@ -133,6 +131,10 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
     @Override
     @Transactional
     public Registration approveRegistration(Integer registrationId) {
+        CustomUserDetails userDetails =
+                (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        Account account = userDetails.getAccount();
         Registration registration = registrationRepository.findById(registrationId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy Registration: " + registrationId));
 
@@ -151,14 +153,31 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
 
         //tạo participant lưu các team đã được approve trước
         participantService.saveParticipant(registration);
-
+        auditService.saveLog(
+                account,
+                AuditAction.APPROVE_REGISTRATION,
+                AuditEntityType.REGISTRATION,registrationId,
+                "Approve registration of team:  " + registration.getTeam().getTeamName()
+        );
+        TeamMember leader = registration.getTeam()
+                .getTeamMembers()
+                .stream()
+                .filter(TeamMember::getIsLeader)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy team leader"));
+        Account leaderAccount = leader.getStudent().getAccount();
+        notificationService.notifyRegistrationApproved(account.getAccountId(), leaderAccount, registration.getTeam().getTeamName(), registration.getHackathonEvent().getEventName());
         return registration;
     }
 
     //Coordinator từ chối Registration - Chuyển trạng thái sang REJECTED
     @Override
     @Transactional
-    public Registration rejectRegistration(Integer registrationId) {
+    public Registration rejectRegistration(Integer registrationId, String reason) {
+        CustomUserDetails userDetails =
+                (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        Account account = userDetails.getAccount();
         Registration registration = registrationRepository.findById(registrationId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy Registration: " + registrationId));
 
@@ -168,6 +187,20 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
 
         registration.setStatus(RegistrationStatus.REJECTED);
         registration = registrationRepository.save(registration);
+        auditService.saveLog(
+                account,
+                AuditAction.REJECT_REGISTRATION,
+                AuditEntityType.REGISTRATION,registrationId,
+                "Reject registration of team:  " + registration.getTeam().getTeamName()
+        );
+        TeamMember leader = registration.getTeam()
+                .getTeamMembers()
+                .stream()
+                .filter(TeamMember::getIsLeader)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy team leader"));
+        Account leaderAccount = leader.getStudent().getAccount();
+        notificationService.notifyRegistrationRejected(account.getAccountId(), leaderAccount, registration.getTeam().getTeamName(), registration.getHackathonEvent().getEventName(), reason);
         return registration;
     }
 

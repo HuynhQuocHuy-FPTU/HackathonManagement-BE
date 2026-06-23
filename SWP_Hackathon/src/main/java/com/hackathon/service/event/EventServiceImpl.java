@@ -6,14 +6,14 @@ import com.hackathon.dto.event.EventResponse;
 import com.hackathon.dto.event.UpdateEventRequest;
 import com.hackathon.dto.round.RoundResponse;
 import com.hackathon.entity.*;
+import com.hackathon.entity.enums.AuditAction;
+import com.hackathon.entity.enums.AuditEntityType;
 import com.hackathon.entity.enums.EventStatus;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.EventCoordinatorRepository;
 import com.hackathon.repository.HackathonEventRepository;
-import com.hackathon.service.CategoryRoundService;
-import com.hackathon.service.CategoryService;
-import com.hackathon.service.ExpertAssignService;
-import com.hackathon.service.RoundService;
+import com.hackathon.security.CustomUserDetails;
+import com.hackathon.service.*;
 import com.hackathon.validator.EventValidator;
 import com.hackathon.validator.RoundValidator;
 import jakarta.transaction.Transactional;
@@ -44,6 +44,7 @@ public class EventServiceImpl implements EventService {
     private final CategoryRoundService categoryRoundService;
     private final ExpertAssignService expertAssignService;
     private final RoundValidator roundValidator;
+    private final AuditService auditService;
 
     // =========================================================
     // CREATE
@@ -75,6 +76,7 @@ public class EventServiceImpl implements EventService {
         if (request.getMaxTeamSize() != null) event.setMaxTeamSize(request.getMaxTeamSize());
         if (request.getMinTeamSize() != null) event.setMinTeamSize(request.getMinTeamSize());
         if (request.getRegistrationDeadline() != null) event.setRegistrationDeadline(request.getRegistrationDeadline());
+        if (request.getBannerUrl() != null) event.setBannerUrl(request.getBannerUrl());
 
         event.setEventCoordinator(coordinator);
         event.setCreateAt(LocalDateTime.now());
@@ -109,6 +111,13 @@ public class EventServiceImpl implements EventService {
         savedEvent.getRounds().clear();
         savedEvent.getRounds().addAll(createdRounds);
         savedEvent = eventRepository.saveAndFlush(savedEvent);
+        auditService.saveLog(
+                coordinator.getAccount(),
+                AuditAction.CREATE_EVENT,
+                AuditEntityType.EVENT,
+                event.getEventId(),
+                "Create event " + event.getEventName()
+        );
 
 
 
@@ -123,6 +132,11 @@ public class EventServiceImpl implements EventService {
     @Transactional
     @PreAuthorize("hasRole('EVENTCOORDINATOR')")
     public EventResponse updateEvent(UpdateEventRequest request, Integer eventId) {
+
+        CustomUserDetails userDetails =
+                (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        Account account = userDetails.getAccount();
 
         // 1. Lấy event cần update
         HackathonEvent event = eventRepository.findById(eventId)
@@ -188,10 +202,6 @@ public class EventServiceImpl implements EventService {
                 List<CategoryRound> categoryRounds = new ArrayList<>();
                 if (!finalCategories.isEmpty()) {
                     categoryRounds = categoryRoundService.createCategoryRound(finalCategories, savedRound);
-//                    log.info(">>> [DEBUG] categoryRounds created = {}", categoryRounds.size());
-//                    if (categoryRounds.isEmpty()) {
-//                        throw new BadRequestException("Không tạo được bản ghi CategoryRound cho round: " + savedRound.getRoundId());
-//                    }
                 }
 
                 if (roundRequest.getCategoryExperts() != null && !roundRequest.getCategoryExperts().isEmpty()) {
@@ -211,6 +221,13 @@ public class EventServiceImpl implements EventService {
             // Rounds rỗng → xóa sạch tất cả round của event
             roundService.deleteByEventId(eventId);
         }
+        auditService.saveLog(
+                account,
+                AuditAction.UPDATE_EVENT,
+                AuditEntityType.EVENT,
+                event.getEventId(),
+                "Updated event " + event.getEventName()
+        );
 
         return mapToResponse(updatedEvent, updatedRounds, finalCategories);
     }
@@ -222,6 +239,10 @@ public class EventServiceImpl implements EventService {
     @Override
     @PreAuthorize("hasRole('EVENTCOORDINATOR')")
     public void publishEvent(Integer eventId) {
+        CustomUserDetails userDetails =
+                (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        Account account = userDetails.getAccount();
         HackathonEvent event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy sự kiện"));
 
@@ -229,6 +250,13 @@ public class EventServiceImpl implements EventService {
 
         event.setStatus(EventStatus.ACTIVE);
         eventRepository.save(event);
+        auditService.saveLog(
+                account,
+                AuditAction.UPDATE_EVENT,
+                AuditEntityType.EVENT,
+                event.getEventId(),
+                "Publish event " + event.getEventName()
+        );
     }
 
     // =========================================================
@@ -238,6 +266,10 @@ public class EventServiceImpl implements EventService {
     @Override
     @PreAuthorize("hasRole('EVENTCOORDINATOR')")
     public void deleteEvent(Integer eventId) {
+        CustomUserDetails userDetails =
+                (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        Account account = userDetails.getAccount();
         HackathonEvent event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy sự kiện"));
 
@@ -248,6 +280,13 @@ public class EventServiceImpl implements EventService {
         event.setStatus(EventStatus.DELETED);
         event.setUpdateAt(LocalDateTime.now());
         eventRepository.save(event);
+        auditService.saveLog(
+                account,
+                AuditAction.DELETE_EVENT,
+                AuditEntityType.EVENT,
+                event.getEventId(),
+                "Publish event " + event.getEventName()
+        );
     }
 
     // =========================================================
@@ -257,6 +296,10 @@ public class EventServiceImpl implements EventService {
     @Override
     @PreAuthorize("hasRole('EVENTCOORDINATOR')")
     public void restoreEvent(Integer eventId) {
+        CustomUserDetails userDetails =
+                (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        Account account = userDetails.getAccount();
         HackathonEvent event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy sự kiện"));
 
@@ -267,6 +310,13 @@ public class EventServiceImpl implements EventService {
         event.setStatus(EventStatus.DRAFT);
         event.setUpdateAt(LocalDateTime.now());
         eventRepository.save(event);
+        auditService.saveLog(
+                account,
+                AuditAction.UPDATE_EVENT,
+                AuditEntityType.EVENT,
+                event.getEventId(),
+                "Restore event " + event.getEventName()
+        );
     }
 
     // =========================================================
@@ -277,6 +327,10 @@ public class EventServiceImpl implements EventService {
     @Transactional
     @PreAuthorize("hasRole('EVENTCOORDINATOR')")
     public void permanentlyDeleteEvent(Integer eventId) {
+        CustomUserDetails userDetails =
+                (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        Account account = userDetails.getAccount();
         HackathonEvent event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy sự kiện"));
 
@@ -285,6 +339,13 @@ public class EventServiceImpl implements EventService {
         }
 
         eventRepository.delete(event);
+        auditService.saveLog(
+                account,
+                AuditAction.UPDATE_EVENT,
+                AuditEntityType.EVENT,
+                event.getEventId(),
+                "Deleted event permanently" + event.getEventName()
+        );
     }
 
     // =========================================================
@@ -367,82 +428,5 @@ public class EventServiceImpl implements EventService {
         return new EventResponse(event, categoryResponses, roundResponses);
 
     }
-
-//    @Override
-//    public EventResponse getEventDetail(Integer eventId) {
-//        HackathonEvent event = eventRepository.findById(eventId).orElseThrow(() -> new BadRequestException("Not found event"));
-//
-//        List<CategoryResponse> categories = event.getCategories().stream()
-//                .map(category -> CategoryResponse.builder()
-//                        .categoryName(category.getCategoryName()).build()).toList();
-//
-//        List<RoundResponse> rounds = event.getRounds()
-//                .stream()
-//                .map(round -> RoundResponse.builder()
-//                        .roundName(round.getRoundName())
-//                        .startDate(round.getStartTime())
-//                        .endDate(round.getEndTime())
-//                        .advancementRule(round.getAdvancementRule())
-//                        .build())
-//                .toList();
-//        return EventResponse.builder()
-//                .eventName(event.getEventName())
-//                .startDate(event.getStartDate())
-//                .endDate(event.getEndDate())
-//                .title(event.getTitle())
-//                .address(event.getAddress())
-//                .season(event.getSeason())
-//                .description(event.getDescription())
-//                .maxTeam(event.getMaxTeam())
-//                .maxTeamSize(event.getMaxTeamSize())
-//                .minTeamSize(event.getMinTeamSize())
-//                .registrationDeadline(event.getRegistrationDeadline())
-//                .status(event.getStatus())
-//                .createdAt(event.getCreateAt())
-//                .updateAt(event.getUpdateAt())
-//                .categories(categories)
-//                .rounds(rounds)
-//                .build();
-//    }
-//
-
-//    @Override
-//    public List<EventResponse> searchByEventName(String eventName) {
-//        List<HackathonEvent> events =
-//                eventRepository.findByEventNameContainingIgnoreCase(eventName);
-//
-//        return events.stream()
-//                .map(event -> EventResponse.builder()
-//                        .eventName(event.getEventName())
-//                        .title(event.getTitle())
-//                        .season(event.getSeason())
-//                        .address(event.getAddress())
-//                        .description(event.getDescription())
-//                        .maxTeam(event.getMaxTeam())
-//                        .maxTeamSize(event.getMaxTeamSize())
-//                        .minTeamSize(event.getMinTeamSize())
-//                        .status(event.getStatus())
-//                        .startDate(event.getStartDate())
-//                        .endDate(event.getEndDate())
-//                        .registrationDeadline(event.getRegistrationDeadline())
-//                        .build())
-//                .toList();
-//    }
-//
-//    @Override
-//    public List<EventResponse> getAllEvent() {
-//        List<HackathonEvent> events = eventRepository.findAll();
-//        return events.stream()
-//                .map(event -> EventResponse.builder()
-//                        .eventName(event.getEventName())
-//                        .title(event.getTitle())
-//                        .season(event.getSeason())
-//                        .status(event.getStatus())
-//                        .startDate(event.getStartDate())
-//                        .endDate(event.getEndDate())
-//                        .registrationDeadline(event.getRegistrationDeadline())
-//                        .build())
-//                .toList();
-//    }
 
 }

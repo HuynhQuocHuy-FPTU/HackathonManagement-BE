@@ -1,6 +1,5 @@
 package com.hackathon.service;
 
-import com.hackathon.dto.registration.RegistrationResponse;
 import com.hackathon.dto.team.CreateTeamRequest;
 import com.hackathon.dto.team.TeamDetailResponse;
 import com.hackathon.dto.team.TeamRequest;
@@ -12,7 +11,6 @@ import com.hackathon.entity.enums.*;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.*;
 import com.hackathon.security.CustomUserDetails;
-import jakarta.servlet.http.Part;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,12 +30,13 @@ public class TeamServiceImpl implements TeamService {
     private final RegistrationRepository registrationRepository;
     private final NotificationRepository notificationRepository;
     private final StudentRepository studentRepository;
-    private final EmailService emailService;
-    private final ParticipantRepository participantRepository;
     private final ExpertRepository expertRepository;
+
+    private final EmailService emailService;
+    private final AuditService auditService;
     private static final int MAX_TEAM_SIZE = 5;
     private static final long LOCK_BEFORE_DEADLINE_HOURS = 24;
-    private static final long INVITATION_EXPIRE_DAYS = 3;
+    private static final long INVITATION_EXPIRE_HOURS = 3;
 
 
     // Nếu Đội đã nộp đơn và thời gian hiện tại cách thời gian đk event dưới 24 giờ -> CHẶN
@@ -67,8 +66,8 @@ public class TeamServiceImpl implements TeamService {
 
     }
 
-     /*
-    TẠO TEAM, LỜI MỜI
+    /*
+     *TẠO TEAM, LỜI MỜI
      */
 
     //FUNCTION 1:Create Team
@@ -138,7 +137,7 @@ public class TeamServiceImpl implements TeamService {
         }
 
 
-        //3.4 Check trùng tên Nhóm
+        //3.5 Check trùng tên Nhóm
         boolean existName = teamRepository.existsByTeamNameIgnoreCase(request.getTeamName().trim());
         if (existName) {
             throw new BadRequestException("Tên nhóm này đã được đăng ký trong cuộc thi này rồi!");
@@ -152,7 +151,7 @@ public class TeamServiceImpl implements TeamService {
         Team saveTeam = teamRepository.save(team);
 
 
-        //4. Luu thong tin Leader
+        //4.1. Luu thong tin Leader
         TeamMember leaderMember = new TeamMember();
         leaderMember.setTeam(saveTeam);
         leaderMember.setIsLeader(true);
@@ -176,7 +175,7 @@ public class TeamServiceImpl implements TeamService {
             invite.setAccount(account);
             invite.setTeam(saveTeam);
             invite.setType(NotificationType.TEAM_INVITATION);
-            invite.setStatus(NotificationStatus.PENDING);
+            invite.setStatus(InvitationStatus.PENDING);
             invite.setTitle("INVITE TEAM " + saveTeam.getTeamName().trim());
             invite.setMessage("Bạn được mời bởi " + leaderAccount.getStudent().getStudentName() +
                     " để tạo đội  tham gia cuộc thi Hackathon.");
@@ -204,6 +203,13 @@ public class TeamServiceImpl implements TeamService {
             }
 
         }
+        auditService.saveLog(
+                leaderAccount,
+                AuditAction.CREATE_TEAM,
+                AuditEntityType.TEAM,
+                team.getTeamId(),
+                "Create team " + team.getTeamName()
+        );
         //8. Return TeamResponse
         return new TeamResponse(saveTeam.getTeamId(), saveTeam.getTeamName(), leaderInfo, listMember, saveTeam.getCreateAt(), invitedEmails);
     }
@@ -282,7 +288,7 @@ public class TeamServiceImpl implements TeamService {
             invite.setAccount(memberAccount);
             invite.setTeam(team);
             invite.setType(NotificationType.TEAM_INVITATION);
-            invite.setStatus(NotificationStatus.PENDING);
+            invite.setStatus(InvitationStatus.PENDING);
             invite.setTitle("INVITE TEAM " + team.getTeamName());
             invite.setMessage("Bạn được mời bởi " + leaderAcc.getStudent().getStudentName() +
                     " để tạo đội  tham gia cuộc thi Hackathon.");
@@ -378,11 +384,18 @@ public class TeamServiceImpl implements TeamService {
         // 6. Update
         team.setTeamName(cleanName);
         teamRepository.save(team);
+        auditService.saveLog(
+                currentAccount,
+                AuditAction.UPDATE_EVENT,
+                AuditEntityType.EVENT,
+                team.getTeamId(),
+                "Update team " + team.getTeamName()
+        );
         return team.getTeamName();
+
     }
 
     //FUNCTION 3: RỜI TEAM
-    //BR-03: Member chỉ được phép Leave team trước khi chốt danh sách 24 giờ
 
     @Transactional
     @Override
@@ -405,6 +418,13 @@ public class TeamServiceImpl implements TeamService {
         checkEventRegistrationWindow(team);
         // Xoa
         teamMemberRepository.delete(teamMember);
+        auditService.saveLog(
+                currentUser,
+                AuditAction.UPDATE_TEAM,
+                AuditEntityType.TEAM,
+                team.getTeamId(),
+                "Leave team " + team.getTeamName()
+        );
 
         //5. Cập nhật lại số lượng thành viên thực tế trong DB
         team.setTeamSize(Math.max(0, team.getTeamSize() - 1));
@@ -456,7 +476,7 @@ public class TeamServiceImpl implements TeamService {
         inviteTransfer.setType(NotificationType.LEADER_TRANSFER_REQUEST);
         inviteTransfer.setTitle("TRANSFER LEADER.");
         inviteTransfer.setMessage("Bạn được mời làm trưởng nhóm " + team.getTeamName());
-        inviteTransfer.setStatus(NotificationStatus.PENDING);
+        inviteTransfer.setStatus(InvitationStatus.PENDING);
         Notification savedNoti = notificationRepository.save(inviteTransfer);
 
         System.out.println(
@@ -479,6 +499,13 @@ public class TeamServiceImpl implements TeamService {
         } catch (Exception e) {
             System.out.println("==> Lỗi gửi email chuyển quyền leader: " + e.getMessage());
         }
+        auditService.saveLog(
+                currentUser,
+                AuditAction.UPDATE_EVENT,
+                AuditEntityType.EVENT,
+                team.getTeamId(),
+                "Transfer leader " + team.getTeamName() + "leader mới: " + newLeader
+        );
     }
 
     //FUNCTION 5: HÀM XỬ LÝ CHẤP NHẬN LỜI MỜI CHO TRANSFER, INVITE TEAM
@@ -501,16 +528,16 @@ public class TeamServiceImpl implements TeamService {
         }
 
         //4. Check trạng thái của lời mời(hết hạn, chấp nhận, từ chối) rồi sẽ vô hiệu hóa
-        if (notification.getStatus() == NotificationStatus.ACCEPTED
-                || notification.getStatus() == NotificationStatus.REJECTED
-                || notification.getStatus() == NotificationStatus.EXPIRED
-                || notification.getStatus() == NotificationStatus.INVALID) {
+        if (notification.getStatus() == InvitationStatus.ACCEPTED
+                || notification.getStatus() == InvitationStatus.REJECTED
+                || notification.getStatus() == InvitationStatus.EXPIRED
+                || notification.getStatus() == InvitationStatus.INVALID) {
             throw new BadRequestException("Lời mời này đã được xử lý hoặc không còn hiệu lực.");
         }
         // 4.1 Check trường hợp Team ko tồn tại
         Team team = notification.getTeam();
         if (team == null || team.getTeamSize() == null || team.getTeamSize() <= 0) {
-            notification.setStatus(NotificationStatus.INVALID);
+            notification.setStatus(InvitationStatus.INVALID);
             notificationRepository.save(notification);
             throw new BadRequestException("Đội hình này hiện không còn thành viên nào hoạt động, lời mời đã bị vô hiệu hóa.");
         }
@@ -554,12 +581,12 @@ public class TeamServiceImpl implements TeamService {
         if (LocalDateTime.now().isAfter(expiredAt)) {
             // Neu loi moi het han , thi vo hieu hoa loi moi(cap nhat trang thai thong bao)
             notification.setTitle("EXPIRED. Lời mời tham gia : " + team.getTeamName() + " hết hạn.");
-            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_DAYS + " ngày");
-            notification.setStatus(NotificationStatus.EXPIRED);
+            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_HOURS + " ngày");
+            notification.setStatus(InvitationStatus.EXPIRED);
             notificationRepository.save(notification);
             throw new BadRequestException("Lời mời tham gia của bạn hết hạn");
         }
-        //5.Kiểm tra xem sinh viên này có bị TRÙNG cuộc thi  không
+        //5.Kiểm tra xem sinh viên này có bị TRÙNG cuộc thi (Event) không
         List<TeamMember> userCurrentTeams = teamMemberRepository.findByStudent(inviteAccount.getStudent());
         if (userCurrentTeams != null && !userCurrentTeams.isEmpty()) {
             // Lấy trước danh sách các đơn đăng ký (giải đấu) của Team mới chuẩn bị gia nhập
@@ -595,7 +622,7 @@ public class TeamServiceImpl implements TeamService {
         if (currentSize >= MAX_TEAM_SIZE) {
             notification.setTitle("INVALID. Team đã đủ thành viên");
             notification.setMessage("Lời mời này không còn hiệu lực vì Đội thi đã đủ thành viên.");
-            notification.setStatus(NotificationStatus.INVALID);
+            notification.setStatus(InvitationStatus.INVALID);
             notificationRepository.save(notification);
             throw new BadRequestException("Team '" + team.getTeamName() + " đủ thành viên");
         }
@@ -620,7 +647,7 @@ public class TeamServiceImpl implements TeamService {
         // 10. Cap nhat thong boa khi ban Chap nhan loi moi
         notification.setTitle("INVITATION ACCEPTED. Bạn đã tham gia Team: " + team.getTeamName());
         notification.setMessage("Thành viên chính thức của " + team.getTeamName());
-        notification.setStatus(NotificationStatus.ACCEPTED);
+        notification.setStatus(InvitationStatus.ACCEPTED);
         notificationRepository.save(notification);
 
         // 11. Check All Team, neu du 5 thanh vien , vo hieu hoa loi moi con lai
@@ -631,8 +658,8 @@ public class TeamServiceImpl implements TeamService {
                     continue;
                 }
                 // Vo hieu hoa loi moi con lai
-                if (oldNoti.getType() == NotificationType.TEAM_INVITATION && oldNoti.getStatus() == NotificationStatus.PENDING) {
-                    oldNoti.setStatus(NotificationStatus.INVALID);
+                if (oldNoti.getType() == NotificationType.TEAM_INVITATION && oldNoti.getStatus() == InvitationStatus.PENDING) {
+                    oldNoti.setStatus(InvitationStatus.INVALID);
                     oldNoti.setTitle("INVALID. Lời mời vào đội " + team.getTeamName());
                     oldNoti.setMessage("This invitation is no longer valid because the team has reached its maximum capacity.");
                     oldNoti.setRead(true);
@@ -663,8 +690,8 @@ public class TeamServiceImpl implements TeamService {
         if (LocalDateTime.now().isAfter(expiredAt)) {
             // Neu loi moi het han , thi vo hieu hoa loi moi(cap nhat trang thai thong bao)
             notification.setTitle("EXPIRED. Lời mời tham gia : " + team.getTeamName() + " hết hạn.");
-            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_DAYS + " ngày");
-            notification.setStatus(NotificationStatus.EXPIRED);
+            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_HOURS + " ngày");
+            notification.setStatus(InvitationStatus.EXPIRED);
             notificationRepository.save(notification);
             throw new BadRequestException("Lời mời tham gia của bạn hết hạn");
         }
@@ -690,17 +717,21 @@ public class TeamServiceImpl implements TeamService {
         teamMemberRepository.save(newLeader);
         notification.setTitle("TRANSFER APPROVED. Bạn đã là Leader của Team: " + team.getTeamName());
         notification.setMessage("Bạn đã chấp nhận lời mời và chính thức trở thành Trưởng nhóm.");
-        notification.setStatus(NotificationStatus.ACCEPTED);
+        notification.setStatus(InvitationStatus.ACCEPTED);
 
     }
 
     @Override
     @Transactional
     public void rejectGeneralInvite(Long notificationId, CustomUserDetails userDetails) {
+        System.out.println("STEP 1");
+
+
         //1.Tìm lời mời dựa trên thông báo
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new BadRequestException("Lời mời không tồn tại hoặc đã bị hủy từ trước."));
         ;
+        System.out.println("STEP 2");
 
         // 2. Check account được nhận lời mời vs account được gửi lời mời có giống nhau không
         if (userDetails != null && userDetails.getAccount() != null) {
@@ -715,16 +746,16 @@ public class TeamServiceImpl implements TeamService {
         }
 
         //4. Check trạng thái của lời mời(hết hạn, chấp nhận, từ chối) rồi sẽ vô hiệu hóa
-        if (notification.getStatus() == NotificationStatus.ACCEPTED
-                || notification.getStatus() == NotificationStatus.REJECTED
-                || notification.getStatus() == NotificationStatus.EXPIRED
-                || notification.getStatus() == NotificationStatus.INVALID) {
+        if (notification.getStatus() == InvitationStatus.ACCEPTED
+                || notification.getStatus() == InvitationStatus.REJECTED
+                || notification.getStatus() == InvitationStatus.EXPIRED
+                || notification.getStatus() == InvitationStatus.INVALID) {
             throw new BadRequestException("Lời mời này đã được xử lý hoặc không còn hiệu lực.");
         }
         // 4.1 Check trường hợp Team ko tồn tại
         Team team = notification.getTeam();
         if (team == null || team.getTeamSize() == null || team.getTeamSize() <= 0) {
-            notification.setStatus(NotificationStatus.INVALID);
+            notification.setStatus(InvitationStatus.INVALID);
             notificationRepository.save(notification);
             throw new BadRequestException("Đội hình này hiện không còn thành viên nào hoạt động, lời mời đã bị vô hiệu hóa.");
         }
@@ -763,15 +794,15 @@ public class TeamServiceImpl implements TeamService {
         if (LocalDateTime.now().isAfter(expiredAt)) {
             // Neu loi moi het han , thi vo hieu hoa loi moi(cap nhat trang thai thong bao)
             notification.setTitle("EXPIRED. Lời mời tham gia : " + team.getTeamName() + " hết hạn.");
-            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_DAYS + " ngày");
-            notification.setStatus(NotificationStatus.EXPIRED);
+            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_HOURS + " ngày");
+            notification.setStatus(InvitationStatus.EXPIRED);
             notificationRepository.save(notification);
             throw new BadRequestException("Lời mời tham gia của bạn hết hạn");
         }
         Student newLeaderStudent = inviteAccount.getStudent();
         notification.setTitle("TRANSFER REJECTED. Tôi từ chối làm Leader Team: " + team.getTeamName());
         notification.setMessage("Bạn đã từ chối lời mời chuyển quyền Leader.");
-        notification.setStatus(NotificationStatus.REJECTED);
+        notification.setStatus(InvitationStatus.REJECTED);
 
 
     }
@@ -799,18 +830,19 @@ public class TeamServiceImpl implements TeamService {
         if (LocalDateTime.now().isAfter(expiredAt)) {
             // Neu loi moi het han , thi vo hieu hoa loi moi(cap nhat trang thai thong bao)
             notification.setTitle("EXPIRED. Lời mời tham gia : " + team.getTeamName() + " hết hạn.");
-            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_DAYS + " ngày");
-            notification.setStatus(NotificationStatus.EXPIRED);
+            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_HOURS + " ngày");
+            notification.setStatus(InvitationStatus.EXPIRED);
             notificationRepository.save(notification);
             throw new BadRequestException("Lời mời tham gia của bạn hết hạn");
         }
         Student newLeaderStudent = inviteAccount.getStudent();
         notification.setTitle("INVITE REJECTED. Tôi từ chối lời mời tham gia nhóm : " + team.getTeamName());
         notification.setMessage("Bạn đã từ chối lời mời tham gia nhóm.");
-        notification.setStatus(NotificationStatus.REJECTED);
+        notification.setStatus(InvitationStatus.REJECTED);
 
     }
-    /*
+
+      /*
     XEM THÔNG TIN VỀ TEAM
      */
 
@@ -963,7 +995,6 @@ public class TeamServiceImpl implements TeamService {
                 .leader(leaderInfo)
                 .members(memberList)
                 .build();
-
 
     }
 

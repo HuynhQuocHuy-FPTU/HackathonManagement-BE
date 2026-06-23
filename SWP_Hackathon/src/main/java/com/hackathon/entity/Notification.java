@@ -1,7 +1,7 @@
 package com.hackathon.entity;
 
-import com.hackathon.entity.enums.InvitationAction;
-import com.hackathon.entity.enums.NotificationStatus;
+import com.hackathon.entity.enums.NotificationChannel;
+import com.hackathon.entity.enums.InvitationStatus;
 import com.hackathon.entity.enums.NotificationType;
 import jakarta.persistence.*;
 import lombok.*;
@@ -19,7 +19,7 @@ public class Notification {
     private Long id;
     @Column(columnDefinition = "NVARCHAR(255)")
     private String title;
-    @Column(columnDefinition = "NVARCHAR(1000)")
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String message;
     private boolean isRead;
     private LocalDateTime createdAt;
@@ -28,10 +28,14 @@ public class Notification {
     @Enumerated(EnumType.STRING)
     private NotificationType type;
 
-    @Column(nullable = false)
+
     @Enumerated(EnumType.STRING)
     // Check trạng thái của lời mời
-    private NotificationStatus status;
+    private InvitationStatus status;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private NotificationChannel channel;
 
 
     //N Notification - 1 Account
@@ -43,16 +47,25 @@ public class Notification {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "Team_ID")
     private Team team;
-
-    //N Notification - 1 event
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "Event_ID")
-    private HackathonEvent event;
+//
+//    //N Notification - 1 event
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "Event_ID")
+//    private HackathonEvent event;
 
     @PrePersist
-    public void prePersist(){
+    public void prePersist() {
         createdAt = LocalDateTime.now();
         isRead = false;
+
+        // enforce rule
+        if (type != NotificationType.TEAM_INVITATION) {
+            status = null;
+        }
+
+        if (type == NotificationType.TEAM_INVITATION && status == null) {
+            status = InvitationStatus.PENDING;
+        }
     }
 
 }

@@ -14,7 +14,8 @@ public class AuthResponse {
     private String refreshToken;
     private long expiresIn;
     private int accountId;
-    private String accountName;
+    private String avatarUrl;
+    private String fullName;
     private String email;
     private AccountRole role;
 }
