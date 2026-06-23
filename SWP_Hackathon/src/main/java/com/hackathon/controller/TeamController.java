@@ -16,6 +16,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/teams")
 @RequiredArgsConstructor
@@ -23,6 +25,9 @@ public class TeamController {
     private final TeamService teamService;
 
     private final NotificationService notificationService;
+        /*
+           1. NHÓM API QUẢN LÝ THÔNG TIN ĐỘI THI (STUDENT)
+        */
 
     //Create Team
     @PostMapping("/create")
@@ -53,11 +58,15 @@ public class TeamController {
     @PutMapping("/{teamId}/transfer-leader")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<Void>> transferLeader(@PathVariable Integer teamId,
-                                                            @Valid @RequestBody TeamRequest request ,
+                                                            @Valid @RequestBody TeamRequest request,
                                                             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        teamService.transferLeader(teamId,request, userDetails);
+        teamService.transferLeader(teamId, request, userDetails);
         return ResponseEntity.ok(ApiResponse.success(null, "Gửi lời mời chuyển quyền Trưởng nhóm thành công!"));
     }
+    /*
+           2. NHÓM API XỬ LÝ LỜI MỜI / THÔNG BÁO (STUDENT)
+    */
+
 
     //     View Invite
     @GetMapping("/notifications/{notiId}")
@@ -79,6 +88,7 @@ public class TeamController {
         teamService.acceptGeneralInvite(notiId, userDetails);
         return ResponseEntity.ok(ApiResponse.success("Xử lý chấp nhận yêu cầu thành công!", "Hệ thống đã ghi nhận trạng thái mới."));
     }
+
     //  Reject Invite
     @PostMapping("/notifications/{notiId}/reject")
     @PreAuthorize("hasRole('STUDENT')")
@@ -91,6 +101,21 @@ public class TeamController {
 
     }
 
+    // Send Invite
+    @PostMapping("/invitations")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<TeamResponse>> sendTeamInvitation(
+            @Valid @RequestBody CreateTeamRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        TeamResponse response = teamService.sendTeamInvitation(request, userDetails);
+        return ResponseEntity.ok(ApiResponse.success(response, "Gửi lời mời vào nhóm thành công!"));
+    }
+     /*
+           3. NHÓM API XEM THÀNH VIÊN ĐỘI (STUDENT / EXPERT / COORD / ADMIN)
+    */
+
+
     // View Team
     @GetMapping("/members/{teamId}")
     public ResponseEntity<ApiResponse<TeamDetailResponse>> getTeamMembers(
@@ -98,7 +123,39 @@ public class TeamController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         TeamDetailResponse response = teamService.getTeamMember(teamId, userDetails);
-        return ResponseEntity.ok(ApiResponse.success(response,"Xem thành viên trong đội thành công"));
+        return ResponseEntity.ok(ApiResponse.success(response, "Xem thành viên trong đội thành công"));
+    }
+
+//    // View Team of ADMIN COORDINATOR(ĐỪNG XÓA PLEASE)
+//    @GetMapping("/expert/{expertId}")
+//    @PreAuthorize("hasAnyRole('ADMIN', 'EVENTCOORDINATOR')")
+//    public ResponseEntity<ApiResponse<List<TeamDetailResponse>>> getTeamInfo(
+//            @PathVariable Integer expertId,
+//            @AuthenticationPrincipal CustomUserDetails userDetails) {
+//        List<TeamDetailResponse> response = teamService.getTeamInfor(expertId, userDetails);
+//        return ResponseEntity.ok(ApiResponse.success(response, "Xem danh sách thành viên trong đội do 1 expert quản lý thành công"));
+//    }
+
+    //View TeamDetail of Expert
+    @GetMapping("/{teamId}/detail")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVENTCOORDINATOR', 'EXPERT')")
+    public ResponseEntity<ApiResponse<TeamDetailResponse>> getTeamDetail(
+            @PathVariable Integer teamId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        TeamDetailResponse response = teamService.getTeamDetail(teamId, userDetails);
+        return ResponseEntity.ok(ApiResponse.success(response, "Xem thành viên chi tiết trong đội do 1 expert quản lý thành công"));
+    }
+
+    // 2. API dành riêng cho EXPERT
+    @GetMapping("/expert/my-member")
+    @PreAuthorize("hasRole('EXPERT')")
+    public ResponseEntity<ApiResponse<List<TeamDetailResponse>>> getMyTeamInfor(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        List<TeamDetailResponse> response = teamService.getTeamInfor(null, userDetails); // Truyền null vào
+        if (response.isEmpty()) {
+            return ResponseEntity.ok(ApiResponse.success(response, "Bạn hiện chưa được phân công quản lý đội thi nào."));
+        }
+        return ResponseEntity.ok(ApiResponse.success(response, "Expert xem danh sách đội của mình thành công"));
     }
 
 

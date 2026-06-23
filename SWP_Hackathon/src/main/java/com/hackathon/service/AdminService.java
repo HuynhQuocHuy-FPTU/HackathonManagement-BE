@@ -58,7 +58,7 @@ public class AdminService {
 //        account.setEmail(request.getEmail().trim().toLowerCase());
 //        account.setRole(accountRole);
 //        account.setStatus(AccountStatus.ACTIVE); // Cho phép login luôn bằng mật khẩu tạm
-//        account.setPasswordChanged(false);     // 💡 Đánh dấu bắt buộc phải đổi mật khẩu ở lần đăng nhập đầu tiên
+//        account.setPasswordChanged(false);     //  Đánh dấu bắt buộc phải đổi mật khẩu ở lần đăng nhập đầu tiên
 //        account.setPassword(passwordEncoder.encode(temporaryPassword)); // Băm mật khẩu lưu vào DB
 //
 //        Account savedAccount = accountRepository.save(account);
@@ -76,7 +76,7 @@ public class AdminService {
 //            expertRepository.save(expert);
 //        }
 //
-//        // 6. GỌI EMAIL SERVICE ĐỂ GỬI MẬT KHẨU TẠM THỜI 🚀
+//        // 6. GỌI EMAIL SERVICE ĐỂ GỬI MẬT KHẨU TẠM THỜI
 //        emailService.sendTemporaryPasswordEmail(account.getEmail(), temporaryPassword, request.getFullName());
 //
 //        return "Đã tạo tài khoản và gửi mật khẩu tạm thời thành công đến: " + account.getEmail();

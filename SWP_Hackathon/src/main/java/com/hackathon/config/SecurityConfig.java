@@ -57,15 +57,24 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/api/events/public/**"
                         ).permitAll()
-                        //expert
+                        //EXPERT
                         .requestMatchers(HttpMethod.GET,"/api/participants/teams/**").hasRole("EXPERT")
-
                         .requestMatchers("/api/notifications/**").authenticated()
+
+                        // API DÀNH CHO EVENT , EXPERT, COORDINATOR
+                        .requestMatchers(HttpMethod.GET, "/api/teams/expert/**")
+                        .hasAnyRole("EXPERT", "ADMIN", "EVENTCOORDINATOR")
+                        .requestMatchers(HttpMethod.GET, "/api/teams/*/detail")
+                        .hasAnyRole("ADMIN", "EXPERT", "EVENTCOORDINATOR")
+                        // Xem thành viên team
+                        .requestMatchers(HttpMethod.GET, "/api/teams/members/**")
+                        .hasAnyRole("STUDENT", "EXPERT", "ADMIN", "EVENTCOORDINATOR")
+
                         // Dành cho STUDENT (Đăng ký sự kiện & Mời thành viên)
                         .requestMatchers(HttpMethod.POST, "/api/registrations/*/register-event").hasRole("STUDENT")
                         .requestMatchers(HttpMethod.POST, "/api/registrations/teams/invite").hasRole("STUDENT")
-
                         .requestMatchers("/api/teams/**").hasRole("STUDENT")
+
                         //Chỉ event coordinator
                         // 1. tất cả các API thay đổi dữ liệu sự kiện (POST, PUT, DELETE, PATCH)
                         .requestMatchers("/api/events/create", "/api/events/publish/**",
@@ -82,7 +91,6 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.PUT,"/api/participants/teams/disqualify/**").hasRole("EVENTCOORDINATOR")
                         .requestMatchers(HttpMethod.PUT,"/api/events/*/draw-results/**").hasRole("EVENTCOORDINATOR")
-
 
 
                         // Dành cho COORDINATOR (Quản lý duyệt đơn)

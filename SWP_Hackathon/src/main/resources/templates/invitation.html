@@ -21,11 +21,11 @@
 <p>Vui lòng phản hồi bằng cách chọn một trong hai đường link:</p>
 
 <p>
-    <a th:href="'http://localhost:3000/respond-invitation?id=' + ${notificationId} + '&action=accept'" style="color: blue; text-decoration: underline; margin-right: 20px;">
+    <a th:href="'http://localhost:3000/respond-invitation?id=' + ${notificationId} + '&action=accept'" >
         [ CHẤP NHẬN ]
     </a>
 
-    <a th:href="'http://localhost:3000/respond-invitation?id=' + ${notificationId} + '&action=reject'" style="color: red; text-decoration: underline;">
+    <a th:href="'http://localhost:3000/respond-invitation?id=' + ${notificationId} + '&action=reject'" >
         [ TỪ CHỐI ]
     </a>
 </p>

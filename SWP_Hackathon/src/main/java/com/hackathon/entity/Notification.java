@@ -29,7 +29,7 @@ public class Notification {
     private NotificationType type;
 
 
-    @Enumerated(EnumType.STRING)// moi bo sung
+    @Enumerated(EnumType.STRING)
     // Check trạng thái của lời mời
     private InvitationStatus status;
 
