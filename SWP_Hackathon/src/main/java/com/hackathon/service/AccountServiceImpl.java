@@ -32,7 +32,6 @@ public class AccountServiceImpl implements AccountService {
 
         //1. Tìm thông tin Student qua Account
         Account currentAccount = userDetails.getAccount();
-
         if (currentAccount.getRole() != AccountRole.STUDENT
                 && currentAccount.getRole() != AccountRole.ADMIN
                 && currentAccount.getRole() != AccountRole.EVENTCOORDINATOR) {

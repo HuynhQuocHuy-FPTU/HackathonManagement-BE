@@ -100,6 +100,17 @@ public class TeamController {
 
 
     }
+
+    // Send Invite
+    @PostMapping("/invitations")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<TeamResponse>> sendTeamInvitation(
+            @Valid @RequestBody CreateTeamRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        TeamResponse response = teamService.sendTeamInvitation(request, userDetails);
+        return ResponseEntity.ok(ApiResponse.success(response, "Gửi lời mời vào nhóm thành công!"));
+    }
      /*
            3. NHÓM API XEM THÀNH VIÊN ĐỘI (STUDENT / EXPERT / COORD / ADMIN)
     */
@@ -118,7 +129,7 @@ public class TeamController {
 //    // View Team of ADMIN COORDINATOR(ĐỪNG XÓA PLEASE)
 //    @GetMapping("/expert/{expertId}")
 //    @PreAuthorize("hasAnyRole('ADMIN', 'EVENTCOORDINATOR')")
-//    public ResponseEntity<ApiResponse<List<TeamDetailResponse>>> getTeamInfor(
+//    public ResponseEntity<ApiResponse<List<TeamDetailResponse>>> getTeamInfo(
 //            @PathVariable Integer expertId,
 //            @AuthenticationPrincipal CustomUserDetails userDetails) {
 //        List<TeamDetailResponse> response = teamService.getTeamInfor(expertId, userDetails);

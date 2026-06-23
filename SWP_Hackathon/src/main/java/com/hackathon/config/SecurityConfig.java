@@ -57,7 +57,7 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/api/events/public/**"
                         ).permitAll()
-                        //expert
+                        //EXPERT
                         .requestMatchers(HttpMethod.GET,"/api/participants/teams/**").hasRole("EXPERT")
                         .requestMatchers("/api/notifications/**").authenticated()
 
@@ -66,12 +66,15 @@ public class SecurityConfig {
                         .hasAnyRole("EXPERT", "ADMIN", "EVENTCOORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/api/teams/*/detail")
                         .hasAnyRole("ADMIN", "EXPERT", "EVENTCOORDINATOR")
+                        // Xem thành viên team
+                        .requestMatchers(HttpMethod.GET, "/api/teams/members/**")
+                        .hasAnyRole("STUDENT", "EXPERT", "ADMIN", "EVENTCOORDINATOR")
 
                         // Dành cho STUDENT (Đăng ký sự kiện & Mời thành viên)
                         .requestMatchers(HttpMethod.POST, "/api/registrations/*/register-event").hasRole("STUDENT")
                         .requestMatchers(HttpMethod.POST, "/api/registrations/teams/invite").hasRole("STUDENT")
-
                         .requestMatchers("/api/teams/**").hasRole("STUDENT")
+
                         //Chỉ event coordinator
                         // 1. tất cả các API thay đổi dữ liệu sự kiện (POST, PUT, DELETE, PATCH)
                         .requestMatchers("/api/events/create", "/api/events/publish/**",
