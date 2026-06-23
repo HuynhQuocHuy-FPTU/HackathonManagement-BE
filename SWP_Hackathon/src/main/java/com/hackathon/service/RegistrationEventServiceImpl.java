@@ -27,6 +27,7 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
     private final TeamRepository teamRepository;
     private final ParticipantService participantService;
     private final AuditService auditService;
+    private final NotificationService notificationService;
 
     //1. Leader đại diện Team đăng ký cuộc thi
     @Override
@@ -158,13 +159,21 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
                 AuditEntityType.REGISTRATION,registrationId,
                 "Approve registration of team:  " + registration.getTeam().getTeamName()
         );
+        TeamMember leader = registration.getTeam()
+                .getTeamMembers()
+                .stream()
+                .filter(TeamMember::getIsLeader)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy team leader"));
+        Account leaderAccount = leader.getStudent().getAccount();
+        notificationService.notifyRegistrationApproved(account.getAccountId(), leaderAccount, registration.getTeam().getTeamName(), registration.getHackathonEvent().getEventName());
         return registration;
     }
 
     //Coordinator từ chối Registration - Chuyển trạng thái sang REJECTED
     @Override
     @Transactional
-    public Registration rejectRegistration(Integer registrationId) {
+    public Registration rejectRegistration(Integer registrationId, String reason) {
         CustomUserDetails userDetails =
                 (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
@@ -184,6 +193,14 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
                 AuditEntityType.REGISTRATION,registrationId,
                 "Reject registration of team:  " + registration.getTeam().getTeamName()
         );
+        TeamMember leader = registration.getTeam()
+                .getTeamMembers()
+                .stream()
+                .filter(TeamMember::getIsLeader)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy team leader"));
+        Account leaderAccount = leader.getStudent().getAccount();
+        notificationService.notifyRegistrationRejected(account.getAccountId(), leaderAccount, registration.getTeam().getTeamName(), registration.getHackathonEvent().getEventName(), reason);
         return registration;
     }
 

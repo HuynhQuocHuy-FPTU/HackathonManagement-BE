@@ -1,12 +1,8 @@
 package com.hackathon.controller;
 
 import com.hackathon.dto.TeamSelectionDTO;
-import com.hackathon.dto.event.EventResponse;
-import com.hackathon.dto.notification.NotificationResponse;
 import com.hackathon.dto.registration.RegistrationResponse;
 import com.hackathon.dto.team.CreateTeamRequest;
-import com.hackathon.dto.team.TeamDetailResponse;
-import com.hackathon.dto.team.TeamRequest;
 import com.hackathon.dto.team.TeamResponse;
 import com.hackathon.entity.Registration;
 import com.hackathon.exception.ApiResponse;
@@ -14,8 +10,6 @@ import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.NotificationService;
 import com.hackathon.service.RegistrationEventService;
 import com.hackathon.service.TeamService;
-import com.hackathon.service.event.EventService;
-import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -79,8 +73,8 @@ public class RegistrationController {
     // Từ chối đăng ký
     @PatchMapping("/{registrationId}/reject")
     @PreAuthorize("hasRole('EVENTCOORDINATOR')")
-    public ApiResponse<Registration> reject(@PathVariable Integer registrationId) {
-        Registration registration = registrationEventService.rejectRegistration(registrationId);
+    public ApiResponse<Registration> reject(@PathVariable Integer registrationId, @RequestParam String reason) {
+        Registration registration = registrationEventService.rejectRegistration(registrationId, reason);
         return ApiResponse.success(registration, "Đã từ chối đơn đăng ký");
     }
 

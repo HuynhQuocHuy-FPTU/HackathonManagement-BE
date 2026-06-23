@@ -1,6 +1,6 @@
 package com.hackathon.entity.enums;
 
-public enum NotificationStatus {
+public enum InvitationStatus {
     PENDING,
     ACCEPTED,
     REJECTED,

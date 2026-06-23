@@ -80,8 +80,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/criteriaSet/**")
                         .hasRole("EVENTCOORDINATOR")
 
-                        .requestMatchers(HttpMethod.GET,"/api/participants/teams/**").hasRole("EXPERT")
-                        .requestMatchers(HttpMethod.GET,"/api/participants/teams/disqualify").hasRole("EVENTCOORDINATOR")
+                        .requestMatchers(HttpMethod.PUT,"/api/participants/teams/disqualify/**").hasRole("EVENTCOORDINATOR")
+                        .requestMatchers(HttpMethod.PUT,"/api/events/*/draw-results/**").hasRole("EVENTCOORDINATOR")
 
 
 

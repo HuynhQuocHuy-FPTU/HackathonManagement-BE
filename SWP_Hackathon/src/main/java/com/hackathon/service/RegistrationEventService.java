@@ -12,7 +12,7 @@ public interface RegistrationEventService {
     void registerEvent(Integer eventId, CustomUserDetails userDetails);
     Registration approveRegistration(Integer registrationId);
 
-    Registration rejectRegistration(Integer registrationId);
+    Registration rejectRegistration(Integer registrationId,String reason);
 
     List<TeamSelectionDTO> getApprovedRegistrations(Integer eventId);
     RegistrationResponse getTeamsDetailForApproval(Integer registrationId, CustomUserDetails userDetails);
