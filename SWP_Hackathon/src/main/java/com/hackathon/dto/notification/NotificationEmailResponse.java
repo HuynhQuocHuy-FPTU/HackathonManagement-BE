@@ -7,7 +7,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class NotificationResponse {
+public class NotificationEmailResponse {
     private Long notificationId;
 
     private String title;
