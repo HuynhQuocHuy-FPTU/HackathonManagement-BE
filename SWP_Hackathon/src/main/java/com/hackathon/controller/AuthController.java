@@ -63,14 +63,6 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.ok("Làm mới token thành công", response));
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<ApiResponse<AuthResponse>> me(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        if (userDetails == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.fail("Chưa đăng nhập"));
-        }
-        return ResponseEntity.ok(ApiResponse.ok("Thông tin tài khoản", authService.getCurrentUser(userDetails)));
-    }
-
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         authService.forgotPassword(request.getEmail());

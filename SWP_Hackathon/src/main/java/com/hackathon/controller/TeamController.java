@@ -1,6 +1,6 @@
 package com.hackathon.controller;
 
-import com.hackathon.dto.notification.NotificationResponse;
+import com.hackathon.dto.notification.NotificationEmailResponse;
 import com.hackathon.dto.team.CreateTeamRequest;
 import com.hackathon.dto.team.TeamDetailResponse;
 import com.hackathon.dto.team.TeamRequest;
@@ -71,9 +71,9 @@ public class TeamController {
     //     View Invite
     @GetMapping("/notifications/{notiId}")
     @PreAuthorize("hasRole('STUDENT')")
-    public ResponseEntity<ApiResponse<NotificationResponse>> getNotificationDetail(
+    public ResponseEntity<ApiResponse<NotificationEmailResponse>> getNotificationDetail(
             @PathVariable("notiId") Long notiId, @AuthenticationPrincipal CustomUserDetails userDetails) {
-        NotificationResponse data = notificationService.getInfoNotificationInvite(userDetails, notiId);
+        NotificationEmailResponse data = notificationService.getInfoNotificationInvite(userDetails, notiId);
         return ResponseEntity.ok(ApiResponse.success(data, "Lấy thông tin lời mời thành công"));
 
 

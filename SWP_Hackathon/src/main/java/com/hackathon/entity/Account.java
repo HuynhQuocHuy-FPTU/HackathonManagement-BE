@@ -23,9 +23,6 @@ public class Account {
     @Column(name = "Account_ID")
     private int accountId;
 
-    @Column(name = "Account_Name", columnDefinition = "NVARCHAR(255)")
-    private String accountName;
-
     @Column(name = "Password", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String password;
 
@@ -43,6 +40,12 @@ public class Account {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
+    @Column(name = "Avatar_Url", columnDefinition = "NVARCHAR(255)")
+    private String avatarUrl;
+
+    @Column(name = "Account_Name", columnDefinition = "NVARCHAR(255)")
+    private String accountName;
+
     @Column(name = "Updated_At")
     @UpdateTimestamp
     private LocalDateTime updatedAt;
@@ -50,9 +53,6 @@ public class Account {
     @Enumerated(EnumType.STRING)
     @Column(name = "Role", nullable = false)
     private AccountRole role;
-
-    @Column(name ="Avarta_Url")
-    private String avatarUrl;
 
     // 1 Account - 1 Expert
     @OneToOne(mappedBy = "account", cascade = CascadeType.ALL,fetch = FetchType.LAZY)
@@ -70,7 +70,9 @@ public class Account {
     private List<Notification> notifications;
 
     // 1 account - N Auditlog
-    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(
+            mappedBy = "account",
+            fetch = FetchType.LAZY)
     private List<AuditLog> auditLogs;
 
     @Column(name = "Verification_Token", columnDefinition = "VARCHAR(255)")

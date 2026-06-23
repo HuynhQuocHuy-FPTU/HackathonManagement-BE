@@ -1,6 +1,5 @@
 package com.hackathon.service;
 
-import com.hackathon.dto.auth.InviteAccountRequest;
 import com.hackathon.dto.auth.LoginRequest;
 import com.hackathon.dto.auth.AuthResponse;
 import com.hackathon.dto.auth.ResetPasswordRequest;
@@ -10,7 +9,6 @@ import com.hackathon.entity.enums.AccountStatus;
 import com.hackathon.exception.ApiException;
 import com.hackathon.repository.AccountRepository;
 import com.hackathon.repository.RefreshTokenRepository;
-import com.hackathon.security.CustomUserDetails;
 import com.hackathon.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -39,7 +37,7 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse login(LoginRequest request) {
         String email = request.getEmail().trim().toLowerCase();
         Account account = accountRepository.findByEmail(email)
-                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Email không đúng"));
+                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Email hoặc mật khẩu không đúng"));
 
         if (account.getStatus() == AccountStatus.INACTIVE) {
             throw new ApiException(HttpStatus.FORBIDDEN,
@@ -56,12 +54,9 @@ public class AuthServiceImpl implements AuthService {
         } catch (DisabledException e) {
             throw new ApiException(HttpStatus.FORBIDDEN, "Tài khoản chưa được kích hoạt");
         } catch (Exception e) {
-            System.out.println("====== DEBUG LỖI ĐĂNG NHẬP ======");
-            System.out.println("Loại Exception: " + e.getClass().getName());
-            System.out.println("Message: " + e.getMessage());
-            System.out.println("=================================");
-            throw new ApiException(HttpStatus.UNAUTHORIZED, "Mật khẩu không đúng");
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "Email hoặc mật khẩu không đúng");
         }
+
         return buildAuthResponse(account);
     }
 
@@ -97,21 +92,6 @@ public class AuthServiceImpl implements AuthService {
                 .refreshToken(refreshTokenValue)
                 .expiresIn(jwtService.getAccessExpirationMs() / 1000)
                 .accountId(account.getAccountId())
-                .accountName(account.getAccountName())
-                .email(account.getEmail())
-                .role(account.getRole())
-                .build();
-    }
-
-    @Override
-    public AuthResponse getCurrentUser(CustomUserDetails userDetails) {
-        Account account = userDetails.getAccount();
-        return AuthResponse.builder()
-                .accessToken(null)
-                .refreshToken(null)
-                .expiresIn(0)
-                .accountId(account.getAccountId())
-                .accountName(account.getAccountName())
                 .email(account.getEmail())
                 .role(account.getRole())
                 .build();
@@ -123,13 +103,12 @@ public class AuthServiceImpl implements AuthService {
         Account account = accountRepository.findByEmail(email.trim().toLowerCase())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Không tìm thấy tài khoản với email này"));
 
-        // Tạo mã OTP 6 số ngẫu nhiên
         String otp = String.format("%06d", new java.util.Random().nextInt(999999));
 
         account.setResetPasswordOtp(otp);
         account.setResetPasswordOtpExpiry(LocalDateTime.now().plusMinutes(15));
+
         accountRepository.save(account);
-        // Gửi OTP qua mail
         emailService.sendForgotPasswordEmail(account.getEmail(), otp);
     }
 
@@ -151,13 +130,11 @@ public class AuthServiceImpl implements AuthService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Mã xác thực đã hết hạn. Vui lòng yêu cầu lại.");
         }
 
-        // Đổi pass và xóa dữ liệu OTP
         account.setPassword(passwordEncoder.encode(request.getNewPassword()));
         account.setResetPasswordOtp(null);
         account.setResetPasswordOtpExpiry(null);
-        accountRepository.save(account);
 
-        // Buộc người dùng phải đăng nhập lại bằng mật khẩu mới trên tất cả thiết bị
+        accountRepository.save(account);
         refreshTokenRepository.revokeAllByAccount(account);
     }
 
@@ -178,11 +155,10 @@ public class AuthServiceImpl implements AuthService {
                 .accessToken(accessToken)
                 .refreshToken(refreshTokenValue)
                 .expiresIn(jwtService.getAccessExpirationMs() / 1000)
+                .fullName(accountRepository.findFullNameByEmail(account.getEmail()).orElse(null))
                 .accountId(account.getAccountId())
-                .accountName(account.getAccountName())
                 .email(account.getEmail())
                 .role(account.getRole())
                 .build();
     }
-
 }
