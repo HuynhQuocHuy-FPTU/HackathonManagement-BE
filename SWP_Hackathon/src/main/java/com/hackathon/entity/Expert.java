@@ -22,6 +22,8 @@ public class Expert {
     private String expertName;
     @Column(name = "Department", columnDefinition = "NVARCHAR(255)")
     private String department;
+    @Column(name = "Organization", columnDefinition = "NVARCHAR(255)")
+    private String organization;
     @Column(name = "Type")
     @Enumerated(EnumType.STRING)
     private ExpertType type;

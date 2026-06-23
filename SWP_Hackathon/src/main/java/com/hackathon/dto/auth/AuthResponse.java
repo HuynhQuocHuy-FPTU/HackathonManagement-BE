@@ -1,9 +1,12 @@
 package com.hackathon.dto.auth;
 
 import com.hackathon.entity.enums.AccountRole;
+import com.hackathon.entity.enums.AccountStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+
+import java.time.LocalDateTime;
 
 @Getter
 @AllArgsConstructor
@@ -18,4 +21,8 @@ public class AuthResponse {
     private String fullName;
     private String email;
     private AccountRole role;
+    private String university;
+    private String organization;
+    private LocalDateTime createdAt;
+    private AccountStatus accountStatus;
 }
