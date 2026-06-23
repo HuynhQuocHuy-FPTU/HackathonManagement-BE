@@ -23,6 +23,8 @@ public class EventCoordinator {
     private String coordinatorName;
     @Column(name="Department")
     private String department;
+    @Column(name = "Organization", columnDefinition = "NVARCHAR(255)")
+    private String organization;
 
     // 1 ACCOUNT - 1 EVENT COORDINATOR
     @OneToOne(fetch = FetchType.LAZY)
