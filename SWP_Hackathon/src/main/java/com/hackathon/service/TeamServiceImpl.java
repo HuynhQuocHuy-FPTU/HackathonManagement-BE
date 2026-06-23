@@ -175,6 +175,7 @@ public class TeamServiceImpl implements TeamService {
             invite.setAccount(account);
             invite.setTeam(saveTeam);
             invite.setType(NotificationType.TEAM_INVITATION);
+            invite.setChannel(NotificationChannel.EMAIL);
             invite.setStatus(InvitationStatus.PENDING);
             invite.setTitle("INVITE TEAM " + saveTeam.getTeamName().trim());
             invite.setMessage("Bạn được mời bởi " + leaderAccount.getStudent().getStudentName() +
@@ -289,6 +290,7 @@ public class TeamServiceImpl implements TeamService {
             invite.setTeam(team);
             invite.setType(NotificationType.TEAM_INVITATION);
             invite.setStatus(InvitationStatus.PENDING);
+            invite.setChannel(NotificationChannel.EMAIL);
             invite.setTitle("INVITE TEAM " + team.getTeamName());
             invite.setMessage("Bạn được mời bởi " + leaderAcc.getStudent().getStudentName() +
                     " để tạo đội  tham gia cuộc thi Hackathon.");
@@ -474,6 +476,7 @@ public class TeamServiceImpl implements TeamService {
         inviteTransfer.setAccount(newLeader.getAccount());
         inviteTransfer.setTeam(team);
         inviteTransfer.setType(NotificationType.LEADER_TRANSFER_REQUEST);
+        inviteTransfer.setChannel(NotificationChannel.EMAIL);
         inviteTransfer.setTitle("TRANSFER LEADER.");
         inviteTransfer.setMessage("Bạn được mời làm trưởng nhóm " + team.getTeamName());
         inviteTransfer.setStatus(InvitationStatus.PENDING);
@@ -897,6 +900,7 @@ public class TeamServiceImpl implements TeamService {
                 .build();
     }
 
+    //FUNCTION ADMIN QUẢN LÝ LIST THÔNG TIN TEAM
     @Override
     public List<TeamDetailResponse> getTeamForAdmin(CustomUserDetails userDetails) {
         //1. Check admin
@@ -1076,6 +1080,10 @@ public class TeamServiceImpl implements TeamService {
 
         return list;
     }
+
+    // Leader xem  thông tin về hạng mục thi của đội
+
+
 
 
 }

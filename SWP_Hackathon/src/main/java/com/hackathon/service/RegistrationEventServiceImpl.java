@@ -36,6 +36,10 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
         // Check thời hạn đăng ký cuộc thi
         HackathonEvent event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin về sự kiện này."));
+
+        if(event.getStatus() == EventStatus.DRAFT){
+            throw new BadRequestException("Không tìm thấy thông tin về sự kiện này.");
+        }
         if (LocalDateTime.now().isAfter(event.getRegistrationDeadline())) {
             throw new BadRequestException("Đã quá hạn đăng ký tham gia cuộc thi này!");
         }
