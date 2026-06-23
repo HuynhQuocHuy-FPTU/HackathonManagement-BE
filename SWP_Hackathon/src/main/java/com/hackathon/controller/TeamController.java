@@ -116,12 +116,11 @@ public class TeamController {
     */
 
 
-    // View Team
+    // View Team of Student
     @GetMapping("/members/{teamId}")
     public ResponseEntity<ApiResponse<TeamDetailResponse>> getTeamMembers(
             @PathVariable Integer teamId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-
         TeamDetailResponse response = teamService.getTeamMember(teamId, userDetails);
         return ResponseEntity.ok(ApiResponse.success(response, "Xem thành viên trong đội thành công"));
     }
@@ -137,7 +136,7 @@ public class TeamController {
 //    }
 
     //View TeamDetail of Expert
-    @GetMapping("/{teamId}/detail")
+    @GetMapping("/detail/{teamId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EVENTCOORDINATOR', 'EXPERT')")
     public ResponseEntity<ApiResponse<TeamDetailResponse>> getTeamDetail(
             @PathVariable Integer teamId,
@@ -146,7 +145,15 @@ public class TeamController {
         return ResponseEntity.ok(ApiResponse.success(response, "Xem thành viên chi tiết trong đội do 1 expert quản lý thành công"));
     }
 
-    // 2. API dành riêng cho EXPERT
+    // Vỉew Team of Admin
+    @GetMapping("/members/{teamId}")
+    public ResponseEntity<ApiResponse<List<TeamDetailResponse>>> getTeamForAdmin(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        List<TeamDetailResponse> response = teamService.getTeamForAdmin(userDetails);
+        return ResponseEntity.ok(ApiResponse.success(response, "Admin xem danh sách các team tham gia cuộc thi thành công"));
+    }
+
+    // API dành riêng cho EXPERT - Xem team mình quản lý
     @GetMapping("/expert/my-member")
     @PreAuthorize("hasRole('EXPERT')")
     public ResponseEntity<ApiResponse<List<TeamDetailResponse>>> getMyTeamInfor(
@@ -157,6 +164,9 @@ public class TeamController {
         }
         return ResponseEntity.ok(ApiResponse.success(response, "Expert xem danh sách đội của mình thành công"));
     }
+
+    // View Team of Leader về hạng mục thi ở từng vòng
+
 
 
 }

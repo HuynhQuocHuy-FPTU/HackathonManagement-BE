@@ -1,6 +1,7 @@
 package com.hackathon.service;
 
-import com.hackathon.dto.student.StudentHistoryResponse;
+import com.hackathon.dto.history.ExpertHistoryResponse;
+import com.hackathon.dto.history.StudentHistoryResponse;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.AccountRole;
 import com.hackathon.exception.BadRequestException;
@@ -9,21 +10,19 @@ import com.hackathon.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
-//    private final StudentRepository studentRepository;
+    //    private final StudentRepository studentRepository;
 //    private final TeamRepository teamRepository;
 //    private final HackathonEventRepository hackathonEventRepository;
     private final TeamMemberRepository teamMemberRepository;
     private final RegistrationRepository registrationRepository;
-    private  final ParticipantRepository participantRepository;
+    private final ParticipantRepository participantRepository;
 
 
     // Cần bổ sung thêm tham gia round nào , hạng mục nào
@@ -75,11 +74,11 @@ public class AccountServiceImpl implements AccountService {
                 historyStudent.setRegistrationDate(registration.getRegistrationDate());
 
                 Optional<Participant> participant = participantRepository.findByRegistration(registration);
-                if(participant.isPresent()){
+                if (participant.isPresent()) {
                     Participant parti = participant.get();
-                    if(parti.getRank() != null ){
+                    if (parti.getRank() != null) {
                         historyStudent.setRanking(parti.getRank());
-                    }else{
+                    } else {
                         historyStudent.setRanking(null);
 
                     }
@@ -96,6 +95,56 @@ public class AccountServiceImpl implements AccountService {
                 historyResponse.getCreatAt(),
                 historyList
         );
+    }
+
+    @Override
+    public ExpertHistoryResponse expertHistory(Integer accountId, CustomUserDetails userDetails) {
+        //1. Tìm thông tin Student qua Account
+        Account currentAccount = userDetails.getAccount();
+        if (currentAccount.getRole() != AccountRole.EXPERT
+                && currentAccount.getRole() != AccountRole.ADMIN
+                && currentAccount.getRole() != AccountRole.EVENTCOORDINATOR) {
+
+            throw new BadRequestException("Bạn không có quyền xem lịch sử này.");
+        }
+        //  Nếu là Sinh viên, CHỈ được xem chính mình. Admin/Coordinator xem ai cũng được.
+        if (currentAccount.getRole() == AccountRole.EXPERT && currentAccount.getAccountId() != accountId) {
+            throw new BadRequestException("Bạn không thể xem lịch sử của Expert khác.");
+        }
+        Account accExpert = accountRepository.findById(accountId)
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy tài khoản này."));
+        Expert expert = accExpert.getExpert();
+        if (expert == null) {
+            throw new BadRequestException("Tài khoản này không phải tài khoản của Expert.");
+        }
+        //2.
+
+        ExpertHistoryResponse historyResponse = new ExpertHistoryResponse();
+        historyResponse.setExpertName(expert.getExpertName());
+        historyResponse.setDepartment(expert.getDepartment());
+        historyResponse.setType(expert.getType());
+
+        List<Map<String, Object>> histories = new ArrayList<>();
+        List<ExpertAssign> expertAssign = expert.getExpertAssigns();
+        for (ExpertAssign ex : expertAssign) {
+            if (ex.getCategoryRound() == null) continue;
+
+            Map<String, Object> item = new HashMap<>();
+
+            item.put("roundName",
+                    ex.getCategoryRound().getRound().getRoundName());
+
+            item.put("categoryName",
+                    ex.getCategoryRound().getCategory().getCategoryName());
+
+            item.put("type",
+                    ex.getExpert().getType());
+
+            histories.add(item);
+        }
+        historyResponse.setHistories(histories);
+
+        return historyResponse;
     }
 
 }

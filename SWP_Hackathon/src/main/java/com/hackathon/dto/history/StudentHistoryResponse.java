@@ -1,4 +1,4 @@
-package com.hackathon.dto.student;
+package com.hackathon.dto.history;
 
 import com.hackathon.entity.enums.RegistrationStatus;
 import lombok.AllArgsConstructor;
