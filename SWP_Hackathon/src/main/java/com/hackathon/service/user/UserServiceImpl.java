@@ -1,7 +1,7 @@
-package com.hackathon.service;
+package com.hackathon.service.user;
 
 import com.hackathon.dto.auth.AuthResponse;
-import com.hackathon.dto.auth.UpdateProfileRequest;
+import com.hackathon.dto.user.UpdateProfileRequest;
 import com.hackathon.entity.Account;
 import com.hackathon.exception.ApiException;
 import com.hackathon.repository.AccountRepository;
@@ -20,12 +20,16 @@ public class UserServiceImpl implements UserService {
     @Override
     public AuthResponse getCurrentUser(CustomUserDetails userDetails) {
         Account account = userDetails.getAccount();
+
+        // Gọi hàm custom query để lấy Full Name từ các bảng con
+        String fullName = accountRepository.findFullNameByEmail(account.getEmail()).orElse(null);
+
         return AuthResponse.builder()
                 .accessToken(null)
                 .refreshToken(null)
                 .expiresIn(0)
                 .accountId(account.getAccountId())
-                .fullName(account.getAccountName())
+                .fullName(fullName) // <-- Sử dụng fullName
                 .email(account.getEmail())
                 .role(account.getRole())
                 .build();
@@ -37,16 +41,15 @@ public class UserServiceImpl implements UserService {
         Account account = accountRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Không tìm thấy tài khoản"));
 
-        // Cập nhật thông tin chung ở bảng Account
-        account.setAccountName(request.getAccountName());
+        // 1. Bảng Account giờ chỉ còn chứa các thông tin chung như phone (Không còn accountName)
         account.setPhone(request.getPhone());
 
-        // Phân nhánh cập nhật theo Role
+        // 2. Phân nhánh cập nhật TÊN và các thông tin khác trực tiếp vào bảng con
         switch (account.getRole()) {
             case STUDENT:
                 com.hackathon.entity.Student student = account.getStudent();
                 if (student != null) {
-                    student.setStudentName(request.getAccountName()); // Đồng bộ tên
+                    student.setStudentName(request.getUserName()); // Cập nhật tên thẳng vào bảng Student
                     if (request.getStudentCode() != null) student.setStudentCode(request.getStudentCode());
                     if (request.getAddress() != null) student.setAddress(request.getAddress());
                     if (request.getMajor() != null) student.setMajor(request.getMajor());
@@ -56,16 +59,16 @@ public class UserServiceImpl implements UserService {
             case EXPERT: // Hoặc JUDGE
                 com.hackathon.entity.Expert expert = account.getExpert();
                 if (expert != null) {
-                    expert.setExpertName(request.getAccountName()); // Đồng bộ tên
+                    expert.setExpertName(request.getUserName()); // Cập nhật tên thẳng vào bảng Expert
                     if (request.getDepartment() != null) expert.setDepartment(request.getDepartment());
                     if (request.getWorkplace() != null) expert.setWorkplace(request.getWorkplace());
                 }
                 break;
 
-            case EVENTCOORDINATOR:
+            case EVENTCOORDINATOR: // Chú ý Role enum của bạn viết liền
                 com.hackathon.entity.EventCoordinator coordinator = account.getEventCoordinator();
                 if (coordinator != null) {
-                    coordinator.setCoordinatorName(request.getAccountName()); // Đồng bộ tên
+                    coordinator.setCoordinatorName(request.getUserName()); // Cập nhật tên thẳng vào bảng EventCoordinator
                     if (request.getDepartment() != null) coordinator.setDepartment(request.getDepartment());
                 }
                 break;
@@ -81,7 +84,7 @@ public class UserServiceImpl implements UserService {
                 .refreshToken(null)
                 .expiresIn(0)
                 .accountId(account.getAccountId())
-                .fullName(account.getAccountName())
+                .fullName(request.getUserName()) // Trả về luôn tên vừa cập nhật từ Request cho UI hiển thị
                 .email(account.getEmail())
                 .role(account.getRole())
                 .build();

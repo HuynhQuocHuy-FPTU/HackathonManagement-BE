@@ -1,4 +1,4 @@
-package com.hackathon.service;
+package com.hackathon.service.auth;
 
 import com.hackathon.dto.auth.RegisterRequest;
 import com.hackathon.dto.auth.ResendVerificationRequest;

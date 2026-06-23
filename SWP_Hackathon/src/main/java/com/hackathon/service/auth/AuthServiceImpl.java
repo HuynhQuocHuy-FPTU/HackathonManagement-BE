@@ -1,4 +1,4 @@
-package com.hackathon.service;
+package com.hackathon.service.auth;
 
 import com.hackathon.dto.auth.LoginRequest;
 import com.hackathon.dto.auth.AuthResponse;
@@ -10,6 +10,7 @@ import com.hackathon.exception.ApiException;
 import com.hackathon.repository.AccountRepository;
 import com.hackathon.repository.RefreshTokenRepository;
 import com.hackathon.security.JwtService;
+import com.hackathon.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -87,11 +88,16 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String newAccessToken = jwtService.generateAccessToken(account);
+
+        // <-- THÊM MỚI: Lấy fullName qua query để trả về cho Refresh API
+        String fullName = accountRepository.findFullNameByEmail(account.getEmail()).orElse(null);
+
         return AuthResponse.builder()
                 .accessToken(newAccessToken)
                 .refreshToken(refreshTokenValue)
                 .expiresIn(jwtService.getAccessExpirationMs() / 1000)
                 .accountId(account.getAccountId())
+                .fullName(fullName) // Thêm fullName vào response
                 .email(account.getEmail())
                 .role(account.getRole())
                 .build();
