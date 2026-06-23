@@ -1,4 +1,4 @@
-package com.hackathon.service;
+package com.hackathon.service.auth;
 
 import com.hackathon.dto.auth.LoginRequest;
 import com.hackathon.dto.auth.AuthResponse;

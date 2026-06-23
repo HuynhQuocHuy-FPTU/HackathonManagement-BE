@@ -1,4 +1,4 @@
-package com.hackathon.service;
+package com.hackathon.service.auth;
 
 import com.hackathon.dto.auth.RegisterRequest;
 import com.hackathon.dto.auth.ResendVerificationRequest;
@@ -10,6 +10,7 @@ import com.hackathon.entity.enums.StudentStatus;
 import com.hackathon.exception.ApiException;
 import com.hackathon.repository.AccountRepository;
 import com.hackathon.repository.StudentRepository;
+import com.hackathon.service.EmailServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
