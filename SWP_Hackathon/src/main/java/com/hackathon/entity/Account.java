@@ -69,6 +69,9 @@ public class Account {
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Notification> notifications;
 
+    @OneToMany(mappedBy = "actor", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Notification> sentNotifications;
+
     // 1 account - N Auditlog
     @OneToMany(
             mappedBy = "account",

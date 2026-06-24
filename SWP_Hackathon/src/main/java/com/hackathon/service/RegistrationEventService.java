@@ -15,6 +15,10 @@ public interface RegistrationEventService {
     Registration rejectRegistration(Integer registrationId,String reason);
 
     List<TeamSelectionDTO> getApprovedRegistrations(Integer eventId);
+
+    List<Registration> getRegistrationsToCancelled(Integer eventId);
+    public void transferStatusToRejectd(List<Registration> registrations);
+
     RegistrationResponse getTeamsDetailForApproval(Integer registrationId, CustomUserDetails userDetails);
     List<RegistrationResponse> getTeamsForApproval(Integer evenId, CustomUserDetails userDetails);
 }

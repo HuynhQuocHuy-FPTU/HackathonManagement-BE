@@ -1,14 +1,19 @@
 package com.hackathon.service;
 
 import com.hackathon.entity.HackathonEvent;
+import com.hackathon.entity.Registration;
 import com.hackathon.entity.Round;
+import com.hackathon.entity.Team;
 import com.hackathon.entity.enums.EventStatus;
 import com.hackathon.entity.enums.RoundStatus;
+import com.hackathon.entity.enums.TeamStatus;
+import com.hackathon.entity.enums.WorkshopStatus;
 import com.hackathon.repository.HackathonEventRepository;
 import com.hackathon.repository.RoundRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -20,9 +25,17 @@ public class StatusSchedulerService {
 
     private final RoundService roundService;
     private final HackathonEventRepository eventRepository;
+    private final RoundRepository roundRepository;
     @Scheduled(fixedRate = 60000)
+    @Transactional
     public void updateEventStatusAuto(){
-        List<HackathonEvent> events = eventRepository.findByStatus(EventStatus.ACTIVE);
+        List<EventStatus> excluded = List.of(
+                EventStatus.DRAFT,
+                EventStatus.COMPLETED,
+                EventStatus.CANCELLED,
+                EventStatus.DELETED
+        );
+        List<HackathonEvent> events = eventRepository.findAllActiveProcessingEvents(excluded);
         LocalDateTime now = LocalDateTime.now();
 
         for(HackathonEvent event : events){
@@ -31,13 +44,29 @@ public class StatusSchedulerService {
             if(newStatus != null && event.getStatus() != newStatus){
                 event.setUpdateAt(LocalDateTime.now());
                 event.setStatus(newStatus);
+                if(newStatus == EventStatus.COMPLETED){
+                    for(Registration registration : event.getRegistrations()){
+                        Team team = registration.getTeam();
+                        team.setStatus(TeamStatus.DRAFT);
+                    }
+                }
                 eventRepository.save(event);
             }
         }
     }
     @Scheduled(fixedRate = 60000)
+    @Transactional
     public void updateRoundStatusAuto(){
-        List<Round> rounds = roundService.getRoundByStatusNot(RoundStatus.COMPLETED);
+        List<EventStatus> eventStatuses = List.of(
+                EventStatus.DRAFT,
+                EventStatus.COMPLETED,
+                EventStatus.CANCELLED,
+                EventStatus.DELETED
+        );
+        List<Round> rounds = roundRepository.findRoundsOfActiveEvents(
+                List.of(RoundStatus.COMPLETED),
+                eventStatuses
+        );
         LocalDateTime now = LocalDateTime.now();
 
         for(Round round : rounds){
@@ -49,6 +78,28 @@ public class StatusSchedulerService {
             }
         }
     }
+    @Scheduled(fixedRate = 60000)
+    @Transactional
+    public void updateWorkshopStatusAuto() {
+        List<EventStatus> excluded = List.of(
+                EventStatus.DRAFT,
+                EventStatus.COMPLETED,
+                EventStatus.CANCELLED,
+                EventStatus.DELETED
+        );
+        List<HackathonEvent> events = eventRepository.findAllActiveProcessingEvents(excluded);
+        LocalDateTime now = LocalDateTime.now();
+
+        for (HackathonEvent event : events) {
+            WorkshopStatus newStatus = calculateStatus(event, now); // Gọi hàm tính toán ở đây
+
+            if (newStatus != null && event.getWorkshopStatus() != newStatus) {
+                event.setWorkshopStatus(newStatus);
+                eventRepository.save(event);
+            }
+        }
+    }
+
 
     private EventStatus resolveEventStatus(HackathonEvent event, LocalDateTime now){
 
@@ -90,5 +141,31 @@ public class StatusSchedulerService {
 
         return RoundStatus.COMPLETED;
     }
+    private WorkshopStatus calculateStatus(HackathonEvent event, LocalDateTime now) {
+        if (event == null || event.getWorkshopTime() == null) return null;
+
+        // 1. TRẠNG THÁI ĐÓNG BĂNG: Coordinator đã chốt (COMPLETED) hoặc đã bị hủy (CANCELLED)
+        // Hệ thống tự động KHÔNG ĐƯỢC PHÉP can thiệp vào các trạng thái này.
+        if (event.getWorkshopStatus() == WorkshopStatus.COMPLETED ||
+                event.getWorkshopStatus() == WorkshopStatus.CANCELLED) {
+            return event.getWorkshopStatus();
+        }
+
+        // 2. TRẠNG THÁI THỜI GIAN: Tính toán dựa trên thời gian thực
+        LocalDateTime startTime = event.getWorkshopTime();
+
+        if (now.isBefore(startTime)) {
+            return WorkshopStatus.UPCOMING;
+        }
+
+        if (now.isBefore(startTime.plusHours(24))) {
+            return WorkshopStatus.ONGOING;
+        }
+
+        // 3. MẶC ĐỊNH: Quá thời gian quy định (24h)
+        return WorkshopStatus.COMPLETED;
+    }
+
+
 
 }

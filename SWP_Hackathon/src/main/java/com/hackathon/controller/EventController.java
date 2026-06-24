@@ -123,4 +123,11 @@ public class EventController {
         return ResponseEntity.ok(ApiResponse.success(categoryResponses, "Các categories thuộc về event"));
     }
 
+    @PutMapping("/cancel/{eventId}")
+    public ResponseEntity<String> cancelledEvent(@PathVariable Integer eventId, @AuthenticationPrincipal CustomUserDetails userDetails, @RequestParam String reason){
+        eventService.cancelEvent(eventId, reason, userDetails);
+        return ResponseEntity.ok("Đã hủy cuộc thi và gửi thông báo đến các team");
+    }
+
+
 }

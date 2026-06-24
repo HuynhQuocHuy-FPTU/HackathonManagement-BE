@@ -20,7 +20,8 @@ public interface RegistrationRepository extends JpaRepository<Registration, Inte
     Optional<Registration> findByTeamAndHackathonEvent_EventId(Team team, Integer eventId);
 
     List<Registration> findByHackathonEvent_EventIdAndStatus(Integer eventId, RegistrationStatus status);
-//    boolean existsByHackathonEvent_EventIdAndTeam_TeamNameAndTeam_IdNot(Integer eventId, String teamName, Integer teamId);
+
+    List<Registration> findRegistrationByHackathonEvent_EventIdAndStatusIn(int hackathonEventEventId, List<RegistrationStatus> status);
 
     Optional<Registration> findByRegistrationId(Integer registrationId);
 

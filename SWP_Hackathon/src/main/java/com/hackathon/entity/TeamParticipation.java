@@ -13,7 +13,7 @@ import java.util.List;
 @Getter
 @Builder
 @Entity
-public class Participant {
+public class TeamParticipation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -41,6 +41,6 @@ public class Participant {
     @JoinColumn(name = "CategoryRound_ID")
     private CategoryRound categoryRound;
 
-    @OneToMany(mappedBy = "participant", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "teamParticipation", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Evaluation> evaluations = new ArrayList<>();
 }

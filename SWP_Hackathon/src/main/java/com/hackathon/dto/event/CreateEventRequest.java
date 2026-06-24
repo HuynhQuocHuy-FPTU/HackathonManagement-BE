@@ -38,6 +38,8 @@ public class CreateEventRequest {
 
     private LocalDateTime registrationDeadline;
 
+    private LocalDateTime workshopTime;
+
     private List<CreateCategoryRequest> categories;
     private List<CreateRoundRequest> rounds;
 

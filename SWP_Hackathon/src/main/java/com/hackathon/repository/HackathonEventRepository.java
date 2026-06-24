@@ -27,6 +27,8 @@ public interface HackathonEventRepository extends JpaRepository<HackathonEvent, 
 
     List<HackathonEvent> findHackathonEventByEventNameContainingIgnoreCaseAndStatus(String eventName, EventStatus status);
 
+    @Query("SELECT e FROM HackathonEvent e WHERE e.status NOT IN :excludedStatuses")
+    List<HackathonEvent> findAllActiveProcessingEvents(@Param("excludedStatuses") List<EventStatus> excludedStatuses);
 
 
 }

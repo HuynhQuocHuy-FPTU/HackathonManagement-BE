@@ -1,5 +1,6 @@
 package com.hackathon.entity;
 
+import com.hackathon.entity.enums.NotiResponseStatus;
 import com.hackathon.entity.enums.NotificationChannel;
 import com.hackathon.entity.enums.InvitationStatus;
 import com.hackathon.entity.enums.NotificationType;
@@ -21,7 +22,9 @@ public class Notification {
     private String title;
     @Column(columnDefinition = "NVARCHAR(MAX)")
     private String message;
+    @Column(name = "Is_Read")
     private boolean isRead;
+    @Column(name = "Created_At")
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
@@ -37,11 +40,29 @@ public class Notification {
     @Enumerated(EnumType.STRING)
     private NotificationChannel channel;
 
+    @Column(name = "Allow_Response")
+    private boolean allowResponse;
+    @Column(name = "Response_Deadline")
+    private LocalDateTime responseDeadline;
+    @Column(name = "Response_Message", columnDefinition = "NVARCHAR(MAX)")
+    private String responseMessage;
+    @Column(name = "Response_At")
+    private LocalDateTime responseAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "Response_Status")
+    private NotiResponseStatus responseStatus;
+
 
     //N Notification - 1 Account
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "account_Id", nullable = false )
+    @JoinColumn(name = "account_Id")
     private Account account;
+
+    // người gửi / người thực hiện hành động
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "Actor_ID")
+    private Account actor;
 
     //N Notification - 1 Team
     @ManyToOne(fetch = FetchType.LAZY)
@@ -52,20 +73,11 @@ public class Notification {
 //    @ManyToOne(fetch = FetchType.LAZY)
 //    @JoinColumn(name = "Event_ID")
 //    private HackathonEvent event;
-
-    @PrePersist
-    public void prePersist() {
-        createdAt = LocalDateTime.now();
-        isRead = false;
-
-        // enforce rule
-        if (type != NotificationType.TEAM_INVITATION) {
-            status = null;
-        }
-
-        if (type == NotificationType.TEAM_INVITATION && status == null) {
-            status = InvitationStatus.PENDING;
-        }
-    }
+//
+//    @PrePersist
+//    public void prePersist() {
+//        createdAt = LocalDateTime.now();
+//        isRead = false;
+//    }
 
 }

@@ -123,89 +123,89 @@ public class DatabaseService {
 //        criteriaDetailRepository.save(CriteriaDetail.builder().criteriaSet(criteriaSet2).criteriaName("Giao diện người dùng đẹp mắt").description("Đẹp mắt, dễ sử dụng, thân thiện").criteriaType(CriteriaType.SUBMISSION).weight(new BigDecimal(15)).build());
 //
 //        criteriaDetailRepository.save(CriteriaDetail.builder().criteriaSet(criteriaSet2).criteriaName("Trải nghiệm người dùng").description("Mượt mà, ít lỗi, dễ tiếp cận").criteriaType(CriteriaType.PRESENTATION).weight(new BigDecimal(15)).build());
-////
+//
 //        criteriaDetailRepository.save(CriteriaDetail.builder().criteriaSet(criteriaSet2).criteriaName("Trình bày và demo").description("Logic, rõ ràng, trả lời tất cả câu hỏi của ban giám khảo").criteriaType(CriteriaType.PRESENTATION).weight(new BigDecimal(25)).build());
-
-        Account[] studentAccounts = new Account[15];
-        Student[] students = new Student[15];
-        Team[] teams = new Team[5];
-
-        int studentIndex = 0;
-
-// =======================
-// 1. CREATE 15 STUDENTS
-// =======================
-        for (int i = 0; i < 15; i++) {
-
-            studentAccounts[i] = accountRepository.save(
-                    Account.builder()
-                            .createdAt(LocalDateTime.now())
-                            .email("student" + (i + 1) + "@gmail.com")
-                            .phone("09000000" + i)
-                            .password(passwordEncoder.encode("123456"))
-                            .status(AccountStatus.ACTIVE)
-                            .role(AccountRole.STUDENT)
-                            .build()
-            );
-
-            students[i] = studentRepository.save(
-                    Student.builder()
-                            .studentCode("SE" + (200000 + i))
-                            .studentName("Student " + (i + 1))
-                            .major("Software Engineering")
-                            .status(StudentStatus.STUDYING)
-                            .startDate(LocalDateTime.now())
-                            .account(studentAccounts[i])
-                            .build()
-            );
-        }
-
-// =======================
-// 2. CREATE 5 TEAMS + TEAM MEMBERS
-// =======================
-        for (int i = 0; i < 5; i++) {
-
-            Team team = teamRepository.save(
-                    Team.builder()
-                            .teamName("Team " + (i + 1))
-                            .teamSize(3)
-                            .status(TeamStatus.DRAFT)
-                            .build()
-            );
-
-            teams[i] = team;
-
-            // mỗi team 3 student
-            for (int j = 0; j < 3; j++) {
-
-                Student student = students[studentIndex++];
-
-                TeamMember member = TeamMember.builder()
-                        .team(team)
-                        .student(student)
-                        .isLeader(j == 0)
-                        .build();
-
-                teamMemberRepository.save(member);
-            }
-        }
-
-// =======================
-// 3. CREATE REGISTRATION (eventId = 1)
-// =======================
-        HackathonEvent event = eventRepository.findById(1)
-                .orElseThrow(() -> new RuntimeException("Event not found"));
-
-        for (Team team : teams) {
-
-            Registration registration = Registration.builder()
-                    .team(team)
-                    .hackathonEvent(event)
-                    .status(RegistrationStatus.PENDING)
-                    .build();
-
-            registrationRepository.save(registration);
-        }
+////
+//        Account[] studentAccounts = new Account[15];
+//        Student[] students = new Student[15];
+//        Team[] teams = new Team[5];
+//
+//        int studentIndex = 0;
+//
+//// =======================
+//// 1. CREATE 15 STUDENTS
+//// =======================
+//        for (int i = 0; i < 15; i++) {
+//
+//            studentAccounts[i] = accountRepository.save(
+//                    Account.builder()
+//                            .createdAt(LocalDateTime.now())
+//                            .email("student" + (i + 1) + "@gmail.com")
+//                            .phone("09000000" + i)
+//                            .password(passwordEncoder.encode("123456"))
+//                            .status(AccountStatus.ACTIVE)
+//                            .role(AccountRole.STUDENT)
+//                            .build()
+//            );
+//
+//            students[i] = studentRepository.save(
+//                    Student.builder()
+//                            .studentCode("SE" + (200000 + i))
+//                            .studentName("Student " + (i + 1))
+//                            .major("Software Engineering")
+//                            .status(StudentStatus.STUDYING)
+//                            .startDate(LocalDateTime.now())
+//                            .account(studentAccounts[i])
+//                            .build()
+//            );
+//        }
+//
+//// =======================
+//// 2. CREATE 5 TEAMS + TEAM MEMBERS
+//// =======================
+//        for (int i = 0; i < 5; i++) {
+//
+//            Team team = teamRepository.save(
+//                    Team.builder()
+//                            .teamName("Team " + (i + 1))
+//                            .teamSize(3)
+//                            .status(TeamStatus.DRAFT)
+//                            .build()
+//            );
+//
+//            teams[i] = team;
+//
+//            // mỗi team 3 student
+//            for (int j = 0; j < 3; j++) {
+//
+//                Student student = students[studentIndex++];
+//
+//                TeamMember member = TeamMember.builder()
+//                        .team(team)
+//                        .student(student)
+//                        .isLeader(j == 0)
+//                        .build();
+//
+//                teamMemberRepository.save(member);
+//            }
+//        }
+//
+//// =======================
+//// 3. CREATE REGISTRATION (eventId = 1)
+//// =======================
+//        HackathonEvent event = eventRepository.findById(1)
+//                .orElseThrow(() -> new RuntimeException("Event not found"));
+//
+//        for (Team team : teams) {
+//
+//            Registration registration = Registration.builder()
+//                    .team(team)
+//                    .hackathonEvent(event)
+//                    .status(RegistrationStatus.PENDING)
+//                    .build();
+//
+//            registrationRepository.save(registration);
+//        }
     }
 }
 

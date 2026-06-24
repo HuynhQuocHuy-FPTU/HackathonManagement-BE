@@ -1,6 +1,7 @@
 package com.hackathon.repository;
 
 import com.hackathon.entity.Round;
+import com.hackathon.entity.enums.EventStatus;
 import com.hackathon.entity.enums.RoundStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -22,4 +23,12 @@ public interface RoundRepository extends JpaRepository<Round, Integer> {
     List<Round> findByStatusNot(RoundStatus status);
 
     Optional<Round> findFirstByHackathonEvent_EventIdOrderByOrderIndexAsc(int hackathonEventEventId);
+
+    @Query("SELECT r FROM Round r JOIN r.hackathonEvent e " +
+            "WHERE r.status NOT IN :excludedRoundStatuses " +
+            "AND e.status NOT IN :allowedEventStatuses")
+    List<Round> findRoundsOfActiveEvents(
+            @Param("excludedRoundStatuses") List<RoundStatus> excludedRoundStatuses,
+            @Param("allowedEventStatuses") List<EventStatus> allowedEventStatuses
+    );
 }
