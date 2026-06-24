@@ -1,9 +1,6 @@
 package com.hackathon.service;
 
-import com.hackathon.dto.team.CreateTeamRequest;
-import com.hackathon.dto.team.TeamDetailResponse;
-import com.hackathon.dto.team.TeamRequestDTO;
-import com.hackathon.dto.team.TeamResponse;
+import com.hackathon.dto.team.*;
 import com.hackathon.entity.Notification;
 import com.hackathon.entity.Team;
 import com.hackathon.security.CustomUserDetails;
@@ -11,7 +8,6 @@ import com.hackathon.security.CustomUserDetails;
 import java.util.List;
 
 public interface TeamService {
-    //    HackathonEvent checkEventRegistrationWindow(Integer eventId);
     void checkEventRegistrationWindow(Team team);
 
     TeamResponse createTeam(CreateTeamRequest request, CustomUserDetails userDetails);
@@ -40,10 +36,19 @@ public interface TeamService {
 
     List<TeamDetailResponse> getTeamForAdmin(CustomUserDetails userDetails);
 
-    TeamDetailResponse getTeamDetail(Integer  teamId, CustomUserDetails userDetails);
+    TeamDetailResponse getTeamDetail(Integer teamId, CustomUserDetails userDetails);
 
     List<TeamDetailResponse> getTeamInfor(Integer expertId, CustomUserDetails userDetails);
 
     TeamDetailResponse getTeamDetailByStudentId(CustomUserDetails userDetails);
 
+    TeamCompetitionResponse getTeamCompetition(CustomUserDetails userDetails);
+
+    TeamRequestResponse teamSendRequestToMentor(CustomUserDetails userDetails);
+
+    List<TeamRequestResponse> getTeamRequestsForExpert(CustomUserDetails userDetails);
+
+    TeamRequestResponse acceptTeamRequest(Integer requestId, CustomUserDetails userDetails);
+
+    TeamRequestResponse rejectTeamRequest(Integer requestId, CustomUserDetails userDetails);
 }

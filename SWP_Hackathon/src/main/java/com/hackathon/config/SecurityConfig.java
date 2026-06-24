@@ -46,9 +46,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         //các API công khai ai cũng vào được
                         .requestMatchers(
-                                "/api/account/**",   // N Them de test
-                                "/api/account/login",      //  N them de test
-                                "/api/account/resend-verification", //N them
+                                "/api/account/**",
+                                "/api/account/login",
+                                "/api/account/resend-verification",
                                 "/api/notifications/**",
                                 "/error",
                                 "/verify-email",
