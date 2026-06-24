@@ -73,9 +73,9 @@ public class AccountServiceImpl implements AccountService {
                 historyStudent.setStatus(registration.getStatus());
                 historyStudent.setRegistrationDate(registration.getRegistrationDate());
 
-                Optional<Participant> participant = participantRepository.findByRegistration(registration);
+                Optional<TeamParticipant> participant = participantRepository.findByRegistration(registration);
                 if (participant.isPresent()) {
-                    Participant parti = participant.get();
+                    TeamParticipant parti = participant.get();
                     if (parti.getRank() != null) {
                         historyStudent.setRanking(parti.getRank());
                     } else {

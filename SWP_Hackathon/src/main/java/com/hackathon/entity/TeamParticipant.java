@@ -13,7 +13,7 @@ import java.util.List;
 @Getter
 @Builder
 @Entity
-public class Participant {
+public class TeamParticipant {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -43,4 +43,5 @@ public class Participant {
 
     @OneToMany(mappedBy = "participant", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Evaluation> evaluations = new ArrayList<>();
+
 }
