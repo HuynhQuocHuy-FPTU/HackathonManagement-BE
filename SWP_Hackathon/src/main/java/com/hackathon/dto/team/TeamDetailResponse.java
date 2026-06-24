@@ -38,6 +38,7 @@ public class TeamDetailResponse {
         private String fullName;
         private String email;
         private String major;
+        private boolean isLeader;
         private String university;
         private String avatarUrl;
     }

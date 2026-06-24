@@ -41,4 +41,10 @@ public class RegisterRequest {
     @NotBlank(message = "Chuyên ngành không được để trống")
     @Size(max = 255, message = "Chuyên ngành tối đa 255 ký tự")
     private String major;
+
+    @NotBlank(message = "University không được để trống")
+    @Size(max = 255, message = "University tối đa 255 ký tự")
+    private String university;
+
+
 }

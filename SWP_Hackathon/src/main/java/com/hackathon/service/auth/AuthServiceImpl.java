@@ -1,4 +1,4 @@
-package com.hackathon.service;
+package com.hackathon.service.auth;
 
 import com.hackathon.dto.auth.LoginRequest;
 import com.hackathon.dto.auth.AuthResponse;
@@ -6,10 +6,12 @@ import com.hackathon.dto.auth.ResetPasswordRequest;
 import com.hackathon.entity.Account;
 import com.hackathon.entity.RefreshToken;
 import com.hackathon.entity.enums.AccountStatus;
+import com.hackathon.entity.enums.AccountRole;
 import com.hackathon.exception.ApiException;
 import com.hackathon.repository.AccountRepository;
 import com.hackathon.repository.RefreshTokenRepository;
 import com.hackathon.security.JwtService;
+import com.hackathon.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -87,13 +89,31 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String newAccessToken = jwtService.generateAccessToken(account);
+
+        String fullName = accountRepository.findFullNameByEmail(account.getEmail()).orElse(null);
+        String university = (account.getRole() == AccountRole.STUDENT && account.getStudent() != null)
+                ? account.getStudent().getUniversityName() : null;
+
+        String organization = null;
+        if (account.getRole() == AccountRole.EXPERT && account.getExpert() != null) {
+            organization = account.getExpert().getOrganization();
+        } else if (account.getRole() == AccountRole.EVENTCOORDINATOR && account.getEventCoordinator() != null) {
+            organization = account.getEventCoordinator().getOrganization();
+        }
+
         return AuthResponse.builder()
                 .accessToken(newAccessToken)
                 .refreshToken(refreshTokenValue)
                 .expiresIn(jwtService.getAccessExpirationMs() / 1000)
                 .accountId(account.getAccountId())
+                .fullName(fullName)
                 .email(account.getEmail())
                 .role(account.getRole())
+                .avatarUrl(account.getAvatarUrl())
+                .university(university)
+                .organization(organization)
+                .createdAt(account.getCreatedAt())
+                .accountStatus(account.getStatus())
                 .build();
     }
 
@@ -151,14 +171,30 @@ public class AuthServiceImpl implements AuthService {
         refreshToken.setRevoked(false);
         refreshTokenRepository.save(refreshToken);
 
+        String fullName = accountRepository.findFullNameByEmail(account.getEmail()).orElse(null);
+        String university = (account.getRole() == AccountRole.STUDENT && account.getStudent() != null)
+                ? account.getStudent().getUniversityName() : null;
+
+        String organization = null;
+        if (account.getRole() == AccountRole.EXPERT && account.getExpert() != null) {
+            organization = account.getExpert().getOrganization();
+        } else if (account.getRole() == AccountRole.EVENTCOORDINATOR && account.getEventCoordinator() != null) {
+            organization = account.getEventCoordinator().getOrganization();
+        }
+
         return AuthResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshTokenValue)
                 .expiresIn(jwtService.getAccessExpirationMs() / 1000)
-                .fullName(accountRepository.findFullNameByEmail(account.getEmail()).orElse(null))
                 .accountId(account.getAccountId())
+                .fullName(fullName)
                 .email(account.getEmail())
                 .role(account.getRole())
+                .avatarUrl(account.getAvatarUrl())
+                .university(university)
+                .organization(organization)
+                .createdAt(account.getCreatedAt())
+                .accountStatus(account.getStatus())
                 .build();
     }
 }

@@ -1,28 +1,26 @@
-package com.hackathon.dto.auth;
+package com.hackathon.dto;
 
 import com.hackathon.entity.enums.AccountRole;
 import com.hackathon.entity.enums.AccountStatus;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 
 import java.time.LocalDateTime;
 
-@Getter
-@AllArgsConstructor
+@Data
 @Builder
-public class AuthResponse {
-
-    private String accessToken;
-    private String refreshToken;
-    private long expiresIn;
+public class UserAdminResponse {
     private int accountId;
-    private String avatarUrl;
-    private String fullName;
     private String email;
+    private String phone;
+    private String fullName;
     private AccountRole role;
+    private AccountStatus status;
+    private String avatarUrl;
+
+    // Các trường đặc thù theo Role
     private String university;
     private String organization;
+
     private LocalDateTime createdAt;
-    private AccountStatus accountStatus;
 }
