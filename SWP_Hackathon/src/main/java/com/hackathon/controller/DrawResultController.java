@@ -1,7 +1,7 @@
 package com.hackathon.controller;
 
 import com.hackathon.dto.DrawResultRequestDTO;
-import com.hackathon.entity.TeamParticipation;
+import com.hackathon.entity.TeamParticipant;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.LuckyDrawResultService;
 import com.hackathon.service.WorkshopService;
@@ -21,7 +21,7 @@ public class DrawResultController {
     private final WorkshopService workshopService;
 
     @PutMapping
-    public ResponseEntity<List<TeamParticipation>> importDrawResults(
+    public ResponseEntity<List<TeamParticipant>> importDrawResults(
             @PathVariable Integer eventId,
             @RequestBody DrawResultRequestDTO drawResults,
             @AuthenticationPrincipal CustomUserDetails userDetails,

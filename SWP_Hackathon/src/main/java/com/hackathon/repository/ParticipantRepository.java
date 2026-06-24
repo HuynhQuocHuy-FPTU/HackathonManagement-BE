@@ -1,14 +1,14 @@
 package com.hackathon.repository;
 
-import com.hackathon.entity.TeamParticipation;
+import com.hackathon.entity.TeamParticipant;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface ParticipantRepository extends JpaRepository<TeamParticipation, Integer> {
-    Optional<TeamParticipation> findParticipantByRegistration_RegistrationId(int registrationRegistrationId);
-    List<TeamParticipation> findParticipantByCategoryRound_CategoryRoundId(Integer id);
+public interface ParticipantRepository extends JpaRepository<TeamParticipant, Integer> {
+    Optional<TeamParticipant> findParticipantByRegistration_RegistrationId(int registrationRegistrationId);
+    List<TeamParticipant> findParticipantByCategoryRound_CategoryRoundId(Integer id);
 
-    List<TeamParticipation> findParticipantByRegistration_Team_TeamIdAndRegistration_HackathonEvent_EventId(int TeamId, int EventId);
+    List<TeamParticipant> findParticipantByRegistration_Team_TeamIdAndRegistration_HackathonEvent_EventId(int TeamId, int EventId);
 }

@@ -40,6 +40,6 @@ public class CategoryRound {
 
     //1 Category Round - N Participant
     @OneToMany(mappedBy = "categoryRound", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<TeamParticipation> teamParticipations;
+    private List<TeamParticipant> teamParticipants;
 
 }

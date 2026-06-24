@@ -13,7 +13,7 @@ import java.util.List;
 @Getter
 @Builder
 @Entity
-public class TeamParticipation {
+public class TeamParticipant {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;

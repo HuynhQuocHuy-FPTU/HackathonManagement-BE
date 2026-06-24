@@ -10,7 +10,6 @@ import com.hackathon.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,7 +26,7 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
     private final NotificationRepository notificationRepository;
 
     @Override
-    public List<TeamParticipation> importDrawResults(Integer eventId, DrawResultRequestDTO drawResults, CustomUserDetails userDetails, Integer responseDeadline) {
+    public List<TeamParticipant> importDrawResults(Integer eventId, DrawResultRequestDTO drawResults, CustomUserDetails userDetails, Integer responseDeadline) {
         Account acc = userDetails.getAccount();
         //tìm event
         HackathonEvent event = eventRepository.findById(eventId).orElseThrow(() -> new BadRequestException("Không tìm thấy event"));
@@ -44,7 +43,7 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
         //Tìm round đầu tiên có index nhỏ nhất trong event
         Round firstRound = roundRepository.findFirstByHackathonEvent_EventIdOrderByOrderIndexAsc(eventId).orElseThrow(() -> new BadRequestException("Event" + eventId + "chưa có round nào"));
 
-        List<TeamParticipation> updateTeamParticipations = new ArrayList<>();
+        List<TeamParticipant> updateTeamParticipants = new ArrayList<>();
         List<Account> accLeaders = new ArrayList<>();
         for(Integer registrationId : drawResults.getRegistrationId()){
             // 1. Lấy registration đã có trong participant và thuộc đúng event
@@ -58,9 +57,9 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
             Category category = categoryRepository.findCategoryByCategoryIdAndHackathonEvent_EventId(drawResults.getCategoryId(), eventId).orElseThrow(() -> new BadRequestException("Không tìm thấy category: " + drawResults.getCategoryId() + "với eventID: " + eventId));
 
             //3. Lấy participant đã được approve
-            TeamParticipation teamParticipation = participantRepository.findParticipantByRegistration_RegistrationId(registration.getRegistrationId()).orElseThrow(() -> new BadRequestException("Không tìm thấy participant theo registration id" + registrationId));
+            TeamParticipant teamParticipant = participantRepository.findParticipantByRegistration_RegistrationId(registration.getRegistrationId()).orElseThrow(() -> new BadRequestException("Không tìm thấy participant theo registration id" + registrationId));
 
-            if(teamParticipation.getCategoryRound() != null){
+            if(teamParticipant.getCategoryRound() != null){
                 throw new BadRequestException("Registration đã được gán vào Category rồi" + registrationId);
             }
 
@@ -69,12 +68,12 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
                     " ở round đầu tiên " + firstRound.getRoundId()));
 
             //5. Cập nhật Participant set categoryRound
-            teamParticipation.setCategoryRound(categoryRound);
-            teamParticipation = participantRepository.save(teamParticipation);
-            updateTeamParticipations.add(teamParticipation);
+            teamParticipant.setCategoryRound(categoryRound);
+            teamParticipant = participantRepository.save(teamParticipant);
+            updateTeamParticipants.add(teamParticipant);
 
             //6. Lấy ra team leader account
-            Team team = teamParticipation.getRegistration().getTeam();
+            Team team = teamParticipant.getRegistration().getTeam();
             Account accountLeader = team.getTeamMembers()
                     .stream()
                     .filter(TeamMember::getIsLeader)
@@ -87,7 +86,7 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
             notificationService.notifyAssignedCategory(acc, accountLeader, team.getTeamName(), event.getEventName(),category.getCategoryName(), responseDeadline);
         }
 
-        return updateTeamParticipations;
+        return updateTeamParticipants;
     }
 
 
