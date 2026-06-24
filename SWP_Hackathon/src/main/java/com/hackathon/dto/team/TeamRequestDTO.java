@@ -10,7 +10,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class TeamRequest {
+public class TeamRequestDTO {
     @NotBlank(message = "StudentCode is required")
     private String studentCode;
 }

@@ -1,14 +1,26 @@
 package com.hackathon.dto.team;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.hackathon.entity.enums.RequestStatus;
+import lombok.*;
+
+import java.time.LocalDateTime;
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
-public class TeamSupportRequest {
+@Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class TeamRequestResponse {
+    private Integer requestId;
+    private Integer teamId;
+    private String teamName;
+    private Integer expertId;
+    private LocalDateTime createDate;
+    private RequestStatus status;
+    private String round;
+    private String categoryName;
+
 
 }

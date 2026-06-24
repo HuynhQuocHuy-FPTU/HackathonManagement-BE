@@ -1,8 +1,9 @@
 <!DOCTYPE html>
+
 <html xmlns:th="http://www.thymeleaf.org" lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Lời Mời</title>
+    <title>Lời Mời Tham Gia Đội Thi</title>
 </head>
 <body>
 
@@ -11,23 +12,34 @@
 <p>
     Xin chào <span th:text="${studentName}">Sinh viên</span>,
     <br>
-    Bạn nhận được lời mời làm Trưởng nhóm từ <span th:text="${leaderName}">Cựu Leader</span>.
+    Bạn đã nhận được lời mời tham gia đội thi từ
+    <span th:text="${leaderName}">Leader</span>.
 </p>
 
 <p>
-    <strong>Đội thi:</strong> <span th:text="${teamName}">Tên Đội</span>
+    <strong>Tên đội:</strong>
+    <span th:text="${teamName}">Tên Đội</span>
 </p>
 
-<p>Vui lòng phản hồi bằng cách chọn một trong hai đường link:</p>
+<p>
+    Hãy xác nhận tham gia hoặc từ chối lời mời bằng cách chọn một trong hai liên kết bên dưới:
+</p>
 
 <p>
-    <a th:href="'http://localhost:3000/respond-invitation?id=' + ${notificationId} + '&action=accept'" >
+    <a th:href="'http://localhost:3000/respond-invitation?id=' + ${notificationId} + '&action=accept'">
         [ CHẤP NHẬN ]
     </a>
+</p>
 
-    <a th:href="'http://localhost:3000/respond-invitation?id=' + ${notificationId} + '&action=reject'" >
+<p>
+    <a th:href="'http://localhost:3000/respond-invitation?id=' + ${notificationId} + '&action=reject'">
         [ TỪ CHỐI ]
     </a>
+</p>
+
+<p>
+    Trân trọng,<br>
+    FPT Hackathon System
 </p>
 
 </body>

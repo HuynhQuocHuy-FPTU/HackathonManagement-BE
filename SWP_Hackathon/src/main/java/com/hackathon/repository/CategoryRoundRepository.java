@@ -23,4 +23,14 @@ public interface CategoryRoundRepository extends JpaRepository<CategoryRound, In
     Optional<CategoryRound> findCategoryRoundByCategoryAndRound(@Param("cateId") Integer cateId, @Param("roundId") Integer roundId);
 
     Optional<CategoryRound> findCategoryRoundByCategory_CategoryIdAndRound_RoundId(Integer categoryCategoryId, Integer roundRoundId);
+
+    @Query("SELECT cr FROM Participant p " +
+            "JOIN p.categoryRound cr " +
+            "JOIN p.registration rg " +
+            "JOIN rg.team t " +
+            "WHERE t.teamId = :teamId " +
+            "AND rg.status = RegistrationStatus.APPROVED " +
+            "AND p.status = ParticipantStatus.ACTIVE " +
+            "AND cr.round.status = RoundStatus.ONGOING")
+    List<CategoryRound> findActiveCategoryRoundsByTeamId(@Param("teamId") Integer teamId);
 }

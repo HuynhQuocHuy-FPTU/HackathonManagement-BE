@@ -1,12 +1,10 @@
 package com.hackathon.service;
 
-import com.hackathon.dto.team.CreateTeamRequest;
-import com.hackathon.dto.team.TeamDetailResponse;
-import com.hackathon.dto.team.TeamRequest;
-import com.hackathon.dto.team.TeamResponse;
+import com.hackathon.dto.team.*;
 
 import com.hackathon.email.MailRequest;
 import com.hackathon.entity.*;
+import com.hackathon.entity.TeamRequest;
 import com.hackathon.entity.enums.*;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.*;
@@ -14,6 +12,7 @@ import com.hackathon.security.CustomUserDetails;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -31,6 +30,11 @@ public class TeamServiceImpl implements TeamService {
     private final NotificationRepository notificationRepository;
     private final StudentRepository studentRepository;
     private final ExpertRepository expertRepository;
+    private final ExpertAssignRepository expertAssignRepository;
+    private final TeamRequestRepository teamRequestRepository;
+    private final CategoryRoundRepository categoryRoundRepository;
+
+
 
     private final EmailService emailService;
     private final AuditService auditService;
@@ -410,11 +414,19 @@ public class TeamServiceImpl implements TeamService {
                 .orElseThrow(() -> new BadRequestException("Bạn hiện không tham gia hoặc không phải thành viên của đội này!"));
 
         //2. Leader khong duoc phep roi khoi nhom , truoc khi chuyen quyen leader cho nguoi khac
-        if (teamMember.getIsLeader()) {
-            throw new BadRequestException("Leader không được phép rời Team trước khi chuyển quyền cho thành viên khác.");
-        }
 
         Team team = teamMember.getTeam();
+        int countMember = team.getTeamSize();
+        if (teamMember.getIsLeader() && countMember > 1) {
+            throw new BadRequestException(
+                    "Leader phải chuyển quyền cho thành viên khác trước khi rời team."
+            );
+        }
+        if (countMember == 1) {
+            teamMemberRepository.delete(teamMember);
+            teamRepository.delete(team);
+            return;
+        }
 
         //3. Check deadline
         checkEventRegistrationWindow(team);
@@ -437,7 +449,7 @@ public class TeamServiceImpl implements TeamService {
 
     //FUNCTION 4: CHUYỂN QUYỀN LEADER(Chỉ mới gửi lời mời đến thành viên muốn chuyển quyền )
     @Override
-    public void transferLeader(Integer teamId, TeamRequest request, CustomUserDetails userDetails) {
+    public void transferLeader(Integer teamId, TeamRequestDTO request, CustomUserDetails userDetails) {
 
         // 2. Check Team
         Account currentUser = userDetails.getAccount();
@@ -973,7 +985,8 @@ public class TeamServiceImpl implements TeamService {
         if (team.getTeamMembers() != null && !team.getTeamMembers().isEmpty()) {
 
             for (TeamMember member : team.getTeamMembers()) {
-                String avatar = (member.getStudent() != null && member.getStudent().getAccount() != null)
+                if (member.getStudent() == null) continue;
+                String avatar = (member.getStudent().getAccount() != null)
                         ? member.getStudent().getAccount().getAvatarUrl() : null;
 
                 TeamDetailResponse.MemberInfo info = TeamDetailResponse.MemberInfo.builder()
@@ -1002,6 +1015,7 @@ public class TeamServiceImpl implements TeamService {
 
     }
 
+
     @Override
     public List<TeamDetailResponse> getTeamInfor(Integer expertId, CustomUserDetails userDetails) {
         //1. Check admin
@@ -1020,13 +1034,15 @@ public class TeamServiceImpl implements TeamService {
             }
             finalExpertId = expertId;
         }
+
+
         // Nếu là expert thì phải dùng account Expert của mình để xem thông tin Team mình quản lý
         else if (account.getRole() == AccountRole.EXPERT) {
             Expert expert = expertRepository.findByAccount_AccountId(account.getAccountId())
                     .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin Expert tương ứng với account này."));
             finalExpertId = expert.getExpertId();
-
         }
+
 
         //2. Lấy list team mà Expert quản lý
         List<Team> listTeam = teamRepository.findTeamsByExpertAssignment(finalExpertId);
@@ -1045,22 +1061,14 @@ public class TeamServiceImpl implements TeamService {
                         CategoryRound categoryRound = participant.getCategoryRound();
 
                         // Check Category Round này có đúng là cái mà Expert này được phân công không
-                        boolean isTrue = categoryRound.getExpertAssigns() != null &&
-                                categoryRound.getExpertAssigns().stream().anyMatch(expertAssign ->
-                                        expertAssign.getExpert() != null
-                                                && searchExpertId != null // Bảo đảm finalExpertId không null trước khi so sánh
-                                                && expertAssign.getExpert().getExpertId() == searchExpertId
-                                );
-                        if (isTrue) {
-                            if (categoryRound.getCategory() != null) {
-                                categoryName = participant.getCategoryRound().getCategory().getCategoryName();
+                        if (categoryRound.getCategory() != null) {
+                            categoryName = participant.getCategoryRound().getCategory().getCategoryName();
 
-                            }
-                            if (categoryRound.getRound() != null) {
-                                roundName = participant.getCategoryRound().getRound().getRoundName();
-                            }
-                            break;
                         }
+                        if (categoryRound.getRound() != null) {
+                            roundName = participant.getCategoryRound().getRound().getRoundName();
+                        }
+                        break;
                     }
 
                 }
@@ -1079,12 +1087,225 @@ public class TeamServiceImpl implements TeamService {
         }
 
         return list;
+
+
     }
 
     // Leader xem  thông tin về hạng mục thi của đội
+    @Override
+    public TeamCompetitionResponse getTeamCompetition(CustomUserDetails userDetails) {
+        // Check leader
+        Account account = userDetails.getAccount();
+
+        Student student = studentRepository.findById(account.getStudent().getStudentId())
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin sinh viên"));
+//        if (student == null) {
+//            throw new BadRequestException("Không tìm thấy thông tin sinh viên");
+//        }
+        TeamMember teamMember = student.getTeamMembers().stream()
+                .findFirst().orElseThrow(() -> new BadRequestException("Bạn chưa tham gia vào bất kì Team nào."));
+        if (!teamMember.getIsLeader()) {
+            throw new BadRequestException("Bạn không phải là leader nên không được phép xem thông tin về hạng mục này.");
+        }
+        Team team = teamMember.getTeam();
+        if (team == null) {
+            throw new BadRequestException("Không tìm thấy thông tin  về Team này");
+        }
+
+        List<CategoryRound> categoryRound = team.getRegistrations().stream()
+                .filter(registration -> registration != null && registration.getStatus() == RegistrationStatus.APPROVED)
+                .map(Registration::getParticipant)
+                .filter(participant -> participant != null && participant.getStatus() == ParticipantStatus.ACTIVE)
+                .map(Participant::getCategoryRound)
+                .filter(cr -> cr != null && cr.getRound() != null && cr.getRound().getStatus() == RoundStatus.ONGOING)
+                .toList();
+        if (categoryRound.isEmpty()) {
+            throw new BadRequestException("Đội của bạn hiện không tham gia vòng thi nào hoặc chưa được kích hoạt.");
+        }
+
+        String eventName = "N/A";
+        if (categoryRound.getFirst().getRound().getHackathonEvent() != null) {
+            eventName = categoryRound.getFirst().getRound().getHackathonEvent().getEventName();
+        }
+
+        List<TeamCompetitionResponse.RoundInfo> roundInfoList = new ArrayList<>();
+
+        List<TeamCompetitionResponse.Category> categoryList = new ArrayList<>();
+
+        for (CategoryRound category : categoryRound) {
+            String roundName = category.getRound().getRoundName();
+            String categoryName = category.getCategory().getCategoryName();
+            // Check vòng thi có tồn tại chưa
+
+            TeamCompetitionResponse.RoundInfo roundExist = null;
+            for (TeamCompetitionResponse.RoundInfo roundInfo : roundInfoList) {
+                if (roundInfo.getRoundName().equalsIgnoreCase(roundName)) {
+                    roundExist = roundInfo;
+                    break;
+                }
+
+            }
+            if (roundExist == null) {
+                TeamCompetitionResponse.RoundInfo newRoundInfo = new TeamCompetitionResponse.RoundInfo();
+                newRoundInfo.setRoundName(roundName);
+                //
+                List<TeamCompetitionResponse.Category> categories = new ArrayList<>();
+                categories.add(new TeamCompetitionResponse.Category(categoryName));
+                newRoundInfo.setCategories(categories);
+                roundInfoList.add(newRoundInfo);
+            } else {
+                roundExist.getCategories().add(
+                        new TeamCompetitionResponse.Category(categoryName)
+                );
+            }
+        }
+
+        return TeamCompetitionResponse.builder()
+                .eventName(eventName)
+                .teamId(team.getTeamId())
+                .teamName(team.getTeamName())
+                .rounds(roundInfoList)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public TeamRequestResponse teamSendRequestToMentor(CustomUserDetails userDetails) {
+        Account account = userDetails.getAccount();
+        if (account == null || account.getStudent() == null) {
+            throw new BadRequestException("Tài khoản này không phải là tài khoản student");
+        }
+        //Tìm Team mà Student này làm leader và đang trạng thái thi đấu
+        Team team = teamRepository.findActiveLeadingTeamByStudentId(account.getStudent().getStudentId())
+                .orElseThrow(() -> new BadRequestException("Bạn không phải leader của đội đang tham gia thi đấu"));
+
+        Participant activeParticipant = team.getRegistrations().stream()
+                .filter(registration -> registration.getStatus() == RegistrationStatus.APPROVED)
+                .map(Registration::getParticipant)
+                .filter(p -> p != null
+                        && p.getCategoryRound() != null
+                        && p.getCategoryRound().getRound() != null
+                        && p.getCategoryRound().getRound().getStatus() == RoundStatus.ONGOING)
+                .findFirst()
+                .orElseThrow(() -> new BadRequestException("Hiện tại không có vòng thi nào đang diễn ra hoặc đội chưa có suất tham gia hợp lệ."));
+        CategoryRound categoryRound = activeParticipant.getCategoryRound();
+
+        ExpertAssign expertAssign = expertAssignRepository.findExpertAssignByTeamAndCategoryRound(team.getTeamId(),
+                        categoryRound.getCategoryRoundId())
+                .orElseThrow(() -> new BadRequestException("Đội của bạn hiện tại chưa được Ban tổ chức phân công Mentor phụ trách ở vòng này."));
+
+        TeamRequest newRequest = new TeamRequest();
+        newRequest.setTeam(team);
+        newRequest.setExpertAssign(expertAssign);
+        newRequest.setCategoryRound(categoryRound);
+
+        newRequest.setCreateDate(LocalDateTime.now());
+        newRequest.setStatus(RequestStatus.PENDING);
+        TeamRequest saveTeam = teamRequestRepository.save(newRequest);
+        return TeamRequestResponse.builder()
+                .requestId(saveTeam.getRequestId())
+                .teamId(saveTeam.getTeam().getTeamId())
+                .teamName(saveTeam.getTeam().getTeamName())
+                .expertId(expertAssign.getExpert().getExpertId())
+                .createDate(saveTeam.getCreateDate())
+                .status(saveTeam.getStatus())
+                .round(saveTeam.getCategoryRound().getRound().getRoundName())
+                .categoryName(saveTeam.getCategoryRound().getCategory().getCategoryName())
+                .build();
+    }
+
+    @Override
+    public List<TeamRequestResponse> getTeamRequestsForExpert(CustomUserDetails userDetails) {
+        Account account = userDetails.getAccount();
+        Expert expert = expertRepository.findByAccount_AccountId(account.getAccountId())
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin Expert tương ứng với tài khoản này."));
+        // Lấy ds các Team gửi request
+        List<TeamRequest> listRequest = teamRequestRepository.findRequestByExpertId(expert.getExpertId());
+        if (listRequest == null || listRequest.isEmpty()) {
+            throw new BadRequestException("Danh sách các Team gửi yêu cầu rỗng.");
+        }
 
 
+        List<TeamRequestResponse> responseList = new ArrayList<>();
+        TeamRequestResponse response = null;
+        for (TeamRequest rq : listRequest) {
+            response = TeamRequestResponse.builder()
+                    .requestId(rq.getRequestId())
+                    .teamId(rq.getTeam().getTeamId())
+                    .teamName(rq.getTeam().getTeamName())
+                    .expertId(expert.getExpertId())
+                    .createDate(rq.getCreateDate())
+                    .status(rq.getStatus())
+                    .round(rq.getCategoryRound().getRound().getRoundName())
+                    .categoryName(rq.getCategoryRound().getCategory().getCategoryName())
+                    .build();
+            responseList.add(response);
+        }
+
+
+        return responseList;
+    }
+
+    @Override
+    public TeamRequestResponse acceptTeamRequest(Integer requestId, CustomUserDetails userDetails) {
+        Account account = userDetails.getAccount();
+        Expert expert = expertRepository.findByAccount_AccountId(account.getAccountId())
+                .orElseThrow(() -> new BadRequestException("Bạn không phải là Expert vì vậy không được phép truy cập vào trình duyệt này."));
+        // Check expert có quản lý Team được gửi yêu cầu không
+        TeamRequest listRequest = teamRequestRepository.findById(requestId)
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy yêu cầu này"));
+        if (listRequest.getExpertAssign() == null || listRequest.getExpertAssign().getExpert().getExpertId()
+                != expert.getExpertId()) {
+            throw new BadRequestException("Bạn không phải là Mentor cho đội thi này.");
+
+        }
+
+        if (listRequest.getStatus() != RequestStatus.PENDING) {
+            throw new BadRequestException("Lời yêu cầu này đã được xử lý.");
+        }
+        listRequest.setStatus(RequestStatus.ACCEPTED);
+        TeamRequest updateRequest = teamRequestRepository.save(listRequest);
+
+
+        return TeamRequestResponse.builder()
+                .requestId(updateRequest.getRequestId())
+                .teamId(updateRequest.getTeam().getTeamId())
+                .teamName(updateRequest.getTeam().getTeamName())
+                .expertId(updateRequest.getExpertAssign().getExpert().getExpertId())
+                .status(updateRequest.getStatus())
+                .build();
+    }
+
+
+    @Override
+    public TeamRequestResponse rejectTeamRequest(Integer requestId, CustomUserDetails userDetails) {
+        Account account = userDetails.getAccount();
+        Expert expert = expertRepository.findByAccount_AccountId(account.getAccountId())
+                .orElseThrow(() -> new BadRequestException("Bạn không phải là Expert vì vậy không được phép truy cập vào trình duyệt này."));
+        // Check expert có quản lý Team được gửi yêu cầu không
+        TeamRequest listRequest = teamRequestRepository.findById(requestId)
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy yêu cầu này"));
+        if (listRequest.getExpertAssign() == null || listRequest.getExpertAssign().getExpert().getExpertId()
+                != expert.getExpertId()) {
+            throw new BadRequestException("Bạn không phải là Mentor cho đội thi này.");
+
+        }
+
+        if (listRequest.getStatus() != RequestStatus.PENDING) {
+            throw new BadRequestException("Lời yêu cầu này đã được xử lý.");
+        }
+        listRequest.setStatus(RequestStatus.DECLINED);
+        TeamRequest updateRequest = teamRequestRepository.save(listRequest);
+
+
+        return TeamRequestResponse.builder()
+                .requestId(updateRequest.getRequestId())
+                .teamId(updateRequest.getTeam().getTeamId())
+                .teamName(updateRequest.getTeam().getTeamName())
+                .expertId(updateRequest.getExpertAssign().getExpert().getExpertId())
+                .status(updateRequest.getStatus())
+                .build();
+    }
 
 
 }
-

@@ -19,23 +19,14 @@ public interface TeamRepository extends JpaRepository<Team, Integer> {
     boolean existsByTeamNameIgnoreCaseAndTeamIdNot(String name, Integer teamId);
 
     // Tìm những team mà expert được phân công quản lý
-    @Query ("SELECT DISTINCT t FROM Team  t " +
-            "JOIN Registration  r ON r.team = t " +
-            "JOIN HackathonEvent e ON r.hackathonEvent = e " +
-            "JOIN Category c ON c.hackathonEvent = e " +
-            "JOIN CategoryRound  cr ON cr.category = c " +
-            "JOIN ExpertAssign ex ON ex.categoryRound =cr " +
+    @Query("SELECT DISTINCT t FROM Team t " +
+            "JOIN t.registrations r " +
+            "JOIN r.participant p " + // Lấy Participant của vòng đấu
+            "JOIN p.categoryRound cr " + // Lấy CategoryRound mà Team đang đá
+            "JOIN ExpertAssign ex ON ex.categoryRound = cr " + // Expert cũng phải thuộc CategoryRound đó
             "WHERE ex.expert.expertId = :expertId")
     List<Team> findTeamsByExpertAssignment(@Param("expertId") Integer expertId);
 
-    // Truy vấn lấy Participant dựa trên ExpertID phân công qua CategoryRound
-    @Query("SELECT p FROM Participant p " +
-            "JOIN p.registration r " +
-            "JOIN r.team t " +
-            "JOIN p.categoryRound cr " +
-            "JOIN ExpertAssign ea ON ea.categoryRound = cr " +
-            "WHERE ea.expert.expertId = :expertId")
-    List<Participant> findParticipantsByExpertAssignment(@Param("expertId") Integer expertId);
 
     @Query("SELECT DISTINCT t FROM Team t " +
             "JOIN Registration r ON r.team = t " +
@@ -44,5 +35,12 @@ public interface TeamRepository extends JpaRepository<Team, Integer> {
             "JOIN ExpertAssign ea ON ea.categoryRound = cr " +
             "WHERE t.teamId = :teamId AND ea.expert.expertId = :expertId")
     Optional<Team> findTeamByIdAndExpertAssignment(@Param("teamId") Integer teamId, @Param("expertId") Integer expertId);
+
+    @Query("SELECT t FROM Team t " +
+            "JOIN t.teamMembers tm " +
+            "WHERE tm.student.studentId = :studentId " +
+            "AND tm.isLeader = true " +
+            "AND t.status = com.hackathon.entity.enums.TeamStatus.BUSY")
+    Optional<Team> findActiveLeadingTeamByStudentId(@Param("studentId") Integer studentId);
 }
 

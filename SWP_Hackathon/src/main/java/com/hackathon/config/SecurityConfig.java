@@ -73,6 +73,14 @@ public class SecurityConfig {
                         // Dành cho STUDENT (Đăng ký sự kiện & Mời thành viên)
                         .requestMatchers(HttpMethod.POST, "/api/registrations/*/register-event").hasRole("STUDENT")
                         .requestMatchers(HttpMethod.POST, "/api/registrations/teams/invite").hasRole("STUDENT")
+
+                        //EXPERT
+                        .requestMatchers(HttpMethod.GET, "/api/teams/team-requests/received").hasRole("EXPERT")
+                        .requestMatchers("/api/teams/team-requests/received").hasRole("EXPERT")
+                        .requestMatchers(HttpMethod.PATCH, "/api/teams/team-requests/*/reject").hasRole("EXPERT")
+                        .requestMatchers(HttpMethod.PATCH, "/api/teams/team-requests/*/accept").hasRole("EXPERT")
+
+
                         .requestMatchers("/api/teams/**").hasRole("STUDENT")
 
                         //Chỉ event coordinator
