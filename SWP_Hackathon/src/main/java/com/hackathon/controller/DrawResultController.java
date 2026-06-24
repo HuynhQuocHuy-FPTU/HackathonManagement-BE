@@ -1,7 +1,7 @@
 package com.hackathon.controller;
 
 import com.hackathon.dto.DrawResultRequestDTO;
-import com.hackathon.entity.Participant;
+import com.hackathon.entity.TeamParticipant;
 import com.hackathon.service.DrawResultService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +17,7 @@ public class DrawResultController {
     private final DrawResultService drawResultService;
 
     @PutMapping
-    public ResponseEntity<List<Participant>> importDrawResults(
+    public ResponseEntity<List<TeamParticipant>> importDrawResults(
             @PathVariable Integer eventId,
             @RequestBody List<DrawResultRequestDTO> drawResults) {
         return ResponseEntity.ok(drawResultService.importDrawResults(eventId, drawResults));

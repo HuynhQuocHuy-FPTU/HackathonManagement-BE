@@ -1056,7 +1056,7 @@ public class TeamServiceImpl implements TeamService {
 
             if (team.getRegistrations() != null && !team.getRegistrations().isEmpty()) {
                 for (Registration registration : team.getRegistrations()) {
-                    Participant participant = registration.getParticipant();
+                    TeamParticipant participant = registration.getParticipant();
                     if (participant != null && participant.getCategoryRound() != null) {
                         CategoryRound categoryRound = participant.getCategoryRound();
 
@@ -1116,7 +1116,7 @@ public class TeamServiceImpl implements TeamService {
                 .filter(registration -> registration != null && registration.getStatus() == RegistrationStatus.APPROVED)
                 .map(Registration::getParticipant)
                 .filter(participant -> participant != null && participant.getStatus() == ParticipantStatus.ACTIVE)
-                .map(Participant::getCategoryRound)
+                .map(TeamParticipant::getCategoryRound)
                 .filter(cr -> cr != null && cr.getRound() != null && cr.getRound().getStatus() == RoundStatus.ONGOING)
                 .toList();
         if (categoryRound.isEmpty()) {
@@ -1179,7 +1179,7 @@ public class TeamServiceImpl implements TeamService {
         Team team = teamRepository.findActiveLeadingTeamByStudentId(account.getStudent().getStudentId())
                 .orElseThrow(() -> new BadRequestException("Bạn không phải leader của đội đang tham gia thi đấu"));
 
-        Participant activeParticipant = team.getRegistrations().stream()
+        TeamParticipant activeParticipant = team.getRegistrations().stream()
                 .filter(registration -> registration.getStatus() == RegistrationStatus.APPROVED)
                 .map(Registration::getParticipant)
                 .filter(p -> p != null

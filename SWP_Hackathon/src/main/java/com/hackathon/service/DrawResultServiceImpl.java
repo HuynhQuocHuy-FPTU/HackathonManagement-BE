@@ -21,7 +21,7 @@ public class DrawResultServiceImpl implements DrawResultService{
     private final RegistrationRepository registrationRepository;
 
     @Override
-    public List<Participant> importDrawResults(Integer eventId, List<DrawResultRequestDTO> drawResults) {
+    public List<TeamParticipant> importDrawResults(Integer eventId, List<DrawResultRequestDTO> drawResults) {
         if(drawResults == null && drawResults.isEmpty()){
             throw new BadRequestException("Danh sách kết quả bốc thăm không được rỗng");
         }
@@ -30,7 +30,7 @@ public class DrawResultServiceImpl implements DrawResultService{
 
         Round firstRound = roundRepository.findFirstByHackathonEvent_EventIdOrderByOrderIndexAsc(eventId).orElseThrow(() -> new BadRequestException("Event" + eventId + "chưa có round nào"));
 
-        List<Participant> updateParticipants = new ArrayList<>();
+        List<TeamParticipant> updateParticipants = new ArrayList<>();
         for(DrawResultRequestDTO request : drawResults){
             // 1. Lấy registration đã có trong participant và thuộc đúng event
 
@@ -45,7 +45,7 @@ public class DrawResultServiceImpl implements DrawResultService{
 
             //3. Lấy participant đã được approve
 
-            Participant participant = participantRepository.findParticipantByRegistration_RegistrationId(registration.getRegistrationId()).orElseThrow(() -> new BadRequestException("Không tìm thấy participant theo registration id" + request.getRegistrationId()));
+            TeamParticipant participant = participantRepository.findParticipantByRegistration_RegistrationId(registration.getRegistrationId()).orElseThrow(() -> new BadRequestException("Không tìm thấy participant theo registration id" + request.getRegistrationId()));
 
             if(participant.getCategoryRound() != null){
                 throw new BadRequestException("Registration đã được gán vào Category rồi" + request.getRegistrationId());

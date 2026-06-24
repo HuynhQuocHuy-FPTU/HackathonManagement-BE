@@ -2,7 +2,6 @@ package com.hackathon.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hackathon.entity.enums.RegistrationStatus;
-import com.hackathon.entity.enums.TeamStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -41,7 +40,7 @@ public class Registration {
     private HackathonEvent hackathonEvent;
 
     @OneToOne
-    private Participant participant;
+    private TeamParticipant participant;
 
 
 }

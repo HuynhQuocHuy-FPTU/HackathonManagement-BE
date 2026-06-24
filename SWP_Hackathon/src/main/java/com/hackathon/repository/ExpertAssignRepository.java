@@ -32,7 +32,7 @@ public interface ExpertAssignRepository extends JpaRepository<ExpertAssign, Inte
     //  tìm ExpertAssign phụ trách đúng Team tại CategoryRound cụ thể
     @Query("SELECT ex FROM ExpertAssign ex " +
             "JOIN ex.categoryRound cr " +
-            "JOIN Participant p ON p.categoryRound = cr " +
+            "JOIN TeamParticipant p ON p.categoryRound = cr " +
             "JOIN p.registration r " +
             "WHERE r.team.teamId = :teamId " +
             "AND cr.categoryRoundId = :categoryRoundId")

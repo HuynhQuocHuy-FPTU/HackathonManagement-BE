@@ -1,6 +1,6 @@
 package com.hackathon.validator;
 
-import com.hackathon.entity.Participant;
+import com.hackathon.entity.TeamParticipant;
 import com.hackathon.entity.Registration;
 import com.hackathon.entity.enums.ParticipantStatus;
 import com.hackathon.entity.enums.RegistrationStatus;
@@ -23,9 +23,9 @@ public class DisqualifyValidator {
      * @param eventId      id event đang xử lý (chỉ dùng để hiển thị message lỗi)
      * @return chính danh sách participants (để service dùng tiếp, tránh query lại)
      */
-    public List<Participant> validateTeamBelongsToEventAndApproved(List<Participant> participants,
-                                                                   Integer teamId,
-                                                                   Integer eventId) {
+    public List<TeamParticipant> validateTeamBelongsToEventAndApproved(List<TeamParticipant> participants,
+                                                                       Integer teamId,
+                                                                       Integer eventId) {
 
         // 1. Nếu không có participant nào -> team không tham gia event này
         if (participants == null || participants.isEmpty()) {

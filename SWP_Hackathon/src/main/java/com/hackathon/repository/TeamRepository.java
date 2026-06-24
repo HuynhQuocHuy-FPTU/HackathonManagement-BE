@@ -1,6 +1,5 @@
 package com.hackathon.repository;
 
-import com.hackathon.entity.Participant;
 import com.hackathon.entity.Team;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -30,7 +29,7 @@ public interface TeamRepository extends JpaRepository<Team, Integer> {
 
     @Query("SELECT DISTINCT t FROM Team t " +
             "JOIN Registration r ON r.team = t " +
-            "JOIN Participant p ON r.participant = p " +
+            "JOIN TeamParticipant p ON r.participant = p " +
             "JOIN CategoryRound cr ON p.categoryRound = cr " +
             "JOIN ExpertAssign ea ON ea.categoryRound = cr " +
             "WHERE t.teamId = :teamId AND ea.expert.expertId = :expertId")
