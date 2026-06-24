@@ -36,9 +36,10 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
         // Check thời hạn đăng ký cuộc thi
         HackathonEvent event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin về sự kiện này."));
-//        if (LocalDateTime.now().isBefore(event.getStartDate())) {
-//            throw new BadRequestException("Cuộc thi chưa mở cổng đăng ký! Vui lòng quay lại sau.");
-//        }
+
+        if(event.getStatus() == EventStatus.DRAFT){
+            throw new BadRequestException("Không tìm thấy thông tin về sự kiện này.");
+        }
         if (LocalDateTime.now().isAfter(event.getRegistrationDeadline())) {
             throw new BadRequestException("Đã quá hạn đăng ký tham gia cuộc thi này!");
         }
@@ -252,7 +253,6 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
                 RegistrationResponse.MemberInfo info = new RegistrationResponse.MemberInfo(
                         memberInfo.getStudent().getStudentCode(),
                         memberInfo.getStudent().getStudentName(),
-//                        memberInfo.getStudent().getUniversityName(),
                         memberInfo.getStudent().getMajor(),
                         memberInfo.getStudent().getAccount().getEmail()
                 );

@@ -1,7 +1,7 @@
-package com.hackathon.service;
+package com.hackathon.service.user;
 
 import com.hackathon.dto.auth.AuthResponse;
-import com.hackathon.dto.auth.UpdateProfileRequest;
+import com.hackathon.dto.user.UpdateProfileRequest;
 import com.hackathon.security.CustomUserDetails;
 
 public interface UserService {

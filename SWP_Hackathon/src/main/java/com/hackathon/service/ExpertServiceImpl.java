@@ -1,6 +1,7 @@
 package com.hackathon.service;
 
 import com.hackathon.dto.expert.ExpertInfoResponse;
+import com.hackathon.dto.team.TeamDetailResponse;
 import com.hackathon.entity.Expert;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.ExpertRepository;
@@ -40,4 +41,6 @@ public class ExpertServiceImpl implements ExpertService{
                 .type(expert.getType())
                 .workplace(expert.getWorkplace()).build();
     }
+
+
 }

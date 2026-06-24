@@ -43,4 +43,5 @@ public class TeamParticipant {
 
     @OneToMany(mappedBy = "teamParticipation", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Evaluation> evaluations = new ArrayList<>();
+
 }

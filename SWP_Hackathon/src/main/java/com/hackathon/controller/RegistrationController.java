@@ -79,7 +79,7 @@ public class RegistrationController {
     }
 
 
-
+    // Lấy ra ds Team chờ duyệt
     @GetMapping("/{eventId}/pendingTeam")
     public ResponseEntity<ApiResponse<List<RegistrationResponse>>> getTeamsForApproval(@PathVariable Integer eventId, @AuthenticationPrincipal CustomUserDetails userDetails) {
         List<RegistrationResponse> list = registrationEventService.getTeamsForApproval(eventId,userDetails);
@@ -87,7 +87,7 @@ public class RegistrationController {
     }
 
     @GetMapping("/{registrationId}/pendingTeam-detail")
-    public ResponseEntity<ApiResponse<RegistrationResponse>> getTeamsDeatilForApproval(@PathVariable Integer registrationId, @AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<ApiResponse<RegistrationResponse>> getTeamsDetailForApproval(@PathVariable Integer registrationId, @AuthenticationPrincipal CustomUserDetails userDetails) {
         RegistrationResponse list = registrationEventService.getTeamsDetailForApproval(registrationId,userDetails);
         return ResponseEntity.ok(ApiResponse.success(list,"Lấy danh sách phê duyệt Team thành công."));
     }

@@ -43,8 +43,8 @@ public class Account {
     @Column(name = "Avatar_Url", columnDefinition = "NVARCHAR(255)")
     private String avatarUrl;
 
-    @Column(name = "Account_Name", columnDefinition = "NVARCHAR(255)")
-    private String accountName;
+//    @Column(name = "Account_Name", columnDefinition = "NVARCHAR(255)")
+//    private String accountName;
 
     @Column(name = "Updated_At")
     @UpdateTimestamp

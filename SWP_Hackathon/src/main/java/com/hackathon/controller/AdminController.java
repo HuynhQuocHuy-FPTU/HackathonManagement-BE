@@ -1,25 +1,51 @@
 package com.hackathon.controller;
 
 import com.hackathon.dto.AuditLogResponse;
-import com.hackathon.dto.auth.InviteAccountRequest;
-import com.hackathon.service.AdminService;
+import com.hackathon.dto.UserAdminResponse;
+import com.hackathon.dto.common.ApiResponse;
 import com.hackathon.service.AuditService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.hackathon.service.AdminService;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
+
     private final AuditService auditService;
+
     @GetMapping("/auditLog")
     public ResponseEntity<List<AuditLogResponse>> getAllAuditLog(){
         List<AuditLogResponse> list = auditService.getAllAuditLog();
         return ResponseEntity.ok(list);
+    }
+
+    private final AdminService adminService;
+    /**
+     * API: Lấy danh sách toàn bộ người dùng
+     * GET /api/admin/users
+     */
+    @GetMapping("/users")
+    // Tương lai bạn có thể thêm @PreAuthorize("hasAuthority('ADMIN')") ở đây để bảo mật
+    public ResponseEntity<ApiResponse<List<UserAdminResponse>>> getAllUsers() {
+        List<UserAdminResponse> users = adminService.getAllUsers();
+        return ResponseEntity.ok(ApiResponse.ok("Lấy danh sách người dùng thành công", users));
+    }
+
+    /**
+     * API: Lấy thông tin chi tiết một người dùng
+     * GET /api/admin/users/{id}
+     */
+    @GetMapping("/users/{id}")
+    public ResponseEntity<ApiResponse<UserAdminResponse>> getUserById(@PathVariable int id) {
+        UserAdminResponse user = adminService.getUserById(id);
+        return ResponseEntity.ok(ApiResponse.ok("Lấy thông tin chi tiết người dùng thành công", user));
     }
 //    private final AdminService adminService;
 //    @PostMapping("invite")

@@ -21,6 +21,9 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Integer>
     //kiểm tra xem Sinh viên đã nằm trong Team nào chưa
     List<TeamMember> findByStudent(Student student);
 
+    //Tìm danh sách member bằng studentId
+    List<TeamMember> findByStudent_StudentId(int studentId);
+
     //Tim Student thuoc Team nao
     Optional<TeamMember> findByTeamAndStudent(Team team, Student student);
 
@@ -32,5 +35,7 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Integer>
     Optional<TeamMember> findByTeam_TeamIdAndStudent(Integer teamId, Student student);
 
     Optional<TeamMember> findByStudentAndIsLeader(Student student, boolean isLeader);
+
+//    boolean hasLeader(boolean b);
 
 }
