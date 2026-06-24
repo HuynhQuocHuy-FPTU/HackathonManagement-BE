@@ -114,8 +114,6 @@ public class TeamController {
      /*
            3. NHÓM API XEM THÀNH VIÊN ĐỘI (STUDENT / EXPERT / COORD / ADMIN)
     */
-
-
     // View Team of Student
     @GetMapping("/members/{teamId}")
     public ResponseEntity<ApiResponse<TeamDetailResponse>> getTeamMembers(
@@ -134,6 +132,13 @@ public class TeamController {
 //        List<TeamDetailResponse> response = teamService.getTeamInfor(expertId, userDetails);
 //        return ResponseEntity.ok(ApiResponse.success(response, "Xem danh sách thành viên trong đội do 1 expert quản lý thành công"));
 //    }
+    @GetMapping("/members/view-team-member-detail")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<TeamDetailResponse>> getTeamDetailByStudent(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        TeamDetailResponse response = teamService.getTeamDetailByStudentId(userDetails);
+        return ResponseEntity.ok(ApiResponse.success(response, "Xem thành viên chi tiết trong đội thành công"));
+    }
 
     //View TeamDetail of Expert
     @GetMapping("/detail/{teamId}")

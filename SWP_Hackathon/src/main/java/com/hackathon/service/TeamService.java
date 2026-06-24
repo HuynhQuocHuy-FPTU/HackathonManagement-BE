@@ -44,5 +44,6 @@ public interface TeamService {
 
     List<TeamDetailResponse> getTeamInfor(Integer expertId, CustomUserDetails userDetails);
 
+    TeamDetailResponse getTeamDetailByStudentId(CustomUserDetails userDetails);
 
 }
