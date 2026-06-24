@@ -328,6 +328,59 @@ public class TeamServiceImpl implements TeamService {
 
     }
 
+    @Override
+    @Transactional()
+    public TeamDetailResponse getTeamDetailByStudentId(CustomUserDetails userDetails) {
+        Account currentAccount = userDetails.getAccount();
+        List<TeamMember> members = teamMemberRepository.findByStudent_StudentId(currentAccount.getStudent().getStudentId());
+        if (members.isEmpty()) {
+            throw new BadRequestException("Bạn hiện chưa tham gia đội nào.");
+        }
+        Team team = teamRepository.findById(members.get(0).getTeam().getTeamId()).orElseThrow(() -> new BadRequestException("Team không tồn tại"));
+        //2. Check account đang đăng nhập có đag  là thành viên của Team đó hay không
+        TeamMember teamMember = teamMemberRepository.findByTeamAndStudent(team, currentAccount.getStudent())
+                .orElseThrow(() -> new BadRequestException("Sinh viên hiện tại không thuộc Team này. Không được phép xem danh sách Team này."));
+        //3. Lấy danh sách teamMember
+        List<TeamMember> teamMembers = teamMemberRepository.findByTeam(team);
+        TeamDetailResponse.MemberInfo leaderInfo = null;
+        List<TeamDetailResponse.MemberInfo> officialMembers = new ArrayList<>();
+        for (TeamMember member : teamMembers) {
+            TeamDetailResponse.MemberInfo info = TeamDetailResponse.MemberInfo.builder()
+                    .studentCode(member.getStudent().getStudentCode())
+                    .fullName(member.getStudent().getStudentName())
+                    .email(member.getStudent().getAccount().getEmail())
+                    .avatarUrl(member.getStudent().getAccount().getAvatarUrl())
+                    .isLeader(member.getIsLeader())
+                    .major(member.getStudent().getMajor())
+                    .build();
+
+            if (member.getIsLeader()) {
+                leaderInfo = info;
+            } else {
+                officialMembers.add(info); // Chỉ add thành viên thường vào list này
+            }
+        }
+        // 4. Lấy danh sách các email đã gửi lời mời
+        List<TeamDetailResponse.InviteInfo> inviteInfo = new ArrayList<>();
+        // Chỉ khi người đang xem là LEADER  thì mới xem được lời mời
+        if (teamMember.getIsLeader()) {
+            List<Notification> invites = notificationRepository.findByTeamAndType(team, NotificationType.TEAM_INVITATION);
+            for (Notification invite : invites) {
+                inviteInfo.add(new TeamDetailResponse.InviteInfo(
+                        invite.getAccount().getEmail(),
+                        invite.getStatus().name()
+                ));
+            }
+        }
+        // 4. Đóng gói dữ liệu trả về cho Frontend
+        return TeamDetailResponse.builder()
+                .teamId(team.getTeamId())
+                .teamName(team.getTeamName())
+                .leader(leaderInfo)
+                .members(officialMembers)
+                .sizeTeam(teamMembers.size())
+                .build();
+    }
 
     //FUNCTION 2:UPDATE INFORMATION ABOUT TEAM AS NAME
     @Override
@@ -517,8 +570,7 @@ public class TeamServiceImpl implements TeamService {
         //1.Tìm lời mời dựa trên thông báo
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new BadRequestException("Lời mời không tồn tại hoặc đã bị hủy từ trước."));
-        ;
-        // 2. Check account được nhận lời mời vs account được gửi lời mời có giống nhau không(nhớ mở ra)
+//         2. Check account được nhận lời mời vs account được gửi lời mời có giống nhau không(nhớ mở ra)
         if (userDetails != null && userDetails.getAccount() != null) {
             if (notification.getAccount().getAccountId() != userDetails.getAccount().getAccountId()) {
                 throw new BadRequestException("Bạn không có quyền truy cập vào thông báo này.");
@@ -1082,8 +1134,6 @@ public class TeamServiceImpl implements TeamService {
     }
 
     // Leader xem  thông tin về hạng mục thi của đội
-
-
 
 
 }
