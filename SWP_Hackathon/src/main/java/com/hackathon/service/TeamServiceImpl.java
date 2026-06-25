@@ -549,7 +549,7 @@ public class TeamServiceImpl implements TeamService {
             props.put("leaderName", currentUser.getStudent().getStudentName());
             props.put("email", currentUser.getEmail());
             props.put("receiverEmail", newLeader.getAccount().getEmail());
-            props.put("notiId", savedNoti.getId());
+            props.put("notificationId", savedNoti.getId());
             mailRequest.setProps(props);
             emailService.sendEmail(mailRequest, "transfer");
         } catch (Exception e) {

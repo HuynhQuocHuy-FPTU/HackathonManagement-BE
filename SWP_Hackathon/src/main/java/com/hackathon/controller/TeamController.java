@@ -151,7 +151,7 @@ public class TeamController {
     }
 
     // Vỉew Team of Admin
-    @GetMapping("/members/{teamId}")
+    @GetMapping("/admin/members/{teamId}")
     public ResponseEntity<ApiResponse<List<TeamDetailResponse>>> getTeamForAdmin(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         List<TeamDetailResponse> response = teamService.getTeamForAdmin(userDetails);

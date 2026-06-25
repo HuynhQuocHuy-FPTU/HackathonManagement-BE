@@ -21,7 +21,8 @@
 <p>
     <strong>Đội thi:</strong> <span th:text="${teamName}">Tên Đội</span>
     <br>
-    <strong>Nội dung:</strong> Bạn được mời làm trưởng nhóm cho đội <span th:text="${teamName}">Tên Đội</span> tham gia cuộc thi Hackathon. Vui lòng phản hồi yêu cầu này.
+    <strong>Nội dung:</strong> Bạn được mời làm trưởng nhóm cho đội <span th:text="${teamName}">Tên Đội</span> tham gia
+    cuộc thi Hackathon. Vui lòng phản hồi yêu cầu này.
 </p>
 
 <p>
@@ -29,17 +30,18 @@
 </p>
 
 <p>
-    <a th:href="'http://localhost:5174/respond-invitation?id=' + ${notificationId} + '&action=accept'">
+    <a th:href="'http://localhost:5174/respond-invitation?id=' + ${notificationId} + '&action=accept&type=transfer_leader'">
         [ CHẤP NHẬN ]
     </a>
 
-    <a th:href="'http://localhost:5174/respond-invitation?id=' + ${notificationId} + '&action=reject'" >
+    <a th:href="'http://localhost:5174/respond-invitation?id=' + ${notificationId} + '&action=reject&type=transfer_leader'">
         [ TỪ CHỐI ]
     </a>
 </p>
 
 <p style="font-size: 12px; color: #777777; font-style: italic;">
-    * Lưu ý: Lời mời này chỉ có hiệu lực trước khi ban tổ chức tiến hành phê duyệt danh sách đội thi chính thức. Hành động này sẽ không thể hoàn tác sau khi đã bấm phản hồi.
+    * Lưu ý: Lời mời này chỉ có hiệu lực trước khi ban tổ chức tiến hành phê duyệt danh sách đội thi chính thức. Hành
+    động này sẽ không thể hoàn tác sau khi đã bấm phản hồi.
 </p>
 
 <p style="font-size: 11px; color: #aaaaaa;">
