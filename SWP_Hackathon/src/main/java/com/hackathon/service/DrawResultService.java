@@ -1,10 +1,10 @@
 package com.hackathon.service;
 
 import com.hackathon.dto.DrawResultRequestDTO;
-import com.hackathon.entity.Participant;
+import com.hackathon.entity.TeamParticipant;
 
 import java.util.List;
 
 public interface DrawResultService {
-    List<Participant> importDrawResults(Integer eventId, List<DrawResultRequestDTO> drawResults);
+    List<TeamParticipant> importDrawResults(Integer eventId, List<DrawResultRequestDTO> drawResults);
 }

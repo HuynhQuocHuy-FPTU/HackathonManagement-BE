@@ -19,7 +19,6 @@ import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -56,14 +55,14 @@ public class ParticipantServiceImpl implements ParticipantService{
 
         Account account = userDetails.getAccount();
         // 1. Lấy toàn bộ Participant của Team này trong Event này
-        List<Participant> participants = participantRepository
+        List<TeamParticipant> participants = participantRepository
                 .findParticipantByRegistration_Team_TeamIdAndRegistration_HackathonEvent_EventId(teamId, eventId);
 
         // 2. Validate: team phải thuộc event này VÀ đăng ký phải đã được APPROVED
         participants = disqualifyValidator.validateTeamBelongsToEventAndApproved(participants, teamId, eventId);
 
         // 3. Đổi status từng Participant + lưu lý do loại
-        for (Participant participant : participants) {
+        for (TeamParticipant participant : participants) {
             participant.setStatus(ParticipantStatus.DISQUALIFIED); // điều chỉnh đúng tên enum thật
             participant.setDisqualificationReason(reason);
         }
@@ -77,7 +76,7 @@ public class ParticipantServiceImpl implements ParticipantService{
 
     }
 
-    private ParticipantResponseDTO mapToResponse(Participant participant){
+    private ParticipantResponseDTO mapToResponse(TeamParticipant participant){
         if(participant == null){
             return null;
         }
@@ -95,7 +94,7 @@ public class ParticipantServiceImpl implements ParticipantService{
     private ExpertAssignedGroupDTO buildGroup(ExpertAssign expertAssign){
         CategoryRound categoryRound = expertAssign.getCategoryRound();
 
-        List<Participant> participants = participantRepository.findParticipantByCategoryRound_CategoryRoundId(categoryRound.getCategoryRoundId());
+        List<TeamParticipant> participants = participantRepository.findParticipantByCategoryRound_CategoryRoundId(categoryRound.getCategoryRoundId());
 
         List<ParticipantResponseDTO> participantResponseDTOS = participants.stream().map(this::mapToResponse).toList();
 
@@ -123,8 +122,8 @@ public class ParticipantServiceImpl implements ParticipantService{
 
         return ((CustomUserDetails) principal).getAccount();
     }
-    public Participant saveParticipant(Registration registration){
-        Participant participant = new Participant();
+    public TeamParticipant saveParticipant(Registration registration){
+        TeamParticipant participant = new TeamParticipant();
         participant.setRegistration(registration);
         participant.setCategoryRound(null);
         participant.setStatus(ParticipantStatus.ACTIVE);

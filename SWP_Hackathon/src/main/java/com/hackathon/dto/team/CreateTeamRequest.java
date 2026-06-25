@@ -13,13 +13,8 @@ import java.util.List;
 @Getter
 @Setter
 public class CreateTeamRequest {
-    private Integer eventId;
     private Integer teamId;
-
-
-//    @NotBlank(message = "Team name is required")
     private String teamName;
-
     @NotNull(message = "Member list is required")
     @Size(min = 1, message = "Team must have at least 1 member besides leader")
     private List<@NotBlank @Email String> memberEmails;

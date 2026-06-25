@@ -36,4 +36,6 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Integer>
 
     Optional<TeamMember> findByStudentAndIsLeader(Student student, boolean isLeader);
 
+//    boolean hasLeader(boolean b);
+
 }

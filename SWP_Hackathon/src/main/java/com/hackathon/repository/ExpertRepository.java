@@ -10,4 +10,5 @@ import java.util.Optional;
 @Repository
 public interface ExpertRepository extends JpaRepository<Expert, Integer> {
     Optional<Expert> findByAccount_AccountId(Integer accountId);
+
 }
