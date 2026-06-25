@@ -13,22 +13,38 @@ import java.util.List;
 public interface NotificationService {
     NotificationEmailResponse getInfoNotificationInvite(CustomUserDetails userDetails, Long notificationId);
 
-    void createNotification(Account account,
-                            Integer actorId,
+    void createNotificationHaveResponse(Account account, Account actor,
                             NotificationType type,
                             NotificationChannel channel,
                             String title,
-                            String message
+                            String message, boolean allowResponse, Integer responseDeadline
                             );
 
-    void notifyRegistrationApproved(Integer coordinatorId, Account teamLeaderAccount, String teamName, String eventName);
+    void createNotificationNoResponse(Account acc, Account actor, NotificationType type, NotificationChannel channel, String title, String message);
 
-    void notifyRegistrationRejected(Integer coordinatorId, Account teamLeaderAccount, String teamName,String eventName, String reason );
+    void notifyRegistrationApproved(Account actor, Account teamLeaderAccount, String teamName, String eventName);
 
+    void notifyRegistrationRejected(Account actor, Account teamLeaderAccount, String teamName,String eventName, String reason );
+
+    void notifyDisqualifyTeam(Account actor, Account teamLeaderAccount, String teamName,String eventName, String reason );
+
+    public void notifyAssignedCategory(Account actor, Account teamLeaderAccount, String teamName, String eventName, String category, Integer responseDeadline);
+
+    void notifyCancelledEvent(Account actor, List<Account> teamLeaderAccounts,String eventName, String reason);
+
+    void notifyCategoryAssignmentResponse(
+            Account actor,
+            String teamName,
+            String responseMessage);
+
+    void responseCategoryAssignment(
+            Long notificationId,
+            String responseMessage,CustomUserDetails userDetails);
     List<NotificationWebResponse> getNotifications(CustomUserDetails userDetails);
     List<NotificationWebResponse> getUnreadNotifications(CustomUserDetails userDetails);
     List<NotificationWebResponse> getReadNotifications(CustomUserDetails userDetails);
     List<NotificationWebResponse> getByType(CustomUserDetails userDetails, NotificationType type);
+    List<NotificationWebResponse> getPendingResponses(CustomUserDetails userDetails);
 
     long countUnread(CustomUserDetails userDetails);
     void markAsRead(Long notificationId, CustomUserDetails userDetails);

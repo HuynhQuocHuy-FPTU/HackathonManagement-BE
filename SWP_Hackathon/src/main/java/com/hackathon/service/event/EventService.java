@@ -5,6 +5,7 @@ import com.hackathon.dto.event.CreateEventRequest;
 import com.hackathon.dto.event.EventResponse;
 import com.hackathon.dto.event.UpdateEventRequest;
 import com.hackathon.exception.BadRequestException;
+import com.hackathon.security.CustomUserDetails;
 
 import java.util.List;
 
@@ -17,6 +18,7 @@ public interface EventService {
     public List<EventResponse> getDeletedEvents();
     public void restoreEvent(Integer eventId);
     public void permanentlyDeleteEvent(Integer eventId);
+    void cancelEvent(Integer eventId, String reason, CustomUserDetails currentUser);
 //    public List<EventResponse> searchEventByName(String eventName);
 
     // Information about HackathonEvent Detail

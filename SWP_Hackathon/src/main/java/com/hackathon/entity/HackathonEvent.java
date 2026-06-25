@@ -2,6 +2,7 @@ package com.hackathon.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hackathon.entity.enums.EventStatus;
+import com.hackathon.entity.enums.WorkshopStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -48,8 +49,17 @@ public class HackathonEvent {
     private LocalDateTime createAt;
     @Column(name = "Update_At", nullable = true)
     private LocalDateTime updateAt;
+    @Column(name = "Workshop_Time")
+    private LocalDateTime workshopTime;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "Workshop_Status")
+    private WorkshopStatus workshopStatus;
     @Column(name = "Banner_Url", nullable = true)
     private String bannerUrl;
+
+    @Column(name = "Cancellation_Reason", nullable = true)
+    private String cancellationReason;
 
     // 1 HACKATHON - N CATEGORY
     @OneToMany(mappedBy = "hackathonEvent", cascade = CascadeType.ALL, orphanRemoval = true)

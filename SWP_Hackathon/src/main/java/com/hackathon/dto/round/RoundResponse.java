@@ -51,7 +51,6 @@ public class RoundResponse {
     private List<EvaluationCriteriaResponseDTO> customCriteriaDetatils;
     private List<CategoryExpertAssignResponseDTO> categoryExperts;
 
-
     public RoundResponse(Round round, List<EvaluationCriteriaResponseDTO> criteriaList, List<CategoryExpertAssignResponseDTO> experts){
         this.roundId = round.getRoundId();
         this.roundName = round.getRoundName();

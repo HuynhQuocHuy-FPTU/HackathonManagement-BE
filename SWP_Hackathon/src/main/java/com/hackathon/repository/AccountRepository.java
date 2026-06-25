@@ -1,11 +1,14 @@
 package com.hackathon.repository;
 
 import com.hackathon.entity.Account;
+import com.hackathon.entity.enums.AccountRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 public interface AccountRepository extends JpaRepository<Account, Integer> {
@@ -30,4 +33,6 @@ public interface AccountRepository extends JpaRepository<Account, Integer> {
                 WHERE a.email = :email
             """)
     java.util.Optional<String> findFullNameByEmail(@Param("email") String email);
+
+    List<Account> findAccountByRole(AccountRole role);
 }

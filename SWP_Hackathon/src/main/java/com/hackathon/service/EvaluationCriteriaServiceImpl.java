@@ -34,21 +34,11 @@ public class EvaluationCriteriaServiceImpl implements EvaluationCriteriaService 
 
     @Override
     public EvaluationCriteria createEvaluationCritera(EvaluationCriteriaRequestDTO request, int criteriaSetId, Round round) {
-        //lay ra tieu chi goc
-        if (request.getCriteriaDetailId() == null) {
-            throw new BadRequestException("Vui lòng chọn tiêu chí mẫu (criteriaDetailId) cho từng tiêu chí chấm điểm");
-        }
-        CriteriaDetail tempCriteriaDetail = criteriaDetailRepository.findById(request.getCriteriaDetailId()).orElseThrow(() -> new RuntimeException("Criteria detail not valid with ID: " + request.getCriteriaDetailId()));
-
-        // kiểm tra tiêu chí con có thuộc bộ tieeu chi không
-        if (tempCriteriaDetail.getCriteriaSet().getCriteriaSetId() != criteriaSetId) {
-            throw new BadRequestException("Criteria detail not criteria set");
-        }
 
         //tạo EvaluationCriteria để snapshot dữ liệu()
         EvaluationCriteria evaluationCriteria = new EvaluationCriteria();
         evaluationCriteria.setRound(round);
-        evaluationCriteria.setCriteriaName(tempCriteriaDetail.getCriteriaName());
+        evaluationCriteria.setCriteriaName(request.getCriteriaName());
         //custom
         evaluationCriteria.setWeight(request.getCustomWeight());
         evaluationCriteria.setDescription(request.getDescription());

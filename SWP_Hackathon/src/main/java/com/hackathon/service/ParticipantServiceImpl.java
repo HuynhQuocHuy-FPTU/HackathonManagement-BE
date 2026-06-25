@@ -8,15 +8,10 @@ import com.hackathon.entity.enums.AuditEntityType;
 import com.hackathon.entity.enums.ParticipantStatus;
 import com.hackathon.entity.enums.TeamStatus;
 import com.hackathon.exception.BadRequestException;
-import com.hackathon.repository.ExpertAssignRepository;
-import com.hackathon.repository.ExpertRepository;
-import com.hackathon.repository.ParticipantRepository;
-import com.hackathon.repository.TeamRepository;
+import com.hackathon.repository.*;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.validator.DisqualifyValidator;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -31,22 +26,29 @@ public class ParticipantServiceImpl implements ParticipantService{
     private final TeamRepository teamRepository;
     private final DisqualifyValidator disqualifyValidator;
     private final AuditService auditService;
+    private final NotificationService notificationService;
+    private final HackathonEventRepository hackathonEventRepository;
 
-    public List<ExpertAssignedGroupDTO> getAssignParticipants(Integer eventId){
+    public List<ExpertAssignedGroupDTO> getAssignParticipants(Integer eventId, CustomUserDetails userDetails){
 
-        //1. Lấy Account đang đăng nhập, tìm expert
-        Account currentAccount = getCurrentAccount();
+        //1. Lấy Account đang đăng nhập
+        Account account = userDetails.getAccount();
 
-        Expert expert = expertRepository.findByAccount_AccountId(currentAccount.getAccountId()).orElseThrow(() -> new BadRequestException("Không tìm thấy expert ứng với account" + currentAccount.getEmail()));
+        // 2. Tìm expert tương ứng
+        Expert expert = expertRepository
+                .findByAccount_AccountId(account.getAccountId())
+                .orElseThrow(() ->
+                        new BadRequestException(
+                                "Không tìm thấy expert ứng với account " + account.getEmail()));
 
-        //2. Lấy tất cả expertAssign của expert theo event
+        //3. Lấy tất cả expertAssign của expert theo event
         List<ExpertAssign> assigns = expertAssignRepository.findExpertAssignments(expert.getExpertId(), eventId);
 
         if(assigns.isEmpty()){
             throw new BadRequestException("Expert không được phân công trong event này");
         }
 
-        //3. Lấy participant tương ứng
+        //4. Lấy participant tương ứng
         return assigns.stream().map(this::buildGroup).toList();
     }
     public void disqualifyTeam(Integer eventId, Integer teamId, String reason) {
@@ -55,48 +57,61 @@ public class ParticipantServiceImpl implements ParticipantService{
 
         Account account = userDetails.getAccount();
         // 1. Lấy toàn bộ Participant của Team này trong Event này
-        List<TeamParticipant> participants = participantRepository
+        List<TeamParticipant> teamParticipants = participantRepository
                 .findParticipantByRegistration_Team_TeamIdAndRegistration_HackathonEvent_EventId(teamId, eventId);
+        //3. Tìm event
+        HackathonEvent event = hackathonEventRepository.findById(eventId).orElseThrow(() -> new BadRequestException("Không tìm thấy event"));
 
         // 2. Validate: team phải thuộc event này VÀ đăng ký phải đã được APPROVED
-        participants = disqualifyValidator.validateTeamBelongsToEventAndApproved(participants, teamId, eventId);
+        teamParticipants = disqualifyValidator.validateTeamBelongsToEventAndApproved(teamParticipants, teamId, eventId);
 
         // 3. Đổi status từng Participant + lưu lý do loại
-        for (TeamParticipant participant : participants) {
-            participant.setStatus(ParticipantStatus.DISQUALIFIED); // điều chỉnh đúng tên enum thật
-            participant.setDisqualificationReason(reason);
+        for (TeamParticipant teamParticipant : teamParticipants) {
+            teamParticipant.setStatus(ParticipantStatus.DISQUALIFIED); // điều chỉnh đúng tên enum thật
+            teamParticipant.setDisqualificationReason(reason);
         }
-        participantRepository.saveAll(participants);
+        participantRepository.saveAll(teamParticipants);
 
         // 4. Đổi status Team — loại hẳn khỏi event
-        Team team = participants.get(0).getRegistration().getTeam();
-        team.setStatus(TeamStatus.DRAFT); // điều chỉnh đúng tên enum thật
+        Team team = teamParticipants.get(0).getRegistration().getTeam();
+        team.setStatus(TeamStatus.DRAFT);
         teamRepository.save(team);
-        auditService.saveLog(account, AuditAction.DISQUALIFY_TEAM, AuditEntityType.PARTICIPANT, participants.get(0).getId(), team.getTeamName() );
+
+        Account accountLeader = team.getTeamMembers()
+                .stream()
+                .filter(TeamMember::getIsLeader)
+                .map(TeamMember::getStudent)
+                .map(Student::getAccount)
+                .findFirst()
+                .orElseThrow(() ->
+                        new BadRequestException("Không tìm thấy trưởng nhóm"));
+        auditService.saveLog(account, AuditAction.DISQUALIFY_TEAM, AuditEntityType.PARTICIPANT, teamParticipants.get(0).getId(), team.getTeamName() );
+
+        notificationService.notifyDisqualifyTeam(account, accountLeader, team.getTeamName(), event.getEventName(),reason);
 
     }
 
-    private ParticipantResponseDTO mapToResponse(TeamParticipant participant){
-        if(participant == null){
+    private ParticipantResponseDTO mapToResponse(TeamParticipant teamParticipant){
+        if(teamParticipant == null){
             return null;
         }
-        String teamName = participant.getRegistration().getTeam().getTeamName();
+        String teamName = teamParticipant.getRegistration().getTeam().getTeamName();
 
         return ParticipantResponseDTO.builder()
-                .participantId(participant.getId())
+                .participantId(teamParticipant.getId())
                 .teamName(teamName)
-                .totalScore(participant.getTotalScore())
-                .rank(participant.getRank())
-                .status(participant.getStatus())
+                .totalScore(teamParticipant.getTotalScore())
+                .rank(teamParticipant.getRank())
+                .status(teamParticipant.getStatus())
                 .build();
     }
 
     private ExpertAssignedGroupDTO buildGroup(ExpertAssign expertAssign){
         CategoryRound categoryRound = expertAssign.getCategoryRound();
 
-        List<TeamParticipant> participants = participantRepository.findParticipantByCategoryRound_CategoryRoundId(categoryRound.getCategoryRoundId());
+        List<TeamParticipant> teamParticipants = participantRepository.findParticipantByCategoryRound_CategoryRoundId(categoryRound.getCategoryRoundId());
 
-        List<ParticipantResponseDTO> participantResponseDTOS = participants.stream().map(this::mapToResponse).toList();
+        List<ParticipantResponseDTO> participantResponseDTOS = teamParticipants.stream().map(this::mapToResponse).toList();
 
         return ExpertAssignedGroupDTO.builder()
                 .categoryRoundId(categoryRound.getCategoryRoundId())
@@ -109,27 +124,12 @@ public class ParticipantServiceImpl implements ParticipantService{
                 .build();
     }
 
-    private Account getCurrentAccount(){
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if(authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken){
-            throw new BadRequestException("Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại!");
-        }
-        Object principal = authentication.getPrincipal();
-        if (!(principal instanceof CustomUserDetails)) {
-            throw new BadRequestException("Không xác định được thông tin tài khoản đăng nhập");
-        }
-
-        return ((CustomUserDetails) principal).getAccount();
-    }
     public TeamParticipant saveParticipant(Registration registration){
-        TeamParticipant participant = new TeamParticipant();
-        participant.setRegistration(registration);
-        participant.setCategoryRound(null);
-        participant.setStatus(ParticipantStatus.ACTIVE);
+        TeamParticipant teamParticipant = new TeamParticipant();
+        teamParticipant.setRegistration(registration);
+        teamParticipant.setCategoryRound(null);
+        teamParticipant.setStatus(ParticipantStatus.ACTIVE);
 
-        return participantRepository.save(participant);
+        return participantRepository.save(teamParticipant);
     }
-
-
 }

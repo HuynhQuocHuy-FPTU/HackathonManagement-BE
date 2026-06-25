@@ -43,5 +43,5 @@ public class Evaluation {
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnore
     @JoinColumn(name = "Participant_ID", nullable = false)
-    private TeamParticipant participant;
+    private TeamParticipant teamParticipant;
 }

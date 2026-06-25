@@ -167,7 +167,7 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy team leader"));
         Account leaderAccount = leader.getStudent().getAccount();
-        notificationService.notifyRegistrationApproved(account.getAccountId(), leaderAccount, registration.getTeam().getTeamName(), registration.getHackathonEvent().getEventName());
+        notificationService.notifyRegistrationApproved(account, leaderAccount, registration.getTeam().getTeamName(), registration.getHackathonEvent().getEventName());
         return registration;
     }
 
@@ -201,7 +201,7 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy team leader"));
         Account leaderAccount = leader.getStudent().getAccount();
-        notificationService.notifyRegistrationRejected(account.getAccountId(), leaderAccount, registration.getTeam().getTeamName(), registration.getHackathonEvent().getEventName(), reason);
+        notificationService.notifyRegistrationRejected(account, leaderAccount, registration.getTeam().getTeamName(), registration.getHackathonEvent().getEventName(), reason);
         return registration;
     }
 
@@ -212,6 +212,21 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
         //2. Map sang DTO
         return registrations.stream().map(reg -> new TeamSelectionDTO(reg.getRegistrationId(), reg.getTeam().getTeamName())).toList();
     }
+
+    @Override
+    public List<Registration> getRegistrationsToCancelled(Integer eventId) {
+        List<RegistrationStatus> list = List.of(RegistrationStatus.PENDING, RegistrationStatus.APPROVED);
+        List<Registration> registrations =  registrationRepository.findRegistrationByHackathonEvent_EventIdAndStatusIn(eventId, list);
+        return registrations;
+    }
+
+    @Override
+    public void transferStatusToRejectd(List<Registration> registrations) {
+        for(Registration registration: registrations){
+            registration.setStatus(RegistrationStatus.REJECTED);
+        }
+    }
+
 
     @Override
     public RegistrationResponse getTeamsDetailForApproval(Integer registrationId, CustomUserDetails userDetails) {

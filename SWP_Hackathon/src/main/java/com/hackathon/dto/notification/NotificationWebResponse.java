@@ -1,6 +1,5 @@
 package com.hackathon.dto.notification;
 
-import com.hackathon.entity.enums.InvitationStatus;
 import com.hackathon.entity.enums.NotificationChannel;
 import com.hackathon.entity.enums.NotificationType;
 import lombok.*;
@@ -26,6 +25,8 @@ public class NotificationWebResponse {
     private NotificationType type;
 
     private NotificationChannel channel;
+
+    private boolean allowResponse;
 
     // optional info for UI
 //    private String actorName;

@@ -29,6 +29,7 @@ public class EventResponse {
     private Integer maxTeamSize;
     private Integer minTeamSize;
     private LocalDateTime registrationDeadline;
+    private LocalDateTime workshopTime;
     private EventStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updateAt;

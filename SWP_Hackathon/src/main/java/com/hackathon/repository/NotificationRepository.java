@@ -2,6 +2,7 @@ package com.hackathon.repository;
 
 import com.hackathon.entity.Notification;
 import com.hackathon.entity.Team;
+import com.hackathon.entity.enums.NotiResponseStatus;
 import com.hackathon.entity.enums.NotificationType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -18,6 +19,8 @@ public interface NotificationRepository extends JpaRepository<Notification,Long>
     List<Notification> findByAccount_AccountIdAndIsReadTrueOrderByCreatedAtDesc(Integer accountId);
 
     List<Notification> findByAccount_AccountIdAndTypeOrderByCreatedAtDesc(Integer accountId, NotificationType type);
+
+    List<Notification> findNotificationByAccount_AccountIdAndResponseStatus(int accountAccountId, NotiResponseStatus responseStatus);
 
     long countByAccount_AccountIdAndIsReadFalse(Integer accountId);
 

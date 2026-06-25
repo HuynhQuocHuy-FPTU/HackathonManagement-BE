@@ -41,7 +41,7 @@ public class TeamParticipant {
     @JoinColumn(name = "CategoryRound_ID")
     private CategoryRound categoryRound;
 
-    @OneToMany(mappedBy = "participant", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "teamParticipant", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Evaluation> evaluations = new ArrayList<>();
 
 }

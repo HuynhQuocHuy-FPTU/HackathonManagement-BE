@@ -9,6 +9,7 @@ import com.hackathon.entity.*;
 import com.hackathon.entity.enums.AuditAction;
 import com.hackathon.entity.enums.AuditEntityType;
 import com.hackathon.entity.enums.EventStatus;
+import com.hackathon.entity.enums.WorkshopStatus;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.EventCoordinatorRepository;
 import com.hackathon.repository.HackathonEventRepository;
@@ -22,9 +23,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -43,8 +46,10 @@ public class EventServiceImpl implements EventService {
     private final RoundService roundService;
     private final CategoryRoundService categoryRoundService;
     private final ExpertAssignService expertAssignService;
+    private final RegistrationEventService registrationEventService;
     private final RoundValidator roundValidator;
     private final AuditService auditService;
+    private final NotificationService notificationService;
 
     // =========================================================
     // CREATE
@@ -76,6 +81,7 @@ public class EventServiceImpl implements EventService {
         if (request.getMaxTeamSize() != null) event.setMaxTeamSize(request.getMaxTeamSize());
         if (request.getMinTeamSize() != null) event.setMinTeamSize(request.getMinTeamSize());
         if (request.getRegistrationDeadline() != null) event.setRegistrationDeadline(request.getRegistrationDeadline());
+        if(request.getWorkshopTime() != null) event.setWorkshopTime(request.getWorkshopTime());
         if (request.getBannerUrl() != null) event.setBannerUrl(request.getBannerUrl());
 
         event.setEventCoordinator(coordinator);
@@ -159,6 +165,7 @@ public class EventServiceImpl implements EventService {
         if (request.getMaxTeamSize() != null) event.setMaxTeamSize(request.getMaxTeamSize());
         if (request.getMinTeamSize() != null) event.setMinTeamSize(request.getMinTeamSize());
         if (request.getRegistrationDeadline() != null) event.setRegistrationDeadline(request.getRegistrationDeadline());
+        if(request.getWorkshopTime() != null) event.setWorkshopTime(request.getWorkshopTime());
 
         event.setUpdateAt(LocalDateTime.now());
 
@@ -317,6 +324,55 @@ public class EventServiceImpl implements EventService {
                 event.getEventId(),
                 "Restore event " + event.getEventName()
         );
+    }
+
+    // =========================================================
+    // CANCELLED
+    // =========================================================
+    @Override
+    public void cancelEvent(Integer eventId, String reason, CustomUserDetails currentUser) {
+        HackathonEvent event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy event"));
+
+        // Ràng buộc 1: Kiểm tra quyền
+        if (!event.getEventCoordinator().getAccount().equals(currentUser.getAccount())) {
+            throw new AccessDeniedException("Bạn không có quyền hủy sự kiện này.");
+        }
+
+        // Ràng buộc 2: Trạng thái không được là COMPLETED
+        if (event.getStatus() == EventStatus.COMPLETED) {
+            throw new IllegalStateException("Không thể hủy sự kiện đã kết thúc.");
+        }
+        if (event.getStatus() == EventStatus.DRAFT) {
+            throw new IllegalStateException("Không thể hủy sự kiện chưa được công bố.");
+        }
+
+        // Ràng buộc 3: Phải có lý do
+        if (reason == null || reason.isBlank()) {
+            throw new IllegalArgumentException("Vui lòng nhập lý do hủy sự kiện.");
+        }
+
+        // Thực hiện hủy
+        event.setStatus(EventStatus.CANCELLED);
+        event.setCancellationReason(reason);
+        event.setUpdateAt(LocalDateTime.now());
+
+        // Lưu lịch sử
+        auditService.saveLog(currentUser.getAccount(), AuditAction.CANCELLD_EVENT, AuditEntityType.EVENT, eventId,"Cancelled event: " + event.getEventName());
+
+        eventRepository.save(event);
+
+        List<Registration> registrationList = registrationEventService.getRegistrationsToCancelled(eventId);
+        registrationEventService.transferStatusToRejectd(registrationList);
+        List<Account> accLeaders = registrationList.stream()
+                .map(Registration::getTeam) // Lấy ra Team
+                .flatMap(team -> team.getTeamMembers().stream()) // Chuyển từ List<TeamMember> thành Stream<TeamMember>
+                .filter(TeamMember::getIsLeader) // Lọc lấy người là Leader
+                .map(member -> member.getStudent().getAccount()) // Lấy Account từ Student
+                .distinct() // Đảm bảo không trùng lặp (nếu cần)
+                .toList();
+        // Ràng buộc 4: Gửi thông báo
+        notificationService.notifyCancelledEvent(currentUser.getAccount(), accLeaders, event.getEventName(), reason);
     }
 
     // =========================================================

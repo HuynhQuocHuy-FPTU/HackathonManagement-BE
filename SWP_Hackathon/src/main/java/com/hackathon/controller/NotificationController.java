@@ -1,11 +1,11 @@
 package com.hackathon.controller;
 
+import com.hackathon.dto.notification.NotiResponseRequest;
 import com.hackathon.dto.notification.NotificationWebResponse;
 import com.hackathon.entity.Notification;
 import com.hackathon.entity.enums.NotificationType;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.NotificationService;
-import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,6 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NotificationController {
     private final NotificationService notificationService;
+
     @GetMapping("/web/all")
     public ResponseEntity<List<NotificationWebResponse>>getAll(@AuthenticationPrincipal CustomUserDetails userDetails) {
         return ResponseEntity.ok(notificationService.getNotifications(userDetails));
@@ -65,6 +66,18 @@ public class NotificationController {
         return ResponseEntity.ok(notificationService.getByType(userDetails, type));
     }
 
+    @PostMapping("/web/response/{notiId}")
+    public ResponseEntity<Void> responseCategoryAssigment(@PathVariable Long notiId, @RequestBody NotiResponseRequest request,@AuthenticationPrincipal CustomUserDetails userDetails){
+        notificationService.responseCategoryAssignment(notiId, request.getMessage(),userDetails );
+        return ResponseEntity.ok().build();
+    }
 
+    @GetMapping("/web/pending-response")
+    public ResponseEntity<List<NotificationWebResponse>> getPendingResponses(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        return ResponseEntity.ok(
+                notificationService.getPendingResponses(userDetails));
+    }
 
 }

@@ -6,5 +6,6 @@ public enum EventStatus {
     REGISTRATION_CLOSED,
     ONGOING,// dang dien ra
     COMPLETED,
-    DELETED// xoa event
+    DELETED,// xoa event
+    CANCELLED
 }

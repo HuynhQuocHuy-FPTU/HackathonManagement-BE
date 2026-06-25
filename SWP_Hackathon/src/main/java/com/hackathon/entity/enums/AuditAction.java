@@ -4,6 +4,7 @@ public enum AuditAction {
     CREATE_EVENT,
     UPDATE_EVENT,
     DELETE_EVENT,
+    CANCELLD_EVENT,
     CREATE_TEAM,
     UPDATE_ROUND,
     UPDATE_CRITERIA,

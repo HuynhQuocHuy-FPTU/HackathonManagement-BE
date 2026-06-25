@@ -1,10 +1,12 @@
 package com.hackathon.controller;
 
 import com.hackathon.dto.ExpertAssignedGroupDTO;
+import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.ParticipantServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,8 +18,8 @@ public class ParticipantController {
     private final ParticipantServiceImpl participantService;
 
     @GetMapping("/teams/{eventId}")
-    public ResponseEntity<List<ExpertAssignedGroupDTO>> getAssignedGroups(@PathVariable Integer eventId) {
-        return ResponseEntity.ok(participantService.getAssignParticipants(eventId));
+    public ResponseEntity<List<ExpertAssignedGroupDTO>> getAssignedGroups(@PathVariable Integer eventId,@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(participantService.getAssignParticipants(eventId, userDetails));
     }
     @PutMapping("/teams/disqualify")
     public ResponseEntity<String> disqualifyTeam(
