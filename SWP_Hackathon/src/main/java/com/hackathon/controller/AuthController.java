@@ -2,12 +2,14 @@ package com.hackathon.controller;
 
 import com.hackathon.dto.auth.*;
 import com.hackathon.dto.common.ApiResponse;
+import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.auth.AuthService;
 import com.hackathon.service.auth.RegisterService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -72,4 +74,14 @@ public class AuthController {
         authService.resetPassword(request);
         return ResponseEntity.ok(ApiResponse.ok("Đặt lại mật khẩu thành công. Bạn có thể đăng nhập với mật khẩu mới."));
     }
+
+    @PutMapping("/change-password")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        authService.changePassword(userDetails, request);
+        return ResponseEntity.ok(ApiResponse.ok("Đổi mật khẩu thành công! Vui lòng đăng nhập lại."));
+    }
+
+
 }

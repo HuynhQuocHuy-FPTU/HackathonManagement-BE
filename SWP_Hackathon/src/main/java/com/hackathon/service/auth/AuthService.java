@@ -1,8 +1,10 @@
 package com.hackathon.service.auth;
 
+import com.hackathon.dto.auth.ChangePasswordRequest;
 import com.hackathon.dto.auth.LoginRequest;
 import com.hackathon.dto.auth.AuthResponse;
 import com.hackathon.dto.auth.ResetPasswordRequest;
+import com.hackathon.security.CustomUserDetails;
 
 public interface AuthService {
     AuthResponse login(LoginRequest request);
@@ -10,4 +12,5 @@ public interface AuthService {
     AuthResponse refreshAccessToken(String refreshTokenValue);
     void forgotPassword(String email);
     void resetPassword(ResetPasswordRequest request);
+    void changePassword(CustomUserDetails userDetails, ChangePasswordRequest request);
 }
