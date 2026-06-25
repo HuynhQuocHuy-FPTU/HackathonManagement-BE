@@ -1,5 +1,6 @@
 package com.hackathon.service.auth;
 
+import com.hackathon.dto.auth.ChangePasswordRequest;
 import com.hackathon.dto.auth.LoginRequest;
 import com.hackathon.dto.auth.AuthResponse;
 import com.hackathon.dto.auth.ResetPasswordRequest;
@@ -10,6 +11,7 @@ import com.hackathon.entity.enums.AccountRole;
 import com.hackathon.exception.ApiException;
 import com.hackathon.repository.AccountRepository;
 import com.hackathon.repository.RefreshTokenRepository;
+import com.hackathon.security.CustomUserDetails;
 import com.hackathon.security.JwtService;
 import com.hackathon.service.EmailService;
 import lombok.RequiredArgsConstructor;
@@ -114,6 +116,7 @@ public class AuthServiceImpl implements AuthService {
                 .organization(organization)
                 .createdAt(account.getCreatedAt())
                 .accountStatus(account.getStatus())
+                .isPasswordChanged(account.isPasswordChanged())
                 .build();
     }
 
@@ -158,6 +161,30 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenRepository.revokeAllByAccount(account);
     }
 
+    @Override
+    @Transactional
+    public void changePassword(CustomUserDetails userDetails, ChangePasswordRequest request) {
+        Account account = accountRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Không tìm thấy tài khoản"));
+
+        if (!passwordEncoder.matches(request.getOldPassword(), account.getPassword())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Mật khẩu hiện tại không chính xác!");
+        }
+        if (passwordEncoder.matches(request.getNewPassword(), account.getPassword())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Mật khẩu mới không được trùng với mật khẩu hiện tại!");
+        }
+
+        account.setPassword(passwordEncoder.encode(request.getNewPassword()));
+
+        // MỞ KHÓA HỆ THỐNG
+        if (!account.isPasswordChanged()) {
+            account.setPasswordChanged(true);
+        }
+
+        accountRepository.save(account);
+        refreshTokenRepository.revokeAllByAccount(account); // Xóa token cũ
+    }
+
     private AuthResponse buildAuthResponse(Account account) {
         refreshTokenRepository.revokeAllByAccount(account);
 
@@ -195,6 +222,7 @@ public class AuthServiceImpl implements AuthService {
                 .organization(organization)
                 .createdAt(account.getCreatedAt())
                 .accountStatus(account.getStatus())
+                .isPasswordChanged(account.isPasswordChanged())
                 .build();
     }
 }
