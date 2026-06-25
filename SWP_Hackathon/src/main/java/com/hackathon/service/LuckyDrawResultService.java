@@ -8,4 +8,6 @@ import java.util.List;
 
 public interface LuckyDrawResultService {
     List<TeamParticipant> importDrawResults(Integer eventId, DrawResultRequestDTO drawResults, CustomUserDetails userDetails, Integer responseDeadline);
+
+
 }

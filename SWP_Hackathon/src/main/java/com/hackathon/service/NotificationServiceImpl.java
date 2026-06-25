@@ -253,29 +253,32 @@ public class NotificationServiceImpl implements NotificationService {
                         new BadRequestException("Notification không tồn tại"));
         if (LocalDateTime.now()
                 .isAfter(notification.getResponseDeadline())) {
-
             throw new BadRequestException(
                     "Đã hết thời gian phản hồi");
         }
-
         if (!notification.isAllowResponse()) {
             throw new BadRequestException(
                     "Thông báo này không cho phép phản hồi");
         }
+
         if(notification != null){
-            notification.setResponseMessage(responseMessage);
-            System.out.println(notification.getResponseMessage());
-            notification.setResponseAt(LocalDateTime.now());
-            notification.setResponseStatus(NotiResponseStatus.PENDING);
-            System.out.println(notification.getResponseStatus());
-            notification = notificationRepository.saveAndFlush(notification);
-        }else{
-            System.out.println("Null--------------------------");
+            if(notification.getResponseStatus() == NotiResponseStatus.NONE){
+                notification.setResponseMessage(responseMessage);
+                System.out.println(notification.getResponseMessage());
+                notification.setResponseAt(LocalDateTime.now());
+                notification.setResponseStatus(NotiResponseStatus.PENDING);
+                System.out.println(notification.getResponseStatus());
+                notification = notificationRepository.saveAndFlush(notification);
+            }else{
+                throw new BadRequestException("Thông báo này đã được phản hồi");
+            }
+
         }
 
 
         // lấy ra team của leader đang phản hồi
         Team team = notification.getAccount().getStudent().getTeamMembers().stream().map(TeamMember::getTeam).findFirst().orElseThrow(() -> new BadRequestException("Không tìm thấy Team của leader"));
+
         this.notifyCategoryAssignmentResponse(
                 acc,
                 team.getTeamName(),
