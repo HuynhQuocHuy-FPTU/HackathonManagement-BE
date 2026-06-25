@@ -1,6 +1,8 @@
 package com.hackathon.service;
 
 import com.hackathon.dto.UserAdminResponse;
+import com.hackathon.dto.admin.InviteAccountRequest;
+
 import java.util.List;
 
 public interface AdminService {
@@ -14,4 +16,5 @@ public interface AdminService {
      * @param id ID của tài khoản cần tìm
      */
     UserAdminResponse getUserById(int id);
+    void inviteAccount(InviteAccountRequest request);
 }
