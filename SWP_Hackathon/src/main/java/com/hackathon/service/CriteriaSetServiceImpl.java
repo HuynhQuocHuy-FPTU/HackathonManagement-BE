@@ -114,7 +114,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
 
     //5. Tao CriteriaSet
     @Override
-    public CriteriaSetResponseDTO createCriteriaSet(CriteriaSetRequestDTO request, CustomUserDetails userDetails) {
+    public CriteriaSetResponseDTO createCriteriaSet(CreateCriteriaSetRequest request, CustomUserDetails userDetails) {
         // Check Coordinator mới là người được tạo
         Account account = userDetails.getAccount();
         EventCoordinator coordinator = eventCoordinatorRepository.findByAccount_AccountId(account.getAccountId())
@@ -146,7 +146,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
             detail.setCriteriaSet(criteriaSet);
             detail.setCriteriaType(dto.getType());
             list.add(detail);
-            totalWeight.add(dto.getWeight());
+            totalWeight = totalWeight.add(dto.getWeight());
         }
 
         if (totalWeight.compareTo(hundred) != 0) {
@@ -335,7 +335,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
                         ));
         CriteriaSet criteriaSet = criteriaSetRepository.findByCriteriaSetId(criteriaSetId);
         if (criteriaSet == null) {
-            throw new RuntimeException("CriteriaSet not found with id: " + criteriaSetId);
+            throw new BadRequestException("CriteriaSet not found with id: " + criteriaSetId);
         }
 
         criteriaSetRepository.delete(criteriaSet);

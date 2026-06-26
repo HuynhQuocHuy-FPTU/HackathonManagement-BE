@@ -3,6 +3,7 @@ package com.hackathon.controller;
 import com.hackathon.dto.TeamSelectionDTO;
 import com.hackathon.dto.registration.RegistrationResponse;
 import com.hackathon.dto.team.CreateTeamRequest;
+import com.hackathon.dto.team.InviteTeamRequest;
 import com.hackathon.dto.team.TeamResponse;
 import com.hackathon.entity.Registration;
 import com.hackathon.exception.ApiResponse;
@@ -44,12 +45,12 @@ public class RegistrationController {
     @PostMapping("/teams/invite")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<TeamResponse>> sendInvitation(
-            @Valid @RequestBody CreateTeamRequest request,
+            @Valid @RequestBody InviteTeamRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        if (request.getTeamId() == null) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.success(null, "MISSING_TEAM_ID"));
-        }
+//        if (request.getTeamId() == null) {
+//            return ResponseEntity.badRequest()
+//                    .body(ApiResponse.success(null, "MISSING_TEAM_ID"));
+//        }
         TeamResponse response = teamService.sendTeamInvitation(request, userDetails);
         return ResponseEntity.ok(ApiResponse.success(response, "Đã gửi lời mời thành công"));
     }

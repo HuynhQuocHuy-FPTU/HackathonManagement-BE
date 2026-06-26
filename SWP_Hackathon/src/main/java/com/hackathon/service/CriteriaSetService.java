@@ -1,5 +1,6 @@
 package com.hackathon.service;
 
+import com.hackathon.dto.criteria.CreateCriteriaSetRequest;
 import com.hackathon.dto.criteria.CriteriaDetailResponseDTO;
 import com.hackathon.dto.criteria.CriteriaSetRequestDTO;
 import com.hackathon.dto.criteria.CriteriaSetResponseDTO;
@@ -22,7 +23,7 @@ public interface CriteriaSetService {
     CriteriaSetResponseDTO getCriteriaDetailById(Integer criteriaSetId);
 
     // Tao bo tieu chi danh gia (Template)
-    CriteriaSetResponseDTO createCriteriaSet(CriteriaSetRequestDTO request, CustomUserDetails userDetailst);
+    CriteriaSetResponseDTO createCriteriaSet(CreateCriteriaSetRequest request, CustomUserDetails userDetailst);
 
     //Update bo tieu chi
     CriteriaSetResponseDTO updateCriteriaSet(CriteriaSetRequestDTO request,CustomUserDetails userDetailst );
