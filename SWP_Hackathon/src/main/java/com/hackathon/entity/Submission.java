@@ -42,9 +42,9 @@ public class Submission {
     @JoinColumn(name = "Team_ID",nullable = false)
     private Team team;
 
-    //1 categoryRound- N submission
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JsonIgnore
-    @JoinColumn(name = "Category_Round_ID",nullable = false)
-    private CategoryRound categoryRound;
+//    //1 categoryRound- N submission
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JsonIgnore
+//    @JoinColumn(name = "Category_Round_ID",nullable = false)
+//    private CategoryRound categoryRound;
 }

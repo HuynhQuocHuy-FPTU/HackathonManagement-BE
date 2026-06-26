@@ -39,8 +39,7 @@ public class Registration {
     @JoinColumn(name = "Event_ID", nullable = false)
     private HackathonEvent hackathonEvent;
 
-    @OneToOne
+    @OneToOne(mappedBy = "registration")
     private TeamParticipant participant;
-
 
 }

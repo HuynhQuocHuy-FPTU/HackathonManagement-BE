@@ -30,7 +30,7 @@ public class HackathonEvent {
     private String title;
     @Column(name = "Address", columnDefinition = "NVARCHAR(255)", nullable = true)
     private String address;
-    @Column(name = "Description", columnDefinition = "NVARCHAR(500)", nullable = true)
+    @Column(name = "Description", columnDefinition = "NVARCHAR(MAX)", nullable = true)
     private String description;
     @Column(name = "Season", columnDefinition = "NVARCHAR(100)", nullable = true)
     private String season;

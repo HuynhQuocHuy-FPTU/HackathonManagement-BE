@@ -57,39 +57,75 @@ public class RegistrationController {
     // Lấy ra list team đã được approve
     @GetMapping("/{eventId}/approved-teams")
     @PreAuthorize("hasRole('EVENTCOORDINATOR')")
-    public ResponseEntity<List<TeamSelectionDTO>> getApproveTeams(@PathVariable Integer eventId){
-        List<TeamSelectionDTO> teams = registrationEventService.getApprovedRegistrations(eventId);
-        return ResponseEntity.ok(teams);
+    public ResponseEntity<ApiResponse<List<TeamSelectionDTO>>> getApproveTeams(
+            @PathVariable Integer eventId
+    ) {
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        registrationEventService.getApprovedRegistrations(eventId),
+                        "Danh sách team đã duyệt"
+                )
+        );
     }
 
     // Duyệt đăng ký
     @PatchMapping("/{registrationId}/approve")
     @PreAuthorize("hasRole('EVENTCOORDINATOR')")
-    public ApiResponse<Registration> approve(@PathVariable Integer registrationId) {
-        Registration registration = registrationEventService.approveRegistration(registrationId);
-        return ApiResponse.success(registration, "Đã duyệt đơn đăng ký thành công");
+    public ResponseEntity<ApiResponse<Void>> approve(
+            @PathVariable Integer registrationId
+    ) {
+
+        registrationEventService.approveRegistration(registrationId);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(null, "Đã duyệt đơn đăng ký thành công")
+        );
     }
 
     // Từ chối đăng ký
     @PatchMapping("/{registrationId}/reject")
     @PreAuthorize("hasRole('EVENTCOORDINATOR')")
-    public ApiResponse<Registration> reject(@PathVariable Integer registrationId, @RequestParam String reason) {
-        Registration registration = registrationEventService.rejectRegistration(registrationId, reason);
-        return ApiResponse.success(registration, "Đã từ chối đơn đăng ký");
+    public ResponseEntity<ApiResponse<Void>> reject(
+            @PathVariable Integer registrationId,
+            @RequestParam String reason
+    ) {
+
+        registrationEventService.rejectRegistration(registrationId, reason);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(null, "Đã từ chối đơn đăng ký")
+        );
     }
 
 
     // Lấy ra ds Team chờ duyệt
     @GetMapping("/{eventId}/pendingTeam")
-    public ResponseEntity<ApiResponse<List<RegistrationResponse>>> getTeamsForApproval(@PathVariable Integer eventId, @AuthenticationPrincipal CustomUserDetails userDetails) {
-        List<RegistrationResponse> list = registrationEventService.getTeamsForApproval(eventId,userDetails);
-        return ResponseEntity.ok(ApiResponse.success(list,"Lấy danh sách phê duyệt Team thành công."));
+    public ResponseEntity<ApiResponse<List<RegistrationResponse>>> getTeamsForApproval(
+            @PathVariable Integer eventId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        registrationEventService.getTeamsForApproval(eventId, userDetails),
+                        "Danh sách chờ duyệt"
+                )
+        );
     }
 
     @GetMapping("/{registrationId}/pendingTeam-detail")
-    public ResponseEntity<ApiResponse<RegistrationResponse>> getTeamsDetailForApproval(@PathVariable Integer registrationId, @AuthenticationPrincipal CustomUserDetails userDetails) {
-        RegistrationResponse list = registrationEventService.getTeamsDetailForApproval(registrationId,userDetails);
-        return ResponseEntity.ok(ApiResponse.success(list,"Lấy danh sách phê duyệt Team thành công."));
+    public ResponseEntity<ApiResponse<RegistrationResponse>> getTeamsDetailForApproval(
+            @PathVariable Integer registrationId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        registrationEventService.getTeamsDetailForApproval(registrationId, userDetails),
+                        "Chi tiết đăng ký"
+                )
+        );
     }
 
 

@@ -9,6 +9,7 @@ import com.hackathon.repository.*;
 import com.hackathon.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +25,7 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
     private final HackathonEventRepository eventRepository;
     private final NotificationService notificationService;
     private final NotificationRepository notificationRepository;
-
+    @Transactional
     @Override
     public List<TeamParticipant> importDrawResults(Integer eventId, DrawResultRequestDTO drawResults, CustomUserDetails userDetails, Integer responseDeadline) {
         Account acc = userDetails.getAccount();
@@ -57,7 +58,7 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
             Category category = categoryRepository.findCategoryByCategoryIdAndHackathonEvent_EventId(drawResults.getCategoryId(), eventId).orElseThrow(() -> new BadRequestException("Không tìm thấy category: " + drawResults.getCategoryId() + "với eventID: " + eventId));
 
             //3. Lấy participant đã được approve
-            TeamParticipant teamParticipant = participantRepository.findParticipantByRegistration_RegistrationId(registration.getRegistrationId()).orElseThrow(() -> new BadRequestException("Không tìm thấy participant theo registration id" + registrationId));
+            TeamParticipant teamParticipant = participantRepository.findParticipantByRegistration_RegistrationId(registration.getRegistrationId()).orElseThrow(() -> new BadRequestException("Không tìm thấy participant theo registration id " + registrationId));
 
             if(teamParticipant.getCategoryRound() != null){
                 throw new BadRequestException("Registration đã được gán vào Category rồi" + registrationId);
