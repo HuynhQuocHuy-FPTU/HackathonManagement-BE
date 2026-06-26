@@ -49,7 +49,7 @@ public class SecurityConfig {
                                 "/api/account/**",
                                 "/api/account/login",
                                 "/api/account/resend-verification",
-                                "/api/notifications/**",
+//                                "/api/notifications/**",
                                 "/error",
                                 "/verify-email",
                                 "/swagger-ui/**",
