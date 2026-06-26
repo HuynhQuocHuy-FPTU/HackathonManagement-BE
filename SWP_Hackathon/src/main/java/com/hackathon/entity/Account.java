@@ -90,6 +90,6 @@ public class Account {
     @Column(name = "Reset_Password_Otp_Expiry")
     private LocalDateTime resetPasswordOtpExpiry;
 
-//    @Column(name = "Is_Password_Changed", nullable = false)
-//    private boolean isPasswordChanged;
+    @Column(name = "Is_Password_Changed", nullable = false)
+    private boolean isPasswordChanged;
 }

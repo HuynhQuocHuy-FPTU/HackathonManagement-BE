@@ -1,6 +1,7 @@
 package com.hackathon.controller;
 
 
+import com.hackathon.dto.criteria.CreateCriteriaSetRequest;
 import com.hackathon.dto.criteria.CriteriaDetailResponseDTO;
 import com.hackathon.dto.criteria.CriteriaSetRequestDTO;
 import com.hackathon.dto.criteria.CriteriaSetResponseDTO;
@@ -56,7 +57,7 @@ public class CriteriaSetController {
     //5. Tao CriteriaSet
     @PostMapping("/create-criteriaSet")
     @PreAuthorize("hasRole('EVENTCOORDINATOR')")
-    public ResponseEntity<ApiResponse<CriteriaSetResponseDTO>> createCriteriaSet(@RequestBody CriteriaSetRequestDTO request, @AuthenticationPrincipal CustomUserDetails user){
+    public ResponseEntity<ApiResponse<CriteriaSetResponseDTO>> createCriteriaSet(@RequestBody CreateCriteriaSetRequest request, @AuthenticationPrincipal CustomUserDetails user){
         System.out.println("USER DETAILS = " + user);
             CriteriaSetResponseDTO create = criteriaSetService.createCriteriaSet(request, user);
             return ResponseEntity.ok(ApiResponse.success(create,"Tạo bộ tiêu chí thành công"));

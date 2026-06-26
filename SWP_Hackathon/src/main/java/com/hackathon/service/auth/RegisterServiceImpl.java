@@ -57,6 +57,7 @@ public class RegisterServiceImpl implements RegisterService {
         account.setStatus(AccountStatus.INACTIVE);
         account.setVerificationToken(verificationToken);
         account.setVerificationTokenExpiry(LocalDateTime.now().plusHours(verificationExpirationHours));
+        account.setPasswordChanged(true);
         account = accountRepository.save(account);
 
         Student student = new Student();

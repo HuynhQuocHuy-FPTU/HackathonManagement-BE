@@ -12,7 +12,7 @@ public interface TeamService {
 
     TeamResponse createTeam(CreateTeamRequest request, CustomUserDetails userDetails);
 
-    TeamResponse sendTeamInvitation(CreateTeamRequest request, CustomUserDetails userDetails);
+    TeamResponse sendTeamInvitation(InviteTeamRequest request, CustomUserDetails userDetails);
 
     String updateInfo(CustomUserDetails userDetails, String teamName);
 
