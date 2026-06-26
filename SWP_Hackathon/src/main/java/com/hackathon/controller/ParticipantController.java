@@ -1,6 +1,7 @@
 package com.hackathon.controller;
 
 import com.hackathon.dto.ExpertAssignedGroupDTO;
+import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.ParticipantServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -18,17 +19,33 @@ public class ParticipantController {
     private final ParticipantServiceImpl participantService;
 
     @GetMapping("/teams/{eventId}")
-    public ResponseEntity<List<ExpertAssignedGroupDTO>> getAssignedGroups(@PathVariable Integer eventId,@AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ResponseEntity.ok(participantService.getAssignParticipants(eventId, userDetails));
+    public ResponseEntity<ApiResponse<List<ExpertAssignedGroupDTO>>> getAssignedGroups(
+            @PathVariable Integer eventId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        participantService.getAssignParticipants(eventId, userDetails),
+                        "Danh sách nhóm đã phân công"
+                )
+        );
     }
+
     @PutMapping("/teams/disqualify")
-    public ResponseEntity<String> disqualifyTeam(
+    public ResponseEntity<ApiResponse<Void>> disqualifyTeam(
             @RequestParam Integer eventId,
             @RequestParam Integer teamId,
-            @RequestParam String reason) {
+            @RequestParam String reason
+    ) {
 
-        // Gọi service với đủ 3 tham số
         participantService.disqualifyTeam(eventId, teamId, reason);
-        return ResponseEntity.ok("Đã loại đội thi ID: " + teamId + " khỏi sự kiện " + eventId + " với lý do: " + reason);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        null,
+                        "Đã loại đội thi khỏi sự kiện"
+                )
+        );
     }
 }

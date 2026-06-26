@@ -47,9 +47,8 @@ public class SecurityConfig {
                         //các API công khai ai cũng vào được
                         .requestMatchers(
                                 "/api/account/**",
-                                "/api/account/login",
-                                "/api/account/resend-verification",
-//                                "/api/notifications/**",
+                                "/api/account/login", "/api/account/resend-verification",
+                                "/api/notifications/**",
                                 "/error",
                                 "/verify-email",
                                 "/swagger-ui/**",
@@ -87,8 +86,8 @@ public class SecurityConfig {
                         //Chỉ event coordinator
                         // 1. tất cả các API thay đổi dữ liệu sự kiện (POST, PUT, DELETE, PATCH)
                         .requestMatchers("/api/events/create", "/api/events/publish/**",
-                                        "/api/events/delete/**", "/api/events/update/**",
-                                        "/api/events/restore/**", "/api/events/permanently/**")
+                                "/api/events/delete/**", "/api/events/update/**",
+                                "/api/events/restore/**","/api/events/cancel/**", "/api/events/permanently/**")
                                 .hasRole("EVENTCOORDINATOR")
 
                         // 2. các API xem danh sách sự kiện (GET)

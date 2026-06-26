@@ -2,6 +2,7 @@ package com.hackathon.controller;
 
 import com.hackathon.dto.DrawResultRequestDTO;
 import com.hackathon.entity.TeamParticipant;
+import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.LuckyDrawResultService;
 import com.hackathon.service.WorkshopService;
@@ -21,28 +22,49 @@ public class DrawResultController {
     private final WorkshopService workshopService;
 
     @PutMapping
-    public ResponseEntity<List<TeamParticipant>> importDrawResults(
+    public ResponseEntity<ApiResponse<Void>> importDrawResults(
             @PathVariable Integer eventId,
             @RequestBody DrawResultRequestDTO drawResults,
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam Integer responseDeadline) {
-        return ResponseEntity.ok(luckyDrawResultService.importDrawResults(eventId, drawResults, userDetails, responseDeadline));
+            @RequestParam Integer responseDeadline
+    ) {
+
+        luckyDrawResultService.importDrawResults(
+                eventId,
+                drawResults,
+                userDetails,
+                responseDeadline
+        );
+
+        return ResponseEntity.ok(
+                ApiResponse.success(null, "Import kết quả bốc thăm thành công")
+        );
     }
 
     @PatchMapping("/workshop/complete")
-    public ResponseEntity<String> completeWorkshop(
+    public ResponseEntity<ApiResponse<Void>> completeWorkshop(
             @PathVariable Integer eventId,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+
         workshopService.completedWorkshop(eventId, userDetails);
-        return ResponseEntity.ok("Workshop đã được đánh dấu hoàn thành thành công!");
+
+        return ResponseEntity.ok(
+                ApiResponse.success(null, "Workshop đã được đánh dấu hoàn thành thành công")
+        );
     }
 
     @PatchMapping("/workshop/cancel")
-    public ResponseEntity<String> cancelWorkshop(
+    public ResponseEntity<ApiResponse<Void>> cancelWorkshop(
             @PathVariable Integer eventId,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+
         workshopService.cancelWorkshop(eventId, userDetails);
-        return ResponseEntity.ok("Workshop đã được hủy thành công!");
+
+        return ResponseEntity.ok(
+                ApiResponse.success(null, "Workshop đã được hủy thành công")
+        );
     }
 
 }

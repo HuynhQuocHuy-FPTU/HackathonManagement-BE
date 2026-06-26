@@ -2,9 +2,12 @@ package com.hackathon.controller;
 
 import com.hackathon.dto.AuditLogResponse;
 import com.hackathon.dto.UserAdminResponse;
+import com.hackathon.dto.admin.InviteAccountRequest;
 import com.hackathon.dto.common.ApiResponse;
 import com.hackathon.service.AuditService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -47,6 +50,18 @@ public class AdminController {
         UserAdminResponse user = adminService.getUserById(id);
         return ResponseEntity.ok(ApiResponse.ok("Lấy thông tin chi tiết người dùng thành công", user));
     }
+
+    /**
+     * API: Admin tạo tài khoản cho Expert hoặc EventCoordinator
+     * POST /api/admin/invite
+     */
+    @PostMapping("/invite")
+    public ResponseEntity<ApiResponse<Void>> inviteAccount(@Valid @RequestBody InviteAccountRequest request) {
+        adminService.inviteAccount(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok("Đã tạo tài khoản và gửi email chứa mật khẩu tạm thời thành công!"));
+    }
+
 //    private final AdminService adminService;
 //    @PostMapping("invite")
 //    public ResponseEntity<String> inviteAccount(@Valid @RequestBody InviteAccountRequest request){

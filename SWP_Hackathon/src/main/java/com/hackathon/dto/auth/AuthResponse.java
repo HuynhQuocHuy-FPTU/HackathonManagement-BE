@@ -25,4 +25,5 @@ public class AuthResponse {
     private String organization;
     private LocalDateTime createdAt;
     private AccountStatus accountStatus;
+    private boolean isPasswordChanged;
 }

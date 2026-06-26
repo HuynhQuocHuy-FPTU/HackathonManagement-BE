@@ -18,7 +18,7 @@ public class TeamParticipant {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "Disqualification_Reason")
+    @Column(name = "Disqualification_Reason", columnDefinition = "NVARCHAR(255)")
     private String disqualificationReason;
 
     @Enumerated(EnumType.STRING)
@@ -30,18 +30,15 @@ public class TeamParticipant {
     @Column(name = "Rank")
     private Integer rank;
 
-    @Column(name = "Present_Member")
-    private Integer presentMembers;
-
     @OneToOne
+    @JoinColumn(name = "Registration_Id", nullable = false, unique = true)
     private Registration registration;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JsonIgnore
     @JoinColumn(name = "CategoryRound_ID")
     private CategoryRound categoryRound;
 
-    @OneToMany(mappedBy = "teamParticipant", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "teamParticipant", cascade = CascadeType.ALL)
     private List<Evaluation> evaluations = new ArrayList<>();
 
 }
