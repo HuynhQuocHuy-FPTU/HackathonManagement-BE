@@ -1,5 +1,6 @@
 package com.hackathon.entity;
 
+import com.hackathon.entity.enums.NotiResponseStatus;
 import com.hackathon.entity.enums.RequestStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -8,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,18 +26,30 @@ public class TeamRequest {
     @Column(name = "Request_Status")
     @Enumerated(EnumType.STRING)
     private RequestStatus status;
+    @Column(name = "Request_Message", columnDefinition = "NVARCHAR(MAX)")
+    private String requestMessage;
+    @Column(name = "Response_Message", columnDefinition = "NVARCHAR(MAX)")
+    private String responseMessage;
+    @Column(name = "Response_At")
+    private LocalDateTime responseAt;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "Response_Status")
+    private NotiResponseStatus responseStatus;
+
 
     // 1 TEAM - N REQUEST
     @ManyToOne (fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id")
     private  Team team;
 
     // 1 EXPERT ASSIGN - N REQUEST
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "Assign_ID")
     private ExpertAssign expertAssign;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_round_id")
-    private CategoryRound categoryRound;
+    @Version
+    private Integer version;
+
 
 
 }

@@ -28,16 +28,22 @@ public interface ExpertAssignRepository extends JpaRepository<ExpertAssign, Inte
             "AND r.hackathonEvent.eventId = :eventId")
     List<ExpertAssign> findExpertAssignments(@Param("expertId") Integer expertId, @Param("eventId") Integer eventId);
 
+    // Chỉ cần tìm theo CategoryRoundId là đủ để biết những Mentor nào đang thầu hạng mục này
+    @Query("SELECT ex FROM ExpertAssign ex WHERE ex.categoryRound.categoryRoundId = :categoryRoundId")
+    List<ExpertAssign> findByCategoryRoundId(@Param("categoryRoundId") Integer categoryRoundId);
 
-    //  tìm ExpertAssign phụ trách đúng Team tại CategoryRound cụ thể
+    //    //  tìm ExpertAssign phụ trách đúng Team tại CategoryRound cụ thể
     @Query("SELECT ex FROM ExpertAssign ex " +
             "JOIN ex.categoryRound cr " +
             "JOIN TeamParticipant p ON p.categoryRound = cr " +
             "JOIN p.registration r " +
             "WHERE r.team.teamId = :teamId " +
-            "AND cr.categoryRoundId = :categoryRoundId")
+            "AND cr.categoryRoundId = :categoryRoundId " +
+            "AND ex.expert.expertId = :expertId")
     Optional<ExpertAssign> findExpertAssignByTeamAndCategoryRound(
             @Param("teamId") Integer teamId,
-            @Param("categoryRoundId") Integer categoryRoundId);
+            @Param("categoryRoundId") Integer categoryRoundId,
+            @Param("expertId" ) Integer expertId);
+
 
 }
