@@ -1298,6 +1298,12 @@ public class TeamServiceImpl implements TeamService {
         Team team = teamRepository.findActiveLeadingTeamByStudentId(account.getStudent().getStudentId())
                 .orElseThrow(() -> new BadRequestException("Bạn không phải leader của đội đang tham gia thi đấu"));
 
+        // Kiểm tra xem Đội này đã có yêu cầu nào đang chờ (PENDING)  chưa
+        // Nếu có ko dc gửi nx , tránh spam nhiều lần
+        boolean hasPendingRequest = teamRequestRepository.existsByTeam_TeamIdAndStatus(team.getTeamId(), RequestStatus.PENDING);
+        if (hasPendingRequest) {
+            throw new BadRequestException("Đội của bạn đã có một yêu cầu đang nằm trong danh sách chờ. Vui lòng đợi Mentor xử lý trước khi gửi yêu cầu mới!");
+        }
         TeamParticipant activeParticipant = team.getRegistrations().stream()
                 .filter(registration -> registration.getStatus() == RegistrationStatus.APPROVED)
                 .map(Registration::getParticipant)
@@ -1346,7 +1352,7 @@ public class TeamServiceImpl implements TeamService {
         Expert expert = expertRepository.findByAccount_AccountId(account.getAccountId())
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin Expert tương ứng với tài khoản này."));
         // Lấy ds các Team gửi request
-        List<TeamRequest> listRequest = teamRequestRepository.findRequestForExpert(expert.getExpertId());
+        List<TeamRequest> listRequest = teamRequestRepository.findRequestForExpertRoleMentor(expert.getExpertId());
         if (listRequest == null || listRequest.isEmpty()) {
             return new ArrayList<>();
         }
@@ -1405,13 +1411,14 @@ public class TeamServiceImpl implements TeamService {
                 .orElseThrow(() -> new BadRequestException("Không xác định được vòng thi hợp lệ cho đội này."));
 
         ExpertAssign mySpecificAssign = expertAssignRepository
-                .findExpertAssignByTeamAndCategoryRound(teamRequest.getTeam().getTeamId(), categoryRound.getCategoryRoundId(),expert.getExpertId())
+                .findMentorByExpertIdAndCategoryRoundId( categoryRound.getCategoryRoundId(),expert.getExpertId())
                 .orElseThrow(() -> new BadRequestException("Bạn không phải là Mentor phụ trách đội thi này ở vòng đấu hiện tại."));
 
         teamRequest.setStatus(RequestStatus.ACCEPTED);
         teamRequest.setResponseStatus(NotiResponseStatus.NONE);
         teamRequest.setResponseAt(LocalDateTime.now());
         teamRequest.setExpertAssign(mySpecificAssign);
+        teamRequest.setResponder(account);
         if (responseMessage != null) {
             teamRequest.setResponseMessage(responseMessage);
         } else {
@@ -1467,13 +1474,14 @@ public class TeamServiceImpl implements TeamService {
                 .orElseThrow(() -> new BadRequestException("Không xác định được vòng thi hợp lệ cho đội này."));
 
         ExpertAssign mySpecificAssign = expertAssignRepository
-                .findExpertAssignByTeamAndCategoryRound(teamRequest.getTeam().getTeamId(), categoryRound.getCategoryRoundId(),expert.getExpertId())
+                .findMentorByExpertIdAndCategoryRoundId(categoryRound.getCategoryRoundId(),expert.getExpertId())
                 .orElseThrow(() -> new BadRequestException("Bạn không phải là Mentor phụ trách đội thi này ở vòng đấu hiện tại."));
 
         teamRequest.setExpertAssign(mySpecificAssign);
         teamRequest.setStatus(RequestStatus.DECLINED);
         teamRequest.setResponseStatus(NotiResponseStatus.NONE);
         teamRequest.setResponseAt(LocalDateTime.now());
+        teamRequest.setResponder(account);
         if (responseMessage == null || responseMessage.isEmpty()) {
             teamRequest.setResponseMessage("Yêu cầu đã được từ chối");
         } else {
