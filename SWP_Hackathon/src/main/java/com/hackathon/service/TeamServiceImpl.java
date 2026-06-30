@@ -32,7 +32,6 @@ public class TeamServiceImpl implements TeamService {
     private final ExpertRepository expertRepository;
     private final ExpertAssignRepository expertAssignRepository;
     private final TeamRequestRepository teamRequestRepository;
-//    private final CategoryRoundRepository categoryRoundRepository;
 
 
     private final EmailService emailService;
@@ -72,9 +71,9 @@ public class TeamServiceImpl implements TeamService {
 
     }
 
-    /*
-     *TẠO TEAM, LỜI MỜI
-     */
+    //-------------------------------------//
+    // STUDENT: TẠO TEAM, LỜI MỜI
+    //-------------------------------------//
 
     //FUNCTION 1:Create Team
     //BR: Khi tao team phai co tieu thieu it nhat 1 thanh vien duoc moi (bao gom leader va 1 thanh vien khac)
@@ -244,13 +243,7 @@ public class TeamServiceImpl implements TeamService {
             throw new BadRequestException("Thông tin tài khoản leader không hợp lệ.");
         }
         List<TeamMember> leaderTeams = teamMemberRepository.findByStudent(leaderAcc.getStudent());
-////        TeamMember teamMember = teamMemberRepository.findByTeamIdA
-////                .orElseThrow(() -> new BadRequestException("Bạn không có quyền mời thành viên (Bạn không phải Leader hoặc không thuộc đội này)"));
-//        if (!teamMember.getIsLeader()) {
-//            throw new BadRequestException("Bạn không phải leader, bạn không được phép mời thành viên khác.");
-//        }
 
-//        Team team = teamMember.getTeam();
         TeamMember currentLeaderRole = null;
         for (TeamMember tm : leaderTeams) {
             if (tm.getTeam().getStatus() != TeamStatus.FINISHED && Boolean.TRUE.equals(tm.getIsLeader())) {
@@ -367,59 +360,7 @@ public class TeamServiceImpl implements TeamService {
 
     }
 
-    @Override
-    @Transactional()
-    public TeamDetailResponse getTeamDetailByStudentId(CustomUserDetails userDetails) {
-        Account currentAccount = userDetails.getAccount();
-        List<TeamMember> members = teamMemberRepository.findByStudent_StudentId(currentAccount.getStudent().getStudentId());
-        if (members.isEmpty()) {
-            throw new BadRequestException("Bạn hiện chưa tham gia đội nào.");
-        }
-        Team team = teamRepository.findById(members.get(0).getTeam().getTeamId()).orElseThrow(() -> new BadRequestException("Team không tồn tại"));
-        //2. Check account đang đăng nhập có đag  là thành viên của Team đó hay không
-        TeamMember teamMember = teamMemberRepository.findByTeamAndStudent(team, currentAccount.getStudent())
-                .orElseThrow(() -> new BadRequestException("Sinh viên hiện tại không thuộc Team này. Không được phép xem danh sách Team này."));
-        //3. Lấy danh sách teamMember
-        List<TeamMember> teamMembers = teamMemberRepository.findByTeam(team);
-        TeamDetailResponse.MemberInfo leaderInfo = null;
-        List<TeamDetailResponse.MemberInfo> officialMembers = new ArrayList<>();
-        for (TeamMember member : teamMembers) {
-            TeamDetailResponse.MemberInfo info = TeamDetailResponse.MemberInfo.builder()
-                    .studentCode(member.getStudent().getStudentCode())
-                    .fullName(member.getStudent().getStudentName())
-                    .email(member.getStudent().getAccount().getEmail())
-                    .avatarUrl(member.getStudent().getAccount().getAvatarUrl())
-                    .isLeader(member.getIsLeader())
-                    .major(member.getStudent().getMajor())
-                    .build();
 
-            if (member.getIsLeader()) {
-                leaderInfo = info;
-            } else {
-                officialMembers.add(info); // Chỉ add thành viên thường vào list này
-            }
-        }
-        // 4. Lấy danh sách các email đã gửi lời mời
-        List<TeamDetailResponse.InviteInfo> inviteInfo = new ArrayList<>();
-        // Chỉ khi người đang xem là LEADER  thì mới xem được lời mời
-        if (teamMember.getIsLeader()) {
-            List<Notification> invites = notificationRepository.findByTeamAndType(team, NotificationType.TEAM_INVITATION);
-            for (Notification invite : invites) {
-                inviteInfo.add(new TeamDetailResponse.InviteInfo(
-                        invite.getAccount().getEmail(),
-                        invite.getStatus().name()
-                ));
-            }
-        }
-        // 4. Đóng gói dữ liệu trả về cho Frontend
-        return TeamDetailResponse.builder()
-                .teamId(team.getTeamId())
-                .teamName(team.getTeamName())
-                .leader(leaderInfo)
-                .members(officialMembers)
-                .sizeTeam(teamMembers.size())
-                .build();
-    }
 
     //FUNCTION 2:UPDATE INFORMATION ABOUT TEAM AS NAME
     @Override
@@ -623,6 +564,10 @@ public class TeamServiceImpl implements TeamService {
         );
     }
 
+    //-------------------------------------//
+    //XỬ LÝ LỜI MỜI: CHẤP NHẬN - TỪ CHỐI
+    //-------------------------------------//
+
     //FUNCTION 5: HÀM XỬ LÝ CHẤP NHẬN LỜI MỜI CHO TRANSFER, INVITE TEAM
     @Override
     public void acceptGeneralInvite(Long notificationId, CustomUserDetails userDetails) {
@@ -762,20 +707,9 @@ public class TeamServiceImpl implements TeamService {
         notification.setTitle("INVITATION ACCEPTED. Bạn đã tham gia Team: " + team.getTeamName());
         notification.setMessage("Thành viên chính thức của " + team.getTeamName());
         notification.setStatus(InvitationStatus.ACCEPTED);
+        notification.setActor(inviteAccount);
+        notification.setResponseStatus(NotiResponseStatus.NONE);
         notificationRepository.save(notification);
-
-//        //10.1
-//        List<Notification> otherInvitesOfStudent = notificationRepository
-//                .findByAccountAndTypeAndStatus(inviteAccount, NotificationType.TEAM_INVITATION, InvitationStatus.PENDING);
-//
-//        for (Notification studentNoti : otherInvitesOfStudent) {
-//            if (!studentNoti.getId().equals(notification.getId())) {
-//                studentNoti.setStatus(InvitationStatus.INVALID);
-//                studentNoti.setTitle("INVALID. Lời mời vào đội đã hủy");
-//                studentNoti.setMessage("Lời mời này không còn hiệu lực do bạn đã gia nhập một đội thi khác.");
-//                notificationRepository.save(studentNoti);
-//            }
-//        }
 
         // 11. Check All Team, neu du 5 thanh vien , vo hieu hoa loi moi con lai
         if (team.getTeamSize() == MAX_TEAM_SIZE) {
@@ -845,7 +779,8 @@ public class TeamServiceImpl implements TeamService {
         notification.setTitle("TRANSFER APPROVED. Bạn đã là Leader của Team: " + team.getTeamName());
         notification.setMessage("Bạn đã chấp nhận lời mời và chính thức trở thành Trưởng nhóm.");
         notification.setStatus(InvitationStatus.ACCEPTED);
-
+        notification.setActor(inviteAccount);
+        notification.setResponseStatus(NotiResponseStatus.NONE);
 
     }
 
@@ -930,6 +865,7 @@ public class TeamServiceImpl implements TeamService {
         notification.setTitle("TRANSFER REJECTED. Tôi từ chối làm Leader Team: " + team.getTeamName());
         notification.setMessage("Bạn đã từ chối lời mời chuyển quyền Leader.");
         notification.setStatus(InvitationStatus.REJECTED);
+        notification.setActor(inviteAccount);
 
 
     }
@@ -966,12 +902,68 @@ public class TeamServiceImpl implements TeamService {
         notification.setTitle("INVITE REJECTED. Tôi từ chối lời mời tham gia nhóm : " + team.getTeamName());
         notification.setMessage("Bạn đã từ chối lời mời tham gia nhóm.");
         notification.setStatus(InvitationStatus.REJECTED);
+        notification.setActor(inviteAccount);
+        notification.setResponseStatus(NotiResponseStatus.NONE);
 
     }
 
-      /*
-    XEM THÔNG TIN VỀ TEAM
-     */
+    //-------------------------------------//
+    //XEM THÔNG TIN VỀ TEAM
+    //-------------------------------------//
+
+    @Override
+    @Transactional()
+    public TeamDetailResponse getTeamDetailByStudentId(CustomUserDetails userDetails) {
+        Account currentAccount = userDetails.getAccount();
+        List<TeamMember> members = teamMemberRepository.findByStudent_StudentId(currentAccount.getStudent().getStudentId());
+        if (members.isEmpty()) {
+            throw new BadRequestException("Bạn hiện chưa tham gia đội nào.");
+        }
+        Team team = teamRepository.findById(members.get(0).getTeam().getTeamId()).orElseThrow(() -> new BadRequestException("Team không tồn tại"));
+        //2. Check account đang đăng nhập có đag  là thành viên của Team đó hay không
+        TeamMember teamMember = teamMemberRepository.findByTeamAndStudent(team, currentAccount.getStudent())
+                .orElseThrow(() -> new BadRequestException("Sinh viên hiện tại không thuộc Team này. Không được phép xem danh sách Team này."));
+        //3. Lấy danh sách teamMember
+        List<TeamMember> teamMembers = teamMemberRepository.findByTeam(team);
+        TeamDetailResponse.MemberInfo leaderInfo = null;
+        List<TeamDetailResponse.MemberInfo> officialMembers = new ArrayList<>();
+        for (TeamMember member : teamMembers) {
+            TeamDetailResponse.MemberInfo info = TeamDetailResponse.MemberInfo.builder()
+                    .studentCode(member.getStudent().getStudentCode())
+                    .fullName(member.getStudent().getStudentName())
+                    .email(member.getStudent().getAccount().getEmail())
+                    .avatarUrl(member.getStudent().getAccount().getAvatarUrl())
+                    .isLeader(member.getIsLeader())
+                    .major(member.getStudent().getMajor())
+                    .build();
+
+            if (member.getIsLeader()) {
+                leaderInfo = info;
+            } else {
+                officialMembers.add(info); // Chỉ add thành viên thường vào list này
+            }
+        }
+        // 4. Lấy danh sách các email đã gửi lời mời
+        List<TeamDetailResponse.InviteInfo> inviteInfo = new ArrayList<>();
+        // Chỉ khi người đang xem là LEADER  thì mới xem được lời mời
+        if (teamMember.getIsLeader()) {
+            List<Notification> invites = notificationRepository.findByTeamAndType(team, NotificationType.TEAM_INVITATION);
+            for (Notification invite : invites) {
+                inviteInfo.add(new TeamDetailResponse.InviteInfo(
+                        invite.getAccount().getEmail(),
+                        invite.getStatus().name()
+                ));
+            }
+        }
+        // 4. Đóng gói dữ liệu trả về cho Frontend
+        return TeamDetailResponse.builder()
+                .teamId(team.getTeamId())
+                .teamName(team.getTeamName())
+                .leader(leaderInfo)
+                .members(officialMembers)
+                .sizeTeam(teamMembers.size())
+                .build();
+    }
 
     //FUNCTION STUDENT XEM THÔNG TIN TEAM CỦA MÌNH
     @Override
@@ -1025,6 +1017,81 @@ public class TeamServiceImpl implements TeamService {
                 .members(officialMembers).
                 createAt(team.getCreateAt())
                 .invitations(inviteInfo)
+                .build();
+    }
+
+    // Leader xem  thông tin về hạng mục thi của đội
+    @Override
+    public TeamCompetitionResponse getTeamCompetition(CustomUserDetails userDetails) {
+        // Check leader
+        Account account = userDetails.getAccount();
+
+        Student student = studentRepository.findById(account.getStudent().getStudentId())
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin sinh viên"));
+        TeamMember teamMember = student.getTeamMembers().stream()
+                .findFirst().orElseThrow(() -> new BadRequestException("Bạn chưa tham gia vào bất kì Team nào."));
+        if (!teamMember.getIsLeader()) {
+            throw new BadRequestException("Bạn không phải là leader nên không được phép xem thông tin về hạng mục này.");
+        }
+        Team team = teamMember.getTeam();
+        if (team == null) {
+            throw new BadRequestException("Không tìm thấy thông tin  về Team này");
+        }
+
+        List<CategoryRound> categoryRound = team.getRegistrations().stream()
+                .filter(registration -> registration != null && registration.getStatus() == RegistrationStatus.APPROVED)
+                .map(Registration::getParticipant)
+                .filter(participant -> participant != null && participant.getStatus() == ParticipantStatus.ACTIVE)
+                .map(TeamParticipant::getCategoryRound)
+                .filter(cr -> cr != null && cr.getRound() != null)
+                .sorted(Comparator.comparing(cr -> cr.getRound().getOrderIndex())) // Sắp xếp theo thứ tự Vòng 1, Vòng 2, Vòng Final
+                .toList();
+        if (categoryRound.isEmpty()) {
+            throw new BadRequestException("Đội của bạn hiện không tham gia vòng thi nào hoặc chưa được kích hoạt.");
+        }
+
+        String eventName = "N/A";
+        if (categoryRound.getFirst().getRound().getHackathonEvent() != null) {
+            eventName = categoryRound.getFirst().getRound().getHackathonEvent().getEventName();
+        }
+
+        List<TeamCompetitionResponse.RoundInfo> roundInfoList = new ArrayList<>();
+
+        List<TeamCompetitionResponse.Category> categoryList = new ArrayList<>();
+
+        for (CategoryRound category : categoryRound) {
+            String roundName = category.getRound().getRoundName();
+            String categoryName = category.getCategory().getCategoryName();
+            // Check vòng thi có tồn tại chưa
+
+            TeamCompetitionResponse.RoundInfo roundExist = null;
+            for (TeamCompetitionResponse.RoundInfo roundInfo : roundInfoList) {
+                if (roundInfo.getRoundName().equalsIgnoreCase(roundName)) {
+                    roundExist = roundInfo;
+                    break;
+                }
+
+            }
+            if (roundExist == null) {
+                TeamCompetitionResponse.RoundInfo newRoundInfo = new TeamCompetitionResponse.RoundInfo();
+                newRoundInfo.setRoundName(roundName);
+                //
+                List<TeamCompetitionResponse.Category> categories = new ArrayList<>();
+                categories.add(new TeamCompetitionResponse.Category(categoryName));
+                newRoundInfo.setCategories(categories);
+                roundInfoList.add(newRoundInfo);
+            } else {
+                roundExist.getCategories().add(
+                        new TeamCompetitionResponse.Category(categoryName)
+                );
+            }
+        }
+
+        return TeamCompetitionResponse.builder()
+                .eventName(eventName)
+                .teamId(team.getTeamId())
+                .teamName(team.getTeamName())
+                .rounds(roundInfoList)
                 .build();
     }
 
@@ -1212,80 +1279,7 @@ public class TeamServiceImpl implements TeamService {
         return list;
     }
 
-    // Leader xem  thông tin về hạng mục thi của đội
-    @Override
-    public TeamCompetitionResponse getTeamCompetition(CustomUserDetails userDetails) {
-        // Check leader
-        Account account = userDetails.getAccount();
 
-        Student student = studentRepository.findById(account.getStudent().getStudentId())
-                .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin sinh viên"));
-        TeamMember teamMember = student.getTeamMembers().stream()
-                .findFirst().orElseThrow(() -> new BadRequestException("Bạn chưa tham gia vào bất kì Team nào."));
-        if (!teamMember.getIsLeader()) {
-            throw new BadRequestException("Bạn không phải là leader nên không được phép xem thông tin về hạng mục này.");
-        }
-        Team team = teamMember.getTeam();
-        if (team == null) {
-            throw new BadRequestException("Không tìm thấy thông tin  về Team này");
-        }
-
-        List<CategoryRound> categoryRound = team.getRegistrations().stream()
-                .filter(registration -> registration != null && registration.getStatus() == RegistrationStatus.APPROVED)
-                .map(Registration::getParticipant)
-                .filter(participant -> participant != null && participant.getStatus() == ParticipantStatus.ACTIVE)
-                .map(TeamParticipant::getCategoryRound)
-                .filter(cr -> cr != null && cr.getRound() != null)
-                .sorted(Comparator.comparing(cr -> cr.getRound().getOrderIndex())) // Sắp xếp theo thứ tự Vòng 1, Vòng 2, Vòng Final
-                .toList();
-        if (categoryRound.isEmpty()) {
-            throw new BadRequestException("Đội của bạn hiện không tham gia vòng thi nào hoặc chưa được kích hoạt.");
-        }
-
-        String eventName = "N/A";
-        if (categoryRound.getFirst().getRound().getHackathonEvent() != null) {
-            eventName = categoryRound.getFirst().getRound().getHackathonEvent().getEventName();
-        }
-
-        List<TeamCompetitionResponse.RoundInfo> roundInfoList = new ArrayList<>();
-
-        List<TeamCompetitionResponse.Category> categoryList = new ArrayList<>();
-
-        for (CategoryRound category : categoryRound) {
-            String roundName = category.getRound().getRoundName();
-            String categoryName = category.getCategory().getCategoryName();
-            // Check vòng thi có tồn tại chưa
-
-            TeamCompetitionResponse.RoundInfo roundExist = null;
-            for (TeamCompetitionResponse.RoundInfo roundInfo : roundInfoList) {
-                if (roundInfo.getRoundName().equalsIgnoreCase(roundName)) {
-                    roundExist = roundInfo;
-                    break;
-                }
-
-            }
-            if (roundExist == null) {
-                TeamCompetitionResponse.RoundInfo newRoundInfo = new TeamCompetitionResponse.RoundInfo();
-                newRoundInfo.setRoundName(roundName);
-                //
-                List<TeamCompetitionResponse.Category> categories = new ArrayList<>();
-                categories.add(new TeamCompetitionResponse.Category(categoryName));
-                newRoundInfo.setCategories(categories);
-                roundInfoList.add(newRoundInfo);
-            } else {
-                roundExist.getCategories().add(
-                        new TeamCompetitionResponse.Category(categoryName)
-                );
-            }
-        }
-
-        return TeamCompetitionResponse.builder()
-                .eventName(eventName)
-                .teamId(team.getTeamId())
-                .teamName(team.getTeamName())
-                .rounds(roundInfoList)
-                .build();
-    }
 
     @Override
     @Transactional
@@ -1386,6 +1380,10 @@ public class TeamServiceImpl implements TeamService {
         return responseList;
     }
 
+    //-------------------------------------//
+    // MENTOR: CHẤP NHẬN VÀ TỪ CHỐI YÊU CẦU TỪ ĐỘI THI
+    //-------------------------------------//
+
     @Override
     @Transactional
     public TeamRequestResponse acceptTeamRequest(String responseMessage, Integer requestId, CustomUserDetails userDetails) {
@@ -1411,7 +1409,7 @@ public class TeamServiceImpl implements TeamService {
                 .orElseThrow(() -> new BadRequestException("Không xác định được vòng thi hợp lệ cho đội này."));
 
         ExpertAssign mySpecificAssign = expertAssignRepository
-                .findMentorByExpertIdAndCategoryRoundId( categoryRound.getCategoryRoundId(),expert.getExpertId())
+                .findMentorByExpertIdAndCategoryRoundId(categoryRound.getCategoryRoundId(), expert.getExpertId())
                 .orElseThrow(() -> new BadRequestException("Bạn không phải là Mentor phụ trách đội thi này ở vòng đấu hiện tại."));
 
         teamRequest.setStatus(RequestStatus.ACCEPTED);
@@ -1474,7 +1472,7 @@ public class TeamServiceImpl implements TeamService {
                 .orElseThrow(() -> new BadRequestException("Không xác định được vòng thi hợp lệ cho đội này."));
 
         ExpertAssign mySpecificAssign = expertAssignRepository
-                .findMentorByExpertIdAndCategoryRoundId(categoryRound.getCategoryRoundId(),expert.getExpertId())
+                .findMentorByExpertIdAndCategoryRoundId(categoryRound.getCategoryRoundId(), expert.getExpertId())
                 .orElseThrow(() -> new BadRequestException("Bạn không phải là Mentor phụ trách đội thi này ở vòng đấu hiện tại."));
 
         teamRequest.setExpertAssign(mySpecificAssign);
