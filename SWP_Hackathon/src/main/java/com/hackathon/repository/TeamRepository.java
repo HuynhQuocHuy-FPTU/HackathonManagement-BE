@@ -20,9 +20,9 @@ public interface TeamRepository extends JpaRepository<Team, Integer> {
     // Tìm những team mà expert được phân công quản lý
     @Query("SELECT DISTINCT t FROM Team t " +
             "JOIN t.registrations r " +
-            "JOIN r.participant p " + // Lấy Participant của vòng đấu
-            "JOIN p.categoryRound cr " + // Lấy CategoryRound mà Team đang đá
-            "JOIN ExpertAssign ex ON ex.categoryRound = cr " + // Expert cũng phải thuộc CategoryRound đó
+            "JOIN r.participant p " +
+            "JOIN p.categoryRound cr " +
+            "JOIN ExpertAssign ex ON ex.categoryRound = cr " +
             "WHERE ex.expert.expertId = :expertId")
     List<Team> findTeamsByExpertAssignment(@Param("expertId") Integer expertId);
 
@@ -41,5 +41,12 @@ public interface TeamRepository extends JpaRepository<Team, Integer> {
             "AND tm.isLeader = true " +
             "AND t.status = com.hackathon.entity.enums.TeamStatus.BUSY")
     Optional<Team> findActiveLeadingTeamByStudentId(@Param("studentId") Integer studentId);
+
+    @Query("SELECT DISTINCT t FROM Team t " +
+            "JOIN Registration r ON r.team = t " +
+            "JOIN TeamParticipant p ON r.participant = p " +
+            "JOIN CategoryRound cr ON p.categoryRound = cr " +
+            "WHERE cr.categoryRoundId IN : categoryRoundId")
+    List<Team> findTeamsByCategoryRoundId(@Param("categoryRoundId") List<Integer> categoryId);
 }
 

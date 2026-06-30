@@ -13,7 +13,7 @@ public class ResetPasswordRequest {
     private String email;
 
     @NotBlank(message = "Mã xác thực không được để trống")
-    @Size(min = 6, max = 6, message = "Mã xác thực phải gồm 6 chữ số")
+    @Pattern(regexp = "^\\d{6}$", message = "Mã xác thực phải bao gồm đúng 6 chữ số")
     private String otp;
 
     @NotBlank(message = "Mật khẩu không được để trống")
