@@ -43,6 +43,15 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Integer>
 
     Optional<TeamMember> findByStudentAndIsLeader(Student student, boolean isLeader);
 
+    @Query("""
+                SELECT tm
+                FROM TeamMember tm
+                JOIN tm.team t
+                WHERE t.teamId = :teamId
+                  AND tm.isLeader = true
+            """)
+    TeamMember findLeaderByTeamId(@Param("teamId") int teamId);
+
 //    boolean hasLeader(boolean b);
 
 }
