@@ -14,4 +14,5 @@ public class ParticipantResponseDTO {
     private double totalScore;
     private Integer rank;
     private ParticipantStatus status;
+
 }

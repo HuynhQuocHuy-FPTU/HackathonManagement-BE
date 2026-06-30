@@ -1,18 +1,33 @@
 package com.hackathon.service;
 
-import com.hackathon.entity.Category;
-import com.hackathon.entity.CategoryRound;
-import com.hackathon.entity.Round;
+import com.hackathon.dto.category.CategoryResponse;
+import com.hackathon.dto.categoryRound.CategoryRoundResponseDTO;
+import com.hackathon.entity.*;
+import com.hackathon.entity.enums.EventStatus;
+import com.hackathon.entity.enums.ExpertRole;
+import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.CategoryRoundRepository;
+import com.hackathon.repository.ExpertAssignRepository;
+import com.hackathon.repository.ExpertRepository;
+import com.hackathon.repository.HackathonEventRepository;
+import com.hackathon.security.CustomUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+
 @Service
-public class CategoryRoundServiceImpl implements CategoryRoundService{
+public class CategoryRoundServiceImpl implements CategoryRoundService {
     @Autowired
     private CategoryRoundRepository categoryRoundRepository;
+    @Autowired
+    private HackathonEventRepository hackathonEventRepository;
+    @Autowired
+    private ExpertAssignRepository expertAssignRepository;
+
+    @Autowired
+    private ExpertRepository expertRepository;
 
     @Override
     public List<CategoryRound> createCategoryRound(List<Category> categories, Round round) {
@@ -38,5 +53,58 @@ public class CategoryRoundServiceImpl implements CategoryRoundService{
     public void deleteByEventId(Integer eventId) {
         categoryRoundRepository.deleteByEventId(eventId);
     }
+
+    @Override
+    public List<CategoryRoundResponseDTO> getAllCategory(Integer eventId) {
+        HackathonEvent hackathonEvent = hackathonEventRepository.findById(eventId)
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy event"));
+        List<CategoryRound> categoryRounds = categoryRoundRepository.findByRound_HackathonEvent_EventId(eventId);
+        if (categoryRounds.isEmpty()) {
+            throw new BadRequestException("Không có hạng mục nào trong cuộc thi này.");
+        }
+        List<CategoryRoundResponseDTO> dtoList = new ArrayList<>();
+        for (CategoryRound cr : categoryRounds) {
+            CategoryRoundResponseDTO dto = CategoryRoundResponseDTO.builder()
+                    .roundId(cr.getRound().getRoundId())
+                    .roundName(cr.getRound().getRoundName())
+                    .categoryRoundId(cr.getCategoryRoundId())
+                    .categoryId(cr.getCategory().getCategoryId())
+                    .categoryName(cr.getCategory().getCategoryName()).build();
+            dtoList.add(dto);
+        }
+        return dtoList;
+    }
+
+    //Mentor xem tất cả các CategoryRound mình được phân công trong trạng thái EVENT ĐANG DIỄN RA
+    @Override
+    public List<CategoryRoundResponseDTO> getAssignedCategoryRounds(CustomUserDetails userDetails) {
+        Expert expert = expertRepository.findByAccount_AccountId(userDetails.getAccount().getAccountId())
+                .orElseThrow(() -> new BadRequestException("Bạn không phải là Expert"));
+        List<ExpertAssign> mentorAssignments =
+                expert.getExpertAssigns().stream()
+                        .filter(a -> a.getRole() == ExpertRole.MENTOR)
+                        .toList();
+
+        List<CategoryRoundResponseDTO> dtoList = new ArrayList<>();
+        for (ExpertAssign ex : mentorAssignments) {
+            CategoryRound cr = ex.getCategoryRound();
+            HackathonEvent event = cr.getRound().getHackathonEvent();
+
+            if (event.getStatus() != EventStatus.ONGOING) {
+                continue;
+            }
+            CategoryRoundResponseDTO dto = CategoryRoundResponseDTO.builder()
+                    .roundId(cr.getRound().getRoundId())
+                    .roundName(cr.getRound().getRoundName())
+                    .categoryRoundId(cr.getCategoryRoundId())
+                    .categoryId(cr.getCategory().getCategoryId())
+                    .categoryName(cr.getCategory().getCategoryName())
+                    .role(ex.getRole()).build();
+            dtoList.add(dto);
+        }
+
+        return dtoList;
+    }
+
 
 }

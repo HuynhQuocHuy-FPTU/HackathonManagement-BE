@@ -2,6 +2,9 @@ package com.hackathon.service;
 
 import com.hackathon.dto.ExpertAssignedGroupDTO;
 import com.hackathon.dto.ParticipantResponseDTO;
+import com.hackathon.dto.ranking.CategoryRankingResponse;
+import com.hackathon.dto.ranking.CategoryRoundRankingResponse;
+import com.hackathon.dto.ranking.RankingResponseDTO;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.AuditAction;
 import com.hackathon.entity.enums.AuditEntityType;
@@ -15,11 +18,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class ParticipantServiceImpl implements ParticipantService{
+public class ParticipantServiceImpl implements ParticipantService {
     private final ExpertRepository expertRepository;
     private final ExpertAssignRepository expertAssignRepository;
     private final ParticipantRepository participantRepository;
@@ -28,8 +33,11 @@ public class ParticipantServiceImpl implements ParticipantService{
     private final AuditService auditService;
     private final NotificationService notificationService;
     private final HackathonEventRepository hackathonEventRepository;
+    private final EventCoordinatorRepository eventCoordinatorRepository;
+    private final RoundRepository roundRepository;
+    private final CategoryRoundRepository categoryRoundRepository;
 
-    public List<ExpertAssignedGroupDTO> getAssignParticipants(Integer eventId, CustomUserDetails userDetails){
+    public List<ExpertAssignedGroupDTO> getAssignParticipants(Integer eventId, CustomUserDetails userDetails) {
 
         //1. Lấy Account đang đăng nhập
         Account account = userDetails.getAccount();
@@ -44,13 +52,14 @@ public class ParticipantServiceImpl implements ParticipantService{
         //3. Lấy tất cả expertAssign của expert theo event
         List<ExpertAssign> assigns = expertAssignRepository.findExpertAssignments(expert.getExpertId(), eventId);
 
-        if(assigns.isEmpty()){
+        if (assigns.isEmpty()) {
             throw new BadRequestException("Expert không được phân công trong event này");
         }
 
         //4. Lấy participant tương ứng
         return assigns.stream().map(this::buildGroup).toList();
     }
+
     public void disqualifyTeam(Integer eventId, Integer teamId, String reason) {
         CustomUserDetails userDetails =
                 (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -85,14 +94,14 @@ public class ParticipantServiceImpl implements ParticipantService{
                 .findFirst()
                 .orElseThrow(() ->
                         new BadRequestException("Không tìm thấy trưởng nhóm"));
-        auditService.saveLog(account, AuditAction.DISQUALIFY_TEAM, AuditEntityType.PARTICIPANT, teamParticipants.get(0).getId(), team.getTeamName() );
+        auditService.saveLog(account, AuditAction.DISQUALIFY_TEAM, AuditEntityType.PARTICIPANT, teamParticipants.get(0).getId(), team.getTeamName());
 
-        notificationService.notifyDisqualifyTeam(account, accountLeader, team.getTeamName(), event.getEventName(),reason);
+        notificationService.notifyDisqualifyTeam(account, accountLeader, team.getTeamName(), event.getEventName(), reason);
 
     }
 
-    private ParticipantResponseDTO mapToResponse(TeamParticipant teamParticipant){
-        if(teamParticipant == null){
+    private ParticipantResponseDTO mapToResponse(TeamParticipant teamParticipant) {
+        if (teamParticipant == null) {
             return null;
         }
         String teamName = teamParticipant.getRegistration().getTeam().getTeamName();
@@ -106,7 +115,7 @@ public class ParticipantServiceImpl implements ParticipantService{
                 .build();
     }
 
-    private ExpertAssignedGroupDTO buildGroup(ExpertAssign expertAssign){
+    private ExpertAssignedGroupDTO buildGroup(ExpertAssign expertAssign) {
         CategoryRound categoryRound = expertAssign.getCategoryRound();
 
         List<TeamParticipant> teamParticipants = participantRepository.findParticipantByCategoryRound_CategoryRoundId(categoryRound.getCategoryRoundId());
@@ -124,7 +133,7 @@ public class ParticipantServiceImpl implements ParticipantService{
                 .build();
     }
 
-    public TeamParticipant saveParticipant(Registration registration){
+    public TeamParticipant saveParticipant(Registration registration) {
         TeamParticipant teamParticipant = new TeamParticipant();
         teamParticipant.setRegistration(registration);
         teamParticipant.setCategoryRound(null);
@@ -132,4 +141,61 @@ public class ParticipantServiceImpl implements ParticipantService{
 
         return participantRepository.save(teamParticipant);
     }
+
+
+    //===============================================//
+    //RANKING
+    //===============================================//
+
+
+    @Override
+    public CategoryRoundRankingResponse getRankingByEventCoordinator(
+            Integer roundId, CustomUserDetails userDetails) {
+        Account account = userDetails.getAccount();
+        EventCoordinator eventCoordinator = eventCoordinatorRepository.findByAccount_AccountId(account.getAccountId())
+                .orElseThrow(() -> new BadRequestException("Bạn không phải là Event Coordinator."));
+
+        Round round = roundRepository.findById(roundId).orElseThrow(
+                () -> new BadRequestException("Không tìm thấy round tương ứng với ID này."));
+
+        List<CategoryRankingResponse> categoriesRanking = new ArrayList<>();
+        CategoryRankingResponse response = null;
+        for (CategoryRound cr : round.getCategoryRounds()) {
+            // Thông qua Category Round lấy các Team đnag tham gia cuộc thi
+            List<TeamParticipant> teamParticipants = cr.getTeamParticipants();
+            teamParticipants.sort(Comparator.comparing(TeamParticipant::getRank));
+
+            List<RankingResponseDTO> rankingResponse = new ArrayList<>();
+            for (TeamParticipant participant : teamParticipants) {
+                String teamName = (participant.getRegistration() != null) ? participant.getRegistration().getTeam().getTeamName() : "N/A";
+                RankingResponseDTO dto = RankingResponseDTO.builder()
+                        .participantId(participant.getId())
+                        .totalScore(participant.getTotalScore())
+                        .rank(participant.getRank())
+                        .teamName(teamName)
+                        .status(participant.getStatus())
+                        .build();
+                rankingResponse.add(dto);
+            }
+            response = CategoryRankingResponse.builder()
+                    .categoryRoundId(cr.getCategoryRoundId())
+                    .categoryId(cr.getCategory().getCategoryId())
+                    .categoryName(cr.getCategory().getCategoryName())
+                    .teams(rankingResponse)
+                    .build();
+            categoriesRanking.add(response);
+        }
+
+
+        return CategoryRoundRankingResponse.builder()
+                .roundId(round.getRoundId())
+                .roundName(round.getRoundName())
+                .orderIndex(round.getOrderIndex())
+                .advancementRule(round.getAdvancementRule())
+                .topN(round.getTopN())
+                .roundStatus(round.getStatus())
+                .categoriesRanking(categoriesRanking).build();
+    }
+
+
 }

@@ -11,7 +11,7 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
-public class RankingByCategoryRoundResponse {
+public class CategoryRoundRankingResponse {
     private Integer roundId;
     private String roundName;
     private Integer orderIndex;
