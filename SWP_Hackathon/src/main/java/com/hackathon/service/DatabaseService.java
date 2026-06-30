@@ -68,19 +68,19 @@ public class DatabaseService {
                     .status(AccountStatus.ACTIVE)
                     .password(passwordEncoder.encode("Admin@123"))
                     .role(AccountRole.ADMIN)
-//                    .isPasswordChanged(true) // Admin tối cao thì gán luôn true để không bị ép đổi pass
+                    .isPasswordChanged(true) // Admin tối cao thì gán luôn true để không bị ép đổi pass
                     .build());
             System.out.println("Đã khởi tạo tài khoản Admin: admin@hackathon.com / Mật khẩu: Admin@123");
         }
-        Account acc1 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("nguyenvan30498@gmail.com").phone("0976352891").status(AccountStatus.ACTIVE).password(passwordEncoder.encode("123456")).role(AccountRole.EVENTCOORDINATOR).build());
+        Account acc1 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("nguyenvan30498@gmail.com").phone("0976352891").status(AccountStatus.ACTIVE).password(passwordEncoder.encode("123456")).isPasswordChanged(true).role(AccountRole.EVENTCOORDINATOR).build());
 
-        Account acc2 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("tranhoa456@gmail.com").password(passwordEncoder.encode("123456")).phone("0983452324").status(AccountStatus.ACTIVE).role(AccountRole.EXPERT).build());
+        Account acc2 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("tranhoa456@gmail.com").password(passwordEncoder.encode("123456")).phone("0983452324").isPasswordChanged(true).status(AccountStatus.ACTIVE).role(AccountRole.EXPERT).build());
 
-        Account acc3 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("lehuyen4238@gmail.com").password(passwordEncoder.encode("123456")).phone("097635235").status(AccountStatus.ACTIVE).role(AccountRole.EXPERT).build());
+        Account acc3 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("lehuyen4238@gmail.com").password(passwordEncoder.encode("123456")).phone("097635235").isPasswordChanged(true).status(AccountStatus.ACTIVE).role(AccountRole.EXPERT).build());
 
-        Account acc4 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("lehoa345@gmail.com").password(passwordEncoder.encode("123456")).phone("0126789354").status(AccountStatus.ACTIVE).role(AccountRole.STUDENT).build());
+        Account acc4 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("lehoa345@gmail.com").password(passwordEncoder.encode("123456")).phone("0126789354").isPasswordChanged(true).status(AccountStatus.ACTIVE).role(AccountRole.STUDENT).build());
 
-        Account acc5 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("nguyenha@gmail.com").password(passwordEncoder.encode("123456")).phone("0976336472").status(AccountStatus.ACTIVE).role(AccountRole.STUDENT).build());
+        Account acc5 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("nguyenha@gmail.com").password(passwordEncoder.encode("123456")).phone("0976336472").isPasswordChanged(true).status(AccountStatus.ACTIVE).role(AccountRole.STUDENT).build());
 
 
         //Create eventcoordiantor
@@ -125,7 +125,7 @@ public class DatabaseService {
         criteriaDetailRepository.save(CriteriaDetail.builder().criteriaSet(criteriaSet2).criteriaName("Trải nghiệm người dùng").description("Mượt mà, ít lỗi, dễ tiếp cận").criteriaType(CriteriaType.PRESENTATION).weight(new BigDecimal(15)).build());
 
         criteriaDetailRepository.save(CriteriaDetail.builder().criteriaSet(criteriaSet2).criteriaName("Trình bày và demo").description("Logic, rõ ràng, trả lời tất cả câu hỏi của ban giám khảo").criteriaType(CriteriaType.PRESENTATION).weight(new BigDecimal(25)).build());
-//
+
         Account[] studentAccounts = new Account[15];
         Student[] students = new Student[15];
         Team[] teams = new Team[5];
@@ -142,7 +142,7 @@ public class DatabaseService {
                             .createdAt(LocalDateTime.now())
                             .email("student" + (i + 1) + "@gmail.com")
                             .phone("09000000" + i)
-                            .password(passwordEncoder.encode("123456"))
+                            .password(passwordEncoder.encode("123456")).isPasswordChanged(true)
                             .status(AccountStatus.ACTIVE)
                             .role(AccountRole.STUDENT)
                             .build()
@@ -190,9 +190,9 @@ public class DatabaseService {
             }
         }
 
-// =======================
-// 3. CREATE REGISTRATION (eventId = 1)
-// =======================
+//// =======================
+//// 3. CREATE REGISTRATION (eventId = 1)
+//// =======================
 //        HackathonEvent event = eventRepository.findById(1)
 //                .orElseThrow(() -> new RuntimeException("Event not found"));
 //

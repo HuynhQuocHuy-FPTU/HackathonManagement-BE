@@ -24,7 +24,7 @@ public class CreateEventRequest {
 
     private String address;
 
-    private String description;
+    private EventDescription description;
 
     @Min(value = 1, message = "Max team must be at least 1")
     private Integer maxTeam;

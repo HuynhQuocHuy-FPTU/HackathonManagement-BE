@@ -87,7 +87,7 @@ public class EventValidator {
         if (isNullOrBlank(event.getEventName())) throw new BadRequestException("Tên sự kiện trống!");
         if (isNullOrBlank(event.getTitle())) throw new BadRequestException("Tiêu đề trống!");
         if (isNullOrBlank(event.getAddress())) throw new BadRequestException("Địa chỉ trống!");
-        if (isNullOrBlank(event.getDescription())) throw new BadRequestException("Mô tả trống!");
+        if (event.getDescription() == null) throw new BadRequestException("Mô tả trống!");
         if (event.getMaxTeam() == null || event.getMaxTeam() < 1) throw new BadRequestException("Số lượng đội thi không hợp lệ!");
     }
 
