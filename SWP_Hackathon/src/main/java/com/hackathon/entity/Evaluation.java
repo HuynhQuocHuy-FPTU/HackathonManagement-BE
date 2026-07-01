@@ -1,6 +1,7 @@
 package com.hackathon.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.hackathon.entity.enums.EvaluationStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -22,6 +23,9 @@ public class Evaluation {
     private BigDecimal score;
     @Column(name = "Comment", columnDefinition = "NVARCHAR(500)")
     private String comment;
+
+    @Enumerated(EnumType.STRING)
+    private EvaluationStatus status;
 
     //1 expertAsgin -N evaluation
     @ManyToOne(fetch = FetchType.LAZY)

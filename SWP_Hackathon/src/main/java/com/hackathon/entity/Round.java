@@ -37,6 +37,7 @@ public class Round {
     @Column(nullable = true)
     @Enumerated(EnumType.STRING)
     private RoundStatus status;
+    //Top 5 của category
     @Column(name = "Top_N", nullable = true)
     private Integer topN;
 

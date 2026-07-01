@@ -35,6 +35,7 @@ public class TeamRequest {
     @Enumerated(EnumType.STRING)
     @Column(name = "Response_Status")
     private NotiResponseStatus responseStatus;
+
     // người gửi / người thực hiện hành động
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "Response_Id")
