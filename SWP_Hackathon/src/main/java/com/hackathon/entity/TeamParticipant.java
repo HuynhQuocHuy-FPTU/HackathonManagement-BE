@@ -27,7 +27,6 @@ public class TeamParticipant {
     private ParticipantStatus status;
 
     @Column(name = "Total_Score")
-//    private double totalScore;
     private BigDecimal totalScore;
     @Column(name = "Rank")
     private Integer rank;

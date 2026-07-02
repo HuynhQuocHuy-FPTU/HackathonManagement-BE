@@ -27,7 +27,6 @@ public class AccountServiceImpl implements AccountService {
     private final ParticipantRepository participantRepository;
 
 
-    // Cần bổ sung thêm tham gia round nào , hạng mục nào
     @Override
     public StudentHistoryResponse studentHistory(Integer accountId, CustomUserDetails userDetails) {
 
@@ -147,8 +146,11 @@ public class AccountServiceImpl implements AccountService {
                     .roundId(ex.getCategoryRound().getRound().getRoundId())
                     .categoryId(ex.getCategoryRound().getCategory().getCategoryId())
                     .roundName(ex.getCategoryRound().getRound().getRoundName())
+                    .roundDate(ex.getCategoryRound().getRound().getStartTime())
+                    .roundEnd(ex.getCategoryRound().getRound().getEndTime())
                     .categoryName(ex.getCategoryRound().getCategory().getCategoryName())
                     .expertRole(ex.getRole()).build();
+
             histories.add(response);
 
         }

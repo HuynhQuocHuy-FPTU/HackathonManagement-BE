@@ -19,7 +19,7 @@ import java.util.List;
 @RequestMapping("/expert")
 public class ExpertController {
     private final CategoryRoundService categoryRoundService;
-    @GetMapping("/assigncategory-round")
+    @GetMapping("/mentor/assigncategory-round")
     public ResponseEntity<ApiResponse<List<CategoryRoundResponseDTO>>>getAssignedCategoryRounds(
             @AuthenticationPrincipal CustomUserDetails userDetails){
         List<CategoryRoundResponseDTO> list = categoryRoundService.getAssignedCategoryRounds(userDetails);

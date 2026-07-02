@@ -32,6 +32,7 @@ public class TeamServiceImpl implements TeamService {
     private final ExpertRepository expertRepository;
     private final ExpertAssignRepository expertAssignRepository;
     private final TeamRequestRepository teamRequestRepository;
+    private final HackathonEventRepository hackathonEventRepository;
 
 
     private final EmailService emailService;
@@ -1211,13 +1212,15 @@ public class TeamServiceImpl implements TeamService {
     }
 
     // MENTOR CÓ CÙNG HẠNG MỤC THỂ XEM THÔNG TIN CHUNG VỀ TEAM MÌNH DC PHÂN CÔNG
-    public List<TeamDetailResponse> getTeamInfo(Integer expertId, CustomUserDetails userDetails) {
+    public List<TeamDetailResponse> getTeamInfo(Integer eventId,Integer expertId, CustomUserDetails userDetails) {
         //1. Check coordinator , expert vs vai trò là mentor có thể xem.
         Account account = userDetails.getAccount();
         if (account.getRole() != AccountRole.EXPERT
                 && account.getRole() != AccountRole.EVENTCOORDINATOR) {
             throw new BadRequestException("Bạn không có quyền  xem danh sách này. Chỉ có EVENT COORDINATOR , EXPERT với vai trò MENTOR mới có thể xem.");
         }
+        HackathonEvent event = hackathonEventRepository.findById(eventId)
+                .orElseThrow(() ->  new BadRequestException("Không tìm thấy thông tin về Event này."));
 
         List<Team> listTeam = new ArrayList<>();
         // TH1: EVENTCOORDINATOR xem danh sách theo ID của Expert
@@ -1226,7 +1229,7 @@ public class TeamServiceImpl implements TeamService {
                 throw new BadRequestException("Hãy cung cấp ID của expert để xem danh sách Team họ quản lý. ");
             }
             //  Coordinator xem ds các Team  mà EXPERT đó quản lý
-            listTeam = teamRepository.findTeamsByExpertAssignment(expertId);
+            listTeam = teamRepository.findTeamsByExpertAssignmentAndEvent(expertId, eventId);
         }
         // TH2 Expert xem dc ds các Team mà các Expert khác quản lý nếu có cùng CATEGORY
         else if (account.getRole() == AccountRole.EXPERT) {
@@ -1234,16 +1237,18 @@ public class TeamServiceImpl implements TeamService {
                     .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin Expert tương ứng với account này."));
             // Lấy Category mà Expert này đang quản lý
             List<Integer> categoryRoundId = expert.getExpertAssigns().stream()
-                    .filter(expertAssign -> expertAssign.getRole().equals(ExpertRole.MENTOR))
+                    .filter(expertAssign -> expertAssign.getRole() == ExpertRole.MENTOR)
                     .map(ExpertAssign::getCategoryRound)
-                    .filter(categoryRound -> categoryRound != null)
-                    .map(categoryRound -> categoryRound.getCategoryRoundId())
+                    .filter(Objects::nonNull)
+                    .map(CategoryRound::getCategoryRoundId)
                     .distinct()
                     .toList();
+
             if (categoryRoundId.isEmpty()) {
-                return new ArrayList<>();
+                throw new BadRequestException("Tài khoản Expert của bạn chưa được phân công vai trò MENTOR cho hạng mục nào.");
             }
-            listTeam = teamRepository.findTeamsByCategoryRoundId(categoryRoundId);
+            listTeam = teamRepository.findTeamsByCategoryRoundIdsAndEventId(categoryRoundId, eventId);
+//            listTeam = teamRepository.findTeamsByCategoryRoundId(categoryRoundId);
         }
 
         //2. Lấy list team mà Expert quản lý

@@ -33,6 +33,8 @@ public class ExpertHistoryResponse {
         private Integer roundId;
         private Integer categoryId;
         private String roundName;
+        private LocalDateTime roundDate;
+        private LocalDateTime roundEnd;
         private String categoryName;
         private ExpertRole expertRole;
 

@@ -38,17 +38,17 @@ public interface TeamService {
 
     TeamDetailResponse getTeamDetail(Integer teamId, CustomUserDetails userDetails);
 
-    List<TeamDetailResponse> getTeamInfo(Integer expertId, CustomUserDetails userDetails);
+    List<TeamDetailResponse> getTeamInfo(Integer eventId, Integer expertId, CustomUserDetails userDetails);
 
     TeamDetailResponse getTeamDetailByStudentId(CustomUserDetails userDetails);
 
     TeamCompetitionResponse getTeamCompetition(CustomUserDetails userDetails);
 
-    List<TeamRequestResponse>  teamSendRequestToMentor(String requestMessage,CustomUserDetails userDetails);
+    List<TeamRequestResponse> teamSendRequestToMentor(String requestMessage, CustomUserDetails userDetails);
 
     List<TeamRequestResponse> getTeamRequestsForExpert(CustomUserDetails userDetails);
 
-    TeamRequestResponse acceptTeamRequest(String responseMessage,Integer requestId, CustomUserDetails userDetails);
+    TeamRequestResponse acceptTeamRequest(String responseMessage, Integer requestId, CustomUserDetails userDetails);
 
-    TeamRequestResponse rejectTeamRequest(String responseMessage,Integer requestId, CustomUserDetails userDetails);
+    TeamRequestResponse rejectTeamRequest(String responseMessage, Integer requestId, CustomUserDetails userDetails);
 }
