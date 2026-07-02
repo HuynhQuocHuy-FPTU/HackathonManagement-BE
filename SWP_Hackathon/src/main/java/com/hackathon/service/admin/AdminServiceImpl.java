@@ -1,7 +1,8 @@
-package com.hackathon.service;
+package com.hackathon.service.admin;
 
 import com.hackathon.dto.UserAdminResponse;
 import com.hackathon.dto.admin.InviteAccountRequest;
+import com.hackathon.dto.admin.UpdateAccountStatusRequest;
 import com.hackathon.entity.Account;
 import com.hackathon.entity.EventCoordinator;
 import com.hackathon.entity.Expert;
@@ -12,6 +13,8 @@ import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.AccountRepository;
 import com.hackathon.repository.EventCoordinatorRepository;
 import com.hackathon.repository.ExpertRepository;
+import com.hackathon.repository.RefreshTokenRepository;
+import com.hackathon.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,6 +34,7 @@ public class AdminServiceImpl implements AdminService {
     private final EventCoordinatorRepository eventCoordinatorRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Override
     public List<UserAdminResponse> getAllUsers() {
@@ -129,6 +133,26 @@ public class AdminServiceImpl implements AdminService {
                 .organization(organization)
                 .createdAt(account.getCreatedAt())
                 .build();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateUserStatus(int accountId, UpdateAccountStatusRequest request) {
+        // 1. Tìm tài khoản
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Không tìm thấy người dùng với ID: " + accountId));
+
+        // 2. Không cho phép tự khóa chính mình (Optional: Nếu bạn có truyền UserDetails của Admin đang đăng nhập vào, hãy so sánh ID)
+
+        // 3. Cập nhật trạng thái mới
+        account.setStatus(request.getStatus());
+        accountRepository.save(account);
+
+        // 4. BẢO MẬT: Nếu Admin "Khóa" (BANNED) hoặc "Vô hiệu hóa" (INACTIVE) tài khoản
+        // -> Lập tức thu hồi toàn bộ Token để văng session hiện tại của họ
+        if (request.getStatus() == AccountStatus.BANNED || request.getStatus() == AccountStatus.INACTIVE) {
+            refreshTokenRepository.revokeAllByAccount(account);
+        }
     }
 
 }
