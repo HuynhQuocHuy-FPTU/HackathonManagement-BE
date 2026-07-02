@@ -2,6 +2,7 @@ package com.hackathon.repository;
 
 import com.hackathon.entity.TeamRequest;
 import com.hackathon.entity.enums.RequestStatus;
+import com.hackathon.entity.enums.RequestType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,7 +19,7 @@ public interface TeamRequestRepository extends JpaRepository<TeamRequest,Integer
             "JOIN tr.team t " +
             "JOIN t.registrations reg " +
             "JOIN reg.participant p " +
-            "WHERE tr.status = 'PENDING' " + // Chỉ lấy request đang chờ
+            "WHERE tr.status = 'PENDING' " +
             "AND tr.expertAssign IS NULL " +  // Chỉ lấy request chưa ai nhận
             "AND reg.status = 'APPROVED' " +
             "AND p.categoryRound.round.status = 'ONGOING' " +
@@ -29,4 +30,6 @@ public interface TeamRequestRepository extends JpaRepository<TeamRequest,Integer
     List<TeamRequest> findRequestForExpertRoleMentor(@Param("expertId") Integer expertID);
 
     boolean existsByTeam_TeamIdAndStatus(Integer teamId, RequestStatus status);
+
+    List<TeamRequest> findByRound_RoundIdAndRequestType(Integer roundId, RequestType requestType);
 }

@@ -37,6 +37,10 @@ public class Round {
     private String advancementRule;
     @Column(name = "Order_Index", nullable = true)
     private Integer orderIndex;
+    @Column(name = "Appeal_StartTime", nullable = true)
+    private LocalDateTime appealStartTime;
+    @Column(name = "Appeal_EndTime", nullable = true)
+    private LocalDateTime appealEndTime;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "Submission_Type", nullable = true)
@@ -58,6 +62,7 @@ public class Round {
     @Column(nullable = true)
     @Enumerated(EnumType.STRING)
     private RoundStatus status;
+
     //Top 5 của category
     @Column(name = "Top_N", nullable = true)
     private Integer topN;
@@ -80,7 +85,9 @@ public class Round {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CriteriaSet_ID")
     private CriteriaSet criteriaSet;
-
-
+//
+//    // 1 Round - N Request
+//    @OneToMany(mappedBy = "round", cascade = CascadeType.ALL, orphanRemoval = true)
+//    private List<TeamRequest> teamRequests;
 
 }

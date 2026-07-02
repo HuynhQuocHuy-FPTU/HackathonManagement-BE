@@ -19,14 +19,6 @@ public interface ParticipantService {
 
     TeamParticipant saveParticipant(Registration registration);
 
-    CategoryRoundRankingResponse getRankingByEventCoordinator(Integer roundId, CustomUserDetails userDetails);
 
-    CategoryRoundRankingResponse approveRanking(CustomUserDetails userDetails, Integer roundId);
-
-    CategoryRoundRankingResponse rejectRanking(CustomUserDetails userDetails, Integer roundId);
-
-    void publishDraftRanking(Integer roundId, CustomUserDetails userDetails);
-
-    void publishFinalRanking(Integer roundId, CustomUserDetails userDetails);
 
 }
