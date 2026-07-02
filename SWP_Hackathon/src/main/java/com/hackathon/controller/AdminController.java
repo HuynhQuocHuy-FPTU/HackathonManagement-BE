@@ -3,6 +3,7 @@ package com.hackathon.controller;
 import com.hackathon.dto.AuditLogResponse;
 import com.hackathon.dto.UserAdminResponse;
 import com.hackathon.dto.admin.InviteAccountRequest;
+import com.hackathon.dto.admin.UpdateAccountStatusRequest;
 import com.hackathon.dto.common.ApiResponse;
 import com.hackathon.service.AuditService;
 import jakarta.validation.Valid;
@@ -11,7 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import com.hackathon.service.AdminService;
+import com.hackathon.service.admin.AdminService;
 
 import java.util.List;
 
@@ -60,6 +61,19 @@ public class AdminController {
         adminService.inviteAccount(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok("Đã tạo tài khoản và gửi email chứa mật khẩu tạm thời thành công!"));
+    }
+
+    /**
+     * API: Cập nhật trạng thái hoạt động của tài khoản (Khóa / Mở khóa)
+     * PATCH /api/admin/users/{id}/status
+     */
+    @PatchMapping("/users/{id}/status")
+    public ResponseEntity<ApiResponse<Void>> updateUserStatus(
+            @PathVariable int id,
+            @Valid @RequestBody UpdateAccountStatusRequest request) {
+
+        adminService.updateUserStatus(id, request);
+        return ResponseEntity.ok(ApiResponse.ok("Đã cập nhật trạng thái tài khoản thành công!"));
     }
 
 //    private final AdminService adminService;
