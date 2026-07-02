@@ -1,5 +1,6 @@
 package com.hackathon.service;
 
+import com.hackathon.dto.event.EventDescription;
 import com.hackathon.dto.history.ExpertHistoryResponse;
 import com.hackathon.dto.history.StudentHistoryResponse;
 import com.hackathon.entity.*;
@@ -27,7 +28,6 @@ public class AccountServiceImpl implements AccountService {
     private final ParticipantRepository participantRepository;
 
 
-    // Cần bổ sung thêm tham gia round nào , hạng mục nào
     @Override
     public StudentHistoryResponse studentHistory(Integer accountId, CustomUserDetails userDetails) {
 
@@ -70,29 +70,50 @@ public class AccountServiceImpl implements AccountService {
             List<Registration> regis = registrationRepository.findByTeam(team);
 
             for (Registration registration : regis) {
-                StudentHistoryResponse.StudentHistory historyStudent = new StudentHistoryResponse.StudentHistory();
-                historyStudent.setEventName(registration.getHackathonEvent().getEventName());
-                historyStudent.setEventId(registration.getHackathonEvent().getEventId());
-                historyStudent.setTeamName(tm.getTeam().getTeamName());
-                historyStudent.setLeader(tm.getIsLeader());
-                historyStudent.setStatus(registration.getStatus());
-                historyStudent.setRegistrationDate(registration.getRegistrationDate());
-                historyStudent.setCategoryName(registration.getParticipant().getCategoryRound().getCategory().getCategoryName());
-                historyStudent.setRoundName(registration.getParticipant().getCategoryRound().getRound().getRoundName());
-                historyStudent.setRanking(registration.getParticipant().getRank());
 
-                Optional<TeamParticipant> participant = participantRepository.findByRegistration(registration);
-                if (participant.isPresent()) {
-                    TeamParticipant parti = participant.get();
-                    if (parti.getRank() != null) {
-                        historyStudent.setRanking(parti.getRank());
+                List<TeamParticipant> participantList =registration.getParticipant();
+                if (participantList == null || participantList.isEmpty()) {
+                    StudentHistoryResponse.StudentHistory historyStudent = new StudentHistoryResponse.StudentHistory();
+
+                    // Vẫn gán các thông tin cơ bản của Event để không bị trống data lịch sử
+                    historyStudent.setEventName(registration.getHackathonEvent().getEventName());
+                    historyStudent.setEventId(registration.getHackathonEvent().getEventId());
+                    historyStudent.setTeamName(tm.getTeam().getTeamName());
+                    historyStudent.setLeader(tm.getIsLeader());
+                    historyStudent.setStatus(registration.getStatus());
+                    historyStudent.setRegistrationDate(registration.getRegistrationDate());
+                    historyStudent.setCategoryName(null);
+                    historyStudent.setRoundName(null);
+                    historyStudent.setRanking(null);
+                    historyList.add(historyStudent);
+                    continue;
+                }
+                for(TeamParticipant participant :participantList){
+                    if (participant == null) continue;
+                    StudentHistoryResponse.StudentHistory historyStudent = new StudentHistoryResponse.StudentHistory();
+                    historyStudent.setEventName(registration.getHackathonEvent().getEventName());
+                    historyStudent.setEventId(registration.getHackathonEvent().getEventId());
+                    historyStudent.setTeamName(tm.getTeam().getTeamName());
+                    historyStudent.setLeader(tm.getIsLeader());
+                    historyStudent.setStatus(registration.getStatus());
+                    historyStudent.setRegistrationDate(registration.getRegistrationDate());
+                    if (participant.getCategoryRound()!= null) {
+                        if (participant.getCategoryRound().getCategory() != null) {
+                            historyStudent.setCategoryName(participant.getCategoryRound().getCategory().getCategoryName());
+                        }
+                        if (participant.getCategoryRound().getRound() != null) {
+                            historyStudent.setRoundName(participant.getCategoryRound().getRound().getRoundName());
+                        }
+                    }
+                    if (participant.getRank() != null) {
+                        historyStudent.setRanking(participant.getRank());
                     } else {
                         historyStudent.setRanking(null);
-
                     }
-                }
+
 //                historyStudent.setReward("");
-                historyList.add(historyStudent);
+                    historyList.add(historyStudent);
+                }
 
             }
 
@@ -129,7 +150,6 @@ public class AccountServiceImpl implements AccountService {
             throw new BadRequestException("Tài khoản này không phải tài khoản của Expert.");
         }
 
-        //2.
 
         List<ExpertHistoryResponse.ExpertHistoryDetail> histories = new ArrayList<>();
 
@@ -140,6 +160,7 @@ public class AccountServiceImpl implements AccountService {
             HackathonEvent event = cr.getRound().getHackathonEvent();
             Integer eventId = event.getEventId();
             String eventName = event.getEventName() != null ? event.getEventName() : "N/A";
+            String season = event.getSeason();
 
             ExpertHistoryResponse.ExpertHistoryDetail response = ExpertHistoryResponse.ExpertHistoryDetail.builder()
                     .eventId(eventId)
@@ -147,8 +168,10 @@ public class AccountServiceImpl implements AccountService {
                     .roundId(ex.getCategoryRound().getRound().getRoundId())
                     .categoryId(ex.getCategoryRound().getCategory().getCategoryId())
                     .roundName(ex.getCategoryRound().getRound().getRoundName())
+                    .season(season)
                     .categoryName(ex.getCategoryRound().getCategory().getCategoryName())
                     .expertRole(ex.getRole()).build();
+
             histories.add(response);
 
         }

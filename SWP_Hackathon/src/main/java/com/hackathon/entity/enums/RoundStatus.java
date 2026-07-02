@@ -5,4 +5,5 @@ public enum RoundStatus {
     ONGOING,     // Vòng thi đang diễn ra (Thí sinh đang làm bài/nộp bài)
     EVALUATING,  // Vòng thi đã đóng nộp bài, Hội đồng đang tiến hành chấm điểm
     COMPLETED,   // Vòng thi đã hoàn thành (Đã có kết quả, đã chốt điểm)
+    PUBLIC_DRAFT // EVENT công bố ranking nhưng chưa chính thức (Công bố bản nháp để tiến hành việc xử lý khiếu nại)
 }

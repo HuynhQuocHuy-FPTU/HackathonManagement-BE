@@ -40,7 +40,11 @@ public class Registration {
     @JoinColumn(name = "Event_ID", nullable = false)
     private HackathonEvent hackathonEvent;
 
-    @OneToOne(mappedBy = "registration")
-    private TeamParticipant participant;
+    // 1 Registration - N team participant
+    @OneToMany(mappedBy = "registration")
+    private List<TeamParticipant> participant;
+
+
+
 
 }

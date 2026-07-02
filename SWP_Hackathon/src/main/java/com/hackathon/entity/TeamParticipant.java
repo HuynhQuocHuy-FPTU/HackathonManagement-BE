@@ -5,8 +5,10 @@ import com.hackathon.entity.enums.ParticipantStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
@@ -25,12 +27,12 @@ public class TeamParticipant {
     private ParticipantStatus status;
 
     @Column(name = "Total_Score")
-    private double totalScore;
-
+    private BigDecimal totalScore;
     @Column(name = "Rank")
     private Integer rank;
 
-    @OneToOne
+    // 1 Registration - N team participant
+    @ManyToOne
     @JoinColumn(name = "Registration_Id")
     private Registration registration;
 

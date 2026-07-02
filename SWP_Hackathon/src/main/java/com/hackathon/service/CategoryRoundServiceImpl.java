@@ -77,25 +77,30 @@ public class CategoryRoundServiceImpl implements CategoryRoundService {
 
     //Mentor xem tất cả các CategoryRound mình được phân công trong trạng thái EVENT ĐANG DIỄN RA
     @Override
-    public List<CategoryRoundResponseDTO> getAssignedCategoryRounds(CustomUserDetails userDetails) {
+    public List<CategoryRoundResponseDTO> getAssignedCategoryRounds(CustomUserDetails userDetails, Integer eventId) {
         Expert expert = expertRepository.findByAccount_AccountId(userDetails.getAccount().getAccountId())
                 .orElseThrow(() -> new BadRequestException("Bạn không phải là Expert"));
+//        List<ExpertAssign> mentorAssignments =
+//                expert.getExpertAssigns().stream()
+//                        .filter(a -> a.getRole() == ExpertRole.MENTOR)
+//                        .toList();
         List<ExpertAssign> mentorAssignments =
-                expert.getExpertAssigns().stream()
-                        .filter(a -> a.getRole() == ExpertRole.MENTOR)
-                        .toList();
+                expertAssignRepository.findExpertAssignmentsByRole(
+                        expert.getExpertId(),
+                        ExpertRole.MENTOR,
+                        eventId
+                );
+
 
         List<CategoryRoundResponseDTO> dtoList = new ArrayList<>();
         for (ExpertAssign ex : mentorAssignments) {
             CategoryRound cr = ex.getCategoryRound();
-            HackathonEvent event = cr.getRound().getHackathonEvent();
 
-            if (event.getStatus() != EventStatus.ONGOING) {
-                continue;
-            }
             CategoryRoundResponseDTO dto = CategoryRoundResponseDTO.builder()
                     .roundId(cr.getRound().getRoundId())
                     .roundName(cr.getRound().getRoundName())
+                    .roundDate(cr.getRound().getStartTime())
+                    .roundEnd(cr.getRound().getEndTime())
                     .categoryRoundId(cr.getCategoryRoundId())
                     .categoryId(cr.getCategory().getCategoryId())
                     .categoryName(cr.getCategory().getCategoryName())
