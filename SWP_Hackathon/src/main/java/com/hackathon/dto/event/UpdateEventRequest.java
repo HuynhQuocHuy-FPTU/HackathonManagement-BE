@@ -29,14 +29,13 @@ public class UpdateEventRequest {
 
     private String address;
 
-    private String description;
+    private EventDescription description;
 
     @Min(value = 1, message = "Max team must be at least 1")
     private Integer maxTeam;
 
     @Min(value = 1, message = "Max team size must be at least 1")
     private Integer maxTeamSize;
-
 
     @Min(value = 1, message = "Min team size must be at least 1")
     private Integer minTeamSize;

@@ -114,11 +114,13 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
 
         List<RegistrationResponse> pendingList = new ArrayList<>();
         for (Registration regis : pendingRegistrations) {
-            Team team = regis.getTeam();
+            TeamMember leader = teamMemberRepository.findLeaderByTeamId(regis.getTeam().getTeamId());
+            RegistrationResponse.MemberInfo info = new RegistrationResponse.MemberInfo(leader.getStudent().getStudentCode(), leader.getStudent().getStudentName(), leader.getStudent().getMajor(), leader.getStudent().getAccount().getEmail());
             RegistrationResponse reponse = RegistrationResponse.builder()
                     .registrationId(regis.getRegistrationId())
                     .teamId(regis.getTeam().getTeamId())
                     .teamName(regis.getTeam().getTeamName())
+                    .leader(info)
                     .build();
             pendingList.add(reponse);
 

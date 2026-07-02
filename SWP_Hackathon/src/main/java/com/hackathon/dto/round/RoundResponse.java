@@ -5,7 +5,10 @@ import com.hackathon.dto.category.CategoryExpertAssignResponseDTO;
 import com.hackathon.dto.criteria.EvaluationCriteriaRequestDTO;
 import com.hackathon.dto.criteria.EvaluationCriteriaResponseDTO;
 import com.hackathon.entity.Round;
+import com.hackathon.entity.enums.FileType;
 import com.hackathon.entity.enums.RoundStatus;
+import com.hackathon.entity.enums.SubmissionType;
+import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -48,6 +51,14 @@ public class RoundResponse {
 
     private LocalDateTime submissionDeadline;
 
+    private SubmissionType submissionType;
+
+    private List<FileType> allowedFileTypes;
+
+    private Integer maxFileCount;
+
+    private Integer maxTotalSizeMb;
+
     private List<EvaluationCriteriaResponseDTO> customCriteriaDetatils;
     private List<CategoryExpertAssignResponseDTO> categoryExperts;
 
@@ -59,9 +70,12 @@ public class RoundResponse {
         this.eventID = round.getHackathonEvent().getEventId();
         this.orderIndex = round.getOrderIndex();
         this.status = round.getStatus();
+        this.submissionType = round.getSubmissionType();
+        this.allowedFileTypes = round.getAllowedFileType();
+        this.maxFileCount = round.getMaxFileCount();
+        this.maxTotalSizeMb = round.getMaxTotalSizeMb();
         this.advancementRule = round.getAdvancementRule();
         this.customCriteriaDetatils = criteriaList;
         this.categoryExperts = experts;
     }
-
 }

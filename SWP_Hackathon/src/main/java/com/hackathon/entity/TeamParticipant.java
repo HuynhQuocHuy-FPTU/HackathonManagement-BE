@@ -32,7 +32,7 @@ public class TeamParticipant {
     private Integer rank;
 
     @OneToOne
-    @JoinColumn(name = "Registration_Id", nullable = false, unique = true)
+    @JoinColumn(name = "Registration_Id")
     private Registration registration;
 
     @ManyToOne(fetch = FetchType.LAZY)

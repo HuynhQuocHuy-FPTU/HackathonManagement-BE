@@ -24,7 +24,7 @@ public class EventResponse {
     private String title;
     private String address;
     private String season;
-    private String description;
+    private EventDescription description;
     private Integer maxTeam;
     private Integer maxTeamSize;
     private Integer minTeamSize;
