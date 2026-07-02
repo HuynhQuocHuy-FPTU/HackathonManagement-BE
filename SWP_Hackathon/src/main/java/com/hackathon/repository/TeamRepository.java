@@ -30,7 +30,7 @@ public interface TeamRepository extends JpaRepository<Team, Integer> {
 
     @Query("SELECT DISTINCT t FROM Team t " +
             "JOIN Registration r ON r.team = t " +
-            "JOIN TeamParticipant p ON r.participant = p " +
+            "JOIN  r.participant p " +
             "JOIN CategoryRound cr ON p.categoryRound = cr " +
             "JOIN ExpertAssign ea ON ea.categoryRound = cr " +
             "WHERE t.teamId = :teamId AND ea.expert.expertId = :expertId")
@@ -45,9 +45,9 @@ public interface TeamRepository extends JpaRepository<Team, Integer> {
 
     @Query("SELECT DISTINCT t FROM Team t " +
             "JOIN Registration r ON r.team = t " +
-            "JOIN TeamParticipant p ON r.participant = p " +
+            "JOIN r.participant p " +
             "JOIN CategoryRound cr ON p.categoryRound = cr " +
-            "WHERE cr.categoryRoundId IN : categoryRoundId")
+            "WHERE cr.categoryRoundId IN :categoryRoundId")
     List<Team> findTeamsByCategoryRoundId(@Param("categoryRoundId") List<Integer> categoryId);
 
     @Query("SELECT DISTINCT t FROM Team t " +

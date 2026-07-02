@@ -1026,7 +1026,9 @@ public class TeamServiceImpl implements TeamService {
     public TeamCompetitionResponse getTeamCompetition(CustomUserDetails userDetails) {
         // Check leader
         Account account = userDetails.getAccount();
-
+        if (account.getStudent() == null) {
+            throw new BadRequestException("Tài khoản của bạn không liên kết với thông tin sinh viên nào.");
+        }
         Student student = studentRepository.findById(account.getStudent().getStudentId())
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin sinh viên"));
         TeamMember teamMember = student.getTeamMembers().stream()
@@ -1041,11 +1043,13 @@ public class TeamServiceImpl implements TeamService {
 
         List<CategoryRound> categoryRound = team.getRegistrations().stream()
                 .filter(registration -> registration != null && registration.getStatus() == RegistrationStatus.APPROVED)
+                .filter(registration -> registration.getParticipant() != null)
                 .map(Registration::getParticipant)
+                .flatMap(List ::stream)
                 .filter(participant -> participant != null && participant.getStatus() == ParticipantStatus.ACTIVE)
                 .map(TeamParticipant::getCategoryRound)
                 .filter(cr -> cr != null && cr.getRound() != null)
-                .sorted(Comparator.comparing(cr -> cr.getRound().getOrderIndex())) // Sắp xếp theo thứ tự Vòng 1, Vòng 2, Vòng Final
+                .sorted(Comparator.comparing(cr -> cr.getRound().getOrderIndex() != null ? cr.getRound().getOrderIndex() :0)) // Sắp xếp theo thứ tự Vòng 1, Vòng 2, Vòng Final
                 .toList();
         if (categoryRound.isEmpty()) {
             throw new BadRequestException("Đội của bạn hiện không tham gia vòng thi nào hoặc chưa được kích hoạt.");
@@ -1058,7 +1062,7 @@ public class TeamServiceImpl implements TeamService {
 
         List<TeamCompetitionResponse.RoundInfo> roundInfoList = new ArrayList<>();
 
-        List<TeamCompetitionResponse.Category> categoryList = new ArrayList<>();
+//        List<TeamCompetitionResponse.Category> categoryList = new ArrayList<>();
 
         for (CategoryRound category : categoryRound) {
             String roundName = category.getRound().getRoundName();
@@ -1082,9 +1086,11 @@ public class TeamServiceImpl implements TeamService {
                 newRoundInfo.setCategories(categories);
                 roundInfoList.add(newRoundInfo);
             } else {
-                roundExist.getCategories().add(
-                        new TeamCompetitionResponse.Category(categoryName)
-                );
+                boolean catExists = roundExist.getCategories().stream()
+                        .anyMatch(c -> c.getCategoryName().equalsIgnoreCase(categoryName));
+                if (!catExists) {
+                    roundExist.getCategories().add(new TeamCompetitionResponse.Category(categoryName));
+                }
             }
         }
 
@@ -1166,9 +1172,11 @@ public class TeamServiceImpl implements TeamService {
 
             CategoryRound currentTeamRound = team.getRegistrations().stream()
                     .map(Registration::getParticipant)
-                    .filter(p -> p != null && p.getCategoryRound() != null)
+                    .filter(p -> p!= null && !p.isEmpty())
+                    .flatMap(List::stream)
+                    .filter(p -> p.getCategoryRound() != null)
                     .map(TeamParticipant::getCategoryRound)
-                    .findFirst() // Lấy vòng đấu mà Team đang gắn liền
+                    .findFirst()
                     .orElseThrow(() -> new BadRequestException("Đội thi này chưa được xếp vào vòng đấu hay hạng mục nào."));
             if (!categoryRoundId.contains(currentTeamRound.getCategoryRoundId())) {
                 throw new BadRequestException("Bạn không có quyền xem chi tiết đội thi này ở vòng đấu hiện tại.");
@@ -1212,27 +1220,22 @@ public class TeamServiceImpl implements TeamService {
     }
 
     // MENTOR CÓ CÙNG HẠNG MỤC THỂ XEM THÔNG TIN CHUNG VỀ TEAM MÌNH DC PHÂN CÔNG
-    public List<TeamDetailResponse> getTeamInfo(Integer eventId,Integer expertId, CustomUserDetails userDetails) {
+    public List<TeamDetailResponse> getTeamInfo(Integer eventId, CustomUserDetails userDetails) {
+
+
+
         //1. Check coordinator , expert vs vai trò là mentor có thể xem.
         Account account = userDetails.getAccount();
-        if (account.getRole() != AccountRole.EXPERT
-                && account.getRole() != AccountRole.EVENTCOORDINATOR) {
-            throw new BadRequestException("Bạn không có quyền  xem danh sách này. Chỉ có EVENT COORDINATOR , EXPERT với vai trò MENTOR mới có thể xem.");
+        if (account.getRole() != AccountRole.EXPERT) {
+            throw new BadRequestException("Bạn không có quyền  xem danh sách này. Chỉ có EXPERT với vai trò MENTOR mới có thể xem.");
         }
         HackathonEvent event = hackathonEventRepository.findById(eventId)
                 .orElseThrow(() ->  new BadRequestException("Không tìm thấy thông tin về Event này."));
 
         List<Team> listTeam = new ArrayList<>();
-        // TH1: EVENTCOORDINATOR xem danh sách theo ID của Expert
-        if (account.getRole() == AccountRole.EVENTCOORDINATOR) {
-            if (expertId == null) {
-                throw new BadRequestException("Hãy cung cấp ID của expert để xem danh sách Team họ quản lý. ");
-            }
-            //  Coordinator xem ds các Team  mà EXPERT đó quản lý
-            listTeam = teamRepository.findTeamsByExpertAssignmentAndEvent(expertId, eventId);
-        }
+
         // TH2 Expert xem dc ds các Team mà các Expert khác quản lý nếu có cùng CATEGORY
-        else if (account.getRole() == AccountRole.EXPERT) {
+         if (account.getRole() == AccountRole.EXPERT) {
             Expert expert = expertRepository.findByAccount_AccountId(account.getAccountId())
                     .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin Expert tương ứng với account này."));
             // Lấy Category mà Expert này đang quản lý
@@ -1247,8 +1250,9 @@ public class TeamServiceImpl implements TeamService {
             if (categoryRoundId.isEmpty()) {
                 throw new BadRequestException("Tài khoản Expert của bạn chưa được phân công vai trò MENTOR cho hạng mục nào.");
             }
+             System.out.println("CategoryRoundIds = " + categoryRoundId);
+             System.out.println("EventId = " + eventId);
             listTeam = teamRepository.findTeamsByCategoryRoundIdsAndEventId(categoryRoundId, eventId);
-//            listTeam = teamRepository.findTeamsByCategoryRoundId(categoryRoundId);
         }
 
         //2. Lấy list team mà Expert quản lý
@@ -1265,21 +1269,35 @@ public class TeamServiceImpl implements TeamService {
                     .orElse(null);
 
             if (registration != null) {
-                TeamParticipant participant = registration.getParticipant();
-                if (participant != null && participant.getCategoryRound() != null) {
-                    CategoryRound cr = participant.getCategoryRound();
-                    categoryName = (cr.getCategory() != null) ? cr.getCategory().getCategoryName() : "N/A";
-                    roundName = (cr.getRound() != null) ? cr.getRound().getRoundName() : "N/A";
+                List<TeamParticipant> participant = registration.getParticipant();
+                for(TeamParticipant pt: participant){
+                    if (pt != null && pt.getCategoryRound() != null) {
+                        CategoryRound cr = pt.getCategoryRound();
+                        categoryName = (cr.getCategory() != null) ? cr.getCategory().getCategoryName() : "N/A";
+                        roundName = (cr.getRound() != null) ? cr.getRound().getRoundName() : "N/A";
+
+                        TeamDetailResponse response = TeamDetailResponse.builder()
+                                .teamId(team.getTeamId())
+                                .teamName(team.getTeamName())
+                                .sizeTeam(count)
+                                .categoryName(categoryName)
+                                .roundName(roundName)
+                                .build();
+                        list.add(response);
+                    }
                 }
+
+            }else {
+                TeamDetailResponse response = TeamDetailResponse.builder()
+                        .teamId(team.getTeamId())
+                        .teamName(team.getTeamName())
+                        .sizeTeam(count)
+                        .categoryName("N/A")
+                        .roundName("N/A")
+                        .build();
+                list.add(response);
             }
-            TeamDetailResponse response = TeamDetailResponse.builder()
-                    .teamId(team.getTeamId())
-                    .teamName(team.getTeamName())
-                    .sizeTeam(count)
-                    .categoryName(categoryName)
-                    .roundName(roundName)
-                    .build();
-            list.add(response);
+
         }
         return list;
     }
@@ -1306,6 +1324,7 @@ public class TeamServiceImpl implements TeamService {
         TeamParticipant activeParticipant = team.getRegistrations().stream()
                 .filter(registration -> registration.getStatus() == RegistrationStatus.APPROVED)
                 .map(Registration::getParticipant)
+                .flatMap(List::stream)
                 .filter(p -> p != null
                         && p.getCategoryRound() != null
                         && p.getCategoryRound().getRound().getStatus() == RoundStatus.ONGOING)
@@ -1361,6 +1380,7 @@ public class TeamServiceImpl implements TeamService {
             CategoryRound categoryRound = rq.getTeam().getRegistrations().stream()
                     .filter(reg -> reg.getStatus() == RegistrationStatus.APPROVED)
                     .map(Registration::getParticipant)
+                    .flatMap(List::stream)
                     .filter(p -> p != null && p.getCategoryRound() != null && p.getCategoryRound().getRound().getStatus() == RoundStatus.ONGOING)
                     .map(TeamParticipant::getCategoryRound)
                     .findFirst()
@@ -1406,6 +1426,7 @@ public class TeamServiceImpl implements TeamService {
         CategoryRound categoryRound = teamRequest.getTeam().getRegistrations().stream()
                 .filter(reg -> reg.getStatus() == RegistrationStatus.APPROVED)
                 .map(Registration::getParticipant)
+                .flatMap(List::stream)
                 .filter(p -> p != null
                         && p.getCategoryRound() != null
                         && p.getCategoryRound().getRound().getStatus() == RoundStatus.ONGOING)
@@ -1469,6 +1490,7 @@ public class TeamServiceImpl implements TeamService {
         CategoryRound categoryRound = teamRequest.getTeam().getRegistrations().stream()
                 .filter(reg -> reg.getStatus() == RegistrationStatus.APPROVED)
                 .map(Registration::getParticipant)
+                .flatMap(List::stream)
                 .filter(p -> p != null
                         && p.getCategoryRound() != null
                         && p.getCategoryRound().getRound().getStatus() == RoundStatus.ONGOING)

@@ -38,7 +38,7 @@ public interface TeamService {
 
     TeamDetailResponse getTeamDetail(Integer teamId, CustomUserDetails userDetails);
 
-    List<TeamDetailResponse> getTeamInfo(Integer eventId, Integer expertId, CustomUserDetails userDetails);
+    List<TeamDetailResponse> getTeamInfo(Integer eventId, CustomUserDetails userDetails);
 
     TeamDetailResponse getTeamDetailByStudentId(CustomUserDetails userDetails);
 

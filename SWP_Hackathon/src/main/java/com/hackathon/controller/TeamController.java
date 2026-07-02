@@ -162,7 +162,7 @@ public class TeamController {
     public ResponseEntity<ApiResponse<List<TeamDetailResponse>>> getMyTeamInfo(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Integer eventId) {
-        List<TeamDetailResponse> response = teamService.getTeamInfo(null, eventId, userDetails); // Truyền null vào
+        List<TeamDetailResponse> response = teamService.getTeamInfo( eventId,userDetails);
         if (response.isEmpty()) {
             return ResponseEntity.ok(ApiResponse.success(response, "Bạn hiện chưa được phân công quản lý đội thi nào."));
         }

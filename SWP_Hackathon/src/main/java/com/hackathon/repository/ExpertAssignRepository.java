@@ -2,6 +2,7 @@ package com.hackathon.repository;
 
 import com.hackathon.entity.CategoryRound;
 import com.hackathon.entity.ExpertAssign;
+import com.hackathon.entity.enums.ExpertRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -27,6 +28,16 @@ public interface ExpertAssignRepository extends JpaRepository<ExpertAssign, Inte
             "WHERE ex.expert.expertId = :expertId " +
             "AND r.hackathonEvent.eventId = :eventId")
     List<ExpertAssign> findExpertAssignments(@Param("expertId") Integer expertId, @Param("eventId") Integer eventId);
+
+    @Query("SELECT ex FROM ExpertAssign ex " +
+            "JOIN ex.categoryRound cr " +
+            "JOIN cr.round r " +
+            "WHERE ex.expert.expertId = :expertId " +
+            "AND ex.role = :role " +
+            "AND r.hackathonEvent.eventId = :eventId")
+    List<ExpertAssign> findExpertAssignmentsByRole(@Param("expertId") Integer expertId,
+                                                   @Param("role") ExpertRole role,
+                                                   @Param("eventId") Integer eventId);
 
     // Chỉ cần tìm theo CategoryRoundId là đủ để biết những Mentor nào đang thầu hạng mục này
     @Query("SELECT ex FROM ExpertAssign ex WHERE ex.categoryRound.categoryRoundId = :categoryRoundId")

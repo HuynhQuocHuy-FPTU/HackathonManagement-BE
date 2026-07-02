@@ -31,7 +31,8 @@ public class TeamParticipant {
     @Column(name = "Rank")
     private Integer rank;
 
-    @OneToOne
+    // 1 Registration - N team participant
+    @ManyToOne
     @JoinColumn(name = "Registration_Id")
     private Registration registration;
 
