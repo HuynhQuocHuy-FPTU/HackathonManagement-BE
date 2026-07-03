@@ -1,14 +1,16 @@
 package com.hackathon.config;
 
-import io.jsonwebtoken.io.IOException;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.io.IOException;
+
 @Configuration
 public class GithubClientConfig {
+
     @Value("${github.api.base-url:https://api.github.com}")
     private String baseUrl;
 
@@ -16,7 +18,10 @@ public class GithubClientConfig {
     private String githubToken;
 
     @Bean
-    public GitHub gitHub() throws IOException, java.io.IOException {
+    public GitHub gitHub() throws IOException {
+        if (githubToken == null || githubToken.isEmpty()) {
+            throw new IllegalStateException("GitHub Token chưa được cấu hình!");
+        }
         return new GitHubBuilder()
                 .withEndpoint(baseUrl)
                 .withOAuthToken(githubToken)

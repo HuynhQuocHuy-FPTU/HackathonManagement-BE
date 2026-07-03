@@ -24,7 +24,7 @@ public class DrawResultController {
     @PutMapping
     public ResponseEntity<ApiResponse<Void>> importDrawResults(
             @PathVariable Integer eventId,
-            @RequestBody DrawResultRequestDTO drawResults,
+            @RequestBody List<DrawResultRequestDTO> drawResults,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam Integer responseDeadline
     ) {

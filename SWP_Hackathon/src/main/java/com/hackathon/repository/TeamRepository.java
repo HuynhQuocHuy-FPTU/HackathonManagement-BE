@@ -18,7 +18,7 @@ public interface TeamRepository extends JpaRepository<Team, Integer> {
 
     boolean existsByTeamNameIgnoreCaseAndTeamIdNot(String name, Integer teamId);
 
-    // Tìm những team mà expert được phân công quản lý
+//     Tìm những team mà expert được phân công quản lý
     @Query("SELECT DISTINCT t FROM Team t " +
             "JOIN t.registrations r " +
             "JOIN r.participants p " +

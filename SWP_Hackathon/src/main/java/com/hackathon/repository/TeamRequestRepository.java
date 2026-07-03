@@ -32,4 +32,5 @@ public interface TeamRequestRepository extends JpaRepository<TeamRequest,Integer
     boolean existsByTeam_TeamIdAndStatus(Integer teamId, RequestStatus status);
 
     List<TeamRequest> findByRound_RoundIdAndRequestType(Integer roundId, RequestType requestType);
+
 }

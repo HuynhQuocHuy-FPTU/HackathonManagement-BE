@@ -1,8 +1,8 @@
 package com.hackathon.repository;
 
-import com.hackathon.entity.CategoryRound;
-import com.hackathon.entity.ExpertAssign;
+import com.hackathon.entity.*;
 import com.hackathon.entity.enums.ExpertRole;
+import jdk.jfr.Event;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -29,6 +29,63 @@ public interface ExpertAssignRepository extends JpaRepository<ExpertAssign, Inte
             "AND r.hackathonEvent.eventId = :eventId")
     List<ExpertAssign> findExpertAssignments(@Param("expertId") Integer expertId, @Param("eventId") Integer eventId);
 
+
+    //  tìm ExpertAssign phụ trách đúng Team tại CategoryRound cụ thể
+//    @Query("SELECT ex FROM ExpertAssign ex " +
+//            "JOIN ex.categoryRound cr " +
+//            "JOIN TeamParticipant p ON p.categoryRound = cr " +
+//            "JOIN p.registration r " +
+//            "WHERE r.team.teamId = :teamId " +
+//            "AND cr.categoryRoundId = :categoryRoundId")
+//    Optional<ExpertAssign> findExpertAssignByTeamAndCategoryRound(
+//            @Param("teamId") Integer teamId,
+//            @Param("categoryRoundId") Integer categoryRoundId);
+
+    @Query("SELECT DISTINCT e FROM HackathonEvent e " +
+            "JOIN Round c ON c.hackathonEvent = e " +
+            "JOIN CategoryRound  cr ON cr.round = c " +
+            "JOIN ExpertAssign ex ON ex.categoryRound = cr " +
+            "WHERE ex.expert.expertId =:expertId " +
+            "AND ex.role IN :roles")
+    List<HackathonEvent> findEventByJudge(@Param("expertId") Integer expertId,
+                                          @Param("roles")List<ExpertRole> expertRoles);
+
+    @Query("SELECT DISTINCT cr.round FROM CategoryRound cr " +
+            "JOIN ExpertAssign ex ON ex.categoryRound = cr " +
+            "WHERE cr.round.hackathonEvent.eventId=:eventId " +
+            "AND ex.expert.expertId =:expertId " +
+            "AND ex.role IN :roles")
+    List<Round> findRoundByJudge(@Param("eventId") Integer eventId,
+                                 @Param("expertId") Integer expertId,
+                                 @Param("roles")List<ExpertRole> expertRoles);
+
+    @Query("SELECT DISTINCT cr FROM CategoryRound cr " +
+            "JOIN ExpertAssign ex ON ex.categoryRound = cr " +
+            "WHERE cr.round.roundId =:roundId " +
+            "AND ex.expert.expertId =:expertId " +
+            "AND ex.role IN :roles")
+    List<CategoryRound> findCategoryByJudge(@Param("roundId") Integer eventId,
+                                             @Param("expertId") Integer expertId,
+                                             @Param("roles")List<ExpertRole> expertRoles);
+
+
+    @Query("SELECT DISTINCT s FROM Submission s " +
+            "JOIN TeamParticipant  tp ON s.teamParticipant = tp " +
+            "JOIN CategoryRound cr ON tp.categoryRound = cr " +
+            "JOIN ExpertAssign ex ON ex.categoryRound = cr " +
+            "WHERE cr.categoryRoundId =:categoryRoundId " +
+            "AND ex.expert.expertId =:expertId " +
+            "AND ex.role IN :roles")
+    List<Submission> findSubmissionByJudge(@Param("categoryRoundId") Integer categoryRoundId,
+                                             @Param("expertId") Integer expertId,
+                                             @Param("roles")List<ExpertRole> expertRoles);
+
+
+
+    @Query("SELECT ex FROM ExpertAssign ex " +
+            "WHERE ex.categoryRound.categoryRoundId = :categoryRoundId")
+    List<ExpertAssign> findByCategoryRoundId(@Param("categoryRoundId") Integer categoryRoundId);
+
     @Query("SELECT ex FROM ExpertAssign ex " +
             "JOIN ex.categoryRound cr " +
             "JOIN cr.round r " +
@@ -38,25 +95,6 @@ public interface ExpertAssignRepository extends JpaRepository<ExpertAssign, Inte
     List<ExpertAssign> findExpertAssignmentsByRole(@Param("expertId") Integer expertId,
                                                    @Param("role") ExpertRole role,
                                                    @Param("eventId") Integer eventId);
-
-    @Query("SELECT ex FROM ExpertAssign ex " +
-            "WHERE ex.categoryRound.categoryRoundId = :categoryRoundId")
-    List<ExpertAssign> findByCategoryRoundId(@Param("categoryRoundId") Integer categoryRoundId);
-
-    //    //  tìm ExpertAssign phụ trách đúng Team tại CategoryRound cụ thể
-//    @Query("SELECT ex FROM ExpertAssign ex " +
-//            "JOIN ex.categoryRound cr " +
-//            "JOIN TeamParticipant p ON p.categoryRound = cr " +
-//            "JOIN p.registration r " +
-//            "WHERE r.team.teamId = :teamId " +
-//            "AND cr.categoryRoundId = :categoryRoundId " +
-//            "AND ex.expert.expertId = :expertId " +
-//            "AND ex.role = 'MENTOR'")
-//    Optional<ExpertAssign> findMentorByExpertIdAndCategoryRoundId(
-//            @Param("teamId") Integer teamId,
-//            @Param("categoryRoundId") Integer categoryRoundId,
-//            @Param("expertId" ) Integer expertId);
-
     @Query("SELECT ex FROM ExpertAssign ex " +
             "WHERE ex.categoryRound.categoryRoundId = :categoryRoundId " +
             "AND ex.expert.expertId = :expertId " +
@@ -65,7 +103,4 @@ public interface ExpertAssignRepository extends JpaRepository<ExpertAssign, Inte
             @Param("categoryRoundId") Integer categoryRoundId,
             @Param("expertId") Integer expertId);
 
-    List<ExpertAssign> findByCategoryRound_CategoryRoundIdAndRole(
-            Integer categoryRoundId,
-            ExpertRole role);
 }

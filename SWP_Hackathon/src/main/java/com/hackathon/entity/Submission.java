@@ -25,8 +25,6 @@ public class Submission {
     private String description;
     @Column(name="Github_URL")
     private String githubUrl;
-    @Column(name="File_URL")
-    private String fileUrl;
     @Column(name = "Status", nullable = false)
     @Enumerated(EnumType.STRING)
     private SubmissionStatus status;
@@ -41,6 +39,14 @@ public class Submission {
     @JsonIgnore
     @JoinColumn(name = "Team_ID",nullable = false)
     private Team team;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
+    @JoinColumn(name = "Team_Participant_Id", nullable = false)
+    private TeamParticipant teamParticipant;
+
+    @OneToMany(mappedBy = "submission", cascade = CascadeType.ALL,orphanRemoval = true)
+    private List<SubmissionFile> files;
 
 //    //1 categoryRound- N submission
 //    @ManyToOne(fetch = FetchType.LAZY)

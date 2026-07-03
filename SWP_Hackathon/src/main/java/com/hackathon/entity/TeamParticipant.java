@@ -8,7 +8,6 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
@@ -28,11 +27,11 @@ public class TeamParticipant {
 
     @Column(name = "Total_Score")
     private BigDecimal totalScore;
+
     @Column(name = "Rank")
     private Integer rank;
 
-    // 1 Registration - N team participant
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "Registration_Id")
     private Registration registration;
 
@@ -42,5 +41,11 @@ public class TeamParticipant {
 
     @OneToMany(mappedBy = "teamParticipant", cascade = CascadeType.ALL)
     private List<Evaluation> evaluations = new ArrayList<>();
+
+    @OneToMany(mappedBy = "teamParticipant", cascade = CascadeType.ALL)
+    private List<Submission> submissions = new ArrayList<>();
+
+
+
 
 }
