@@ -71,7 +71,7 @@ public class AccountServiceImpl implements AccountService {
 
             for (Registration registration : regis) {
 
-                List<TeamParticipant> participantList =registration.getParticipant();
+                List<TeamParticipant> participantList =registration.getParticipants();
                 if (participantList == null || participantList.isEmpty()) {
                     StudentHistoryResponse.StudentHistory historyStudent = new StudentHistoryResponse.StudentHistory();
 

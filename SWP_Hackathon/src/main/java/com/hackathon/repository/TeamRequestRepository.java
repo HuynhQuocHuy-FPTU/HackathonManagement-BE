@@ -18,7 +18,7 @@ public interface TeamRequestRepository extends JpaRepository<TeamRequest,Integer
     @Query("SELECT tr FROM TeamRequest tr " +
             "JOIN tr.team t " +
             "JOIN t.registrations reg " +
-            "JOIN reg.participant p " +
+            "JOIN reg.participants p " +
             "WHERE tr.status = 'PENDING' " +
             "AND tr.expertAssign IS NULL " +  // Chỉ lấy request chưa ai nhận
             "AND reg.status = 'APPROVED' " +
@@ -32,4 +32,5 @@ public interface TeamRequestRepository extends JpaRepository<TeamRequest,Integer
     boolean existsByTeam_TeamIdAndStatus(Integer teamId, RequestStatus status);
 
     List<TeamRequest> findByRound_RoundIdAndRequestType(Integer roundId, RequestType requestType);
+
 }

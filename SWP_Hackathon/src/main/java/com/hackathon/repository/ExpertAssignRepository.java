@@ -82,5 +82,25 @@ public interface ExpertAssignRepository extends JpaRepository<ExpertAssign, Inte
 
 
 
+    @Query("SELECT ex FROM ExpertAssign ex " +
+            "WHERE ex.categoryRound.categoryRoundId = :categoryRoundId")
+    List<ExpertAssign> findByCategoryRoundId(@Param("categoryRoundId") Integer categoryRoundId);
+
+    @Query("SELECT ex FROM ExpertAssign ex " +
+            "JOIN ex.categoryRound cr " +
+            "JOIN cr.round r " +
+            "WHERE ex.expert.expertId = :expertId " +
+            "AND ex.role = :role " +
+            "AND r.hackathonEvent.eventId = :eventId")
+    List<ExpertAssign> findExpertAssignmentsByRole(@Param("expertId") Integer expertId,
+                                                   @Param("role") ExpertRole role,
+                                                   @Param("eventId") Integer eventId);
+    @Query("SELECT ex FROM ExpertAssign ex " +
+            "WHERE ex.categoryRound.categoryRoundId = :categoryRoundId " +
+            "AND ex.expert.expertId = :expertId " +
+            "AND ex.role = 'MENTOR'")
+    Optional<ExpertAssign> findMentorByExpertIdAndCategoryRoundId(
+            @Param("categoryRoundId") Integer categoryRoundId,
+            @Param("expertId") Integer expertId);
 
 }
