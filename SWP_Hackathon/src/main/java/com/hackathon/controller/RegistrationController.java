@@ -24,8 +24,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/registrations")
 public class RegistrationController {
-    @Autowired
-    private TeamService teamService;
+//    @Autowired
+//    private TeamService teamService;
     @Autowired
     private NotificationService notificationService;
     @Autowired
@@ -42,18 +42,18 @@ public class RegistrationController {
     }
 
     // Mời thêm thành viên vào Team đã có
-    @PostMapping("/teams/invite")
-    @PreAuthorize("hasRole('STUDENT')")
-    public ResponseEntity<ApiResponse<TeamResponse>> sendInvitation(
-            @Valid @RequestBody InviteTeamRequest request,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-//        if (request.getTeamId() == null) {
-//            return ResponseEntity.badRequest()
-//                    .body(ApiResponse.success(null, "MISSING_TEAM_ID"));
-//        }
-        TeamResponse response = teamService.sendTeamInvitation(request, userDetails);
-        return ResponseEntity.ok(ApiResponse.success(response, "Đã gửi lời mời thành công"));
-    }
+//    @PostMapping("/teams/invite")
+//    @PreAuthorize("hasRole('STUDENT')")
+//    public ResponseEntity<ApiResponse<TeamResponse>> sendInvitation(
+//            @Valid @RequestBody InviteTeamRequest request,
+//            @AuthenticationPrincipal CustomUserDetails userDetails) {
+////        if (request.getTeamId() == null) {
+////            return ResponseEntity.badRequest()
+////                    .body(ApiResponse.success(null, "MISSING_TEAM_ID"));
+////        }
+//        TeamResponse response = teamService.sendTeamInvitation(request, userDetails);
+//        return ResponseEntity.ok(ApiResponse.success(response, "Đã gửi lời mời thành công"));
+//    }
 
     // Lấy ra list team đã được approve
     @GetMapping("/{eventId}/approved-teams")

@@ -1,28 +1,23 @@
-package com.hackathon.service;
-
+package com.hackathon.config;
 
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.*;
 import com.hackathon.repository.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Service
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Component
+public class DataInitializer implements CommandLineRunner {
 
-public class DatabaseService {
+    @Value("${app.init-data:false}") // Mặc định là false (không chạy)
+    private boolean initData;
+
     @Autowired
     private CriteriaSetRepository criteriaSetRepository;
 
@@ -56,10 +51,11 @@ public class DatabaseService {
 
     @Autowired
     private TeamMemberRepository teamMemberRepository;
-
-
-    public void createDatabase() {
-
+    @Override
+    public void run(String... args) throws Exception {
+        if (!initData) {
+            return;
+        }
         if (!accountRepository.existsByEmail("admin@hackathon.com")) {
             accountRepository.save(Account.builder()
                     .createdAt(LocalDateTime.now())
@@ -208,5 +204,3 @@ public class DatabaseService {
 //        }
     }
 }
-
-

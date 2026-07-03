@@ -2,15 +2,21 @@ package com.hackathon.service;
 
 import com.hackathon.dto.category.CategoryExpertAssignRequestDTO;
 import com.hackathon.dto.category.CategoryExpertAssignResponseDTO;
+import com.hackathon.dto.category.CategoryRoundDTO;
+import com.hackathon.dto.event.EventDTO;
 import com.hackathon.dto.expert.ExpertAssginmentRequestDTO;
 import com.hackathon.dto.expert.ExpertAssignmentResponseDTO;
+import com.hackathon.dto.round.RoundDTO;
+import com.hackathon.dto.submission.SubmissionResponse;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.AccountStatus;
+import com.hackathon.entity.enums.ExpertRole;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.AccountRepository;
-import com.hackathon.repository.CategoryRoundRepository;
 import com.hackathon.repository.ExpertAssignRepository;
 import com.hackathon.repository.ExpertRepository;
+import com.hackathon.security.CustomUserDetails;
+import com.hackathon.service.submission.SubmissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -26,7 +32,8 @@ public class ExpertAssignServiceImpl implements ExpertAssignService {
     private final ExpertRepository expertRepository;
     private final AccountRepository accountRepository;
     private final ExpertAssignRepository expertAssignRepository;
-    private final CategoryRoundRepository categoryRoundRepository;
+    private final SubmissionService submissionService;
+
 
     // =========================================================
     // ASSIGN EXPERTS
@@ -150,4 +157,36 @@ public class ExpertAssignServiceImpl implements ExpertAssignService {
     public void deleteByEventId(Integer eventId) {
         expertAssignRepository.deleteByEventId(eventId);
     }
+
+    // =========================================================
+    // GET
+    // =========================================================
+    @Override
+    public List<EventDTO> getEventForJudge(CustomUserDetails userDetails) {
+        int expertId = userDetails.getAccount().getExpert().getExpertId();
+
+        List<HackathonEvent> eventList = expertAssignRepository.findEventByJudge(expertId, List.of(ExpertRole.CORE_JUDGE, ExpertRole.GUEST_JUDGE));
+
+        return eventList.stream().map(e -> new EventDTO(e.getEventId(), e.getEventName())).toList();
+    }
+
+    @Override
+    public List<RoundDTO> getRoundForJudge(CustomUserDetails userDetails, Integer eventId) {
+        int expertId = userDetails.getAccount().getExpert().getExpertId();
+
+        List<Round> roundList = expertAssignRepository.findRoundByJudge(eventId, expertId, List.of(ExpertRole.CORE_JUDGE, ExpertRole.GUEST_JUDGE));
+
+        return roundList.stream().map(r -> new RoundDTO(r.getRoundId(), r.getRoundName())).toList();
+    }
+
+    @Override
+    public List<CategoryRoundDTO> getCategoryRoundForJudge(CustomUserDetails userDetails, Integer roundId) {
+        int expertId = userDetails.getAccount().getExpert().getExpertId();
+
+        List<CategoryRound> categoryRoundList = expertAssignRepository.findCategoryByJudge(roundId, expertId, List.of(ExpertRole.CORE_JUDGE, ExpertRole.GUEST_JUDGE));
+
+        return categoryRoundList.stream().map(cr -> new CategoryRoundDTO(cr.getCategoryRoundId(), cr.getCategory().getCategoryName())).toList();
+    }
+
+
 }

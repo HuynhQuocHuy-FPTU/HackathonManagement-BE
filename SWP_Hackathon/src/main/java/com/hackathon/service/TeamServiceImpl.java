@@ -1041,8 +1041,8 @@ public class TeamServiceImpl implements TeamService {
 
         List<CategoryRound> categoryRound = team.getRegistrations().stream()
                 .filter(registration -> registration != null && registration.getStatus() == RegistrationStatus.APPROVED)
-                .filter(registration -> registration.getParticipant() != null)
-                .map(Registration::getParticipant)
+                .filter(registration -> registration.getParticipants() != null)
+                .map(Registration::getParticipants)
                 .flatMap(List ::stream)
                 .filter(participant -> participant != null && participant.getStatus() == ParticipantStatus.ACTIVE)
                 .map(TeamParticipant::getCategoryRound)
@@ -1169,7 +1169,7 @@ public class TeamServiceImpl implements TeamService {
             // Kiểm tra Team có thuộc CategoryRound mà Mentor được phân công hay không
 
             CategoryRound currentTeamRound = team.getRegistrations().stream()
-                    .map(Registration::getParticipant)
+                    .map(Registration::getParticipants)
                     .filter(p -> p!= null && !p.isEmpty())
                     .flatMap(List::stream)
                     .filter(p -> p.getCategoryRound() != null)
@@ -1267,7 +1267,7 @@ public class TeamServiceImpl implements TeamService {
                     .orElse(null);
 
             if (registration != null) {
-                List<TeamParticipant> participant = registration.getParticipant();
+                List<TeamParticipant> participant = registration.getParticipants();
                 for(TeamParticipant pt: participant){
                     if (pt != null && pt.getCategoryRound() != null) {
                         CategoryRound cr = pt.getCategoryRound();

@@ -2,7 +2,6 @@ package com.hackathon.controller;
 
 import com.hackathon.dto.notification.NotiResponseRequest;
 import com.hackathon.dto.notification.NotificationWebResponse;
-import com.hackathon.entity.Notification;
 import com.hackathon.entity.enums.NotificationType;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;

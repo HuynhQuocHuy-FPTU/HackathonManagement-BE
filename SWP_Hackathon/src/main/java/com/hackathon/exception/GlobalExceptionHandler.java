@@ -92,4 +92,9 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.fail("Định dạng dữ liệu không hợp lệ "));
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<String> handleBadRequest(IllegalArgumentException ex) {
+        return ResponseEntity.badRequest().body(ex.getMessage());
+    }
+
 }
