@@ -2,6 +2,7 @@ package com.hackathon.entity;
 
 import com.hackathon.entity.enums.NotiResponseStatus;
 import com.hackathon.entity.enums.RequestStatus;
+import com.hackathon.entity.enums.RequestType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -21,7 +22,7 @@ public class TeamRequest {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int requestId;
-    @Column(name ="Create_Date")
+    @Column(name = "Create_Date")
     private LocalDateTime createDate;
     @Column(name = "Request_Status")
     @Enumerated(EnumType.STRING)
@@ -35,6 +36,9 @@ public class TeamRequest {
     @Enumerated(EnumType.STRING)
     @Column(name = "Response_Status")
     private NotiResponseStatus responseStatus;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "Request_Type")
+    private RequestType requestType;
 
     // người gửi / người thực hiện hành động
     @ManyToOne(fetch = FetchType.LAZY)
@@ -43,18 +47,22 @@ public class TeamRequest {
 
 
     // 1 TEAM - N REQUEST
-    @ManyToOne (fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id")
-    private  Team team;
+    private Team team;
 
     // 1 EXPERT ASSIGN - N REQUEST
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "Assign_ID")
     private ExpertAssign expertAssign;
 
+    // 1 ROUND - N REQUEST(BỔ SUNG)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "Round_ID")
+    private Round round;
+
     @Version
     private Integer version;
-
 
 
 }

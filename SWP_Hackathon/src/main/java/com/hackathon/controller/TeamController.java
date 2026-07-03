@@ -189,46 +189,6 @@ public class TeamController {
     }
 
 
-    // Team gui request đến Mentor nhận sự hỗ trợ
-    @PreAuthorize("hasRole('STUDENT')")
-    @PostMapping("/team-request")
-    public ResponseEntity<ApiResponse<List<TeamRequestResponse>>> teamSendRequestToMentor(
-            @RequestParam String requestMessage,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        List<TeamRequestResponse> response = teamService.teamSendRequestToMentor(requestMessage, userDetails);
-        return ResponseEntity.ok(ApiResponse.success(response, "Team Leader gửi yêu cầu nhận sự hỗ trợ tới Mentor thành công."));
-    }
-
-    //Expert nhận list các Request mà Team gửi đến
-    @PreAuthorize("hasRole('EXPERT')")
-    @GetMapping("team-requests/received")
-    public ResponseEntity<ApiResponse<List<TeamRequestResponse>>> getTeamRequestsForExpert(
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        List<TeamRequestResponse> response = teamService.getTeamRequestsForExpert(userDetails);
-        return ResponseEntity.ok(ApiResponse.success(response, "Expert nhận danh sách các yêu cầu nhận sự hỗ trợ thành công."));
-    }
-
-    //  Chấp nhận
-    @PatchMapping("/team-requests/{requestId}/accept")
-    @PreAuthorize("hasRole('EXPERT')")
-    public ResponseEntity<ApiResponse<TeamRequestResponse>> acceptTeamRequest(
-            @RequestParam String responseMessage,
-            @PathVariable Integer requestId,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        TeamRequestResponse response = teamService.acceptTeamRequest(responseMessage, requestId, userDetails);
-        return ResponseEntity.ok(ApiResponse.success(response, "Chấp nhận yêu cầu nhận hỗ trợ thành công."));
-    }
-
-    //  Từ chối
-    @PatchMapping("/team-requests/{requestId}/reject")
-    @PreAuthorize("hasRole('EXPERT')")
-    public ResponseEntity<ApiResponse<TeamRequestResponse>> rejectTeamRequest(
-            @RequestParam String responseMessage,
-            @PathVariable Integer requestId,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        TeamRequestResponse response = teamService.rejectTeamRequest(responseMessage, requestId, userDetails);
-        return ResponseEntity.ok(ApiResponse.success(response, "Từ chối yêu cầu nhận hỗ trợ thành công."));
-    }
 
 
 }
