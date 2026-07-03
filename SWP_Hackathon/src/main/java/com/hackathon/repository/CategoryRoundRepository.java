@@ -34,5 +34,6 @@ public interface CategoryRoundRepository extends JpaRepository<CategoryRound, In
             "AND cr.round.status = RoundStatus.ONGOING")
     List<CategoryRound> findActiveCategoryRoundsByTeamId(@Param("teamId") Integer teamId);
 
-    List<CategoryRound> findCategoryRoundByRound_RoundId(Integer roundRoundId);
+
+    List<CategoryRound> findByRound_HackathonEvent_EventId(Integer eventId);
 }

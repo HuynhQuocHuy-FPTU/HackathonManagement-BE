@@ -1,20 +1,22 @@
-package com.hackathon.dto;
+package com.hackathon.dto.ranking;
 
 import com.hackathon.entity.enums.ParticipantStatus;
+import com.hackathon.entity.enums.RoundStatus;
 import lombok.*;
 
 import java.math.BigDecimal;
-
+import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
-@Setter
 @Getter
+@Setter
 @Builder
-public class ParticipantResponseDTO {
+public class RankingResponseDTO {
     private Integer participantId;
-    private String teamName;
     private BigDecimal totalScore;
     private Integer rank;
+    private String teamName;
     private ParticipantStatus status;
+
 
 }

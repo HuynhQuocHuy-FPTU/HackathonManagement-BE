@@ -1,6 +1,7 @@
 package com.hackathon.dto.team;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.hackathon.entity.enums.NotiResponseStatus;
 import com.hackathon.entity.enums.RequestStatus;
 import lombok.*;
 
@@ -21,6 +22,11 @@ public class TeamRequestResponse {
     private RequestStatus status;
     private String round;
     private String categoryName;
+    private String requestMessage;
+    private String responseMessage;
+    private NotiResponseStatus responseStatus;
+    private Integer responseId;
+    private LocalDateTime responseAt;// thời gian phàn hồi của mentor
 
 
 }

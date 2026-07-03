@@ -1,8 +1,11 @@
 package com.hackathon.service;
 
+import com.hackathon.dto.category.CategoryResponse;
+import com.hackathon.dto.categoryRound.CategoryRoundResponseDTO;
 import com.hackathon.entity.Category;
 import com.hackathon.entity.CategoryRound;
 import com.hackathon.entity.Round;
+import com.hackathon.security.CustomUserDetails;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,4 +15,7 @@ public interface CategoryRoundService {
 
     void deleteByEventId(Integer eventId);
 
+    List<CategoryRoundResponseDTO> getAllCategory(Integer eventId);
+
+    List<CategoryRoundResponseDTO> getAssignedCategoryRounds(CustomUserDetails userDetails, Integer eventId);
 }

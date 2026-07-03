@@ -1,7 +1,8 @@
-package com.hackathon.service;
+package com.hackathon.service.admin;
 
 import com.hackathon.dto.UserAdminResponse;
 import com.hackathon.dto.admin.InviteAccountRequest;
+import com.hackathon.dto.admin.UpdateAccountStatusRequest;
 
 import java.util.List;
 
@@ -17,4 +18,5 @@ public interface AdminService {
      */
     UserAdminResponse getUserById(int id);
     void inviteAccount(InviteAccountRequest request);
+    void updateUserStatus(int accountId, UpdateAccountStatusRequest request);
 }

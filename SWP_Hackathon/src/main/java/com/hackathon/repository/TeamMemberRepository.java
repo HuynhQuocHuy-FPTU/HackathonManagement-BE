@@ -18,8 +18,6 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Integer>
     // Check student nay co ton tai trong nhom nay khong
     boolean existsByTeamAndStudent(Team team, Student student);
 
-    boolean existsByStudent(Student student);
-
     @Query("SELECT tm FROM TeamMember tm " +
             "WHERE tm.team.teamId = :teamId " +
             "AND tm.student.studentId = :studentId")
@@ -44,6 +42,15 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Integer>
     Optional<TeamMember> findByTeam_TeamIdAndStudent(Integer teamId, Student student);
 
     Optional<TeamMember> findByStudentAndIsLeader(Student student, boolean isLeader);
+
+    @Query("""
+                SELECT tm
+                FROM TeamMember tm
+                JOIN tm.team t
+                WHERE t.teamId = :teamId
+                  AND tm.isLeader = true
+            """)
+    TeamMember findLeaderByTeamId(@Param("teamId") int teamId);
 
 //    boolean hasLeader(boolean b);
 
