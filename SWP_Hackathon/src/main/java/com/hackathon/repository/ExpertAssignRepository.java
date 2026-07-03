@@ -39,7 +39,6 @@ public interface ExpertAssignRepository extends JpaRepository<ExpertAssign, Inte
                                                    @Param("role") ExpertRole role,
                                                    @Param("eventId") Integer eventId);
 
-    // Chỉ cần tìm theo CategoryRoundId là đủ để biết những Mentor nào đang thầu hạng mục này
     @Query("SELECT ex FROM ExpertAssign ex " +
             "WHERE ex.categoryRound.categoryRoundId = :categoryRoundId")
     List<ExpertAssign> findByCategoryRoundId(@Param("categoryRoundId") Integer categoryRoundId);

@@ -21,7 +21,7 @@ public interface TeamRepository extends JpaRepository<Team, Integer> {
     // Tìm những team mà expert được phân công quản lý
     @Query("SELECT DISTINCT t FROM Team t " +
             "JOIN t.registrations r " +
-            "JOIN r.participant p " +
+            "JOIN r.participants p " +
             "JOIN p.categoryRound cr " +
             "JOIN ExpertAssign ex ON ex.categoryRound = cr " +
             "WHERE ex.expert.expertId = :expertId")
@@ -30,7 +30,7 @@ public interface TeamRepository extends JpaRepository<Team, Integer> {
 
     @Query("SELECT DISTINCT t FROM Team t " +
             "JOIN Registration r ON r.team = t " +
-            "JOIN  r.participant p " +
+            "JOIN  r.participants p " +
             "JOIN CategoryRound cr ON p.categoryRound = cr " +
             "JOIN ExpertAssign ea ON ea.categoryRound = cr " +
             "WHERE t.teamId = :teamId AND ea.expert.expertId = :expertId")
@@ -45,14 +45,14 @@ public interface TeamRepository extends JpaRepository<Team, Integer> {
 
     @Query("SELECT DISTINCT t FROM Team t " +
             "JOIN Registration r ON r.team = t " +
-            "JOIN r.participant p " +
+            "JOIN r.participants p " +
             "JOIN CategoryRound cr ON p.categoryRound = cr " +
             "WHERE cr.categoryRoundId IN :categoryRoundId")
     List<Team> findTeamsByCategoryRoundId(@Param("categoryRoundId") List<Integer> categoryId);
 
     @Query("SELECT DISTINCT t FROM Team t " +
             "JOIN t.registrations r " +          // Team -> Regis (để lọc Event)
-            "JOIN r.participant p " +            // Regis -> Participant
+            "JOIN r.participants p " +            // Regis -> Participant
             "JOIN p.categoryRound cr " +         // Participant -> CategoryRound (để lọc Hạng mục)
             "WHERE cr.categoryRoundId IN :categoryRoundIds " + // Lọc theo list ID truyền vào
             "AND r.hackathonEvent.eventId = :eventId")         // Lọc theo Event ID
@@ -62,7 +62,7 @@ public interface TeamRepository extends JpaRepository<Team, Integer> {
     );
     @Query("SELECT DISTINCT t FROM Team t " +
             "JOIN t.registrations r " +
-            "JOIN r.participant p " +
+            "JOIN r.participants p " +
             "JOIN p.categoryRound cr " +
             "JOIN ExpertAssign ex ON ex.categoryRound = cr " +
             "WHERE ex.expert.expertId = :expertId AND r.hackathonEvent.eventId = :eventId")

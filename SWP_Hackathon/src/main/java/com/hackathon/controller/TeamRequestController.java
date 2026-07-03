@@ -14,14 +14,14 @@ import java.util.List;
 
 
 @RestController
-@RequestMapping("/api/teams")
+@RequestMapping("/api/team-request")
 @RequiredArgsConstructor
 public class TeamRequestController {
     private final TeamRequestService teamRequestService;
 
     // Team gui request đến Mentor nhận sự hỗ trợ
     @PreAuthorize("hasRole('STUDENT')")
-    @PostMapping("/team-request")
+    @PostMapping()
     public ResponseEntity<ApiResponse<List<TeamRequestResponse>>> teamSendRequestToMentor(
             @RequestParam String requestMessage,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -31,7 +31,7 @@ public class TeamRequestController {
 
     //Expert nhận list các Request mà Team gửi đến
     @PreAuthorize("hasRole('EXPERT')")
-    @GetMapping("team-requests/received")
+    @GetMapping("/received")
     public ResponseEntity<ApiResponse<List<TeamRequestResponse>>> getTeamRequestsForExpert(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         List<TeamRequestResponse> response = teamRequestService.getTeamRequestsForExpert(userDetails);
@@ -39,7 +39,7 @@ public class TeamRequestController {
     }
 
     //  Chấp nhận
-    @PatchMapping("/team-requests/{requestId}/accept")
+    @PatchMapping("/{requestId}/accept")
     @PreAuthorize("hasRole('EXPERT')")
     public ResponseEntity<ApiResponse<TeamRequestResponse>> acceptTeamRequest(
             @RequestParam String responseMessage,
@@ -50,7 +50,7 @@ public class TeamRequestController {
     }
 
     //  Từ chối
-    @PatchMapping("/team-requests/{requestId}/reject")
+    @PatchMapping("/{requestId}/reject")
     @PreAuthorize("hasRole('EXPERT')")
     public ResponseEntity<ApiResponse<TeamRequestResponse>> rejectTeamRequest(
             @RequestParam String responseMessage,

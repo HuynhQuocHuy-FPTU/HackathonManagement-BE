@@ -18,7 +18,7 @@ public interface TeamRequestRepository extends JpaRepository<TeamRequest,Integer
     @Query("SELECT tr FROM TeamRequest tr " +
             "JOIN tr.team t " +
             "JOIN t.registrations reg " +
-            "JOIN reg.participant p " +
+            "JOIN reg.participants p " +
             "WHERE tr.status = 'PENDING' " +
             "AND tr.expertAssign IS NULL " +  // Chỉ lấy request chưa ai nhận
             "AND reg.status = 'APPROVED' " +

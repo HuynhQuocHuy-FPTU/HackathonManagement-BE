@@ -42,7 +42,7 @@ public class Registration {
 
     // 1 Registration - N team participant
     @OneToMany(mappedBy = "registration")
-    private List<TeamParticipant> participant;
+    private List<TeamParticipant> participants;
 
 
 

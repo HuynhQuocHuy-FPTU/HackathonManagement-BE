@@ -14,9 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -69,7 +67,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         }
         TeamParticipant activeParticipant = team.getRegistrations().stream()
                 .filter(registration -> registration.getStatus() == RegistrationStatus.APPROVED)
-                .map(Registration::getParticipant)
+                .map(Registration::getParticipants)
                 .flatMap(List::stream)
                 .filter(p -> p != null
                         && p.getCategoryRound() != null
@@ -112,7 +110,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         for (TeamRequest rq : listRequest) {
             CategoryRound categoryRound = rq.getTeam().getRegistrations().stream()
                     .filter(reg -> reg.getStatus() == RegistrationStatus.APPROVED)
-                    .map(Registration::getParticipant)
+                    .map(Registration::getParticipants)
                     .flatMap(List::stream)
                     .filter(p -> p != null && p.getCategoryRound() != null && p.getCategoryRound().getRound().getStatus() == RoundStatus.ONGOING)
                     .map(TeamParticipant::getCategoryRound)
@@ -158,7 +156,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         // Tìm hạng mục mà Mentor này đang được phân công
         CategoryRound categoryRound = teamRequest.getTeam().getRegistrations().stream()
                 .filter(reg -> reg.getStatus() == RegistrationStatus.APPROVED)
-                .map(Registration::getParticipant)
+                .map(Registration::getParticipants)
                 .flatMap(List::stream)
                 .filter(p -> p != null
                         && p.getCategoryRound() != null
@@ -211,7 +209,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         // Tìm hạng mục mà Mentor này đang được phân công
         CategoryRound categoryRound = teamRequest.getTeam().getRegistrations().stream()
                 .filter(reg -> reg.getStatus() == RegistrationStatus.APPROVED)
-                .map(Registration::getParticipant)
+                .map(Registration::getParticipants)
                 .flatMap(List::stream)
                 .filter(p -> p != null
                         && p.getCategoryRound() != null
@@ -398,7 +396,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         // Tim expert phu trách bài nộp đó để xem và đánh giá lại
         CategoryRound categoryRound = appealRequest.getTeam().getRegistrations().stream()
                 .filter(reg -> reg.getStatus() == RegistrationStatus.APPROVED)
-                .map(Registration::getParticipant)
+                .map(Registration::getParticipants)
                 .flatMap(List::stream)
                 .filter(p -> p != null && p.getCategoryRound() != null
                         && p.getCategoryRound().getRound().getRoundId().equals(appealRequest.getRound().getRoundId()))
