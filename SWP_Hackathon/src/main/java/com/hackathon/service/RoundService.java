@@ -11,6 +11,7 @@ import com.hackathon.entity.enums.RoundStatus;
 import com.hackathon.exception.BadRequestException;
 
 import java.util.List;
+import java.util.Optional;
 
 
 public interface RoundService {
@@ -29,5 +30,5 @@ public interface RoundService {
 
     Round saveRound(Round round);
 
-
+    Optional<Round> findById(Integer roundId);
 }

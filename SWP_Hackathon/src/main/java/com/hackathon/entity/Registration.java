@@ -7,6 +7,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @NoArgsConstructor
@@ -40,7 +41,7 @@ public class Registration {
     @JoinColumn(name = "Event_ID", nullable = false)
     private HackathonEvent hackathonEvent;
 
-    @OneToOne(mappedBy = "registration")
-    private TeamParticipant participant;
+    @OneToMany(mappedBy = "registration", cascade = CascadeType.ALL)
+    private List<TeamParticipant> participants = new ArrayList<>();
 
 }

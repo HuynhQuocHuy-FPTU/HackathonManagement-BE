@@ -1,6 +1,5 @@
 package com.hackathon.service;
 
-import com.hackathon.dto.category.CategoryResponse;
 import com.hackathon.entity.Category;
 import com.hackathon.entity.CategoryRound;
 import com.hackathon.entity.Round;
@@ -12,4 +11,5 @@ public interface CategoryRoundService {
     public List<CategoryRound> createCategoryRound(List<Category> categories, Round round);
 
     void deleteByEventId(Integer eventId);
+
 }

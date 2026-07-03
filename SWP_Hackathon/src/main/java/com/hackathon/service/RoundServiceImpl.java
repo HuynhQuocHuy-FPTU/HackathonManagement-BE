@@ -269,6 +269,10 @@ public class RoundServiceImpl implements RoundService{
         return roundRepository.save(round);
     }
 
+    @Override
+    public Optional<Round> findById(Integer roundId) {
+        return roundRepository.findById(roundId);
+    }
 
 
 }
