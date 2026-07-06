@@ -2,6 +2,7 @@ package com.hackathon.service.teamRequest;
 
 
 import com.hackathon.dto.TeamAppealRequestDTO;
+import com.hackathon.dto.evaluation.ReDetailEvaluationRequest;
 import com.hackathon.dto.team.TeamRequestResponse;
 import com.hackathon.security.CustomUserDetails;
 
@@ -26,5 +27,8 @@ public interface TeamRequestService {
 
     TeamRequestResponse requestExpertToReEvaluation(CustomUserDetails userDetails, Integer requestId);
 
+    List<TeamRequestResponse> getAppealRequestsForJudge(CustomUserDetails userDetails, Integer roundId);
 
+    // Đêr tạm ơr đây
+//    void reEvaluationSubmission(CustomUserDetails userDetails, ReDetailEvaluationRequest request );
 }

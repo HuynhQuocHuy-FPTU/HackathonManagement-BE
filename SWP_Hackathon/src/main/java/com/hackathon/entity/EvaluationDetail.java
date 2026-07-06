@@ -21,6 +21,9 @@ public class EvaluationDetail {
     private BigDecimal score;
     @Column(name = "Comment", columnDefinition = "NVARCHAR(500)")
     private String comment;
+    @Column(name="Original_Score", precision = 10 , scale = 2, nullable = false)
+    private BigDecimal originalScore;
+
 
     // 1 evaluation - N evaluation detail
     @ManyToOne(fetch = FetchType.LAZY)
@@ -31,7 +34,7 @@ public class EvaluationDetail {
     // 1 evaluationCriteria - N evaluation_detail
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnore
-    @JoinColumn(name = "Evaluation_Criteria_ID", nullable = false)
+    @JoinColumn(name = "Evaluation_Criteria_ID", nullable = true)
     private EvaluationCriteria evaluationCriteria;
 
 }

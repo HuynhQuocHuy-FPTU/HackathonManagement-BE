@@ -38,7 +38,7 @@ public class RoundValidator {
             throw new BadRequestException("Start date must be before end date");
         }
 
-        // 💡 BỔ SUNG: Kiểm tra hạn nộp bài khi update
+        //  BỔ SUNG: Kiểm tra hạn nộp bài khi update
         if(request.getSubmissionDeadline() != null) {
             if(request.getSubmissionDeadline().isBefore(request.getStartDate()) || request.getSubmissionDeadline().isAfter(request.getEndDate())){
                 throw new BadRequestException("Submission deadline phải sau startDate và trước endDate");
