@@ -9,12 +9,14 @@ import com.hackathon.entity.RefreshToken;
 import com.hackathon.entity.enums.AccountStatus;
 import com.hackathon.entity.enums.AccountRole;
 import com.hackathon.exception.ApiException;
+import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.AccountRepository;
 import com.hackathon.repository.RefreshTokenRepository;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.security.JwtService;
 import com.hackathon.service.EmailService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.DisabledException;
@@ -24,7 +26,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -184,6 +188,43 @@ public class AuthServiceImpl implements AuthService {
         accountRepository.save(account);
         refreshTokenRepository.revokeAllByAccount(account); // Xóa token cũ
     }
+
+    @Override
+    @Transactional
+
+    public AuthResponse loginWithGoogle(String email) {
+        Account account = accountRepository.findByEmail(email.trim())
+                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Tài khoản chưa tồn tại trong hệ thống.Vui lòng đăng ký trước."));
+
+        if (account.getStatus() == AccountStatus.INACTIVE) {
+            throw new ApiException(HttpStatus.FORBIDDEN,
+                    "Tài khoản chưa xác thực email. Vui lòng kiểm tra hộp thư hoặc gửi lại email xác thực.");
+        }
+        if (account.getStatus() == AccountStatus.BANNED) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Tài khoản đã bị khóa");
+        }
+        log.warn("đăng nhập vs gg thành công");
+
+        return buildAuthResponse(account);
+    }
+
+    @Override
+    public void registerWithGoogle(String email) {
+        boolean exitsAccount = accountRepository.existsByEmail(email);
+        if(exitsAccount){
+            throw new ApiException(HttpStatus.CONFLICT, "Email này đã được đăng ký rồi.");
+        }
+
+        Account newAcc = new Account();
+        newAcc.setEmail(email);
+        newAcc.setStatus(AccountStatus.ACTIVE);
+        newAcc.setRole(AccountRole.STUDENT);
+        newAcc.setPassword(
+                passwordEncoder.encode(UUID.randomUUID().toString())
+        );
+        accountRepository.save(newAcc);
+    }
+
 
     private AuthResponse buildAuthResponse(Account account) {
         refreshTokenRepository.revokeAllByAccount(account);
