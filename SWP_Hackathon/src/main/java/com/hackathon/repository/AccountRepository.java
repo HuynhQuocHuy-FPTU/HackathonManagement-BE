@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 
 @Component
 public interface AccountRepository extends JpaRepository<Account, Integer> {
@@ -35,4 +36,6 @@ public interface AccountRepository extends JpaRepository<Account, Integer> {
     java.util.Optional<String> findFullNameByEmail(@Param("email") String email);
 
     List<Account> findAccountByRole(AccountRole role);
+
+    Optional<Account> findAccountByGithubId(Long githubId);
 }

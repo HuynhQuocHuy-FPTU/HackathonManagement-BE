@@ -28,6 +28,8 @@ public class Submission {
     @Column(name = "Status", nullable = false)
     @Enumerated(EnumType.STRING)
     private SubmissionStatus status;
+    @Column(name = "Is_Final")
+    private boolean isFinal;
 
 
     // 1 Submission -N EVALUATION

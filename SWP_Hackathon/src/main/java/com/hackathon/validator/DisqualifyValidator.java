@@ -12,17 +12,7 @@ import java.util.List;
 @Component
 public class DisqualifyValidator {
 
-    /**
-     * Kiểm tra trước khi disqualify một Team trong một Event:
-     * 1. Team đó có thực sự tham gia (thuộc) event này không.
-     * 2. Đăng ký (Registration) của team đã được duyệt (APPROVED) chưa —
-     *    chỉ những team đã được approve mới có thể bị disqualify.
-     *
-     * @param teamParticipants danh sách Participant đã query theo teamId + eventId
-     * @param teamId       id team đang xử lý (chỉ dùng để hiển thị message lỗi)
-     * @param eventId      id event đang xử lý (chỉ dùng để hiển thị message lỗi)
-     * @return chính danh sách participants (để service dùng tiếp, tránh query lại)
-     */
+
     public List<TeamParticipant> validateTeamBelongsToEventAndApproved(List<TeamParticipant> teamParticipants,
                                                                        Integer teamId,
                                                                        Integer eventId) {
@@ -40,7 +30,6 @@ public class DisqualifyValidator {
         }
 
         // 3. Double-check registration thực sự thuộc đúng event được truyền vào
-        //    (đề phòng query repository bị sai điều kiện / dữ liệu lệch)
         if (registration.getHackathonEvent() == null
                 || !eventId.equals(registration.getHackathonEvent().getEventId())) {
             throw new BadRequestException("Team " + teamId + " không thuộc event " + eventId);
