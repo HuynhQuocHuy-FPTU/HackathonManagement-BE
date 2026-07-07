@@ -45,6 +45,8 @@ public class RoundResponse {
 
     private Integer criteriaSetId;
 
+    private Integer topN;
+
     private Integer orderIndex;
 
     private RoundStatus status;
@@ -69,7 +71,9 @@ public class RoundResponse {
         this.endDate = round.getEndTime();
         this.eventID = round.getHackathonEvent().getEventId();
         this.orderIndex = round.getOrderIndex();
+        this.topN = round.getTopN();
         this.status = round.getStatus();
+        this.criteriaSetId = round.getCriteriaSet().getCriteriaSetId();
         this.submissionType = round.getSubmissionType();
         this.allowedFileTypes = round.getAllowedFileType();
         this.maxFileCount = round.getMaxFileCount();
