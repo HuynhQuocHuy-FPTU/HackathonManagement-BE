@@ -6,6 +6,7 @@ import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.submission.SubmissionService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -38,12 +39,15 @@ public class SubmissionController {
     public ResponseEntity<ApiResponse<List<SubmissionResponse>>> getAllSubmission(){
         return ResponseEntity.ok(ApiResponse.success(submissionService.getAllSubmission(), "Lấy danh sách các bài nộp thành công"));
     }
+    @GetMapping("/leader/{roundId}")
+    public ResponseEntity<ApiResponse<List<SubmissionResponse>>> getSubmissionForLeader(@PathVariable Integer roundId, @AuthenticationPrincipal CustomUserDetails userDetails){
+        List<SubmissionResponse> list = submissionService.getSubmissionForLeader(roundId, userDetails);
+        return ResponseEntity.ok(ApiResponse.success(list, "Lấy danh sách submision thành công"));
+    }
 
-    @PatchMapping("/choose-final/{submissionId}")
+    @PatchMapping("/{roundId}/choose-final/{submissionId}")
     @PreAuthorize("hasRole('STUDENT')")
-    public ResponseEntity<ApiResponse<Void>> chooseFinalSubmission(@PathVariable Integer roundId,
-                                                                   @PathVariable Integer submissionId,
-                                                                   @AuthenticationPrincipal CustomUserDetails userDetails){
+    public ResponseEntity<ApiResponse<Void>> chooseFinalSubmission(@PathVariable Integer roundId, @PathVariable Integer submissionId, @AuthenticationPrincipal CustomUserDetails userDetails){
         submissionService.chooseFinalSubmission(submissionId, userDetails);
         return ResponseEntity.ok(ApiResponse.success(null, "Đã chọn bài nộp thành công"));
     }

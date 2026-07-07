@@ -6,6 +6,7 @@ import com.hackathon.entity.Category;
 import com.hackathon.entity.HackathonEvent;
 import com.hackathon.entity.Round;
 import com.hackathon.entity.enums.EventStatus;
+import com.hackathon.entity.enums.WorkshopStatus;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -30,6 +31,7 @@ public class EventResponse {
     private Integer minTeamSize;
     private LocalDateTime registrationDeadline;
     private LocalDateTime workshopTime;
+    private WorkshopStatus workshopStatus;
     private EventStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updateAt;
@@ -54,7 +56,7 @@ public class EventResponse {
         this.createdAt = event.getCreateAt();
         this.updateAt = event.getUpdateAt();
         this.bannerUrl = event.getBannerUrl();
-
+        this.workshopStatus = event.getWorkshopStatus();
         this.categories = categories;
         this.rounds = rounds;
     }
