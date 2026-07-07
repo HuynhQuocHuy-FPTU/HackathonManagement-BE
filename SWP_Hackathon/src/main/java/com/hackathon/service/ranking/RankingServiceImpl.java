@@ -14,6 +14,7 @@ import com.hackathon.repository.*;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.AuditService;
 
+import com.hackathon.service.NotificationService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +37,7 @@ public class RankingServiceImpl implements RankingService {
     private final NotificationRepository notificationRepository;
     private final EvaluationRepository evaluationRepository;
     private final TeamRequestRepository teamRequestRepository;
+    private final NotificationService notificationService;
 
     //===============================================//
     //RANKING
@@ -411,13 +413,14 @@ public class RankingServiceImpl implements RankingService {
         roundRepository.save(round);
         log.info("Đã công bố bản xếp hạng chính thức vòng {}. Đóng vòng đấu thành công!", roundId);
 
-        Notification notification = new Notification();
-        notification.setType(NotificationType.SYSTEM_ANNOUNCEMENT);
-        notification.setChannel(NotificationChannel.WEB);
-        notification.setTitle("KẾT QUẢ CUỘC THI.");
-        notification.setMessage("Ban tổ chức đã công bố kết quả chính thức của " + round.getRoundName());
-        notification.setCreatedAt(LocalDateTime.now());
-        notificationRepository.save(notification);
+//        Notification notification = new Notification();
+//        notification.setType(NotificationType.SYSTEM_ANNOUNCEMENT);
+//        notification.setChannel(NotificationChannel.WEB);
+//        notification.setTitle("KẾT QUẢ CUỘC THI.");
+//        notification.setMessage("Ban tổ chức đã công bố kết quả chính thức của " + round.getRoundName());
+//        notification.setCreatedAt(LocalDateTime.now());
+//        notificationRepository.save(notification);
+        notificationService.notifyRoundRankingPublished(account,roundId,true);
 
 
         try {

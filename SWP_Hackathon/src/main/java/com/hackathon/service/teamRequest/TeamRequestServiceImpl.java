@@ -13,6 +13,7 @@ import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.*;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.AuditService;
+import com.hackathon.service.NotificationService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +45,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
     private final EvaluationRepository evaluationRepository;
     private final EvaluationDetailRepository evaluationDetailRepository;
     private final AuditService auditService;
+    private final NotificationService notificationService;
 
     private TeamRequestResponse mapToResponse(TeamRequest rq, CategoryRound cr, Integer expertId) {
         return TeamRequestResponse.builder()
@@ -393,13 +395,14 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         if (appealRequest.getRequestType() != RequestType.APPEAL) {
             throw new BadRequestException("Đây không phải là đơn khiếu nại kết quả.");
         }
-        if (appealRequest.getStatus() != RequestStatus.PENDING) {
-            throw new BadRequestException("Đơn khiếu nại này đã được ban tổ chức xử lý trước đó.");
+        if (appealRequest.getStatus() != RequestStatus.RE_EVALUATED) {
+            throw new BadRequestException("Đơn khiếu nại này chưa được ban giám khảo hoàn thành.");
         }
+
 
         appealRequest.setResponseStatus(NotiResponseStatus.NONE);
         appealRequest.setStatus(RequestStatus.DECLINED);
-        appealRequest.setResponseMessage(responseMessage != null ? responseMessage : "BTC đã xử lý đơn khiếu nại.");
+        appealRequest.setResponseMessage(responseMessage != null ? responseMessage : "BTC từ chối đơn khiếu nại do điểm số không thay đổi.");
         appealRequest.setResponder(account);
         appealRequest.setResponseAt(LocalDateTime.now());
         auditService.saveLog(
@@ -430,12 +433,15 @@ public class TeamRequestServiceImpl implements TeamRequestService {
             throw new BadRequestException("Đây không phải là đơn khiếu nại kết quả.");
         }
 
-        if (appealRequest.getStatus() != RequestStatus.IN_REVIEW) {
-            throw new BadRequestException("Đơn khiếu nại này chưa được gửi cho Giám khảo rà soát hoặc đã xử lý xong rồi.");
+//        if (appealRequest.getStatus() != RequestStatus.IN_REVIEW) {
+//            throw new BadRequestException("Đơn khiếu nại này chưa được gửi cho Giám khảo rà soát hoặc đã xử lý xong rồi.");
+//        }
+        if (appealRequest.getStatus() != RequestStatus.RE_EVALUATED) {
+            throw new BadRequestException("Đơn khiếu nại này chưa hoàn thành quá trình tái đánh giá từ giám khảo.");
         }
         appealRequest.setResponseStatus(NotiResponseStatus.NONE);
         appealRequest.setStatus(RequestStatus.ACCEPTED);
-        appealRequest.setResponseMessage(responseMessage != null ? responseMessage : "BTC đã xử lý đơn khiếu nại.");
+        appealRequest.setResponseMessage(responseMessage != null ? responseMessage : "BTC đã chấp nhận đơn khiếu nại sau khi có sự thay đổi về điểm số.");
         appealRequest.setResponder(account);
         appealRequest.setResponseAt(LocalDateTime.now());
         auditService.saveLog(
@@ -488,38 +494,39 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                     "Đội thi chưa có bài nộp trong vòng này.");
         }
 
-        Set<Integer> notifiedAssignIds = new HashSet<>();
-        List<Notification> notificationsToSave = new ArrayList<>();
+//        Set<Integer> notifiedAssignIds = new HashSet<>();
+        List<Evaluation> evaluationsToUpdate = new ArrayList<>();
+
+        Set<Account> expertsToNotify = new HashSet<>();
         for (Submission submission : submissions) {
             if (submission.getEvaluations() == null) continue;
 
             for (Evaluation evaluation : submission.getEvaluations()) {
+                evaluation.setStatus(EvaluationStatus.RE_EVALUATION);
+                evaluationsToUpdate.add(evaluation);
+
                 ExpertAssign assign = evaluation.getExpertAssign();
-                if (!notifiedAssignIds.add(assign.getAssignId())) {
-                    continue;
+//                if (!notifiedAssignIds.add(assign.getAssignId())) {
+//                    continue;
+//                }
+
+
+
+                if (evaluation.getExpertAssign() != null) {
+                    expertsToNotify.add(evaluation.getExpertAssign().getExpert().getAccount());
                 }
 
-                evaluation.setStatus(EvaluationStatus.RE_EVALUATION);
-
-                Notification notification = new Notification();
-                notification.setChannel(NotificationChannel.WEB);
-                notification.setType(NotificationType.SUBMISSION_REVIEW);
-                notification.setTitle("YÊU CẦU PHÚC KHẢO BÀI THI");
-                notification.setMessage("Ban tổ chức yêu cầu bạn xem lại điểm số cho bài dự thi của đội "
-                        + appealRequest.getTeam().getTeamName());
-
-                notification.setAccount(assign.getExpert().getAccount());
-                notification.setCreatedAt(LocalDateTime.now());
-                notificationsToSave.add(notification);
             }
         }
-        if (!notificationsToSave.isEmpty()) {
-            notificationRepository.saveAll(notificationsToSave);
-        }
+
+        evaluationRepository.saveAll(evaluationsToUpdate);
+
         appealRequest.setStatus(RequestStatus.IN_REVIEW);
         appealRequest.setResponder(account);
         appealRequest.setResponseAt(LocalDateTime.now());
         TeamRequest updated = teamRequestRepository.save(appealRequest);
+
+        notificationService.notifyExpertReEvaluation(account, expertsToNotify, appealRequest.getTeam().getTeamName());
         auditService.saveLog(
                 account,
                 AuditAction.REQUEST_RE_EVALUATION,

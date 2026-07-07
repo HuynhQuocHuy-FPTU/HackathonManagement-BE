@@ -1,15 +1,10 @@
 package com.hackathon.service;
 
-import com.hackathon.entity.HackathonEvent;
-import com.hackathon.entity.Registration;
-import com.hackathon.entity.Round;
-import com.hackathon.entity.Team;
-import com.hackathon.entity.enums.EventStatus;
-import com.hackathon.entity.enums.RoundStatus;
-import com.hackathon.entity.enums.TeamStatus;
-import com.hackathon.entity.enums.WorkshopStatus;
+import com.hackathon.entity.*;
+import com.hackathon.entity.enums.*;
 import com.hackathon.repository.HackathonEventRepository;
 import com.hackathon.repository.RoundRepository;
+import com.hackathon.repository.TeamRequestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -26,6 +21,7 @@ public class StatusSchedulerService {
     private final RoundService roundService;
     private final HackathonEventRepository eventRepository;
     private final RoundRepository roundRepository;
+    private final TeamRequestRepository teamRequestRepository;
 
     @Scheduled(fixedRate = 60000)
     @Transactional
@@ -160,6 +156,48 @@ public class StatusSchedulerService {
 
         return currentStatus;
 //        return RoundStatus.COMPLETED;
+    }
+
+    @Scheduled(fixedRate = 60000)
+    @Transactional
+    public void checkAndProcessExpiredAppeals() {
+        LocalDateTime now = LocalDateTime.now();
+
+        // 1. Tìm các vòng thi đang ở trạng thái APPEALING và đã quá hạn phúc khảo ban đầu
+        List<Round> expiredRounds = roundRepository.findByStatusAndAppealEndTimeBefore(
+                RoundStatus.APPEALING, now
+        );
+
+        for (Round round : expiredRounds) {
+            Integer roundId = round.getRoundId();
+
+            // 2. Kiểm tra xem vòng này còn đơn phúc khảo nào chưa xử lý (PENDING hoặc IN_REVIEW) không
+            List<TeamRequest> pendingOrInReviewRequests = teamRequestRepository
+                    .findByRound_RoundIdAndRequestTypeAndStatusIn(
+                            roundId,
+                            RequestType.APPEAL,
+                            List.of(RequestStatus.PENDING, RequestStatus.IN_REVIEW)
+                    );
+
+            if (pendingOrInReviewRequests != null && !pendingOrInReviewRequests.isEmpty()) {
+                //  CHƯA XỬ LÝ XONG -> TỰ GIA HẠN 10 PHÚT
+                if (now.isAfter(round.getAppealEndTime().plusMinutes(10))) {
+                    // SAU 10P VẪN CH XƯR LÝ HỆ THÔNGS TỰ ĐỘNG TỪ CHỐI
+                    for (TeamRequest req : pendingOrInReviewRequests) {
+                        req.setStatus(RequestStatus.DECLINED);
+                    }
+                    teamRequestRepository.saveAll(pendingOrInReviewRequests);
+                    round.setStatus(RoundStatus.PENDING_APPROVAL);
+                    roundRepository.save(round);
+                }
+
+            } else {
+                //  ĐÃ XỬ LÝ XONG XUÔI -> TỰ CHUYỂN TRẠNG THÁI
+                round.setStatus(RoundStatus.PENDING_APPROVAL);
+                roundRepository.save(round);
+
+            }
+        }
     }
 
     private WorkshopStatus calculateStatus(HackathonEvent event, LocalDateTime now) {

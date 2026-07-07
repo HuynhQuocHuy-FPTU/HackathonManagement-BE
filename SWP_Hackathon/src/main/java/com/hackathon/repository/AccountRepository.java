@@ -35,4 +35,18 @@ public interface AccountRepository extends JpaRepository<Account, Integer> {
     java.util.Optional<String> findFullNameByEmail(@Param("email") String email);
 
     List<Account> findAccountByRole(AccountRole role);
+
+    @Query("""
+            SELECT DISTINCT  s.account
+                        FROM CategoryRound cr
+                        JOIN cr.teamParticipants tp
+                        JOIN tp.registration r
+                        JOIN r.team t 
+                        JOIN t.teamMembers tm
+                        JOIN tm.student s
+                        WHERE cr.round.roundId = :roundId 
+                        AND s.account IS NOT NULL
+            """)
+    List<Account> findParticipantsByRoundId(@Param("roundId") Integer roundId);
+    List<Account> findByRoleIn(List<AccountRole> roles);
 }

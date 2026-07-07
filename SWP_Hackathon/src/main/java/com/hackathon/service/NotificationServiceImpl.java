@@ -2,22 +2,19 @@ package com.hackathon.service;
 
 import com.hackathon.dto.notification.NotificationEmailResponse;
 import com.hackathon.dto.notification.NotificationWebResponse;
-import com.hackathon.entity.Account;
-import com.hackathon.entity.Notification;
-import com.hackathon.entity.Team;
-import com.hackathon.entity.TeamMember;
+import com.hackathon.entity.*;
 import com.hackathon.entity.enums.*;
 import com.hackathon.exception.BadRequestException;
-import com.hackathon.repository.AccountRepository;
-import com.hackathon.repository.HackathonEventRepository;
-import com.hackathon.repository.NotificationRepository;
+import com.hackathon.repository.*;
 import com.hackathon.security.CustomUserDetails;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +23,9 @@ public class NotificationServiceImpl implements NotificationService {
 
     private final AccountRepository accountRepository;
     private final HackathonEventRepository eventRepository;
+    private final RoundRepository roundRepository;
+    private final EmailService emailService;
+    private final TeamRequestRepository teamRequestRepository;
 
     @Transactional
     @Override
@@ -71,7 +71,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void createNotificationHaveResponse(Account acc, Account actor, NotificationType type, NotificationChannel channel, String title, String message, boolean allowResponse, Integer responseDeadline ) {
+    public void createNotificationHaveResponse(Account acc, Account actor, NotificationType type, NotificationChannel channel, String title, String message, boolean allowResponse, Integer responseDeadline) {
         Notification notification = new Notification();
 
         notification.setAccount(acc);
@@ -119,7 +119,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void notifyRegistrationRejected(Account actor, Account teamLeaderAccount, String teamName,String eventName, String reason ) {
+    public void notifyRegistrationRejected(Account actor, Account teamLeaderAccount, String teamName, String eventName, String reason) {
         String title = "Registration Rejected";
 
         String message = String.format(
@@ -165,10 +165,10 @@ public class NotificationServiceImpl implements NotificationService {
 
         String message = String.format(
                 """
-                Team "%s" đã được phân vào hạng mục "%s" của cuộc thi "%s".
-    
-                Vui lòng kiểm tra lại thông tin. Nếu có sai sót, bạn có thể gửi phản hồi trong vòng "%s" tiếng kể từ thời điểm nhận thông báo.
-                """,
+                        Team "%s" đã được phân vào hạng mục "%s" của cuộc thi "%s".
+                        
+                        Vui lòng kiểm tra lại thông tin. Nếu có sai sót, bạn có thể gửi phản hồi trong vòng "%s" tiếng kể từ thời điểm nhận thông báo.
+                        """,
                 teamName,
                 category,
                 eventName,
@@ -218,17 +218,17 @@ public class NotificationServiceImpl implements NotificationService {
 
         String message = String.format(
                 """
-                Leader của team "%s" đã gửi phản hồi về kết quả phân category.
-    
-                Nội dung phản hồi:
-                "%s"
-                """,
+                        Leader của team "%s" đã gửi phản hồi về kết quả phân category.
+                        
+                        Nội dung phản hồi:
+                        "%s"
+                        """,
                 teamName,
                 responseMessage
         );
         List<Account> coordinators = accountRepository.findAccountByRole(AccountRole.EVENTCOORDINATOR);
 
-        for(Account acc : coordinators){
+        for (Account acc : coordinators) {
             //gửi thông báo cho toàn bộ coordinator
             createNotificationNoResponse(
                     acc,
@@ -241,11 +241,12 @@ public class NotificationServiceImpl implements NotificationService {
         }
 
     }
+
     @Override
     @Transactional
     public void responseCategoryAssignment(
             Long notificationId,
-            String responseMessage,CustomUserDetails userDetails) {
+            String responseMessage, CustomUserDetails userDetails) {
         Account acc = userDetails.getAccount();
         Notification notification = notificationRepository
                 .findById(notificationId)
@@ -261,15 +262,15 @@ public class NotificationServiceImpl implements NotificationService {
                     "Thông báo này không cho phép phản hồi");
         }
 
-        if(notification != null){
-            if(notification.getResponseStatus() == NotiResponseStatus.NONE){
+        if (notification != null) {
+            if (notification.getResponseStatus() == NotiResponseStatus.NONE) {
                 notification.setResponseMessage(responseMessage);
                 System.out.println(notification.getResponseMessage());
                 notification.setResponseAt(LocalDateTime.now());
                 notification.setResponseStatus(NotiResponseStatus.PENDING);
                 System.out.println(notification.getResponseStatus());
                 notification = notificationRepository.saveAndFlush(notification);
-            }else{
+            } else {
                 throw new BadRequestException("Thông báo này đã được phản hồi");
             }
 
@@ -326,9 +327,9 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public List<NotificationWebResponse> getPendingResponses(CustomUserDetails userDetails) {
-        List<Notification> list =  notificationRepository.findNotificationByAccount_AccountIdAndResponseStatus(userDetails.getAccount().getAccountId(), NotiResponseStatus.PENDING);
+        List<Notification> list = notificationRepository.findNotificationByAccount_AccountIdAndResponseStatus(userDetails.getAccount().getAccountId(), NotiResponseStatus.PENDING);
 
-         return list.stream().map(this::toResponse).toList();
+        return list.stream().map(this::toResponse).toList();
     }
 
     @Override
@@ -377,6 +378,99 @@ public class NotificationServiceImpl implements NotificationService {
         }
 
         notificationRepository.delete(notification);
+    }
+
+    @Override
+    @Transactional
+    public void notifyRoundRankingPublished(Account actor, Integer roundId, boolean isFinal) {
+        Round round = roundRepository.findById(roundId)
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy vòng thi."));
+        String eventName = round.getHackathonEvent().getEventName();
+        String title = isFinal ? "Kết quả CHÍNH THỨC: " + round.getRoundName()
+                : "Kết quả TẠM THỜI: " + round.getRoundName();
+        String noteMessage = isFinal
+                ? " Kết quả trên là kết quả chung cuộc chính thức của vòng đấu."
+                : " Cổng phúc khảo hiện đã mở. Nếu có khiếu nại về điểm số, vui lòng nộp đơn trên hệ thống trước khi cổng đóng.";
+        String message = String.format(
+                """
+                        Đã có kết quả xếp hạng cho vòng thi "%s" của cuộc thi "%s" 
+                        Ban tổ chức đã cập nhật kết quả cuộc thi trên hệ thống WEB FPT HACKATHON.
+                        %s
+                        Vui lòng kiểm tra chi tiết bảng xếp hạng tại mục kết quả của cuộc thi
+                        
+                        """,
+                round.getRoundName(),
+                eventName,
+                noteMessage
+        );
+        // Gửi thông báo đến all thí sinh thuộc round đó
+
+        List<Account> accounts;
+        if (isFinal) {
+            List<AccountRole> allRoles = List.of(
+                    AccountRole.STUDENT,
+                    AccountRole.EVENTCOORDINATOR,
+                    AccountRole.EXPERT);
+            accounts = accountRepository.findByRoleIn(allRoles);
+        } else {
+
+            accounts = accountRepository.findParticipantsByRoundId(roundId);
+        }
+        for (Account acc : accounts) {
+            createNotificationNoResponse(
+                    acc,
+                    actor,
+                    isFinal ? NotificationType.RANKING_OFFICIAL : NotificationType.RANKING_DRAFT,
+                    NotificationChannel.WEB,
+                    title,
+                    message
+            );
+            try {
+                emailService.sendRankingPublishEmail(acc.getEmail(), title, message);
+                createNotificationNoResponse(
+                        acc,
+                        actor,
+                        isFinal ? NotificationType.RANKING_OFFICIAL : NotificationType.RANKING_DRAFT,
+                        NotificationChannel.EMAIL,
+                        title,
+                        message
+                );
+            } catch (Exception e) {
+                System.out.println("Lỗi gửi email cho thí sinh xem hạng");
+            }
+
+        }
+    }
+
+    @Override
+    public void notifyExpertReEvaluation(Account actor, Set<Account> expertsToNotify, String teamName) {
+        String title = "YÊU CẦU PHÚC KHẢO BÀI THI";
+        String message = "Ban tổ chức yêu cầu ban giám khảo xem lại và chấm lại điểm số cho bài dự thi của đội " + teamName;
+        for (Account expertAccount : expertsToNotify) {
+            createNotificationNoResponse(
+                    expertAccount,
+                    actor,
+                    NotificationType.SUBMISSION_REVIEW,
+                    NotificationChannel.WEB,
+                    title,
+                    message
+            );
+
+            try {
+                emailService.sendNotifyToExpertReEvaluation(expertAccount.getEmail(), message);
+                createNotificationNoResponse(
+                        expertAccount,
+                        actor,
+                        NotificationType.SUBMISSION_REVIEW,
+                        NotificationChannel.EMAIL,
+                        title,
+                        message
+                );
+            } catch (Exception e) {
+                System.out.println("Lỗi gửi email cho giám khảo để yêu cầu giám khảo chấm lại bài nộp của thí sinh");
+            }
+        }
+
     }
 
     private NotificationWebResponse toResponse(Notification n) {
