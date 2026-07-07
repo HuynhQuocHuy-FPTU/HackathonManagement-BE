@@ -43,9 +43,6 @@ public class RoundServiceImpl implements RoundService{
     private ExpertAssignService expertAssignService;
 
     @Autowired
-    private ExpertAssignRepository expertAssignRepository;
-
-    @Autowired
     private CriteriaSetRepository criteriaSetRepository;
     @Autowired
     private EvaluationCriteriaRepository evaluationCriteriaRepository;
@@ -149,9 +146,6 @@ public class RoundServiceImpl implements RoundService{
 
             // 3. Kiểm tra dòng thời gian so với các round khác trong cùng Event
             roundValidator.validateTimelineByOrderIndexUpdate(roundRequest, currentRounds);
-
-
-
 
             // 4. Cập nhật thông tin round
             saveRound.setRoundName(roundRequest.getRoundName());

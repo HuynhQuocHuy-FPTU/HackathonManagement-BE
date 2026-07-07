@@ -20,11 +20,14 @@ public class GithubClientConfig {
     @Bean
     public GitHub gitHub() throws IOException {
         if (githubToken == null || githubToken.isEmpty()) {
-            throw new IllegalStateException("GitHub Token chưa được cấu hình!");
+            throw new IllegalStateException("GitHub System Token chưa được cấu hình!");
         }
         return new GitHubBuilder()
                 .withEndpoint(baseUrl)
                 .withOAuthToken(githubToken)
                 .build();
+    }
+    public GitHub createUserClient(String accessToken) throws IOException{
+        return new GitHubBuilder().withEndpoint(baseUrl).withOAuthToken(accessToken).build();
     }
 }

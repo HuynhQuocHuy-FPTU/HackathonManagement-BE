@@ -75,7 +75,8 @@ public interface ExpertAssignRepository extends JpaRepository<ExpertAssign, Inte
             "JOIN ExpertAssign ex ON ex.categoryRound = cr " +
             "WHERE cr.categoryRoundId =:categoryRoundId " +
             "AND ex.expert.expertId =:expertId " +
-            "AND ex.role IN :roles")
+            "AND ex.role IN :roles " +
+            "AND s.isFinal = true")
     List<Submission> findSubmissionByJudge(@Param("categoryRoundId") Integer categoryRoundId,
                                              @Param("expertId") Integer expertId,
                                              @Param("roles")List<ExpertRole> expertRoles);
