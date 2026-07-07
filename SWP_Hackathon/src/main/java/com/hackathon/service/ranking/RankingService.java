@@ -16,4 +16,5 @@ public interface RankingService {
     void publishFinalRanking(Integer roundId, CustomUserDetails userDetails);
 
     void openAppeals(CustomUserDetails userDetails, OpenAppealRequestDTO request);
+
 }

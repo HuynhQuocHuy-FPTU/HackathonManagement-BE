@@ -34,5 +34,6 @@ public interface TeamRequestRepository extends JpaRepository<TeamRequest,Integer
     List<TeamRequest> findByRound_RoundIdAndRequestType(Integer roundId, RequestType requestType);
 
     List<TeamRequest> findByRound_RoundIdAndRequestTypeAndStatus(Integer roundId, RequestType requestType, RequestStatus status);
+    List<TeamRequest> findByRound_RoundIdAndRequestTypeAndStatusIn(Integer roundId, RequestType type, List<RequestStatus> statuses);
 
 }
