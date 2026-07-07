@@ -32,7 +32,6 @@ public class ExpertAssignServiceImpl implements ExpertAssignService {
     private final ExpertRepository expertRepository;
     private final AccountRepository accountRepository;
     private final ExpertAssignRepository expertAssignRepository;
-    private final SubmissionService submissionService;
 
 
     // =========================================================

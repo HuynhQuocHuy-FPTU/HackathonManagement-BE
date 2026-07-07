@@ -39,4 +39,16 @@ public class SubmissionController {
         return ResponseEntity.ok(ApiResponse.success(submissionService.getAllSubmission(), "Lấy danh sách các bài nộp thành công"));
     }
 
+    @PatchMapping("/choose-final/{submissionId}")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<Void>> chooseFinalSubmission(@PathVariable Integer roundId,
+                                                                   @PathVariable Integer submissionId,
+                                                                   @AuthenticationPrincipal CustomUserDetails userDetails){
+        submissionService.chooseFinalSubmission(submissionId, userDetails);
+        return ResponseEntity.ok(ApiResponse.success(null, "Đã chọn bài nộp thành công"));
+    }
+
+
+
+
 }

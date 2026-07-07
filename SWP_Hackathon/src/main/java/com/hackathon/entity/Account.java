@@ -43,9 +43,6 @@ public class Account {
     @Column(name = "Avatar_Url", columnDefinition = "NVARCHAR(255)")
     private String avatarUrl;
 
-//    @Column(name = "Account_Name", columnDefinition = "NVARCHAR(255)")
-//    private String accountName;
-
     @Column(name = "Updated_At")
     @UpdateTimestamp
     private LocalDateTime updatedAt;
@@ -53,6 +50,12 @@ public class Account {
     @Enumerated(EnumType.STRING)
     @Column(name = "Role", nullable = false)
     private AccountRole role;
+    @Column(name = "Github_Id")
+    private Long githubId;
+    @Column(name = "Github_Username")
+    private String githubUsername;
+    @Column(length = 1000, name = "Github_Access_Token")
+    private String githubAccessToken;
 
     // 1 Account - 1 Expert
     @OneToOne(mappedBy = "account", cascade = CascadeType.ALL,fetch = FetchType.LAZY)
