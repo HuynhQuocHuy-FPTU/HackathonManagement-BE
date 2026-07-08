@@ -187,7 +187,7 @@ public class RankingServiceImpl implements RankingService {
         }
         String logMessage;
         if (round.getStatus() == RoundStatus.PENDING_APPROVAL) {
-            logMessage = "Phê duyệt lại kết quả cuối cùng sau phúc khảo thành công cho vòng: "+round.getRoundName();
+            logMessage = "Phê duyệt lại kết quả cuối cùng sau phúc khảo thành công cho vòng: " + round.getRoundName();
         } else {
             logMessage = "Phê duyệt ranking lần 1 thành công của vòng: ";
         }
@@ -356,7 +356,7 @@ public class RankingServiceImpl implements RankingService {
         // Check Round
         Round round = roundRepository.findById(roundId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy vòng thi này."));
-        if (round.getStatus() != RoundStatus.APPROVED ) {
+        if (round.getStatus() != RoundStatus.APPROVED) {
             throw new BadRequestException("Vòng thi phải ở trạng thái chờ duyệt hoặc đang phúc khảo mới có thể công bố kết quả chính thức.");
         }
 
@@ -412,16 +412,7 @@ public class RankingServiceImpl implements RankingService {
         round.setStatus(RoundStatus.COMPLETED);
         roundRepository.save(round);
         log.info("Đã công bố bản xếp hạng chính thức vòng {}. Đóng vòng đấu thành công!", roundId);
-
-//        Notification notification = new Notification();
-//        notification.setType(NotificationType.SYSTEM_ANNOUNCEMENT);
-//        notification.setChannel(NotificationChannel.WEB);
-//        notification.setTitle("KẾT QUẢ CUỘC THI.");
-//        notification.setMessage("Ban tổ chức đã công bố kết quả chính thức của " + round.getRoundName());
-//        notification.setCreatedAt(LocalDateTime.now());
-//        notificationRepository.save(notification);
-        notificationService.notifyRoundRankingPublished(account,roundId,true);
-
+        notificationService.notifyRoundRankingPublished(account, roundId, true);
 
         try {
             String jsonData = objectMapper.writeValueAsString(auditRankingData);
@@ -487,5 +478,55 @@ public class RankingServiceImpl implements RankingService {
         );
 
     }
+
+    @Override
+    public CategoryRoundRankingResponse getTopNRanking(Integer roundId) {
+        Round round = roundRepository.findById(roundId).orElseThrow(
+                () -> new BadRequestException("Không tìm thấy vòng thi"));
+        List<CategoryRound> categoryRound = round.getCategoryRounds();
+        int topN = round.getTopN();
+
+        List<CategoryRankingResponse> categoriesRanking = new ArrayList<>();
+        for (CategoryRound cr : categoryRound) {
+            // Thông qua category Round lấy top N ranking
+            List<TeamParticipant>tp = cr.getTeamParticipants().stream()
+                    .filter(teamParticipant -> teamParticipant.getRank() <= topN)
+                    .sorted(Comparator.comparing(TeamParticipant::getRank))
+                    .toList();
+
+            List<RankingResponseDTO> rankingResponse = new ArrayList<>();
+
+            for (TeamParticipant participant : tp) {
+                String teamName = (participant.getRegistration() != null) ? participant.getRegistration().getTeam().getTeamName() : "N/A";
+                RankingResponseDTO dto = RankingResponseDTO.builder()
+                        .participantId(participant.getId())
+                        .totalScore(participant.getTotalScore())
+                        .rank(participant.getRank())
+                        .teamName(teamName)
+                        .status(participant.getStatus())
+                        .build();
+                rankingResponse.add(dto);
+            }
+            CategoryRankingResponse response = CategoryRankingResponse.builder()
+                    .categoryRoundId(cr.getCategoryRoundId())
+                    .categoryId(cr.getCategory().getCategoryId())
+                    .categoryName(cr.getCategory().getCategoryName())
+                    .teams(rankingResponse)
+                    .build();
+            categoriesRanking.add(response);
+        }
+
+
+        return  CategoryRoundRankingResponse.builder()
+                .roundId(round.getRoundId())
+                .roundName(round.getRoundName())
+                .advancementRule(round.getAdvancementRule())
+                .topN(round.getTopN())
+                .orderIndex(round.getOrderIndex())
+                .roundStatus(round.getStatus())
+                .categoriesRanking(categoriesRanking)
+                .build();
+    }
+
 
 }
