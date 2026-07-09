@@ -14,5 +14,5 @@ public class PermissionDto {
     private boolean canEvaluate;
     private boolean canManageUsers;
     private boolean canCreateEvents;
-    private boolean canEditSystemLogs;
+    private boolean canExportSystemLogs;
 }
