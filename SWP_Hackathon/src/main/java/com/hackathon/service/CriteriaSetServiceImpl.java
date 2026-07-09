@@ -7,6 +7,7 @@ import com.hackathon.entity.CriteriaSet;
 import com.hackathon.entity.EventCoordinator;
 import com.hackathon.entity.enums.AuditAction;
 import com.hackathon.entity.enums.AuditEntityType;
+import com.hackathon.entity.enums.AuditResult;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.CriteriaDetailRepository;
 import com.hackathon.repository.CriteriaSetRepository;

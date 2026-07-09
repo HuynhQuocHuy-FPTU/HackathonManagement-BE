@@ -5,6 +5,7 @@ import com.hackathon.entity.Account;
 import com.hackathon.entity.AuditLog;
 import com.hackathon.entity.enums.AuditAction;
 import com.hackathon.entity.enums.AuditEntityType;
+import com.hackathon.entity.enums.AuditResult;
 import com.hackathon.repository.AuditLogRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,17 @@ import java.util.List;
 public class AuditService {
     private final AuditLogRepository auditLogRepository;
 
+    public void saveLog(Account acc, AuditAction action, AuditEntityType entityType, Integer entityId, String description,  String data){
+        AuditLog auditLog = new AuditLog();
+        auditLog.setAction(action);
+        auditLog.setEntityType(entityType);
+        auditLog.setEntityId(entityId);
+        auditLog.setAccount(acc);
+        auditLog.setDescription(description);
+        auditLog.setData(data);
+        auditLogRepository.save(auditLog);
+    }
+
     public void saveLog(Account acc, AuditAction action, AuditEntityType entityType, Integer entityId, String description){
         AuditLog auditLog = new AuditLog();
         auditLog.setAction(action);
@@ -23,8 +35,8 @@ public class AuditService {
         auditLog.setEntityId(entityId);
         auditLog.setAccount(acc);
         auditLog.setDescription(description);
-
         auditLogRepository.save(auditLog);
+
     }
     public AuditLogResponse toResponse(AuditLog log) {
         AuditLogResponse res = new AuditLogResponse();

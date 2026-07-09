@@ -194,12 +194,20 @@ public class RankingServiceImpl implements RankingService {
         round.setStatus(RoundStatus.APPROVED);
         roundRepository.save(round);
 
+        String jsonData = null;
+        try {
+            jsonData = objectMapper.writeValueAsString(categoriesRanking);
+        } catch (Exception e) {
+
+        }
+
         auditService.saveLog(
                 account,
                 AuditAction.APPROVE_RANKING,
                 AuditEntityType.ROUND,
                 roundId,
-                logMessage
+                logMessage,
+                jsonData
         );
 
         return CategoryRoundRankingResponse.builder()
@@ -260,22 +268,22 @@ public class RankingServiceImpl implements RankingService {
         }
         if (!evaluationsToSave.isEmpty()) {
             evaluationRepository.saveAll(evaluationsToSave);
-            if (!teamsToSave.isEmpty()) {
-                participantRepository.saveAll(teamsToSave);
-            }
-            round.setStatus(RoundStatus.RE_EVALUATING);
-
-            roundRepository.save(round);
-
-            auditService.saveLog(
-                    account,
-                    AuditAction.REJECT_RANKING,
-                    AuditEntityType.ROUND,
-                    roundId,
-                    "Từ chối phê duyệt ranking thành công của vòng: " + round.getRoundName()
-            );
-
         }
+        if (!teamsToSave.isEmpty()) {
+            participantRepository.saveAll(teamsToSave);
+        }
+        round.setStatus(RoundStatus.RE_EVALUATING);
+        roundRepository.save(round);
+
+        auditService.saveLog(
+                account,
+                AuditAction.SAVE_DRAFT,
+                AuditEntityType.ROUND,
+                roundId,
+                "Từ chối phê duyệt ranking thành công của vòng: " + round.getRoundName()
+        );
+
+
         return CategoryRoundRankingResponse.builder()
                 .roundId(round.getRoundId())
                 .roundName(round.getRoundName())
@@ -284,6 +292,7 @@ public class RankingServiceImpl implements RankingService {
     }
 
     @Override
+    @Transactional
     public void publishDraftRanking(Integer roundId, CustomUserDetails userDetails) {
         Account account = userDetails.getAccount();
         EventCoordinator eventCoordinator = eventCoordinatorRepository.findByAccount_AccountId(account.getAccountId())
@@ -339,15 +348,18 @@ public class RankingServiceImpl implements RankingService {
                     AuditAction.SAVE_DRAFT,
                     AuditEntityType.ROUND,
                     roundId,
+                    "Công bố kết quả tạm thời thành công.",
                     jsonData
             );
         } catch (JsonProcessingException e) {
+
             log.error("Lỗi khi tuần tự hóa dữ liệu xếp hạng vòng {} sang JSON", roundId, e);
             throw new BadRequestException("Không thể lưu lịch sử bảng xếp hạng do lỗi hệ thống.");
         }
     }
 
     @Override
+    @Transactional
     public void publishFinalRanking(Integer roundId, CustomUserDetails userDetails) {
         Account account = userDetails.getAccount();
         EventCoordinator eventCoordinator = eventCoordinatorRepository.findByAccount_AccountId(account.getAccountId())
@@ -422,6 +434,7 @@ public class RankingServiceImpl implements RankingService {
                     AuditAction.PUBLISH_FINAL,
                     AuditEntityType.ROUND,
                     roundId,
+                    "Công bố bản xếp hạng chính thức của vòng " + round.getRoundName() + " thành công",
                     jsonData
             );
         } catch (JsonProcessingException e) {
@@ -489,7 +502,7 @@ public class RankingServiceImpl implements RankingService {
         List<CategoryRankingResponse> categoriesRanking = new ArrayList<>();
         for (CategoryRound cr : categoryRound) {
             // Thông qua category Round lấy top N ranking
-            List<TeamParticipant>tp = cr.getTeamParticipants().stream()
+            List<TeamParticipant> tp = cr.getTeamParticipants().stream()
                     .filter(teamParticipant -> teamParticipant.getRank() <= topN)
                     .sorted(Comparator.comparing(TeamParticipant::getRank))
                     .toList();
@@ -517,7 +530,7 @@ public class RankingServiceImpl implements RankingService {
         }
 
 
-        return  CategoryRoundRankingResponse.builder()
+        return CategoryRoundRankingResponse.builder()
                 .roundId(round.getRoundId())
                 .roundName(round.getRoundName())
                 .advancementRule(round.getAdvancementRule())
