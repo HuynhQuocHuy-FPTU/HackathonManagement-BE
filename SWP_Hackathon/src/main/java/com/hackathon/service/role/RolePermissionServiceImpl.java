@@ -46,7 +46,7 @@ public class RolePermissionServiceImpl implements RolePermissionService {
 
         // Nhóm 3: Quản trị (Sử dụng Account Role)
         initRole("EVENTCOORDINATOR", "Coordinator", new PermissionDto(false, false, true, true, false));
-        initRole("ADMIN", "Admin", new PermissionDto(true, true, true, true, true));
+        initRole("ADMIN", "Admin", new PermissionDto(true, false, true, true, true));
     }
 
     private static void initRole(String dbKey, String feName, PermissionDto permissions) {
