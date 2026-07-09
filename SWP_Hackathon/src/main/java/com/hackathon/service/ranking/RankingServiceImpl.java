@@ -184,9 +184,7 @@ public class RankingServiceImpl implements RankingService {
                 totalTeams++;
                 TeamParticipant savedTeam = participantRepository.save(teamParticipant);
                 teamsResultList.add(mapToResponse(savedTeam));
-
             }
-
         }
         roundRepository.save(round);
 

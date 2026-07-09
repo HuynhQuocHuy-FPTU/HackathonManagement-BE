@@ -31,9 +31,6 @@ public class RoundServiceImpl implements RoundService{
     private HackathonEventRepository eventRepository;
 
     @Autowired
-    private CriteriaDetailRepository criteriaDetailRepository;
-
-    @Autowired
     private EvaluationCriteriaService evaluationCriteriaService;
 
     @Autowired

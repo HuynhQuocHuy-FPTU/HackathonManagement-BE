@@ -449,12 +449,6 @@ public class EventServiceImpl implements EventService {
     }
 
 
-//    @Override
-//    public Page<HackathonEvent> getPage(int page, int size) {
-//        Pageable pageable = PageRequest.of(page, size);
-//        return eventRepository.findAll(pageable);
-//    }
-
     // =========================================================
     // PRIVATE HELPERS
     // =========================================================

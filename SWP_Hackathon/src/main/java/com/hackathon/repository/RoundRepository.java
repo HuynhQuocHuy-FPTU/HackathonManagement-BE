@@ -31,4 +31,6 @@ public interface RoundRepository extends JpaRepository<Round, Integer> {
             @Param("excludedRoundStatuses") List<RoundStatus> excludedRoundStatuses,
             @Param("allowedEventStatuses") List<EventStatus> allowedEventStatuses
     );
+
+    Optional<Round> findRoundByHackathonEvent_EventIdAndOrderIndex(Integer hackathonEventEventId, Integer orderIndex);
 }

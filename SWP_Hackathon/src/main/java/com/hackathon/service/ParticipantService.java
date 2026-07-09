@@ -9,6 +9,7 @@ import com.hackathon.entity.Registration;
 import com.hackathon.repository.ParticipantRepository;
 import com.hackathon.security.CustomUserDetails;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 
@@ -19,6 +20,9 @@ public interface ParticipantService {
 
     TeamParticipant saveParticipant(Registration registration);
 
+    BigDecimal calculateTotalScore(TeamParticipant participant);
+
+    BigDecimal calculateTotalScore(Integer teamParticipantId);
 
 
 }

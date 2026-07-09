@@ -27,11 +27,8 @@ import java.util.List;
 public class EventController {
     @Autowired
     private EventService eventService;
-
     @Autowired
     private ExpertService expertService;
-    @Autowired
-    private RegistrationEventService registrationEventService;
     @Autowired
     private CategoryService categoryService;
 

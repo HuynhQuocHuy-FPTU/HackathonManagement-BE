@@ -39,13 +39,10 @@ public class TeamParticipant {
     @JoinColumn(name = "CategoryRound_ID")
     private CategoryRound categoryRound;
 
-    @OneToMany(mappedBy = "teamParticipant", cascade = CascadeType.ALL)
-    private List<Evaluation> evaluations = new ArrayList<>();
+//    @OneToMany(mappedBy = "teamParticipant", cascade = CascadeType.ALL)
+//    private List<Evaluation> evaluations = new ArrayList<>();
 
     @OneToMany(mappedBy = "teamParticipant", cascade = CascadeType.ALL)
     private List<Submission> submissions = new ArrayList<>();
-
-
-
 
 }

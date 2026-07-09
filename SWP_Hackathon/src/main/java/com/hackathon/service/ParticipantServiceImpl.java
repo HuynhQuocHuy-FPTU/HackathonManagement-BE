@@ -8,6 +8,7 @@ import com.hackathon.dto.ranking.RankingResponseDTO;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.*;
 import com.hackathon.exception.BadRequestException;
+import com.hackathon.exception.ResourceNotFoundException;
 import com.hackathon.repository.*;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.validator.DisqualifyValidator;
@@ -17,6 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -33,9 +36,9 @@ public class ParticipantServiceImpl implements ParticipantService {
     private final AuditService auditService;
     private final NotificationService notificationService;
     private final HackathonEventRepository hackathonEventRepository;
-    private final EventCoordinatorRepository eventCoordinatorRepository;
-    private final RoundRepository roundRepository;
-    private final CategoryRoundRepository categoryRoundRepository;
+    private final EvaluationRepository evaluationRepository;
+    private static final int SCORE_SCALE = 2;
+
 
     public List<ExpertAssignedGroupDTO> getAssignParticipants(Integer eventId, CustomUserDetails userDetails) {
 
@@ -66,8 +69,7 @@ public class ParticipantServiceImpl implements ParticipantService {
 
         Account account = userDetails.getAccount();
         // 1. Lấy toàn bộ Participant của Team này trong Event này
-        List<TeamParticipant> teamParticipants = participantRepository
-                .findParticipantByRegistration_Team_TeamIdAndRegistration_HackathonEvent_EventId(teamId, eventId);
+        List<TeamParticipant> teamParticipants = participantRepository.findParticipantByRegistration_Team_TeamIdAndRegistration_HackathonEvent_EventId(teamId, eventId);
         //3. Tìm event
         HackathonEvent event = hackathonEventRepository.findById(eventId).orElseThrow(() -> new BadRequestException("Không tìm thấy event"));
 
@@ -76,7 +78,7 @@ public class ParticipantServiceImpl implements ParticipantService {
 
         // 3. Đổi status từng Participant + lưu lý do loại
         for (TeamParticipant teamParticipant : teamParticipants) {
-            teamParticipant.setStatus(ParticipantStatus.DISQUALIFIED); // điều chỉnh đúng tên enum thật
+            teamParticipant.setStatus(ParticipantStatus.DISQUALIFIED);
             teamParticipant.setDisqualificationReason(reason);
         }
         participantRepository.saveAll(teamParticipants);
@@ -97,7 +99,6 @@ public class ParticipantServiceImpl implements ParticipantService {
         auditService.saveLog(account, AuditAction.DISQUALIFY_TEAM, AuditEntityType.PARTICIPANT, teamParticipants.get(0).getId(), team.getTeamName());
 
         notificationService.notifyDisqualifyTeam(account, accountLeader, team.getTeamName(), event.getEventName(), reason);
-
     }
 
     private ParticipantResponseDTO mapToResponse(TeamParticipant teamParticipant) {
@@ -143,4 +144,38 @@ public class ParticipantServiceImpl implements ParticipantService {
     }
 
 
+    @Override
+    @Transactional
+    public BigDecimal calculateTotalScore(TeamParticipant participant) {
+        List<Evaluation> gradedEvaluations = evaluationRepository
+                .findBySubmission_SubmissionIdAndStatus(participant.getId(), EvaluationStatus.GRADED);
+
+        BigDecimal average = computeAverage(gradedEvaluations);
+
+        participant.setTotalScore(average);
+        participantRepository.save(participant);
+
+        return average;
+    }
+
+    @Override
+    public BigDecimal calculateTotalScore(Integer teamParticipantId) {
+        TeamParticipant participant = participantRepository.findById(teamParticipantId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy participant"));
+        return calculateTotalScore(participant);
+    }
+
+    private BigDecimal computeAverage(List<Evaluation> gradedEvaluations) {
+        if (gradedEvaluations == null || gradedEvaluations.isEmpty()) {
+            return null; // chưa có điểm nào -> để null, không phải 0, tránh hiểu nhầm là "bị chấm 0 điểm"
+        }
+
+        BigDecimal sum = gradedEvaluations.stream()
+                .map(Evaluation::getScore)
+                .filter(java.util.Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return sum.divide(BigDecimal.valueOf(gradedEvaluations.size()), SCORE_SCALE, RoundingMode.HALF_UP);
+    }
 }
+
