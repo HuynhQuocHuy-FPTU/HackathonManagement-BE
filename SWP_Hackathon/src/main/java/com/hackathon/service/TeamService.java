@@ -12,7 +12,7 @@ public interface TeamService {
 
     TeamResponse createTeam(CreateTeamRequest request, CustomUserDetails userDetails);
 
-    TeamResponse sendTeamInvitation(CreateTeamRequest request, CustomUserDetails userDetails);
+    TeamResponse sendTeamInvitation(InviteTeamRequest request, CustomUserDetails userDetails);
 
     String updateInfo(CustomUserDetails userDetails, String teamName);
 
@@ -38,17 +38,11 @@ public interface TeamService {
 
     TeamDetailResponse getTeamDetail(Integer teamId, CustomUserDetails userDetails);
 
-    List<TeamDetailResponse> getTeamInfor(Integer expertId, CustomUserDetails userDetails);
+    List<TeamDetailResponse> getTeamInfo(Integer eventId, CustomUserDetails userDetails);
 
     TeamDetailResponse getTeamDetailByStudentId(CustomUserDetails userDetails);
 
     TeamCompetitionResponse getTeamCompetition(CustomUserDetails userDetails);
 
-    TeamRequestResponse teamSendRequestToMentor(CustomUserDetails userDetails);
 
-    List<TeamRequestResponse> getTeamRequestsForExpert(CustomUserDetails userDetails);
-
-    TeamRequestResponse acceptTeamRequest(Integer requestId, CustomUserDetails userDetails);
-
-    TeamRequestResponse rejectTeamRequest(Integer requestId, CustomUserDetails userDetails);
 }

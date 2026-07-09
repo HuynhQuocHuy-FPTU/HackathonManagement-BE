@@ -7,6 +7,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -39,8 +40,11 @@ public class Registration {
     @JoinColumn(name = "Event_ID", nullable = false)
     private HackathonEvent hackathonEvent;
 
-    @OneToOne
-    private TeamParticipant participant;
+    // 1 Registration - N team participant
+    @OneToMany(mappedBy = "registration")
+    private List<TeamParticipant> participants;
+
+
 
 
 }

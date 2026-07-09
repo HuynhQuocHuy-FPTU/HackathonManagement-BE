@@ -14,7 +14,11 @@ import java.util.Optional;
 public interface StudentRepository extends JpaRepository<Student, Integer> {
     boolean existsByStudentCode(String studentCode);
     Student findByStudentCode(String studentCode);
-//    Student findByStudent(Student student);
+
+    @Query("SELECT s FROM Student  s " +
+            "LEFT JOIN FETCH s.teamMembers " +
+            "WHERE s.studentId =:studentId")
+    Optional<Student> findByIdWithTeamMembers(@Param("studentId") Integer studentId);
 
     /**
      * Kiểm tra xem sinh viên có đang tham gia đội nào đang ở trạng thái thi đấu hay không.

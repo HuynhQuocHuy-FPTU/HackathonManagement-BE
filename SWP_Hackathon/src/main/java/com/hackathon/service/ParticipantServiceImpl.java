@@ -2,24 +2,29 @@ package com.hackathon.service;
 
 import com.hackathon.dto.ExpertAssignedGroupDTO;
 import com.hackathon.dto.ParticipantResponseDTO;
+import com.hackathon.dto.ranking.CategoryRankingResponse;
+import com.hackathon.dto.ranking.CategoryRoundRankingResponse;
+import com.hackathon.dto.ranking.RankingResponseDTO;
 import com.hackathon.entity.*;
-import com.hackathon.entity.enums.AuditAction;
-import com.hackathon.entity.enums.AuditEntityType;
-import com.hackathon.entity.enums.ParticipantStatus;
-import com.hackathon.entity.enums.TeamStatus;
+import com.hackathon.entity.enums.*;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.*;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.validator.DisqualifyValidator;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
-public class ParticipantServiceImpl implements ParticipantService{
+public class ParticipantServiceImpl implements ParticipantService {
     private final ExpertRepository expertRepository;
     private final ExpertAssignRepository expertAssignRepository;
     private final ParticipantRepository participantRepository;
@@ -28,8 +33,11 @@ public class ParticipantServiceImpl implements ParticipantService{
     private final AuditService auditService;
     private final NotificationService notificationService;
     private final HackathonEventRepository hackathonEventRepository;
+    private final EventCoordinatorRepository eventCoordinatorRepository;
+    private final RoundRepository roundRepository;
+    private final CategoryRoundRepository categoryRoundRepository;
 
-    public List<ExpertAssignedGroupDTO> getAssignParticipants(Integer eventId, CustomUserDetails userDetails){
+    public List<ExpertAssignedGroupDTO> getAssignParticipants(Integer eventId, CustomUserDetails userDetails) {
 
         //1. Lấy Account đang đăng nhập
         Account account = userDetails.getAccount();
@@ -44,13 +52,14 @@ public class ParticipantServiceImpl implements ParticipantService{
         //3. Lấy tất cả expertAssign của expert theo event
         List<ExpertAssign> assigns = expertAssignRepository.findExpertAssignments(expert.getExpertId(), eventId);
 
-        if(assigns.isEmpty()){
+        if (assigns.isEmpty()) {
             throw new BadRequestException("Expert không được phân công trong event này");
         }
 
         //4. Lấy participant tương ứng
         return assigns.stream().map(this::buildGroup).toList();
     }
+
     public void disqualifyTeam(Integer eventId, Integer teamId, String reason) {
         CustomUserDetails userDetails =
                 (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -85,14 +94,14 @@ public class ParticipantServiceImpl implements ParticipantService{
                 .findFirst()
                 .orElseThrow(() ->
                         new BadRequestException("Không tìm thấy trưởng nhóm"));
-        auditService.saveLog(account, AuditAction.DISQUALIFY_TEAM, AuditEntityType.PARTICIPANT, teamParticipants.get(0).getId(), team.getTeamName() );
+        auditService.saveLog(account, AuditAction.DISQUALIFY_TEAM, AuditEntityType.PARTICIPANT, teamParticipants.get(0).getId(), team.getTeamName());
 
-        notificationService.notifyDisqualifyTeam(account, accountLeader, team.getTeamName(), event.getEventName(),reason);
+        notificationService.notifyDisqualifyTeam(account, accountLeader, team.getTeamName(), event.getEventName(), reason);
 
     }
 
-    private ParticipantResponseDTO mapToResponse(TeamParticipant teamParticipant){
-        if(teamParticipant == null){
+    private ParticipantResponseDTO mapToResponse(TeamParticipant teamParticipant) {
+        if (teamParticipant == null) {
             return null;
         }
         String teamName = teamParticipant.getRegistration().getTeam().getTeamName();
@@ -106,7 +115,7 @@ public class ParticipantServiceImpl implements ParticipantService{
                 .build();
     }
 
-    private ExpertAssignedGroupDTO buildGroup(ExpertAssign expertAssign){
+    private ExpertAssignedGroupDTO buildGroup(ExpertAssign expertAssign) {
         CategoryRound categoryRound = expertAssign.getCategoryRound();
 
         List<TeamParticipant> teamParticipants = participantRepository.findParticipantByCategoryRound_CategoryRoundId(categoryRound.getCategoryRoundId());
@@ -124,7 +133,7 @@ public class ParticipantServiceImpl implements ParticipantService{
                 .build();
     }
 
-    public TeamParticipant saveParticipant(Registration registration){
+    public TeamParticipant saveParticipant(Registration registration) {
         TeamParticipant teamParticipant = new TeamParticipant();
         teamParticipant.setRegistration(registration);
         teamParticipant.setCategoryRound(null);
@@ -132,4 +141,6 @@ public class ParticipantServiceImpl implements ParticipantService{
 
         return participantRepository.save(teamParticipant);
     }
+
+
 }

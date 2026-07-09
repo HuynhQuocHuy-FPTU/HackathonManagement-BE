@@ -1,6 +1,7 @@
 package com.hackathon.repository;
 
 import com.hackathon.entity.CategoryRound;
+import com.hackathon.entity.ExpertAssign;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -33,4 +34,8 @@ public interface CategoryRoundRepository extends JpaRepository<CategoryRound, In
             "AND p.status = ParticipantStatus.ACTIVE " +
             "AND cr.round.status = RoundStatus.ONGOING")
     List<CategoryRound> findActiveCategoryRoundsByTeamId(@Param("teamId") Integer teamId);
+
+
+    List<CategoryRound> findByRound_HackathonEvent_EventId(Integer eventId);
+
 }

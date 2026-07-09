@@ -98,6 +98,49 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    public void sendRankingPublishEmail(String toEmail, String tile, String emailMessage) {
+        if (!StringUtils.hasText(mailUsername)) {
+            if (devLogLink) {
+                log.info("=== DEV: Temporary password for {} ===\nPassword: {}\nLogin URL: {}", toEmail);
+            }
+            return;
+        }
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(mailUsername);
+        message.setTo(toEmail);
+        message.setSubject("FPT HACKATHON - " + tile);
+        message.setText(emailMessage);
+        mailSender.send(message);
+    }
+
+    @Override
+    public void sendNotifyToExpertReEvaluation(String toEmail, String teamName) {
+
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(mailUsername);
+        message.setTo(toEmail);
+        message.setSubject("FPT HACKATHON - Yêu cầu chấm lại bài dự thi theo đơn phúc khảo");
+
+        message.setText("""
+            Kính gửi Quý Ban Giám khảo,
+
+            Ban Tổ chức trân trọng thông báo rằng đơn phúc khảo của đội %s đã được xem xét và chấp thuận.
+
+            Theo đó, Ban Tổ chức kính đề nghị Quý Ban Giám khảo tiến hành xem xét và chấm lại bài dự thi của đội theo quy định của cuộc thi.
+
+            Kính mong Quý Ban Giám khảo hoàn thành việc chấm lại trong thời gian quy định để Ban Tổ chức tổng hợp và công bố kết quả.
+
+            Trân trọng,
+
+            Ban Tổ chức FPT Hackathon
+            """.formatted(teamName));
+
+        mailSender.send(message);
+
+    }
+
+    @Override
     public void sendTemporaryPasswordEmail(String toEmail, String tempPassword, String fullName) {
         String loginUrl = frontendUrl + "/login";
         String subject = "[Hackathon System] Thông tin cấp tài khoản thành viên mới";

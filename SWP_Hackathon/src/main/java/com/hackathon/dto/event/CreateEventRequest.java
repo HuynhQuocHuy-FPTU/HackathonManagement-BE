@@ -2,6 +2,7 @@ package com.hackathon.dto.event;
 
 import com.hackathon.dto.category.CreateCategoryRequest;
 import com.hackathon.dto.round.CreateRoundRequest;
+import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -14,16 +15,16 @@ import java.util.List;
 public class CreateEventRequest {
     @NotBlank(message = "Event name is required")
     private String eventName;
-
+    @FutureOrPresent(message = "Ngày phải là thời điểm trong tương lai")
     private LocalDateTime startDate;
-
+    @FutureOrPresent(message = "Ngày phải là thời điểm trong tương lai")
     private LocalDateTime endDate;
 
     private String title;
 
     private String address;
 
-    private String description;
+    private EventDescription description;
 
     @Min(value = 1, message = "Max team must be at least 1")
     private Integer maxTeam;
@@ -36,8 +37,10 @@ public class CreateEventRequest {
 
     private String bannerUrl;
 
+    @FutureOrPresent(message = "Ngày phải là thời điểm trong tương lai")
     private LocalDateTime registrationDeadline;
 
+    @FutureOrPresent(message = "Ngày phải là thời điểm trong tương lai")
     private LocalDateTime workshopTime;
 
     private List<CreateCategoryRequest> categories;

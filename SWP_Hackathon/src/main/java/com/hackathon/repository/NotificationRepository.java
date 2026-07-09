@@ -1,15 +1,18 @@
 package com.hackathon.repository;
 
+import com.hackathon.entity.Account;
 import com.hackathon.entity.Notification;
 import com.hackathon.entity.Team;
+import com.hackathon.entity.enums.InvitationStatus;
 import com.hackathon.entity.enums.NotiResponseStatus;
 import com.hackathon.entity.enums.NotificationType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface NotificationRepository extends JpaRepository<Notification,Long> {
+public interface NotificationRepository extends JpaRepository<Notification, Long> {
     List<Notification> findByTeam(Team team);
+
     List<Notification> findByTeamAndType(Team team, NotificationType type);
 
     List<Notification> findByAccount_AccountIdOrderByCreatedAtDesc(Integer accountId);
@@ -27,4 +30,8 @@ public interface NotificationRepository extends JpaRepository<Notification,Long>
     void deleteByAccount_AccountId(Integer accountId);
 
     void deleteByAccount_AccountIdAndType(Integer accountId, NotificationType type);
+
+    void deleteByTeam(Team team);
+    List<Notification>findByTeamAndTypeAndStatus(Team team , NotificationType type, InvitationStatus status);
+    List<Notification> findByAccountAndTypeAndStatus(Account account,NotificationType type, InvitationStatus status);
 }

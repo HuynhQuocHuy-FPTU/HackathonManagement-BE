@@ -1,10 +1,13 @@
 package com.hackathon.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.hackathon.dto.event.EventDescription;
 import com.hackathon.entity.enums.EventStatus;
 import com.hackathon.entity.enums.WorkshopStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -30,8 +33,9 @@ public class HackathonEvent {
     private String title;
     @Column(name = "Address", columnDefinition = "NVARCHAR(255)", nullable = true)
     private String address;
-    @Column(name = "Description", columnDefinition = "NVARCHAR(500)", nullable = true)
-    private String description;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "Description", columnDefinition = "NVARCHAR(MAX)", nullable = true)
+    private EventDescription description;
     @Column(name = "Season", columnDefinition = "NVARCHAR(100)", nullable = true)
     private String season;
     @Column(name = "Status", nullable = true)

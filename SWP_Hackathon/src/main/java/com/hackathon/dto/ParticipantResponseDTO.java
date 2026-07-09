@@ -3,6 +3,8 @@ package com.hackathon.dto;
 import com.hackathon.entity.enums.ParticipantStatus;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
@@ -11,7 +13,8 @@ import lombok.*;
 public class ParticipantResponseDTO {
     private Integer participantId;
     private String teamName;
-    private double totalScore;
+    private BigDecimal totalScore;
     private Integer rank;
     private ParticipantStatus status;
+
 }

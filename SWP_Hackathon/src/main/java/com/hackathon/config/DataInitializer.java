@@ -1,28 +1,23 @@
-package com.hackathon.service;
-
+package com.hackathon.config;
 
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.*;
 import com.hackathon.repository.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Service
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Component
+public class DataInitializer implements CommandLineRunner {
 
-public class DatabaseService {
+    @Value("${app.init-data:false}") // Mặc định là false (không chạy)
+    private boolean initData;
+
     @Autowired
     private CriteriaSetRepository criteriaSetRepository;
 
@@ -56,10 +51,11 @@ public class DatabaseService {
 
     @Autowired
     private TeamMemberRepository teamMemberRepository;
-
-
-    public void createDatabase() {
-
+    @Override
+    public void run(String... args) throws Exception {
+        if (!initData) {
+            return;
+        }
         if (!accountRepository.existsByEmail("admin@hackathon.com")) {
             accountRepository.save(Account.builder()
                     .createdAt(LocalDateTime.now())
@@ -68,19 +64,19 @@ public class DatabaseService {
                     .status(AccountStatus.ACTIVE)
                     .password(passwordEncoder.encode("Admin@123"))
                     .role(AccountRole.ADMIN)
-//                    .isPasswordChanged(true) // Admin tối cao thì gán luôn true để không bị ép đổi pass
+                    .isPasswordChanged(true) // Admin tối cao thì gán luôn true để không bị ép đổi pass
                     .build());
             System.out.println("Đã khởi tạo tài khoản Admin: admin@hackathon.com / Mật khẩu: Admin@123");
         }
-        Account acc1 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("nguyenvan30498@gmail.com").phone("0976352891").status(AccountStatus.ACTIVE).password(passwordEncoder.encode("123456")).role(AccountRole.EVENTCOORDINATOR).build());
+        Account acc1 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("nguyenvan30498@gmail.com").phone("0976352891").status(AccountStatus.ACTIVE).password(passwordEncoder.encode("123456")).isPasswordChanged(true).role(AccountRole.EVENTCOORDINATOR).build());
 
-        Account acc2 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("tranhoa456@gmail.com").password(passwordEncoder.encode("123456")).phone("0983452324").status(AccountStatus.ACTIVE).role(AccountRole.EXPERT).build());
+        Account acc2 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("tranhoa456@gmail.com").password(passwordEncoder.encode("123456")).phone("0983452324").isPasswordChanged(true).status(AccountStatus.ACTIVE).role(AccountRole.EXPERT).build());
 
-        Account acc3 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("lehuyen4238@gmail.com").password(passwordEncoder.encode("123456")).phone("097635235").status(AccountStatus.ACTIVE).role(AccountRole.EXPERT).build());
+        Account acc3 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("lehuyen4238@gmail.com").password(passwordEncoder.encode("123456")).phone("097635235").isPasswordChanged(true).status(AccountStatus.ACTIVE).role(AccountRole.EXPERT).build());
 
-        Account acc4 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("lehoa345@gmail.com").password(passwordEncoder.encode("123456")).phone("0126789354").status(AccountStatus.ACTIVE).role(AccountRole.STUDENT).build());
+        Account acc4 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("lehoa345@gmail.com").password(passwordEncoder.encode("123456")).phone("0126789354").isPasswordChanged(true).status(AccountStatus.ACTIVE).role(AccountRole.STUDENT).build());
 
-        Account acc5 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("nguyenha@gmail.com").password(passwordEncoder.encode("123456")).phone("0976336472").status(AccountStatus.ACTIVE).role(AccountRole.STUDENT).build());
+        Account acc5 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("nguyenha@gmail.com").password(passwordEncoder.encode("123456")).phone("0976336472").isPasswordChanged(true).status(AccountStatus.ACTIVE).role(AccountRole.STUDENT).build());
 
 
         //Create eventcoordiantor
@@ -125,71 +121,71 @@ public class DatabaseService {
         criteriaDetailRepository.save(CriteriaDetail.builder().criteriaSet(criteriaSet2).criteriaName("Trải nghiệm người dùng").description("Mượt mà, ít lỗi, dễ tiếp cận").criteriaType(CriteriaType.PRESENTATION).weight(new BigDecimal(15)).build());
 
         criteriaDetailRepository.save(CriteriaDetail.builder().criteriaSet(criteriaSet2).criteriaName("Trình bày và demo").description("Logic, rõ ràng, trả lời tất cả câu hỏi của ban giám khảo").criteriaType(CriteriaType.PRESENTATION).weight(new BigDecimal(25)).build());
-////
-//        Account[] studentAccounts = new Account[15];
-//        Student[] students = new Student[15];
-//        Team[] teams = new Team[5];
-//
-//        int studentIndex = 0;
-//
-//// =======================
-//// 1. CREATE 15 STUDENTS
-//// =======================
-//        for (int i = 0; i < 15; i++) {
-//
-//            studentAccounts[i] = accountRepository.save(
-//                    Account.builder()
-//                            .createdAt(LocalDateTime.now())
-//                            .email("student" + (i + 1) + "@gmail.com")
-//                            .phone("09000000" + i)
-//                            .password(passwordEncoder.encode("123456"))
-//                            .status(AccountStatus.ACTIVE)
-//                            .role(AccountRole.STUDENT)
-//                            .build()
-//            );
-//
-//            students[i] = studentRepository.save(
-//                    Student.builder()
-//                            .studentCode("SE" + (200000 + i))
-//                            .studentName("Student " + (i + 1))
-//                            .major("Software Engineering")
-//                            .status(StudentStatus.STUDYING)
-//                            .startDate(LocalDateTime.now())
-//                            .account(studentAccounts[i])
-//                            .build()
-//            );
-//        }
-//
-//// =======================
-//// 2. CREATE 5 TEAMS + TEAM MEMBERS
-//// =======================
-//        for (int i = 0; i < 5; i++) {
-//
-//            Team team = teamRepository.save(
-//                    Team.builder()
-//                            .teamName("Team " + (i + 1))
-//                            .teamSize(3)
-//                            .status(TeamStatus.DRAFT)
-//                            .build()
-//            );
-//
-//            teams[i] = team;
-//
-//            // mỗi team 3 student
-//            for (int j = 0; j < 3; j++) {
-//
-//                Student student = students[studentIndex++];
-//
-//                TeamMember member = TeamMember.builder()
-//                        .team(team)
-//                        .student(student)
-//                        .isLeader(j == 0)
-//                        .build();
-//
-//                teamMemberRepository.save(member);
-//            }
-//        }
-//
+
+        Account[] studentAccounts = new Account[15];
+        Student[] students = new Student[15];
+        Team[] teams = new Team[5];
+
+        int studentIndex = 0;
+
+// =======================
+// 1. CREATE 15 STUDENTS
+// =======================
+        for (int i = 0; i < 15; i++) {
+
+            studentAccounts[i] = accountRepository.save(
+                    Account.builder()
+                            .createdAt(LocalDateTime.now())
+                            .email("student" + (i + 1) + "@gmail.com")
+                            .phone("09000000" + i)
+                            .password(passwordEncoder.encode("123456")).isPasswordChanged(true)
+                            .status(AccountStatus.ACTIVE)
+                            .role(AccountRole.STUDENT)
+                            .build()
+            );
+
+            students[i] = studentRepository.save(
+                    Student.builder()
+                            .studentCode("SE" + (200000 + i))
+                            .studentName("Student " + (i + 1))
+                            .major("Software Engineering")
+                            .status(StudentStatus.STUDYING)
+                            .startDate(LocalDateTime.now())
+                            .account(studentAccounts[i])
+                            .build()
+            );
+        }
+
+// =======================
+// 2. CREATE 5 TEAMS + TEAM MEMBERS
+// =======================
+        for (int i = 0; i < 5; i++) {
+
+            Team team = teamRepository.save(
+                    Team.builder()
+                            .teamName("Team " + (i + 1))
+                            .teamSize(3)
+                            .status(TeamStatus.DRAFT)
+                            .build()
+            );
+
+            teams[i] = team;
+
+            // mỗi team 3 student
+            for (int j = 0; j < 3; j++) {
+
+                Student student = students[studentIndex++];
+
+                TeamMember member = TeamMember.builder()
+                        .team(team)
+                        .student(student)
+                        .isLeader(j == 0)
+                        .build();
+
+                teamMemberRepository.save(member);
+            }
+        }
+
 //// =======================
 //// 3. CREATE REGISTRATION (eventId = 1)
 //// =======================
@@ -208,5 +204,3 @@ public class DatabaseService {
 //        }
     }
 }
-
-

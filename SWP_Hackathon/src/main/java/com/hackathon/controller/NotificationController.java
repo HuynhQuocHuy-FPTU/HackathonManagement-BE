@@ -2,8 +2,8 @@ package com.hackathon.controller;
 
 import com.hackathon.dto.notification.NotiResponseRequest;
 import com.hackathon.dto.notification.NotificationWebResponse;
-import com.hackathon.entity.Notification;
 import com.hackathon.entity.enums.NotificationType;
+import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -13,71 +13,132 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RestController("/api/notifications")
+@RestController
+@RequestMapping("/api/notifications")
 @RequiredArgsConstructor
 public class NotificationController {
     private final NotificationService notificationService;
 
     @GetMapping("/web/all")
-    public ResponseEntity<List<NotificationWebResponse>>getAll(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ResponseEntity.ok(notificationService.getNotifications(userDetails));
+    public ResponseEntity<ApiResponse<List<NotificationWebResponse>>> getAll(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        notificationService.getNotifications(userDetails),
+                        "Danh sách thông báo"
+                )
+        );
     }
     @GetMapping("/web/unread")
-    public ResponseEntity<List<NotificationWebResponse>> getUnread(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ResponseEntity.ok(notificationService.getUnreadNotifications(userDetails));
+    public ResponseEntity<ApiResponse<List<NotificationWebResponse>>> getUnread(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        notificationService.getUnreadNotifications(userDetails),
+                        "Danh sách chưa đọc"
+                )
+        );
     }
     @GetMapping("/web/read")
-    public ResponseEntity<List<NotificationWebResponse>> getRead(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ResponseEntity.ok(notificationService.getReadNotifications(userDetails));
+    public ResponseEntity<ApiResponse<List<NotificationWebResponse>>> getRead(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        notificationService.getReadNotifications(userDetails),
+                        "Danh sách đã đọc"
+                )
+        );
     }
 
     @GetMapping("/web/unread/count")
-    public ResponseEntity<Long> countUnread(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ResponseEntity.ok(notificationService.countUnread(userDetails));
+    public ResponseEntity<ApiResponse<Long>> countUnread(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        notificationService.countUnread(userDetails),
+                        "Số thông báo chưa đọc"
+                )
+        );
     }
 
     @PutMapping("/web/{id}/read")
-    public ResponseEntity<String> markAsRead(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<ApiResponse<Void>> markAsRead(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
         notificationService.markAsRead(id, userDetails);
-        return ResponseEntity.ok("Đã đọc notification");
+
+        return ResponseEntity.ok(
+                ApiResponse.success(null, "Đã đánh dấu đã đọc")
+        );
     }
 
     @PutMapping("/web/read-all")
-    public ResponseEntity<String> markAllAsRead(
+    public ResponseEntity<ApiResponse<Void>> markAllAsRead(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         notificationService.markAllAsRead(userDetails);
-        return ResponseEntity.ok("Đã đọc tất cả notification");
+
+        return ResponseEntity.ok(
+                ApiResponse.success(null, "Đã đọc tất cả notification")
+        );
     }
+
     @DeleteMapping("/web/{id}")
-    public ResponseEntity<String> deleteNotification(
+    public ResponseEntity<ApiResponse<Void>> deleteNotification(
             @PathVariable Long id,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         notificationService.deleteNotification(id, userDetails);
-        return ResponseEntity.ok("Đã xóa notification");
+
+        return ResponseEntity.ok(
+                ApiResponse.success(null, "Đã xóa notification")
+        );
     }
 
     @GetMapping("/web/filter")
-    public ResponseEntity<List<NotificationWebResponse>> getByType(
+    public ResponseEntity<ApiResponse<List<NotificationWebResponse>>> getByType(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam NotificationType type
     ) {
-        return ResponseEntity.ok(notificationService.getByType(userDetails, type));
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        notificationService.getByType(userDetails, type),
+                        "Kết quả lọc theo loại"
+                )
+        );
     }
 
     @PostMapping("/web/response/{notiId}")
-    public ResponseEntity<Void> responseCategoryAssigment(@PathVariable Long notiId, @RequestBody NotiResponseRequest request,@AuthenticationPrincipal CustomUserDetails userDetails){
-        notificationService.responseCategoryAssignment(notiId, request.getMessage(),userDetails );
-        return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/web/pending-response")
-    public ResponseEntity<List<NotificationWebResponse>> getPendingResponses(
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<ApiResponse<Void>> responseCategoryAssigment(
+            @PathVariable Long notiId,
+            @RequestBody NotiResponseRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        notificationService.responseCategoryAssignment(
+                notiId,
+                request.getMessage(),
+                userDetails
+        );
 
         return ResponseEntity.ok(
-                notificationService.getPendingResponses(userDetails));
+                ApiResponse.success(null, "Phản hồi thành công")
+        );
+    }
+    @GetMapping("/web/pending-response")
+    public ResponseEntity<ApiResponse<List<NotificationWebResponse>>> getPendingResponses(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        notificationService.getPendingResponses(userDetails),
+                        "Danh sách chờ phản hồi"
+                )
+        );
     }
 
 }

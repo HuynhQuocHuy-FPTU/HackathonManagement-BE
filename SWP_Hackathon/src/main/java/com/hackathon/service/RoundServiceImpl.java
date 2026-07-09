@@ -43,9 +43,6 @@ public class RoundServiceImpl implements RoundService{
     private ExpertAssignService expertAssignService;
 
     @Autowired
-    private ExpertAssignRepository expertAssignRepository;
-
-    @Autowired
     private CriteriaSetRepository criteriaSetRepository;
     @Autowired
     private EvaluationCriteriaRepository evaluationCriteriaRepository;
@@ -76,6 +73,10 @@ public class RoundServiceImpl implements RoundService{
         round.setAdvancementRule(request.getAdvancementRule());
         round.setTopN(request.getTopN());
         round.setSubmissionDeadline(request.getSubmissionDeadline());
+        round.setSubmissionType(request.getSubmissionType());
+        round.setAllowedFileType(request.getAllowedFileTypes());
+        round.setMaxFileCount(request.getMaxFileCount());
+        round.setMaxTotalSizeMb(request.getMaxTotalSizeMb());
         round.setStatus(RoundStatus.UPCOMING);
         round.setOrderIndex(request.getOrderIndex());
         if(request.getCriteriaSetId() != null){
@@ -146,9 +147,6 @@ public class RoundServiceImpl implements RoundService{
             // 3. Kiểm tra dòng thời gian so với các round khác trong cùng Event
             roundValidator.validateTimelineByOrderIndexUpdate(roundRequest, currentRounds);
 
-
-
-
             // 4. Cập nhật thông tin round
             saveRound.setRoundName(roundRequest.getRoundName());
             saveRound.setStartTime(roundRequest.getStartDate());
@@ -157,6 +155,10 @@ public class RoundServiceImpl implements RoundService{
             saveRound.setTopN(roundRequest.getTopN());
             saveRound.setOrderIndex(roundRequest.getOrderIndex());
             saveRound.setSubmissionDeadline(roundRequest.getSubmissionDeadline());
+            saveRound.setSubmissionType(roundRequest.getSubmissionType());
+            saveRound.setAllowedFileType(roundRequest.getAllowedFileTypes());
+            saveRound.setMaxFileCount(roundRequest.getMaxFileCount());
+            saveRound.setMaxTotalSizeMb(roundRequest.getMaxTotalSizeMb());
             // 5. Lấy CriteriaSet tương ứng
             if(roundRequest.getCriteriaSetId() != null){
                 CriteriaSet criteriaSet = criteriaSetRepository.findById(roundRequest.getCriteriaSetId())
@@ -261,6 +263,10 @@ public class RoundServiceImpl implements RoundService{
         return roundRepository.save(round);
     }
 
+    @Override
+    public Optional<Round> findById(Integer roundId) {
+        return roundRepository.findById(roundId);
+    }
 
 
 }

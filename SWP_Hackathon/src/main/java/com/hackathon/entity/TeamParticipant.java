@@ -5,6 +5,7 @@ import com.hackathon.entity.enums.ParticipantStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 @NoArgsConstructor
@@ -18,30 +19,33 @@ public class TeamParticipant {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "Disqualification_Reason")
+    @Column(name = "Disqualification_Reason", columnDefinition = "NVARCHAR(255)")
     private String disqualificationReason;
 
     @Enumerated(EnumType.STRING)
     private ParticipantStatus status;
 
     @Column(name = "Total_Score")
-    private double totalScore;
+    private BigDecimal totalScore;
 
     @Column(name = "Rank")
     private Integer rank;
 
-    @Column(name = "Present_Member")
-    private Integer presentMembers;
-
-    @OneToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "Registration_Id")
     private Registration registration;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JsonIgnore
     @JoinColumn(name = "CategoryRound_ID")
     private CategoryRound categoryRound;
 
-    @OneToMany(mappedBy = "teamParticipant", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "teamParticipant", cascade = CascadeType.ALL)
     private List<Evaluation> evaluations = new ArrayList<>();
+
+    @OneToMany(mappedBy = "teamParticipant", cascade = CascadeType.ALL)
+    private List<Submission> submissions = new ArrayList<>();
+
+
+
 
 }

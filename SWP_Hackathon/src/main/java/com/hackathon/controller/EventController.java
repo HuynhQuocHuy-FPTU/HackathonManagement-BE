@@ -59,63 +59,103 @@ public class EventController {
     // COORDINATOR ENDPOINTS (Dành cho quản trị viên)
     // =========================================================
     @PostMapping("/create")
-    public ResponseEntity<EventResponse> createEvent(@Valid @RequestBody CreateEventRequest request) {
+    public ResponseEntity<ApiResponse<EventResponse>> createEvent(@Valid @RequestBody CreateEventRequest request) {
         EventResponse response = eventService.createEvent(request);
-        return new ResponseEntity<>(response,HttpStatus.CREATED);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success(response, "Event được tạo thành công"));
     }
 
     @PutMapping("/publish/{eventId}")
-    public ResponseEntity<String> publishEvent(@PathVariable Integer eventId){
+    public ResponseEntity<ApiResponse<Void>> publishEvent(@PathVariable Integer eventId) {
+
         eventService.publishEvent(eventId);
-        return ResponseEntity.ok("Sự kiện đã được công khai thành công");
+
+        return ResponseEntity.ok(
+                ApiResponse.success(null, "Sự kiện đã được công khai thành công")
+        );
     }
     @PutMapping("/delete/{eventId}")
-    public ResponseEntity<String> deleteEvent(@PathVariable Integer eventId){
+    public ResponseEntity<ApiResponse<Void>> deleteEvent(@PathVariable Integer eventId) {
+
         eventService.deleteEvent(eventId);
-        return ResponseEntity.ok("Sự kiện đã được xóa thành công và chuyển vào thùng rác");
+
+        return ResponseEntity.ok(
+                ApiResponse.success(null, "Sự kiện đã được xóa thành công và chuyển vào thùng rác")
+        );
     }
     @PutMapping("/update/{eventId}")
-    public ResponseEntity<EventResponse> updateEvent(@Valid @RequestBody UpdateEventRequest request, @PathVariable Integer eventId){
+    public ResponseEntity<ApiResponse<EventResponse>> updateEvent(
+            @Valid @RequestBody UpdateEventRequest request,
+            @PathVariable Integer eventId
+    ) {
         EventResponse response = eventService.updateEvent(request, eventId);
-        return ResponseEntity.ok(response);
-    }
 
+        return ResponseEntity.ok(
+                ApiResponse.success(response, "Cập nhật sự kiện thành công")
+        );
+    }
     @GetMapping("/trash")
-    public ResponseEntity<List<EventResponse>> getDeletedEvents(){
+    public ResponseEntity<ApiResponse<List<EventResponse>>> getDeletedEvents() {
+
         List<EventResponse> responses = eventService.getDeletedEvents();
-        return ResponseEntity.ok(responses);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(responses, "Danh sách sự kiện đã xóa")
+        );
     }
 
     @PutMapping("/restore/{eventId}")
-    public ResponseEntity<String> restoreEvent(@PathVariable Integer eventId){
+    public ResponseEntity<ApiResponse<Void>> restoreEvent(@PathVariable Integer eventId) {
+
         eventService.restoreEvent(eventId);
-        return ResponseEntity.ok("Khôi phục event thành công! Trạng thái đã được cập nhật");
+
+        return ResponseEntity.ok(
+                ApiResponse.success(null, "Khôi phục event thành công")
+        );
     }
 
     @DeleteMapping("/permanently/{eventId}")
-    public ResponseEntity<String> permanentlyDeleteEvent(@PathVariable Integer eventId){
+    public ResponseEntity<ApiResponse<Void>> permanentlyDeleteEvent(@PathVariable Integer eventId) {
+
         eventService.permanentlyDeleteEvent(eventId);
-        return ResponseEntity.ok("Đã xóa vĩnh viễn event");
+
+        return ResponseEntity.ok(
+                ApiResponse.success(null, "Đã xóa vĩnh viễn event")
+        );
     }
     @GetMapping("/search-all")
-    public ResponseEntity<List<EventResponse>> searchEvents(@RequestParam(required = false) String name) {
+    public ResponseEntity<ApiResponse<List<EventResponse>>> searchEvents(
+            @RequestParam(required = false) String name
+    ) {
 
-        return ResponseEntity.ok(eventService.searchByEventName(name));
+        return ResponseEntity.ok(
+                ApiResponse.success(eventService.searchByEventName(name), "Kết quả tìm kiếm")
+        );
     }
 
     @GetMapping("/detail/{eventId}")
-    public ResponseEntity<EventResponse> getEventDetail(@PathVariable Integer eventId) {
-        return ResponseEntity.ok(eventService.getEventDetail(eventId));
+    public ResponseEntity<ApiResponse<EventResponse>> getEventDetail(@PathVariable Integer eventId) {
+
+        return ResponseEntity.ok(
+                ApiResponse.success(eventService.getEventDetail(eventId), "Chi tiết event")
+        );
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<EventResponse>> getAllEvent(){
-        return ResponseEntity.ok(eventService.getAllEvent());
+    public ResponseEntity<ApiResponse<List<EventResponse>>> getAllEvent() {
+
+        return ResponseEntity.ok(
+                ApiResponse.success(eventService.getAllEvent(), "Danh sách event")
+        );
     }
 
     @GetMapping("/experts")
-    public ResponseEntity<List<ExpertInfoResponse>> getAllExperts(){
-        return ResponseEntity.ok(expertService.getAllExperts());
+    public ResponseEntity<ApiResponse<List<ExpertInfoResponse>>> getAllExperts() {
+
+        return ResponseEntity.ok(
+                ApiResponse.success(expertService.getAllExperts(), "Danh sách expert")
+        );
     }
     @GetMapping("/categories/{eventId}")
     public ResponseEntity<ApiResponse<List<CategoryResponse>>> getCategoriesOfEvent(@PathVariable Integer eventId){
@@ -124,9 +164,15 @@ public class EventController {
     }
 
     @PutMapping("/cancel/{eventId}")
-    public ResponseEntity<String> cancelledEvent(@PathVariable Integer eventId, @AuthenticationPrincipal CustomUserDetails userDetails, @RequestParam String reason){
+    public ResponseEntity<ApiResponse<Void>> cancelledEvent(
+            @PathVariable Integer eventId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam String reason
+    ) {
         eventService.cancelEvent(eventId, reason, userDetails);
-        return ResponseEntity.ok("Đã hủy cuộc thi và gửi thông báo đến các team");
+        return ResponseEntity.ok(
+                ApiResponse.success(null, "Đã hủy cuộc thi và gửi thông báo đến các team")
+        );
     }
 
 
