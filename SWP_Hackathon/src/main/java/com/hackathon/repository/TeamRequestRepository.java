@@ -29,8 +29,11 @@ public interface TeamRequestRepository extends JpaRepository<TeamRequest,Integer
             "     AND ea.role = 'MENTOR')")
     List<TeamRequest> findRequestForExpertRoleMentor(@Param("expertId") Integer expertID);
 
-    boolean existsByTeam_TeamIdAndStatus(Integer teamId, RequestStatus status);
+    boolean existsByTeam_TeamIdAndStatusAndRequestType(Integer teamId, RequestStatus status, RequestType type);
 
     List<TeamRequest> findByRound_RoundIdAndRequestType(Integer roundId, RequestType requestType);
+
+    List<TeamRequest> findByRound_RoundIdAndRequestTypeAndStatus(Integer roundId, RequestType requestType, RequestStatus status);
+    List<TeamRequest> findByRound_RoundIdAndRequestTypeAndStatusIn(Integer roundId, RequestType type, List<RequestStatus> statuses);
 
 }

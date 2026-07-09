@@ -1,11 +1,13 @@
 package com.hackathon.dto.team;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.hackathon.dto.evaluation.EvaluationResponse;
 import com.hackathon.entity.enums.NotiResponseStatus;
 import com.hackathon.entity.enums.RequestStatus;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -27,6 +29,5 @@ public class TeamRequestResponse {
     private NotiResponseStatus responseStatus;
     private Integer responseId;
     private LocalDateTime responseAt;// thời gian phàn hồi của mentor
-
-
+    private List<EvaluationResponse> listEvaluation;
 }

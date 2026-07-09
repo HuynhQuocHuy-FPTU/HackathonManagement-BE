@@ -2,11 +2,13 @@ package com.hackathon.controller;
 
 import com.hackathon.dto.ParticipantResponseDTO;
 import com.hackathon.dto.ranking.CategoryRoundRankingResponse;
+import com.hackathon.dto.ranking.OpenAppealRequestDTO;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.ParticipantService;
 import com.hackathon.service.ParticipantServiceImpl;
 import com.hackathon.service.ranking.RankingService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -33,6 +35,18 @@ public class RankingController {
     }
 
     /**
+     * Event Coordinator mở cổng đăng ký khiếu nại
+     */
+
+    @PutMapping("/open-appeals")
+    public ResponseEntity<ApiResponse<Void>> openAppeals(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody OpenAppealRequestDTO request) {
+        rankingService.openAppeals( userDetails,request);
+        return ResponseEntity.ok(ApiResponse.success(null, "Mở cổng phúc khảo thành công"));
+    }
+
+    /**
      * Event Coordinator bấm nút phê duyệt dữ liệu xếp hạng
      */
 
@@ -45,7 +59,7 @@ public class RankingController {
         return ResponseEntity.ok(ApiResponse.success(dto, "Ban tổ chức phê duyệt thành công"));
     }
 
-    @PostMapping("/{rounId}/reject")
+    @PostMapping("/{roundId}/reject")
     public ResponseEntity<ApiResponse<CategoryRoundRankingResponse>> rejectRanking(
             @PathVariable Integer roundId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {

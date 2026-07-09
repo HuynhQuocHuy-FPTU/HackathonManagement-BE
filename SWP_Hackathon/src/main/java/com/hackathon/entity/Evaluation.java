@@ -23,9 +23,12 @@ public class Evaluation {
     private BigDecimal score;
     @Column(name = "Comment", columnDefinition = "NVARCHAR(500)")
     private String comment;
-
     @Enumerated(EnumType.STRING)
     private EvaluationStatus status;
+    @Column(name="Original_Score", precision = 10 , scale = 2, nullable = true)
+    private BigDecimal originalScore;
+    @Column(name="Is_ReEvaluation")
+    private Boolean isReEvaluation;
 
     //1 expertAsgin -N evaluation
     @ManyToOne(fetch = FetchType.LAZY)

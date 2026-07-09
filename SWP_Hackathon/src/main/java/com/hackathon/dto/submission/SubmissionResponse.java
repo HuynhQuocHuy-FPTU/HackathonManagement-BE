@@ -2,12 +2,14 @@ package com.hackathon.dto.submission;
 
 import com.hackathon.entity.Submission;
 import com.hackathon.entity.enums.SubmissionStatus;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.List;
+@NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
+@Builder
 public class SubmissionResponse {
 
     private Integer submissionId;

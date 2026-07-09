@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,5 +33,5 @@ public interface RoundRepository extends JpaRepository<Round, Integer> {
             @Param("allowedEventStatuses") List<EventStatus> allowedEventStatuses
     );
 
-    Optional<Round> findRoundByHackathonEvent_EventIdAndOrderIndex(Integer hackathonEventEventId, Integer orderIndex);
+    List<Round> findByStatusAndAppealEndTimeBefore(RoundStatus status, LocalDateTime time);
 }

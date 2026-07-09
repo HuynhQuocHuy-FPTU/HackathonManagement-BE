@@ -3,14 +3,18 @@ package com.hackathon.controller;
 import com.hackathon.dto.auth.*;
 import com.hackathon.dto.common.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
+import com.hackathon.service.StudentServiceImpl;
 import com.hackathon.service.auth.AuthService;
 import com.hackathon.service.auth.RegisterService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
 
 @RestController
 @RequiredArgsConstructor
@@ -19,6 +23,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final RegisterService registerService; // Thêm RegisterService
+    private final StudentServiceImpl studentService;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<Void>> register(@Valid @RequestBody RegisterRequest request) {
@@ -83,5 +88,22 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.ok("Đổi mật khẩu thành công! Vui lòng đăng nhập lại."));
     }
 
+//    @PostMapping("/register-google")
+//    public ResponseEntity<ApiResponse<Void>> registerWithGoogle(@RequestParam String email) {
+//        authService.registerWithGoogle(email);
+//        return ResponseEntity.ok(ApiResponse.ok("Đăng ký thành công"));
+//    }
+
+    @GetMapping("/oauth2/google")
+    public void googleLogin(HttpServletResponse response) throws IOException {
+        response.sendRedirect("/oauth2/authorization/google");
+    }
+    @PostMapping("/complete-register")
+    public ResponseEntity<ApiResponse<Void>>completeRegister(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody StudentUpdateRequest request) {
+        studentService.completeRegister(userDetails, request);
+        return ResponseEntity.ok(ApiResponse.ok("Hoàn tất đăng ký"));
+    }
 
 }

@@ -3,6 +3,7 @@ package com.hackathon.repository;
 import com.hackathon.entity.Evaluation;
 import com.hackathon.entity.enums.EvaluationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
