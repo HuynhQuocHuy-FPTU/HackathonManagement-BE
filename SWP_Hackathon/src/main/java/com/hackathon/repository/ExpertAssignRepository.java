@@ -104,4 +104,7 @@ public interface ExpertAssignRepository extends JpaRepository<ExpertAssign, Inte
             @Param("categoryRoundId") Integer categoryRoundId,
             @Param("expertId") Integer expertId);
 
+    @Query("SELECT COUNT(DISTINCT ea.expert.expertId) FROM ExpertAssign ea WHERE ea.role = :role")
+    long countDistinctExpertByRole(@Param("role") ExpertRole role);
+
 }
