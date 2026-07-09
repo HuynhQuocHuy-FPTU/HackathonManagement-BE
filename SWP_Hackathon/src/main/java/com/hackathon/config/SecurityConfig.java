@@ -138,7 +138,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/registrations/*/pendingTeam").hasRole("EVENTCOORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/api/registrations/*/pendingTeam-detail").hasRole("EVENTCOORDINATOR")
 
+                        //Dành cho ADMIN
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/roles/permissions").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/roles/permissions").hasRole("ADMIN")
+
                         .requestMatchers("/api/users/**").authenticated()
                         .anyRequest().authenticated()
                 )

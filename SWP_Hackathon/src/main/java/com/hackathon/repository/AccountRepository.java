@@ -51,4 +51,6 @@ public interface AccountRepository extends JpaRepository<Account, Integer> {
             """)
     List<Account> findParticipantsByRoundId(@Param("roundId") Integer roundId);
     List<Account> findByRoleIn(List<AccountRole> roles);
+
+    long countByRole(AccountRole role);
 }
