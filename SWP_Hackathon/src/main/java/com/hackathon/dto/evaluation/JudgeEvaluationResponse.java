@@ -4,6 +4,7 @@ import com.hackathon.entity.enums.EvaluationStatus;
 import lombok.Builder;
 import lombok.Data;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -19,7 +20,7 @@ public class JudgeEvaluationResponse {
     private String comment;
     private EvaluationStatus status;
     private boolean isEditable;    // Trạng thái kiểm soát quyền chỉnh sửa dựa trên cấu hình thời gian
-
+    private LocalDateTime gradingDeadline;
     // Danh sách điểm thành phần tách biệt hoàn toàn
     private List<CriteriaScoreResponse> criteriaScores;
 }

@@ -6,6 +6,7 @@ import com.hackathon.entity.Evaluation;
 import com.hackathon.entity.EvaluationDetail;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,7 +20,7 @@ public class EvaluationMapper {
     /**
      * Chuyển đổi thực thể Evaluation thành DTO JudgeEvaluationResponse hoàn chỉnh.
      */
-    public JudgeEvaluationResponse toResponse(Evaluation evaluation, boolean isEditable) {
+    public JudgeEvaluationResponse toResponse(Evaluation evaluation, boolean isEditable, LocalDateTime gradingDeadline) {
 
         // 1. Ánh xạ danh sách các điểm chi tiết thành phần
         List<CriteriaScoreResponse> criteriaScores = evaluation.getEvaluationDetails().stream()
@@ -36,6 +37,7 @@ public class EvaluationMapper {
                 .comment(evaluation.getComment())
                 .status(evaluation.getStatus())
                 .isEditable(isEditable)
+                .gradingDeadline(gradingDeadline)
                 .criteriaScores(criteriaScores)
                 .build();
     }
