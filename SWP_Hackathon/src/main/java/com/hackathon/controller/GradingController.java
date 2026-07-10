@@ -77,4 +77,18 @@ public class GradingController {
 
         return ResponseEntity.ok(ApiResponse.ok("Xử lý ghi nhận điểm số đánh giá thành công!", executionResult));
     }
+
+    /**
+     * API: Tải lại dữ liệu bài đã chấm (Review/Edit Mode)
+     * Cú pháp gọi endpoint: GET /api/grading/submissions/{submissionId}/evaluation
+     */
+    @GetMapping("/submissions/{submissionId}/evaluation")
+    public ResponseEntity<ApiResponse<JudgeEvaluationResponse>> viewMyEvaluation(
+            @PathVariable Integer submissionId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        JudgeEvaluationResponse responseData = gradingService.viewMyEvaluation(userDetails.getAccount(), submissionId);
+
+        return ResponseEntity.ok(ApiResponse.ok("Tải dữ liệu điểm cũ thành công!", responseData));
+    }
 }

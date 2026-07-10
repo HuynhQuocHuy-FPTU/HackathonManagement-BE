@@ -87,6 +87,38 @@ public class GradingServiceImpl implements GradingService {
                 .collect(Collectors.toList());
     }
 
+    // =========================================================================
+    // API: XEM LẠI ĐIỂM CŨ ĐỂ SỬA
+    // =========================================================================
+    @Override
+    public JudgeEvaluationResponse viewMyEvaluation(Account account, Integer submissionId) {
+
+        // 1. Phân tích ngữ cảnh bảo mật: Xác thực Chuyên gia và Bài nộp
+        Expert expert = assignmentResolver.resolveExpert(account);
+        Submission submission = submissionRepository.findById(submissionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dữ liệu Bài nộp: " + submissionId));
+
+        Round round = submission.getTeamParticipant().getCategoryRound().getRound();
+
+        // 2. Xác minh quyền: Đảm bảo ông này là Judge của đúng Vòng thi đó
+        ExpertAssign expertAssign = assignmentResolver.requireJudgeAssignment(
+                expert, submission.getTeamParticipant().getCategoryRound().getCategoryRoundId());
+
+        // 3. Kéo bản ghi điểm số cũ lên
+        Evaluation evaluation = evaluationRepository.findByExpertAssignIdAndSubmissionId(expertAssign.getAssignId(), submissionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Giám khảo chưa từng chấm bài này. Vui lòng sử dụng luồng Chấm mới!"));
+
+        // 4. Kiểm tra xem thời gian hiện tại còn cho phép sửa điểm không?
+        // Nếu đã qua Deadline, cờ isEditable sẽ = false, Frontend dựa vào cờ này để disable (làm mờ) nút Lưu.
+        boolean isEditable = deadlinePolicy.isGradingOpen(round);
+
+        // 5. Lấy thông tin thời gian Deadline cấu hình
+        LocalDateTime deadline = deadlinePolicy.getGradingDeadline(round);
+
+        // 6. Map ra DTO trả về cho Client tái hiện giao diện
+        return evaluationMapper.toResponse(evaluation, isEditable, deadline);
+    }
+
     // =======================================================
     // API: UPSERT (LƯU ĐIỂM HOẶC CẬP NHẬT ĐIỂM)
     // =======================================================
