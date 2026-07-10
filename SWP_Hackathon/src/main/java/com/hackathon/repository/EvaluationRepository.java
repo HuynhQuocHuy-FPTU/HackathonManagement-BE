@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -17,4 +18,5 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Integer>
     Optional<Evaluation> findByExpertAssignIdAndSubmissionId(
             @Param("assignId") Integer assignId,
             @Param("submissionId") Integer submissionId);
+    List<Evaluation> findBySubmission_SubmissionId(Integer submissionId);
 }

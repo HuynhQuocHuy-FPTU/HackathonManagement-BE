@@ -67,13 +67,6 @@ public class AuditService {
     }
 
     public void saveLog(Account acc, AuditAction action, AuditEntityType entityType, Integer entityId, String description) {
-//        AuditLog auditLog = new AuditLog();
-//        auditLog.setAction(action);
-//        auditLog.setEntityType(entityType);
-//        auditLog.setEntityId(entityId);
-//        auditLog.setAccount(acc);
-//        auditLog.setDescription(description);
-//        auditLogRepository.save(auditLog);
         this.saveLog(acc, action, entityType, entityId, description, null);
 
     }
@@ -105,54 +98,6 @@ public class AuditService {
         return list.map(this::toResponse);
     }
 
-    public AdminOverviewResponse getOverviewForAdmin() {
 
-        long totalRoles = AccountRole.values().length;
-        long highLevelAccounts = accountRepository.countByRole(AccountRole.EXPERT)
-                + accountRepository.countByRole(AccountRole.EVENTCOORDINATOR);
-        LocalDateTime time = LocalDateTime.now().minusHours(24);
-        long totalLogs24h = auditLogRepository.countTotalLogs24h(time);
-        long bannedAccounts = accountRepository.countByStatus(AccountStatus.BANNED)
-                + accountRepository.countByStatus(AccountStatus.INACTIVE);
-
-        // Metrics
-        AdminOverviewResponse.AdminMetricsResponse metrics = new AdminOverviewResponse.AdminMetricsResponse();
-        metrics.setSystemRoles(totalRoles);
-        metrics.setTotalLog24h(totalLogs24h);
-        metrics.setHighLevelAccounts(highLevelAccounts);
-        metrics.setBannedAccounts(bannedAccounts);
-        //Role distribution
-        long studentCount = accountRepository.countByRole(AccountRole.STUDENT);
-        long adminCount = accountRepository.countByRole(AccountRole.ADMIN);
-        long coordinatorCount = accountRepository.countByRole(AccountRole.EVENTCOORDINATOR);
-        long expertCount = accountRepository.countByRole(AccountRole.EXPERT);
-        long totalUser = studentCount + adminCount + coordinatorCount + expertCount;
-        AdminOverviewResponse.RoleDistributionResponse distribution = new AdminOverviewResponse.RoleDistributionResponse();
-        distribution.setStudentCount(studentCount);
-        distribution.setAdminCount(adminCount);
-        distribution.setCoordinatorCount(coordinatorCount);
-        distribution.setExpertCount(expertCount);
-        distribution.setTotalUsers(totalUser);
-        //RecentAuditLogs
-        List<AuditLog> list = auditLogRepository.findTop10ByOrderByCreatedAtDesc();
-        List<AuditLogResponse> recentLogs = new ArrayList<>();
-        for (AuditLog log : list) {
-            AuditLogResponse res = new AuditLogResponse();
-            res.setId(log.getId());
-            res.setAccountId(log.getAccount().getAccountId());
-            res.setAction(log.getAction().name());
-            res.setRole(log.getAccount().getRole());
-            res.setCreatedAt(log.getCreatedAt());
-            res.setActorName(log.getActorName());
-            recentLogs.add(res);
-        }
-        return new AdminOverviewResponse(
-                metrics,
-                distribution,
-                recentLogs
-        );
-
-
-    }
 
 }

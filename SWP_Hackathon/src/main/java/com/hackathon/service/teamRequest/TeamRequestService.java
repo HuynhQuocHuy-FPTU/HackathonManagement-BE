@@ -2,7 +2,6 @@ package com.hackathon.service.teamRequest;
 
 
 import com.hackathon.dto.TeamAppealRequestDTO;
-import com.hackathon.dto.evaluation.ReDetailEvaluationRequest;
 import com.hackathon.dto.team.TeamRequestResponse;
 import com.hackathon.security.CustomUserDetails;
 

@@ -1,18 +1,23 @@
 package com.hackathon.service.grading;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.hackathon.dto.evaluation.*;
 import com.hackathon.entity.*;
-import com.hackathon.entity.enums.EvaluationStatus;
+import com.hackathon.entity.enums.*;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.exception.ResourceNotFoundException;
-import com.hackathon.repository.EvaluationRepository;
-import com.hackathon.repository.SubmissionRepository;
+import com.hackathon.repository.*;
+import com.hackathon.security.CustomUserDetails;
+import com.hackathon.service.AuditService;
 import com.hackathon.service.grading.support.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -27,6 +32,9 @@ public class GradingServiceImpl implements GradingService {
 
     private final SubmissionRepository submissionRepository;
     private final EvaluationRepository evaluationRepository;
+    private final ExpertRepository expertRepository;
+    private final TeamRequestRepository teamRequestRepository;
+
 
     // Tiêm các thành phần xử lý quy tắc nghiệp vụ (SOLID Components)
     private final JudgeAssignmentResolver assignmentResolver;
@@ -35,9 +43,12 @@ public class GradingServiceImpl implements GradingService {
     private final ScoreCalculator scoreCalculator;
     private final EvaluationMapper evaluationMapper;
     private final EvaluationAuditLogger auditLogger;
+    private final AuditService auditService;
+    private final ObjectMapper objectMapper;
 
     @Override
-    @Transactional(rollbackFor = Exception.class) // Đảm bảo tính nguyên tử (Atomicity): Lỗi bất kỳ khâu nào sẽ phục hồi DB nguyên trạng
+    @Transactional(rollbackFor = Exception.class)
+    // Đảm bảo tính nguyên tử (Atomicity): Lỗi bất kỳ khâu nào sẽ phục hồi DB nguyên trạng
     public JudgeEvaluationResponse submitOrUpdate(Account account, Integer submissionId, SubmitEvaluationRequest request) {
 
         // 1. Phân tích ngữ cảnh người dùng: Xác thực đối tượng Chuyên gia
@@ -102,7 +113,6 @@ public class GradingServiceImpl implements GradingService {
             EvaluationDetail detail = existingDetailsMap.getOrDefault(criteria.getEvaluationCriteriaId(), new EvaluationDetail());
             detail.setEvaluationCriteria(criteria);
             detail.setScore(scoreReq.getScore());
-            detail.setOriginalScore(scoreReq.getScore()); // Ghi vết điểm số gốc ban đầu phục vụ lưu vết dữ liệu
             detail.setComment(scoreReq.getComment());
             detail.setEvaluation(evaluation);
 
@@ -115,7 +125,6 @@ public class GradingServiceImpl implements GradingService {
         BigDecimal calculatedTotalScore = scoreCalculator.calculateWeightedTotal(evaluation.getEvaluationDetails());
 
         evaluation.setScore(calculatedTotalScore);
-        evaluation.setOriginalScore(calculatedTotalScore);
         evaluation.setComment(request.getComment());
         evaluation.setStatus(EvaluationStatus.GRADED); // Chuyển dịch trạng thái thực thể sang Đã chấm điểm
 
@@ -126,4 +135,254 @@ public class GradingServiceImpl implements GradingService {
         // 12. CHUYỂN ĐỔI DỮ LIỆU ĐẦU RA VÀ PHẢN HỒI PRESENTATION TẦNG
         return evaluationMapper.toResponse(evaluation, true); // Khẳng định cờ isEditable = true vì đang nằm trong khung hạn cho phép sửa
     }
+
+//    // Chấm điểm lại khi bị event coordinator từ chối
+//    @Override
+//    @Transactional
+//    public JudgeEvaluationResponse updateEvaluation(Account account, Integer submissionId, SubmitEvaluationRequest request) {
+//        // 1. Phân tích ngữ cảnh người dùng: Xác thực đối tượng Chuyên gia
+//        Expert expert = assignmentResolver.resolveExpert(account);
+//
+//        // 2. Kiểm tra sự tồn tại của Bài nộp (Submission) trong cơ sở dữ liệu
+//        Submission submission = submissionRepository.findById(submissionId)
+//                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dữ liệu Bài nộp với mã định danh cung cấp: " + submissionId));
+//
+//        // 3. Ràng buộc nghiệp vụ: Tuyệt đối không cho phép chấm điểm trên các bài nộp là Bản nháp (Draft)
+//        if (!submission.isFinal()) {
+//            throw new BadRequestException("Hành động bị từ chối: Bài nộp hiện tại đang ở trạng thái bản nháp, chưa được xác nhận nộp chính thức.");
+//        }
+//
+//        // 4. Khai thác dữ liệu quan hệ bắc cầu: Submission -> TeamParticipant -> CategoryRound -> Round
+//        TeamParticipant participant = submission.getTeamParticipant();
+//        CategoryRound categoryRound = participant.getCategoryRound();
+//        Round round = categoryRound.getRound();
+//
+//        // 5. Kiểm tra phân công chi tiết: Xác định vai trò Judge hợp lệ tại CategoryRound (Hàm này đồng thời ngăn chặn Mentor)
+//        ExpertAssign expertAssign = assignmentResolver.requireJudgeAssignment(expert, categoryRound.getCategoryRoundId());
+//
+//        // 6. Chỉ update những dữ liệu ở trạng thái RE_EVALUATION khi bị event từ chối yêu cầu chấm điểm lại
+//        Evaluation evaluation = evaluationRepository.findByExpertAssignIdAndSubmissionId(expertAssign.getAssignId(), submissionId)
+//                .orElseThrow(() -> new BadRequestException("Không tìm thấy dữ liệu chấm điểm"));
+//
+//        if (evaluation.getStatus() != EvaluationStatus.RE_EVALUATION) {
+//            throw new BadRequestException("Hành động thất bại: Chỉ có thể cập nhật điểm số khi BTC yêu cầu chấm lại");
+//        }
+//        // 7. Thực hiện thẩm định tính toàn vẹn của danh sách tiêu chí gửi lên
+//        List<EvaluationCriteria> roundCriteria = round.getEvaluationCriterias();
+//        criteriaValidator.validate(request, roundCriteria);
+//
+//        // 8. Cập nhật lại điểm số
+//        evaluation.setExpertAssign(expertAssign);
+//        evaluation.setSubmission(submission);
+//        evaluation.setTeamParticipant(participant); // Ràng buộc khóa ngoại đồng bộ cấu trúc DB của dự án
+//
+//        // 9. ĐỒNG BỘ HÓA DỮ LIỆU ĐIỂM CHI TIẾT (EvaluationDetail Mapping)
+//        Map<Integer, EvaluationDetail> existingDetailsMap = evaluation.getEvaluationDetails().stream()
+//                .collect(Collectors.toMap(d -> d.getEvaluationCriteria().getEvaluationCriteriaId(), d -> d));
+//        Map<Integer, EvaluationCriteria> criteriaByIdMap = roundCriteria.stream()
+//                .collect(Collectors.toMap(EvaluationCriteria::getEvaluationCriteriaId, c -> c));
+//
+//        for (CriteriaScoreRequest scoreReq : request.getCriteriaScores()) {
+//            EvaluationCriteria criteria = criteriaByIdMap.get(scoreReq.getEvaluationCriteriaId());
+//            if (criteria == null) continue;
+//
+//            CriteriaSet criteriaSet = round.getCriteriaSet();
+//            BigDecimal maxScore = BigDecimal.valueOf(criteriaSet.getMaxScore());
+//
+//            if (scoreReq.getScore().compareTo(BigDecimal.ZERO) < 0 || scoreReq.getScore().compareTo(maxScore) > 0) {
+//                throw new BadRequestException(
+//                        "Điểm của tiêu chí " + "phải nằm trong khoảng từ 0 đến " + maxScore + ".");
+//            }
+//
+//
+//            // Tái sử dụng bản ghi chi tiết cũ để cập nhật đè dữ liệu, tránh tạo bản ghi trùng lặp rác dữ liệu
+//            EvaluationDetail detail = existingDetailsMap.get(criteria.getEvaluationCriteriaId());
+//            boolean isNewDetail = false;
+//
+//            if (detail == null) {
+//                detail = new EvaluationDetail();
+//                isNewDetail = true;
+//            }
+//
+//
+//            // kiểm tra ID để tránh bỏ sót phần tử mới
+//            if (isNewDetail || detail.getId() == 0) {
+//                evaluation.getEvaluationDetails().add(detail);
+//            }
+//
+//            detail.setEvaluationCriteria(criteria);
+//            detail.setScore(scoreReq.getScore());
+//            detail.setComment(scoreReq.getComment());
+//            detail.setEvaluation(evaluation);
+//        }
+//
+//        // 10. TÍNH TOÁN LẠI TỔNG ĐIỂM (Ủy thác quyền cho ScoreCalculator hạ tầng xử lý)
+//        BigDecimal calculatedTotalScore = scoreCalculator.calculateWeightedTotal(evaluation.getEvaluationDetails());
+//
+//        evaluation.setScore(calculatedTotalScore);
+//        evaluation.setComment(request.getComment());
+//        evaluation.setStatus(EvaluationStatus.GRADED);
+//
+//        // 11. ĐẨY DỮ LIỆU XUỐNG DB & KÍCH HOẠT LƯU VẾT HỆ THỐNG (Audit Service Log)
+//        evaluation = evaluationRepository.save(evaluation);
+//        String description = String.format("Giám khảo (ExpertID: %d) đã cập nhật điểm cho Bài nộp (SubmissionID: %d). Tổng điểm ghi nhận: %s",
+//                expertAssign.getAssignId(), submission.getSubmissionId(), calculatedTotalScore);
+//
+//        auditService.saveLog(
+//                account,
+//                AuditAction.UPDATE_EVALUATION,
+//                AuditEntityType.EVALUATION,
+//                evaluation.getEvaluationId(),
+//                description
+//        );
+//
+//        // 12. CHUYỂN ĐỔI DỮ LIỆU ĐẦU RA VÀ PHẢN HỒI PRESENTATION TẦNG
+//        return evaluationMapper.toResponse(evaluation, false);
+//
+//    }
+
+    // Thực hiện chấm điểm lại khi nhận được yêu cầu của Expert
+    @Override
+    @Transactional
+    public JudgeEvaluationResponse reEvaluationSubmission(CustomUserDetails userDetails, ReEvaluationRequest
+            request) {
+        Account account = userDetails.getAccount();
+        Expert expert = expertRepository.findByAccount_AccountId(account.getAccountId())
+                .orElseThrow(() -> new BadRequestException("Tài khoản này không phải là tài khoản của Expert, vì vậy bạn không được phép truy cập vào trình duyệt này."));
+
+        //  Lấy tất cả đơn khiếu nại kết quả của vòng đấu này đang ở trạng thái INREVIEW
+        TeamRequest appealRequest = teamRequestRepository.findById(request.getRequestId())
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy đơn khiếu nại phúc khảo nào."));
+        if (appealRequest.getStatus() != RequestStatus.IN_REVIEW) {
+            throw new BadRequestException("Đơn khiếu nại này không ở trạng thái INREVIEW");
+        }
+
+
+        // Từ ds khiếu nại lấy ra bài nộp để tiến hành chấm điểm lại
+        Round round = appealRequest.getRound();
+
+        TeamParticipant participant = appealRequest.getTeam().getRegistrations().stream()
+                .filter(registration -> registration.getStatus() == RegistrationStatus.APPROVED)
+                .map(Registration::getParticipants)
+                .flatMap(List::stream)
+                .filter(tp -> tp.getCategoryRound() != null && tp.getCategoryRound().getRound().getRoundId().equals(round.getRoundId()))
+                .findFirst()
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin tham gia vòng đấu của đội này."));
+
+        CategoryRound categoryRound = participant.getCategoryRound();
+        ExpertAssign expertAssign =
+                assignmentResolver.requireJudgeAssignment(expert, categoryRound.getCategoryRoundId());
+
+        // Đảm bảo resolver tìm đúng phân công chấm của ông Expert này tại CategoryRound đó
+
+
+        Submission finalSubmission = participant.getSubmissions().stream()
+                .filter(Submission::isFinal)
+                .findFirst()
+                .orElseThrow(() -> new BadRequestException("Đội thi chưa xác nhận nộp bài chính thức cho vòng này."));
+
+        // Từ  bài nộp tìm ra expert này chấm
+        Evaluation evaluation = evaluationRepository.findByExpertAssignIdAndSubmissionId(expertAssign.getAssignId(), finalSubmission.getSubmissionId())
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy dữ liệu chấm điểm cũ của bạn cho đội thi này."));
+
+
+        System.out.println(
+                evaluation.getExpertAssign().getExpert().getExpertId()
+        );
+
+
+        if (evaluation.getStatus() != EvaluationStatus.RE_EVALUATION) {
+            throw new BadRequestException("Bài đánh giá này chưa được yêu cầu để chấm lại.");
+        }
+
+        if (evaluation.getOriginalScore() == null) {
+            evaluation.setOriginalScore(evaluation.getScore());
+        }
+        CriteriaSet criteriaSet = round.getCriteriaSet();
+
+        Map<Integer, EvaluationDetail> detailsMap = evaluation.getEvaluationDetails().stream()
+                .filter(d -> d.getEvaluationCriteria() != null)
+                .collect(Collectors.toMap(d -> d.getEvaluationCriteria().getEvaluationCriteriaId(), d -> d));
+        for (CriteriaScoreRequest requestEval : request.getCriteriaScores()) {
+
+            EvaluationDetail detail = detailsMap.get(requestEval.getEvaluationCriteriaId());
+            if (detail == null) {
+                throw new BadRequestException("Tiêu chí này không nằm trong danh sách tiêu chí chấm điểm của vòng đấu này.");
+            }
+
+            if (detail.getEvaluation().getEvaluationId() != evaluation.getEvaluationId()) {
+                throw new BadRequestException("Tiêu chí này không thuộc bài chấm đang được phúc khảo.");
+
+            }
+            BigDecimal maxScore = BigDecimal.valueOf(criteriaSet.getMaxScore());
+            if (requestEval.getScore().compareTo(BigDecimal.ZERO) < 0 || requestEval.getScore().compareTo(maxScore) > 0) {
+                throw new BadRequestException(
+                        "Điểm của tiêu chí " + "phải nằm trong khoảng từ 0 đến " + maxScore + ".");
+            }
+            //  lưu điểm cũ của tiêu chí này nếu là lần đầu chấm lại
+            if (detail.getOriginalScore() == null) {
+                detail.setOriginalScore(detail.getScore());
+            }
+
+            detail.setScore(requestEval.getScore());
+
+
+        }
+        BigDecimal finalNewTotalScore = scoreCalculator.calculateWeightedTotal(evaluation.getEvaluationDetails());
+
+        evaluation.setComment(request.getComment());
+        evaluation.setScore(finalNewTotalScore);
+        evaluation.setStatus(EvaluationStatus.GRADED);
+        evaluation.setIsReEvaluation(true);
+
+        evaluationRepository.save(evaluation);
+        // 1. Lấy tất cả các bảng điểm (Evaluation) của bài nộp này từ các giám khảo khác nhau
+        List<Evaluation> allEvaluationsForSub = evaluationRepository.findBySubmission_SubmissionId(finalSubmission.getSubmissionId());
+
+        // 2. Kiểm tra xem có ông giám khảo nào còn đang bị kẹt ở trạng thái "RE_EVALUATION" hay không
+        boolean isAllJudgesFinished = allEvaluationsForSub.stream()
+                .noneMatch(eval -> eval.getStatus() == EvaluationStatus.RE_EVALUATION);
+
+        if (isAllJudgesFinished) {
+            // Nếu tất cả hội đồng đã sửa điểm xong xuôi -> Đóng đơn khiếu nại hoàn toàn
+            appealRequest.setStatus(RequestStatus.RE_EVALUATED);
+            appealRequest.setResponseMessage("Toàn bộ hội đồng Giám khảo đã hoàn tất cập nhật lại điểm số phúc khảo.");
+        } else {
+            // Nếu vẫn còn giám khảo chưa chịu chấm lại -> Giữ nguyên IN_REVIEW để người khác vào chấm tiếp
+            appealRequest.setStatus(RequestStatus.IN_REVIEW);
+            appealRequest.setResponseMessage(String.format("Giám khảo %s đã sửa điểm. Đang đợi các giám khảo khác trong hội đồng hoàn tất.", expert.getExpertName()));
+        }
+
+        appealRequest.setResponseAt(LocalDateTime.now());
+        teamRequestRepository.save(appealRequest);
+
+        // Ghi nhận nhật ký hệ thống tập trung
+        Map<String, Object> auditData = new LinkedHashMap<>();
+
+        auditData.put("oldTotalScore", evaluation.getOriginalScore());
+        auditData.put("newTotalScore", finalNewTotalScore);
+        auditData.put("details",
+                evaluation.getEvaluationDetails().stream()
+                        .map(detail -> Map.of(
+                                "criteriaId", detail.getEvaluationCriteria().getEvaluationCriteriaId(),
+                                "criteriaName", detail.getEvaluationCriteria().getCriteriaName(),
+                                "oldScore", detail.getOriginalScore() != null ? detail.getOriginalScore() : detail.getScore(),
+                                "newScore", detail.getScore()
+                        ))
+                        .toList());
+
+        String data = objectMapper.writeValueAsString(auditData);
+        auditService.saveLog(
+                account,
+                AuditAction.RE_SUBMIT_EVALUATION,
+                AuditEntityType.EVALUATION,
+                evaluation.getEvaluationId(),
+                "Ban giám khảo chấm lại điểm khi có yêu cầu phúc khảo thành công",
+                data);
+
+        return evaluationMapper.toResponse(evaluation, false);
+
+    }
+
+
 }

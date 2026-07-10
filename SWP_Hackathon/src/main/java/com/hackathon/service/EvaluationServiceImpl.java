@@ -48,17 +48,17 @@ public class EvaluationServiceImpl implements EvaluationService {
                 }
 
                 // Check ban giám khảo đã chấm điểm hết chưa
-                if (teamParticipant.getEvaluations() == null || teamParticipant.getEvaluations().isEmpty()) {
-                    throw new BadRequestException(String.format(" Đội '%s' chưa có dữ liệu đánh giá ở hạng mục '%s'."
-                            , teamParticipant.getRegistration().getTeam().getTeamName()
-                            , cr.getCategory().getCategoryName()));
-                }
+//                if (teamParticipant.getEvaluations() == null || teamParticipant.getEvaluations().isEmpty()) {
+//                    throw new BadRequestException(String.format(" Đội '%s' chưa có dữ liệu đánh giá ở hạng mục '%s'."
+//                            , teamParticipant.getRegistration().getTeam().getTeamName()
+//                            , cr.getCategory().getCategoryName()));
+//                }
                 // check giám khảo submit bài nộp chưa
-                for (Evaluation evaluation : teamParticipant.getEvaluations()) {
-                    if (evaluation.getStatus() == EvaluationStatus.NOT_GRADED) {
-                        throw new BadRequestException("Ban giám khảo chưa thực hiện xong quá trình chấm điểm");
-                    }
-                }
+//                for (Evaluation evaluation : teamParticipant.getEvaluations()) {
+//                    if (evaluation.getStatus() == EvaluationStatus.NOT_GRADED) {
+//                        throw new BadRequestException("Ban giám khảo chưa thực hiện xong quá trình chấm điểm");
+//                    }
+//                }
             }
         }
     }
