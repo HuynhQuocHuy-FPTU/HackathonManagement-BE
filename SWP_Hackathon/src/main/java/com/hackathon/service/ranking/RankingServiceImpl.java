@@ -341,7 +341,7 @@ public class RankingServiceImpl implements RankingService {
         roundRepository.save(round);
         log.info("Đã công bố bản nháp bảng xếp hạng vòng {}. Bắt đầu nhận phúc khảo.", roundId);
         try {
-            String jsonData = objectMapper.writeValueAsString(auditRankingData);
+
 
             auditService.saveLog(
                     account,
@@ -349,7 +349,7 @@ public class RankingServiceImpl implements RankingService {
                     AuditEntityType.ROUND,
                     roundId,
                     "Công bố kết quả tạm thời thành công.",
-                    jsonData
+                    objectMapper.writeValueAsString(auditRankingData)
             );
         } catch (JsonProcessingException e) {
 
@@ -427,7 +427,7 @@ public class RankingServiceImpl implements RankingService {
         notificationService.notifyRoundRankingPublished(account, roundId, true);
 
         try {
-            String jsonData = objectMapper.writeValueAsString(auditRankingData);
+
 
             auditService.saveLog(
                     account,
@@ -435,7 +435,7 @@ public class RankingServiceImpl implements RankingService {
                     AuditEntityType.ROUND,
                     roundId,
                     "Công bố bản xếp hạng chính thức của vòng " + round.getRoundName() + " thành công",
-                    jsonData
+                    objectMapper.writeValueAsString(auditRankingData)
             );
         } catch (JsonProcessingException e) {
             log.error("Lỗi khi tuần tự hóa dữ liệu xếp hạng vòng {} sang JSON", roundId, e);

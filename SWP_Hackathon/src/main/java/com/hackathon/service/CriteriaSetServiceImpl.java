@@ -163,6 +163,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
                 AuditEntityType.CRITERIA,
                 criteriaSet.getCriteriaSetId(),
                 "Create criteria " + criteriaSet.getCriteriaSetName()
+
         );
         // 4. Tra du lieu ve DTO
         return mapToResponse(saved, savedDetails);

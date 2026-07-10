@@ -38,7 +38,8 @@ public class AuditLog {
     @Enumerated(EnumType.STRING)
     private AuditEntityType entityType;
 
-
+    @Column(name ="Actor_Name" , columnDefinition = "NVARCHAR(255)")
+    private  String actorName;
 
     private Integer entityId;
 

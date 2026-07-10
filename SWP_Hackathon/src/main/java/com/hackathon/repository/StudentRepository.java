@@ -1,5 +1,6 @@
 package com.hackathon.repository;
 
+import com.hackathon.entity.EventCoordinator;
 import com.hackathon.entity.Student;
 import com.hackathon.entity.enums.ParticipantStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -35,4 +36,6 @@ public interface StudentRepository extends JpaRepository<Student, Integer> {
             @Param("studentId") Integer studentId,
             @Param("statuses") List<ParticipantStatus> statuses
     );
+    Optional<Student> findByAccount_AccountId(Integer accountId);
+
 }

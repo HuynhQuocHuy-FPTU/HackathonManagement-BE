@@ -2,6 +2,7 @@ package com.hackathon.repository;
 
 import com.hackathon.entity.Account;
 import com.hackathon.entity.enums.AccountRole;
+import com.hackathon.entity.enums.AccountStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import org.springframework.data.jpa.repository.Query;
@@ -53,4 +54,5 @@ public interface AccountRepository extends JpaRepository<Account, Integer> {
     List<Account> findByRoleIn(List<AccountRole> roles);
 
     long countByRole(AccountRole role);
+    long countByStatus(AccountStatus status);
 }
