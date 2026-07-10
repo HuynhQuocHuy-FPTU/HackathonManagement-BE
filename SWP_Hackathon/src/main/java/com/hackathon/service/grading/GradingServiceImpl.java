@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -80,7 +81,7 @@ public class GradingServiceImpl implements GradingService {
             evaluation = new Evaluation();
             evaluation.setExpertAssign(expertAssign);
             evaluation.setSubmission(submission);
-            evaluation.setTeamParticipant(participant); // Ràng buộc khóa ngoại đồng bộ cấu trúc DB của dự án
+//            evaluation.setTeamParticipant(participant);
             evaluation.setIsReEvaluation(false);
         } else {
             // Trường hợp 2: Đã tồn tại bản ghi (Update) -> Chặn nếu thực thể đang nằm trong trạng thái xử lý Phúc khảo tách biệt
@@ -123,7 +124,8 @@ public class GradingServiceImpl implements GradingService {
         evaluation = evaluationRepository.save(evaluation);
         auditLogger.logGraded(account, evaluation, submission, expert.getExpertId(), isFirstTimeGrading, calculatedTotalScore);
 
+        LocalDateTime deadline = deadlinePolicy.getGradingDeadline(round);
         // 12. CHUYỂN ĐỔI DỮ LIỆU ĐẦU RA VÀ PHẢN HỒI PRESENTATION TẦNG
-        return evaluationMapper.toResponse(evaluation, true); // Khẳng định cờ isEditable = true vì đang nằm trong khung hạn cho phép sửa
+        return evaluationMapper.toResponse(evaluation, true, deadline); // Khẳng định cờ isEditable = true vì đang nằm trong khung hạn cho phép sửa
     }
 }
