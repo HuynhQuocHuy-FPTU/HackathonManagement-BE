@@ -84,8 +84,10 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
                                 "/api/events/public/**",
-                                "/api/github/**"
+                                "/api/github/**",
+                                "/api/ranking/rounds/*/topN"
                         ).permitAll()
+
                         //EXPERT
                         .requestMatchers(HttpMethod.GET, "/api/participants/teams/**").hasRole("EXPERT")
 

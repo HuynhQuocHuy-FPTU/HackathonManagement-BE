@@ -1,5 +1,6 @@
 package com.hackathon.controller;
 
+import com.hackathon.dto.AdminOverviewResponse;
 import com.hackathon.dto.AuditLogResponse;
 import com.hackathon.dto.UserAdminResponse;
 import com.hackathon.dto.admin.InviteAccountRequest;
@@ -8,6 +9,10 @@ import com.hackathon.dto.common.ApiResponse;
 import com.hackathon.service.AuditService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,12 +30,15 @@ public class AdminController {
     private final AuditService auditService;
 
     @GetMapping("/auditLog")
-    public ResponseEntity<List<AuditLogResponse>> getAllAuditLog(){
-        List<AuditLogResponse> list = auditService.getAllAuditLog();
+    public ResponseEntity<Page<AuditLogResponse>> getAllAuditLog(
+            @PageableDefault(page = 0, size = 50, sort = "createdAt", direction = Sort.Direction.ASC)
+            Pageable pageable) {
+        Page<AuditLogResponse> list = auditService.getAllAuditLog(pageable);
         return ResponseEntity.ok(list);
     }
 
     private final AdminService adminService;
+
     /**
      * API: Lấy danh sách toàn bộ người dùng
      * GET /api/admin/users
@@ -75,6 +83,17 @@ public class AdminController {
         adminService.updateUserStatus(id, request);
         return ResponseEntity.ok(ApiResponse.ok("Đã cập nhật trạng thái tài khoản thành công!"));
     }
+
+    /**
+     * API: ADMIN XEM TỔNG QUAN
+     *
+     */
+    @GetMapping("/overviews")
+    public ResponseEntity<ApiResponse<AdminOverviewResponse>> getOverviewForAdmin() {
+        AdminOverviewResponse overViews = auditService.getOverviewForAdmin();
+        return ResponseEntity.ok(ApiResponse.ok("Admin xem thông tin thành công", overViews));
+    }
+
 
 //    private final AdminService adminService;
 //    @PostMapping("invite")

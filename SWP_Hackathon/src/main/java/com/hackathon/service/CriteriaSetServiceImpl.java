@@ -7,6 +7,7 @@ import com.hackathon.entity.CriteriaSet;
 import com.hackathon.entity.EventCoordinator;
 import com.hackathon.entity.enums.AuditAction;
 import com.hackathon.entity.enums.AuditEntityType;
+import com.hackathon.entity.enums.AuditResult;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.CriteriaDetailRepository;
 import com.hackathon.repository.CriteriaSetRepository;
@@ -162,6 +163,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
                 AuditEntityType.CRITERIA,
                 criteriaSet.getCriteriaSetId(),
                 "Create criteria " + criteriaSet.getCriteriaSetName()
+
         );
         // 4. Tra du lieu ve DTO
         return mapToResponse(saved, savedDetails);

@@ -1,8 +1,11 @@
 package com.hackathon.repository;
 
+import com.hackathon.entity.CategoryRound;
 import com.hackathon.entity.TeamParticipant;
 import com.hackathon.entity.Registration;
 import com.hackathon.entity.enums.ParticipantStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -18,6 +21,5 @@ public interface ParticipantRepository extends JpaRepository<TeamParticipant, In
     Optional<TeamParticipant> findByRegistration(Registration registration);
 
     Optional<TeamParticipant> findTeamParticipantByRegistration_RegistrationIdAndStatus(int registrationRegistrationId, ParticipantStatus status);
-
 
 }
