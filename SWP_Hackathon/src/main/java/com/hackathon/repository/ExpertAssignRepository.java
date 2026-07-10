@@ -107,4 +107,29 @@ public interface ExpertAssignRepository extends JpaRepository<ExpertAssign, Inte
     @Query("SELECT COUNT(DISTINCT ea.expert.expertId) FROM ExpertAssign ea WHERE ea.role = :role")
     long countDistinctExpertByRole(@Param("role") ExpertRole role);
 
+    /**
+     * Trinh sát xem Chuyên gia này có thực sự là Giám khảo (Judge) của Vòng này không.
+     * Dùng mệnh đề IN (:roles) để quét cùng lúc cả CORE_JUDGE và GUEST_JUDGE.
+     */
+    @Query("SELECT ea FROM ExpertAssign ea " +
+            "WHERE ea.categoryRound.categoryRoundId = :categoryRoundId " +
+            "AND ea.expert.expertId = :expertId " +
+            "AND ea.role IN :roles")
+    Optional<ExpertAssign> findJudgeAssignment(
+            @Param("categoryRoundId") Integer categoryRoundId,
+            @Param("expertId") Integer expertId,
+            @Param("roles") List<ExpertRole> roles);
+
+    /**
+     * Dò xem Chuyên gia này có đang bị dính role MENTOR ở Vòng này không.
+     * Tách riêng hàm này ra để Tầng Support bắt chính xác lỗi "Mentor cấm chấm điểm".
+     */
+    @Query("SELECT ea FROM ExpertAssign ea " +
+            "WHERE ea.categoryRound.categoryRoundId = :categoryRoundId " +
+            "AND ea.expert.expertId = :expertId " +
+            "AND ea.role = 'MENTOR'")
+    Optional<ExpertAssign> findMentorAssignment(
+            @Param("categoryRoundId") Integer categoryRoundId,
+            @Param("expertId") Integer expertId);
+
 }

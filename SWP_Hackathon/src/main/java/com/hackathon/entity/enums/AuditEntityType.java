@@ -12,5 +12,6 @@ public enum AuditEntityType {
     REGISTRATION,
     PARTICIPANT,
     RANKING,
-    TEAM_REQUEST
+    TEAM_REQUEST,
+    EVALUATION
 }

@@ -1,0 +1,63 @@
+package com.hackathon.service.grading.support;
+
+import com.hackathon.dto.evaluation.CriteriaScoreRequest;
+import com.hackathon.dto.evaluation.SubmitEvaluationRequest;
+import com.hackathon.entity.EvaluationCriteria;
+import com.hackathon.entity.enums.CriteriaType;
+import com.hackathon.exception.BadRequestException;
+import org.springframework.stereotype.Component;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+/**
+ * Trách nhiệm: Kiểm tra tính toàn vẹn dữ liệu điểm số dựa trên cấu hình tiêu chí (Criteria Domain).
+ */
+@Component
+public class CriteriaCompletenessValidator {
+
+    /**
+     * Ràng buộc nghiệp vụ: Cho phép chấm riêng lẻ từng Loại tiêu chí (Ví dụ: CODE / PRESENTATION),
+     * nhưng yêu cầu khi đã chấm loại nào thì bắt buộc phải hoàn thiện toàn bộ tiêu chí thuộc loại đó để đảm bảo tính công bằng.
+     */
+    public void validate(SubmitEvaluationRequest request, List<EvaluationCriteria> roundCriteria) {
+        // Ánh xạ tập tiêu chí của vòng thi sang dạng Bản đồ để tối ưu hóa hiệu năng tra cứu O(1)
+        Map<Integer, EvaluationCriteria> criteriaMap = roundCriteria.stream()
+                .collect(Collectors.toMap(EvaluationCriteria::getEvaluationCriteriaId, c -> c));
+
+        // Trích xuất danh sách ID tiêu chí mà Frontend gửi lên
+        Set<Integer> requestCriteriaIds = request.getCriteriaScores().stream()
+                .map(CriteriaScoreRequest::getEvaluationCriteriaId)
+                .collect(Collectors.toSet());
+
+        // Kiểm tra tính hợp lệ: ID tiêu chí gửi lên phải nằm trong cấu hình của Vòng thi hiện hành
+        requestCriteriaIds.forEach(id -> {
+            if (!criteriaMap.containsKey(id)) {
+                throw new BadRequestException("Mã tiêu chí đánh giá (ID: " + id + ") không tồn tại hoặc không thuộc vòng thi này.");
+            }
+        });
+
+        // Xác định các nhóm Loại tiêu chí (CriteriaType) xuất hiện trong yêu cầu xử lý này
+        Set<CriteriaType> affectedTypes = requestCriteriaIds.stream()
+                .map(id -> criteriaMap.get(id).getType())
+                .collect(Collectors.toSet());
+
+        // Gom nhóm toàn bộ tiêu chí hệ thống hiện có theo Loại
+        Map<CriteriaType, List<EvaluationCriteria>> systemCriteriaGroupedByType = roundCriteria.stream()
+                .collect(Collectors.groupingBy(EvaluationCriteria::getType));
+
+        // Đối chiếu tính toàn vẹn cho từng nhóm Loại tiêu chí bị tác động
+        for (CriteriaType type : affectedTypes) {
+            Set<Integer> expectedIdsOfThisType = systemCriteriaGroupedByType.getOrDefault(type, List.of()).stream()
+                    .map(EvaluationCriteria::getEvaluationCriteriaId)
+                    .collect(Collectors.toSet());
+
+            // Nếu tập hợp yêu cầu không bao hàm toàn bộ danh sách ID bắt buộc thuộc loại đó -> Báo lỗi dữ liệu thiếu
+            if (!requestCriteriaIds.containsAll(expectedIdsOfThisType)) {
+                throw new BadRequestException("Tính toàn vẹn dữ liệu thất bại: Bạn bắt buộc phải nhập đầy đủ điểm số cho toàn bộ "
+                        + expectedIdsOfThisType.size() + " tiêu chí thuộc nhóm '" + type + "' trong một lần thực thi.");
+            }
+        }
+    }
+}
