@@ -1,6 +1,7 @@
 package com.hackathon.controller;
 
 import com.hackathon.dto.ExpertAssignedGroupDTO;
+import com.hackathon.dto.team.CurrentParticipantDTO;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.ParticipantServiceImpl;
@@ -47,5 +48,10 @@ public class ParticipantController {
                         "Đã loại đội thi khỏi sự kiện"
                 )
         );
+    }
+    @GetMapping("/student/current")
+    public ResponseEntity<ApiResponse<CurrentParticipantDTO>> getCurrentParticipant(@AuthenticationPrincipal CustomUserDetails userDetails){
+
+        return ResponseEntity.ok(ApiResponse.success(participantService.getCurrentParticipant(userDetails), "Lấy thông tin tham gia của student trong event đang diễn ra"));
     }
 }

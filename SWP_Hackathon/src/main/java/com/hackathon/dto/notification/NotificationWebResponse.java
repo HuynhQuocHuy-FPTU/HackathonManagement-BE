@@ -28,6 +28,4 @@ public class NotificationWebResponse {
 
     private boolean allowResponse;
 
-    // optional info for UI
-//    private String actorName;
 }

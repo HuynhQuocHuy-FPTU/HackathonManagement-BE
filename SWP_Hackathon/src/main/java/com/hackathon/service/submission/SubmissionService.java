@@ -149,7 +149,6 @@ public class SubmissionService {
 
         Submission submission = submissionRepository.findById(submissionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bài nộp"));
-
         // Kiểm tra quyền sở hữu: submission phải thuộc đội của leader đang thao tác
         if (submission.getTeam() == null || submission.getTeam().getTeamId() != team.getTeamId()) {
             throw new BadRequestException("Bạn không có quyền chọn bài nộp này làm bài chính thức");

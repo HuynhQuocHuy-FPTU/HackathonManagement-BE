@@ -1,8 +1,10 @@
 package com.hackathon.dto.notification;
 
-import java.time.LocalDateTime;
+import lombok.Builder;
 
-public record ResponseEntry(Long senderId,
+import java.time.LocalDateTime;
+@Builder
+public record ResponseEntry(Integer senderId,
                             String senderName,
                             String message,
                             LocalDateTime timestamp) {

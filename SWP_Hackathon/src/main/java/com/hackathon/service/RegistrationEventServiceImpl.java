@@ -130,7 +130,6 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
     }
 
     //Coordinator duyệt Registration — chuyển trạng thái sang APPROVED.
-
     @Override
     @Transactional
     public Registration approveRegistration(Integer registrationId) {
