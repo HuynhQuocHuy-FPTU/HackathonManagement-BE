@@ -58,9 +58,7 @@ public class EventController {
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<EventResponse>> createEvent(@Valid @RequestBody CreateEventRequest request) {
         EventResponse response = eventService.createEvent(request);
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(ApiResponse.success(response, "Event được tạo thành công"));
+        return ResponseEntity.ok(ApiResponse.success(response, "Đã tạo event thành công"));
     }
 
     @PutMapping("/publish/{eventId}")

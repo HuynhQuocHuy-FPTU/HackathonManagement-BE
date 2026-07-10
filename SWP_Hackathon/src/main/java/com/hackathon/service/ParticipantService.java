@@ -4,6 +4,7 @@ import com.hackathon.dto.ExpertAssignedGroupDTO;
 import com.hackathon.dto.ParticipantResponseDTO;
 import com.hackathon.dto.ranking.CategoryRoundRankingResponse;
 import com.hackathon.dto.ranking.RankingResponseDTO;
+import com.hackathon.dto.team.CurrentParticipantDTO;
 import com.hackathon.entity.TeamParticipant;
 import com.hackathon.entity.Registration;
 import com.hackathon.repository.ParticipantRepository;
@@ -20,9 +21,5 @@ public interface ParticipantService {
 
     TeamParticipant saveParticipant(Registration registration);
 
-    BigDecimal calculateTotalScore(TeamParticipant participant);
-
-    BigDecimal calculateTotalScore(Integer teamParticipantId);
-
-
+    CurrentParticipantDTO getCurrentParticipant(CustomUserDetails userDetails);
 }

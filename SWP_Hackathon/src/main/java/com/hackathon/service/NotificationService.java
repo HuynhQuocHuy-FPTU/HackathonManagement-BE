@@ -2,6 +2,7 @@ package com.hackathon.service;
 
 import com.hackathon.dto.notification.NotificationEmailResponse;
 import com.hackathon.dto.notification.NotificationWebResponse;
+import com.hackathon.dto.notification.ResponseEntry;
 import com.hackathon.entity.Account;
 import com.hackathon.entity.Notification;
 import com.hackathon.entity.enums.NotificationChannel;
@@ -14,11 +15,7 @@ import java.util.Set;
 public interface NotificationService {
     NotificationEmailResponse getInfoNotificationInvite(CustomUserDetails userDetails, Long notificationId);
 
-    void createNotificationHaveResponse(Account account, Account actor,
-                                        NotificationType type,
-                                        NotificationChannel channel,
-                                        String title,
-                                        String message, boolean allowResponse, Integer responseDeadline
+    void createNotificationHaveResponse(Account account, Account actor, NotificationType type, NotificationChannel channel, String title, String message, boolean allowResponse, Integer responseDeadline
     );
 
     void createNotificationNoResponse(Account acc, Account actor, NotificationType type, NotificationChannel channel, String title, String message);
@@ -50,7 +47,7 @@ public interface NotificationService {
 
     List<NotificationWebResponse> getByType(CustomUserDetails userDetails, NotificationType type);
 
-    List<NotificationWebResponse> getPendingResponses(CustomUserDetails userDetails);
+    List<ResponseEntry> getPendingResponses(CustomUserDetails userDetails);
 
     long countUnread(CustomUserDetails userDetails);
 

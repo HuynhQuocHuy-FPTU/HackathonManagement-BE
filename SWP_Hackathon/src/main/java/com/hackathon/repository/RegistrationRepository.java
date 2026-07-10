@@ -33,5 +33,7 @@ public interface RegistrationRepository extends JpaRepository<Registration, Inte
             "AND r.status = RegistrationStatus.APPROVED")
     Optional<Registration> findByEventIdAndTeamId(@Param("eventId") Integer eventId, @Param("teamId") Integer teamId);
 
+    List<Registration> findByTeam_TeamIdAndStatus(int teamTeamId, RegistrationStatus status);
+
 
 }

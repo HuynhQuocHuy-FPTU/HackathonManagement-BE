@@ -2,6 +2,7 @@ package com.hackathon.service;
 
 import com.hackathon.dto.notification.NotificationEmailResponse;
 import com.hackathon.dto.notification.NotificationWebResponse;
+import com.hackathon.dto.notification.ResponseEntry;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.*;
 import com.hackathon.exception.BadRequestException;
@@ -326,10 +327,9 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public List<NotificationWebResponse> getPendingResponses(CustomUserDetails userDetails) {
+    public List<ResponseEntry> getPendingResponses(CustomUserDetails userDetails) {
         List<Notification> list = notificationRepository.findNotificationByAccount_AccountIdAndResponseStatus(userDetails.getAccount().getAccountId(), NotiResponseStatus.PENDING);
-
-        return list.stream().map(this::toResponse).toList();
+        return list.stream().map(this::mapToNotiResponse).toList();
     }
 
     @Override
@@ -343,11 +343,11 @@ public class NotificationServiceImpl implements NotificationService {
     public void markAsRead(Long notificationId, CustomUserDetails userDetails) {
         Integer accountId = userDetails.getAccount().getAccountId();
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("Notification not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông báo"));
 
-        // check ownership (quan trọng)
+        // check ownership
         if (notification.getAccount().getAccountId() != accountId) {
-            throw new RuntimeException("You cannot modify this notification");
+            throw new RuntimeException("Bạn không có quyền đọc tất cả thông báo này");
         }
 
         notification.setRead(true);
@@ -371,12 +371,11 @@ public class NotificationServiceImpl implements NotificationService {
     public void deleteNotification(Long notificationId, CustomUserDetails userDetails) {
         Integer accountId = userDetails.getAccount().getAccountId();
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("Notification not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông báo"));
 
         if (notification.getAccount().getAccountId() != accountId) {
-            throw new RuntimeException("Forbidden");
+            throw new RuntimeException("Bạn không có quyền xóa thông báo này");
         }
-
         notificationRepository.delete(notification);
     }
 
@@ -474,7 +473,6 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     private NotificationWebResponse toResponse(Notification n) {
-
         return NotificationWebResponse.builder()
                 .id(n.getId())
                 .title(n.getTitle())
@@ -485,6 +483,10 @@ public class NotificationServiceImpl implements NotificationService {
                 .channel(n.getChannel())
                 .allowResponse(n.isAllowResponse())
                 .build();
+    }
+
+    private ResponseEntry mapToNotiResponse(Notification notification){
+        return ResponseEntry.builder().senderId(notification.getActor().getAccountId()).senderName(notification.getActor().getStudent().getStudentName()).message(notification.getResponseMessage()).build();
     }
 
 

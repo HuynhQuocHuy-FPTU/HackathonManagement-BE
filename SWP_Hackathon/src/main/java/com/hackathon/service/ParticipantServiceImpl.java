@@ -5,6 +5,8 @@ import com.hackathon.dto.ParticipantResponseDTO;
 import com.hackathon.dto.ranking.CategoryRankingResponse;
 import com.hackathon.dto.ranking.CategoryRoundRankingResponse;
 import com.hackathon.dto.ranking.RankingResponseDTO;
+import com.hackathon.dto.round.RoundStatusDTO;
+import com.hackathon.dto.team.CurrentParticipantDTO;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.*;
 import com.hackathon.exception.BadRequestException;
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -36,8 +39,10 @@ public class ParticipantServiceImpl implements ParticipantService {
     private final AuditService auditService;
     private final NotificationService notificationService;
     private final HackathonEventRepository hackathonEventRepository;
-    private final EvaluationRepository evaluationRepository;
-    private static final int SCORE_SCALE = 2;
+    private final RoundRepository roundRepository;
+    private final RoundAdvancementService roundAdvancementService;
+    private final RegistrationRepository registrationRepository;
+
 
 
     public List<ExpertAssignedGroupDTO> getAssignParticipants(Integer eventId, CustomUserDetails userDetails) {
@@ -76,6 +81,9 @@ public class ParticipantServiceImpl implements ParticipantService {
         // 2. Validate: team phải thuộc event này VÀ đăng ký phải đã được APPROVED
         teamParticipants = disqualifyValidator.validateTeamBelongsToEventAndApproved(teamParticipants, teamId, eventId);
 
+        //Lưu lại teamparticipant passed ở round gần nhất mà team đã passed
+        TeamParticipant mostRecentlyPassed = teamParticipants.stream().filter(p -> p.getStatus() == ParticipantStatus.PASSED).max(Comparator.comparing(p -> p.getCategoryRound().getRound().getOrderIndex())).orElseThrow(null);
+
         // 3. Đổi status từng Participant + lưu lý do loại
         for (TeamParticipant teamParticipant : teamParticipants) {
             teamParticipant.setStatus(ParticipantStatus.DISQUALIFIED);
@@ -87,6 +95,13 @@ public class ParticipantServiceImpl implements ParticipantService {
         Team team = teamParticipants.get(0).getRegistration().getTeam();
         team.setStatus(TeamStatus.DRAFT);
         teamRepository.save(team);
+
+        // Lấy round tiếp theo
+        Round nextRound = roundRepository.findRoundByHackathonEvent_EventIdAndOrderIndex(eventId, mostRecentlyPassed.getCategoryRound().getRound().getOrderIndex() + 1).orElseThrow(null);
+
+        if(nextRound != null && LocalDateTime.now().isBefore(nextRound.getStartTime())){
+            roundAdvancementService.disqualifyRetroactively(mostRecentlyPassed, nextRound);
+        }
 
         Account accountLeader = team.getTeamMembers()
                 .stream()
@@ -143,39 +158,53 @@ public class ParticipantServiceImpl implements ParticipantService {
         return participantRepository.save(teamParticipant);
     }
 
-
     @Override
-    @Transactional
-    public BigDecimal calculateTotalScore(TeamParticipant participant) {
-        List<Evaluation> gradedEvaluations = evaluationRepository
-                .findBySubmission_SubmissionIdAndStatus(participant.getId(), EvaluationStatus.GRADED);
+    public CurrentParticipantDTO getCurrentParticipant(CustomUserDetails userDetails) {
+        Student student = userDetails.getAccount().getStudent();
 
-        BigDecimal average = computeAverage(gradedEvaluations);
-
-        participant.setTotalScore(average);
-        participantRepository.save(participant);
-
-        return average;
-    }
-
-    @Override
-    public BigDecimal calculateTotalScore(Integer teamParticipantId) {
-        TeamParticipant participant = participantRepository.findById(teamParticipantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy participant"));
-        return calculateTotalScore(participant);
-    }
-
-    private BigDecimal computeAverage(List<Evaluation> gradedEvaluations) {
-        if (gradedEvaluations == null || gradedEvaluations.isEmpty()) {
-            return null; // chưa có điểm nào -> để null, không phải 0, tránh hiểu nhầm là "bị chấm 0 điểm"
+        if (student == null) {
+            throw new BadRequestException("Tài khoản này không phải sinh viên, không có thông tin tham gia thi đấu");
         }
 
-        BigDecimal sum = gradedEvaluations.stream()
-                .map(Evaluation::getScore)
-                .filter(java.util.Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        Team team = student.getTeamMembers().stream().map(TeamMember::getTeam).filter(t -> t.getStatus() == TeamStatus.BUSY).findFirst().orElseThrow(() -> new BadRequestException("Sinh viên không thuộc team nào đang hoạt động"));;
+        List<Registration> approvedRegistrations = registrationRepository.findByTeam_TeamIdAndStatus(
+                team.getTeamId(), RegistrationStatus.APPROVED);
 
-        return sum.divide(BigDecimal.valueOf(gradedEvaluations.size()), SCORE_SCALE, RoundingMode.HALF_UP);
+        LocalDateTime now = LocalDateTime.now();
+
+        // CHỈ LẤY ĐÚNG EVENT ĐANG DIỄN RA
+        Registration currentRegistration = approvedRegistrations.stream()
+                .filter(r -> !now.isBefore(r.getHackathonEvent().getStartDate()) &&
+                        !now.isAfter(r.getHackathonEvent().getEndDate()))
+                .findFirst()
+                .orElse(null);
+        if (currentRegistration == null) {
+            return null;
+        }
+        HackathonEvent currentEvent = currentRegistration.getHackathonEvent();
+
+        List<TeamParticipant> teamParticipants = participantRepository.findParticipantByRegistration_Team_TeamIdAndRegistration_HackathonEvent_EventId(team.getTeamId(), currentEvent.getEventId());
+        if(teamParticipants.isEmpty()){
+            return null;
+        }
+        Category category = teamParticipants.get(0).getCategoryRound().getCategory();
+
+        List<RoundStatusDTO> list = new ArrayList<>();
+        for(var teamParticipant : teamParticipants){
+            list.add(this.mapToRoundStatusDTO(teamParticipant));
+        }
+
+        return CurrentParticipantDTO.builder().eventID(currentEvent.getEventId()).eventName(currentEvent.getEventName()).categoryName(category.getCategoryName()).categoryId(category.getCategoryId()).rounds(list).teamName(team.getTeamName()).build();
+
     }
+    private RoundStatusDTO mapToRoundStatusDTO(TeamParticipant participant){
+        Round round = participant.getCategoryRound().getRound();
+        return RoundStatusDTO.builder()
+                .roundId(round.getRoundId())
+                .roundName(round.getRoundName())
+                .status(participant.getStatus()).build();
+    }
+
+
 }
 

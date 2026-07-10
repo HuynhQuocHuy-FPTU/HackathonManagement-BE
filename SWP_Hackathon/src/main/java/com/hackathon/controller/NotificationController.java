@@ -2,6 +2,7 @@ package com.hackathon.controller;
 
 import com.hackathon.dto.notification.NotiResponseRequest;
 import com.hackathon.dto.notification.NotificationWebResponse;
+import com.hackathon.dto.notification.ResponseEntry;
 import com.hackathon.entity.enums.NotificationType;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
@@ -130,7 +131,7 @@ public class NotificationController {
         );
     }
     @GetMapping("/web/pending-response")
-    public ResponseEntity<ApiResponse<List<NotificationWebResponse>>> getPendingResponses(
+    public ResponseEntity<ApiResponse<List<ResponseEntry>>> getPendingResponses(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         return ResponseEntity.ok(
