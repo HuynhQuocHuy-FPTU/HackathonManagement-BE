@@ -1,0 +1,46 @@
+package com.hackathon.controller;
+
+import com.hackathon.dto.common.ApiResponse;
+import com.hackathon.dto.evaluation.JudgeEvaluationResponse;
+import com.hackathon.dto.evaluation.SubmitEvaluationRequest;
+import com.hackathon.security.CustomUserDetails;
+import com.hackathon.service.grading.GradingService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+/**
+ * Controller chịu trách nhiệm định tuyến các yêu cầu liên quan tới tác vụ Chấm điểm của Giám khảo.
+ * Tuân thủ cấu trúc RESTful API, đảm bảo cách ly logic nghiệp vụ hoàn toàn khỏi tầng vận chuyển HTTP.
+ */
+@RestController
+@RequestMapping("/api/grading")
+@RequiredArgsConstructor
+@PreAuthorize("hasRole('EXPERT')") // Lớp bảo mật vòng ngoài: Giới hạn truy cập ở cấp độ phân hệ Role
+public class GradingController {
+
+    private final GradingService gradingService;
+
+    /**
+     * API: Giám khảo thực hiện Chấm điểm lần đầu hoặc Cập nhật sửa đổi điểm số bài nộp.
+     * Cú pháp gọi endpoint: POST /api/grading/submissions/{submissionId}/evaluation
+     */
+    @PostMapping("/submissions/{submissionId}/evaluation")
+    public ResponseEntity<ApiResponse<JudgeEvaluationResponse>> submitOrUpdateEvaluation(
+            @PathVariable Integer submissionId,
+            @Valid @RequestBody SubmitEvaluationRequest request, // Khởi chạy cơ chế Validation Bean đập lỗi ngay tại cửa ngõ
+            @AuthenticationPrincipal CustomUserDetails userDetails) { // Trích xuất trực tiếp thông tin Principal đã xác thực từ Security Context
+
+        // Chuyển giao luồng thực thi xuống tầng Service quản lý độc lập
+        JudgeEvaluationResponse executionResult = gradingService.submitOrUpdate(
+                userDetails.getAccount(),
+                submissionId,
+                request
+        );
+
+        return ResponseEntity.ok(ApiResponse.ok("Xử lý ghi nhận điểm số đánh giá thành công!", executionResult));
+    }
+}

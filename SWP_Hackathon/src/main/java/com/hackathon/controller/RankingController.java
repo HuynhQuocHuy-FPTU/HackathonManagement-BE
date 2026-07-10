@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("api/ranking/rounds")
+@RequestMapping("/api/ranking/rounds")
 public class RankingController {
     private final ParticipantService participantService;
 
@@ -42,7 +42,7 @@ public class RankingController {
     public ResponseEntity<ApiResponse<Void>> openAppeals(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody OpenAppealRequestDTO request) {
-        rankingService.openAppeals( userDetails,request);
+        rankingService.openAppeals(userDetails, request);
         return ResponseEntity.ok(ApiResponse.success(null, "Mở cổng phúc khảo thành công"));
     }
 
@@ -82,5 +82,12 @@ public class RankingController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         rankingService.publishFinalRanking(roundId, userDetails);
         return ResponseEntity.ok(ApiResponse.success(null, "Ban tổ chức công bố bảng xếp hạng chính thức thành công"));
+    }
+
+    @GetMapping("/{roundId}/topN")
+    public ResponseEntity<ApiResponse<CategoryRoundRankingResponse>> getTopNRanking(
+            @PathVariable Integer roundId) {
+        CategoryRoundRankingResponse topN = rankingService.getTopNRanking(roundId);
+        return ResponseEntity.ok(ApiResponse.success(topN, "Xem top N thành công."));
     }
 }

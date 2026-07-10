@@ -505,7 +505,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                 evaluation.setStatus(EvaluationStatus.RE_EVALUATION);
                 evaluationsToUpdate.add(evaluation);
 
-                ExpertAssign assign = evaluation.getExpertAssign();
+//                ExpertAssign assign = evaluation.getExpertAssign();
 //                if (!notifiedAssignIds.add(assign.getAssignId())) {
 //                    continue;
 //                }

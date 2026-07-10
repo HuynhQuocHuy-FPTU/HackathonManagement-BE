@@ -111,7 +111,11 @@ public class ParticipantServiceImpl implements ParticipantService {
                 .findFirst()
                 .orElseThrow(() ->
                         new BadRequestException("Không tìm thấy trưởng nhóm"));
-        auditService.saveLog(account, AuditAction.DISQUALIFY_TEAM, AuditEntityType.PARTICIPANT, teamParticipants.get(0).getId(), team.getTeamName());
+        auditService.saveLog(account,
+                AuditAction.DISQUALIFY_TEAM,
+                AuditEntityType.PARTICIPANT,
+                teamParticipants.get(0).getId(),
+                team.getTeamName());
 
         notificationService.notifyDisqualifyTeam(account, accountLeader, team.getTeamName(), event.getEventName(), reason);
     }
