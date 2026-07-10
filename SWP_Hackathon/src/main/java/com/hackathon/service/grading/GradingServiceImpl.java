@@ -37,6 +37,37 @@ public class GradingServiceImpl implements GradingService {
     private final EvaluationMapper evaluationMapper;
     private final EvaluationAuditLogger auditLogger;
 
+    // =======================================================
+    // API 1: TRẢ RA DANH SÁCH BÀI CẦN CHẤM
+    // =======================================================
+    @Override
+    public List<AssignedSubmissionForJudgeResponse> listAssignedSubmissions(Account account, Integer categoryRoundId) {
+        Expert expert = assignmentResolver.resolveExpert(account);
+        ExpertAssign expertAssign = assignmentResolver.requireJudgeAssignment(expert, categoryRoundId);
+
+        // Kéo list bài thi final từ DB lên
+        List<Submission> submissions = submissionRepository.findFinalSubmissionsByCategoryRoundId(categoryRoundId);
+
+        // Map data để FE hiển thị trạng thái (Đã chấm hay chưa)
+        return submissions.stream().map(sub -> {
+            Evaluation eval = evaluationRepository.findByExpertAssignIdAndSubmissionId(expertAssign.getAssignId(), sub.getSubmissionId())
+                    .orElse(null);
+
+            return AssignedSubmissionForJudgeResponse.builder()
+                    .submissionId(sub.getSubmissionId())
+                    .teamName(sub.getTeam().getTeamName())
+                    .description(sub.getDescription())
+                    .githubUrl(sub.getGithubUrl())
+                    .submittedAt(sub.getCreateAt())
+                    .myEvaluationStatus(eval != null ? eval.getStatus().name() : "NOT_GRADED")
+                    .myTotalScore(eval != null ? eval.getScore() : null)
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
+    // =======================================================
+    // API 4: UPSERT (LƯU ĐIỂM HOẶC CẬP NHẬT ĐIỂM)
+    // =======================================================
     @Override
     @Transactional(rollbackFor = Exception.class) // Đảm bảo tính nguyên tử (Atomicity): Lỗi bất kỳ khâu nào sẽ phục hồi DB nguyên trạng
     public JudgeEvaluationResponse submitOrUpdate(Account account, Integer submissionId, SubmitEvaluationRequest request) {
