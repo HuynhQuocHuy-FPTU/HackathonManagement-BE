@@ -2,6 +2,7 @@ package com.hackathon.controller;
 
 import com.hackathon.dto.common.ApiResponse;
 import com.hackathon.dto.evaluation.AssignedSubmissionForJudgeResponse;
+import com.hackathon.dto.evaluation.EvaluationCriteriaResponse;
 import com.hackathon.dto.evaluation.JudgeEvaluationResponse;
 import com.hackathon.dto.evaluation.SubmitEvaluationRequest;
 import com.hackathon.security.CustomUserDetails;
@@ -41,6 +42,20 @@ public class GradingController {
         List<AssignedSubmissionForJudgeResponse> responseData = gradingService.listAssignedSubmissions(userDetails.getAccount(), categoryRoundId);
 
         return ResponseEntity.ok(ApiResponse.ok("Kéo danh sách bài thi thành công", responseData));
+    }
+
+    /**
+     * API: Tải danh sách bộ tiêu chí đánh giá của một Vòng thi
+     * Cú pháp gọi endpoint: GET /api/grading/rounds/{roundId}/criteria
+     * Phục vụ Frontend render Form chấm điểm động.
+     */
+    @GetMapping("/rounds/{roundId}/criteria")
+    public ResponseEntity<ApiResponse<List<EvaluationCriteriaResponse>>> viewScoringCriteria(
+            @PathVariable Integer roundId) {
+
+        List<EvaluationCriteriaResponse> responseData = gradingService.viewScoringCriteria(roundId);
+
+        return ResponseEntity.ok(ApiResponse.ok("Tải bộ tiêu chí đánh giá thành công", responseData));
     }
 
     /**

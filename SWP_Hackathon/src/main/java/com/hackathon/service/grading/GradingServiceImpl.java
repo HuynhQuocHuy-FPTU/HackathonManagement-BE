@@ -1,11 +1,13 @@
 package com.hackathon.service.grading;
 
+import com.hackathon.dto.criteria.EvaluationCriteriaResponseDTO;
 import com.hackathon.dto.evaluation.*;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.EvaluationStatus;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.exception.ResourceNotFoundException;
 import com.hackathon.repository.EvaluationRepository;
+import com.hackathon.repository.RoundRepository;
 import com.hackathon.repository.SubmissionRepository;
 import com.hackathon.service.grading.support.*;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ public class GradingServiceImpl implements GradingService {
 
     private final SubmissionRepository submissionRepository;
     private final EvaluationRepository evaluationRepository;
+    private final RoundRepository roundRepository;
 
     // Tiêm các thành phần xử lý quy tắc nghiệp vụ (SOLID Components)
     private final JudgeAssignmentResolver assignmentResolver;
@@ -38,7 +41,7 @@ public class GradingServiceImpl implements GradingService {
     private final EvaluationAuditLogger auditLogger;
 
     // =======================================================
-    // API 1: TRẢ RA DANH SÁCH BÀI CẦN CHẤM
+    // API: TRẢ RA DANH SÁCH BÀI CẦN CHẤM
     // =======================================================
     @Override
     public List<AssignedSubmissionForJudgeResponse> listAssignedSubmissions(Account account, Integer categoryRoundId) {
@@ -66,7 +69,26 @@ public class GradingServiceImpl implements GradingService {
     }
 
     // =======================================================
-    // API 4: UPSERT (LƯU ĐIỂM HOẶC CẬP NHẬT ĐIỂM)
+    // API: LẤY FORM TIÊU CHÍ
+    // =======================================================
+    @Override
+    public List<EvaluationCriteriaResponse> viewScoringCriteria(Integer roundId) {
+        Round round = roundRepository.findById(roundId)
+                .orElseThrow(() -> new ResourceNotFoundException("Vòng thi không tồn tại!"));
+
+        return round.getEvaluationCriterias().stream()
+                .map(c -> EvaluationCriteriaResponse.builder()
+                        .evaluationCriteriaId(c.getEvaluationCriteriaId())
+                        .criteriaName(c.getCriteriaName())
+                        .weight(c.getWeight())
+                        .description(c.getDescription())
+                        .type(c.getType())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    // =======================================================
+    // API: UPSERT (LƯU ĐIỂM HOẶC CẬP NHẬT ĐIỂM)
     // =======================================================
     @Override
     @Transactional(rollbackFor = Exception.class) // Đảm bảo tính nguyên tử (Atomicity): Lỗi bất kỳ khâu nào sẽ phục hồi DB nguyên trạng
