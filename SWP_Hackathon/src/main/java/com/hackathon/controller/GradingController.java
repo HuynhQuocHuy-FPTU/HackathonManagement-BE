@@ -1,10 +1,7 @@
 package com.hackathon.controller;
 
 import com.hackathon.dto.common.ApiResponse;
-import com.hackathon.dto.evaluation.AssignedSubmissionForJudgeResponse;
-import com.hackathon.dto.evaluation.EvaluationCriteriaResponse;
-import com.hackathon.dto.evaluation.JudgeEvaluationResponse;
-import com.hackathon.dto.evaluation.SubmitEvaluationRequest;
+import com.hackathon.dto.evaluation.*;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.grading.GradingService;
 import jakarta.validation.Valid;
@@ -90,5 +87,29 @@ public class GradingController {
         JudgeEvaluationResponse responseData = gradingService.viewMyEvaluation(userDetails.getAccount(), submissionId);
 
         return ResponseEntity.ok(ApiResponse.ok("Tải dữ liệu điểm cũ thành công!", responseData));
+    }
+    // Update điểm khi ban tổ chức từ chối xét duyệt
+//    @PostMapping("/submissions/{submissionId}/update")
+//    public ResponseEntity<ApiResponse<JudgeEvaluationResponse>>updateEvaluation(
+//            @PathVariable Integer submissionId,
+//            @Valid @RequestBody SubmitEvaluationRequest request, // Khởi chạy cơ chế Validation Bean đập lỗi ngay tại cửa ngõ
+//            @AuthenticationPrincipal CustomUserDetails userDetails){
+//        JudgeEvaluationResponse executionResult = gradingService.updateEvaluation(
+//                userDetails.getAccount(),
+//                submissionId,
+//                request
+//        );
+//        return ResponseEntity.ok(ApiResponse.ok("Cập nhật điểm số đánh giá thành công!", executionResult));
+//
+//    }
+
+    // Chấm điểm lại khi có yêu cầu phúc khảo
+    @PostMapping("/submissions/re-evaluation")
+    public ResponseEntity<ApiResponse<JudgeEvaluationResponse>>reEvaluationSubmission(
+            @Valid @RequestBody ReEvaluationRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails){
+        JudgeEvaluationResponse executionResult = gradingService.reEvaluationSubmission(userDetails, request);
+        return ResponseEntity.ok(ApiResponse.ok("Ban giám khảo chấm lại điểm số phúc khảo thành công!", executionResult));
+
     }
 }

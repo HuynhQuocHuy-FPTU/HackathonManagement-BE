@@ -19,9 +19,9 @@ import java.util.List;
 @RequiredArgsConstructor
 @Service
 public class EvaluationServiceImpl implements EvaluationService {
-    private final EventCoordinatorRepository eventCoordinatorRepository;
-    private final RoundRepository roundRepository;
-    private final EvaluationRepository evaluationRepository;
+//    private final EventCoordinatorRepository eventCoordinatorRepository;
+//    private final RoundRepository roundRepository;
+//    private final EvaluationRepository evaluationRepository;
 
 //    @Override
 //    public void checkJudgesCompletedEvaluation(CustomUserDetails userDetails, Integer roundId) {
