@@ -43,7 +43,7 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
 
         // Tìm round đầu tiên
         Round firstRound = roundRepository.findFirstByHackathonEvent_EventIdOrderByOrderIndexAsc(eventId)
-                .orElseThrow(() -> new BadRequestException("Event " + eventId + " chưa có round nào"));
+                .orElseThrow(() -> new BadRequestException("Event " + event.getEventName() + " chưa có round nào"));
 
         List<TeamParticipant> updateTeamParticipants = new ArrayList<>();
 
@@ -53,8 +53,7 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
             Integer categoryId = drawResult.getCategoryId();
 
             // 2. Lấy category, thuộc đúng event (làm 1 lần ngoài vòng lặp registration)
-            Category category = categoryRepository.findCategoryByCategoryIdAndHackathonEvent_EventId(categoryId, eventId)
-                    .orElseThrow(() -> new BadRequestException("Không tìm thấy category: " + categoryId + " với eventID: " + eventId));
+            Category category = categoryRepository.findCategoryByCategoryIdAndHackathonEvent_EventId(categoryId, eventId).orElseThrow(() -> new BadRequestException("Không tìm thấy category: " + categoryId + " với eventID: " + eventId));
 
             // 4. Tìm category round ở round đầu tiên (làm 1 lần ngoài vòng lặp registration)
             CategoryRound categoryRound = categoryRoundRepository.findCategoryRoundByCategory_CategoryIdAndRound_RoundId(categoryId, firstRound.getRoundId())
@@ -68,8 +67,13 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
                         .orElseThrow(() -> new BadRequestException("Không tìm thấy registration: " + registrationId + " thuộc event: " + eventId));
 
                 if (registration.getStatus() != RegistrationStatus.APPROVED) {
-                    throw new BadRequestException("Registration " + registrationId + " chưa được approve");
+                    if(registration.getStatus() == RegistrationStatus.REJECTED){
+                        throw new BadRequestException("Registration của đội " + registration.getTeam().getTeamName() + " đã bị từ chối");
+                    }else{
+                        throw new BadRequestException("Registration của đội" + registration.getTeam().getTeamName() + " chưa được chấp nhận");
+                    }
                 }
+
 
                 // 3. Lấy participant
                 TeamParticipant teamParticipant = participantRepository.findParticipantByRegistration_RegistrationId(registration.getRegistrationId())

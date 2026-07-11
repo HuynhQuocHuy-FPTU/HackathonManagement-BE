@@ -11,8 +11,6 @@ import java.util.List;
 @Getter
 @Builder
 public class DrawResultRequestDTO {
-
-
     @NotNull(message = "Category id is required")
     private Integer categoryId;
 

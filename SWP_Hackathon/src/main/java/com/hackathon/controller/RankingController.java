@@ -11,14 +11,14 @@ import com.hackathon.service.ranking.RankingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("api/ranking/rounds")
+@RequestMapping("/api/ranking/rounds")
 public class RankingController {
-    private final ParticipantService participantService;
 
     private final RankingService rankingService;
 
@@ -27,6 +27,7 @@ public class RankingController {
      *
      */
     @GetMapping("/{roundId}")
+    @PreAuthorize("hasRole('EVENTCOORDINATOR')")
     public ResponseEntity<ApiResponse<CategoryRoundRankingResponse>> getRankingByEventCoordinator(
             @PathVariable("roundId") Integer roundId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -37,12 +38,12 @@ public class RankingController {
     /**
      * Event Coordinator mở cổng đăng ký khiếu nại
      */
-
+    @PreAuthorize("hasRole('EVENTCOORDINATOR')")
     @PutMapping("/open-appeals")
     public ResponseEntity<ApiResponse<Void>> openAppeals(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody OpenAppealRequestDTO request) {
-        rankingService.openAppeals( userDetails,request);
+        rankingService.openAppeals(userDetails, request);
         return ResponseEntity.ok(ApiResponse.success(null, "Mở cổng phúc khảo thành công"));
     }
 
@@ -51,6 +52,7 @@ public class RankingController {
      */
 
     @PostMapping("/{roundId}/approve")
+    @PreAuthorize("hasRole('EVENTCOORDINATOR')")
     public ResponseEntity<ApiResponse<CategoryRoundRankingResponse>> approveRanking(
             @PathVariable Integer roundId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -60,6 +62,8 @@ public class RankingController {
     }
 
     @PostMapping("/{roundId}/reject")
+    @PreAuthorize("hasRole('EVENTCOORDINATOR')")
+
     public ResponseEntity<ApiResponse<CategoryRoundRankingResponse>> rejectRanking(
             @PathVariable Integer roundId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -69,6 +73,7 @@ public class RankingController {
     }
 
     @PostMapping("/{roundId}/publish-draft")
+    @PreAuthorize("hasRole('EVENTCOORDINATOR')")
     public ResponseEntity<ApiResponse<Void>> publishDraftRanking(
             @PathVariable Integer roundId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -77,10 +82,19 @@ public class RankingController {
     }
 
     @PostMapping("/{roundId}/publish-final")
+    @PreAuthorize("hasRole('EVENTCOORDINATOR')")
     public ResponseEntity<ApiResponse<Void>> publishFinalRanking(
             @PathVariable Integer roundId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         rankingService.publishFinalRanking(roundId, userDetails);
         return ResponseEntity.ok(ApiResponse.success(null, "Ban tổ chức công bố bảng xếp hạng chính thức thành công"));
+    }
+
+    @GetMapping("/{roundId}/topN")
+    @PreAuthorize("hasRole('EVENTCOORDINATOR')")
+    public ResponseEntity<ApiResponse<CategoryRoundRankingResponse>> getTopNRanking(
+            @PathVariable Integer roundId) {
+        CategoryRoundRankingResponse topN = rankingService.getTopNRanking(roundId);
+        return ResponseEntity.ok(ApiResponse.success(topN, "Xem top N thành công."));
     }
 }

@@ -161,7 +161,7 @@ public class AuthServiceImpl implements AuthService {
         account.setResetPasswordOtp(null);
         account.setResetPasswordOtpExpiry(null);
 
-        accountRepository.save(account);
+        accountRepository.saveAndFlush(account);
         refreshTokenRepository.revokeAllByAccount(account);
     }
 
@@ -185,7 +185,7 @@ public class AuthServiceImpl implements AuthService {
             account.setPasswordChanged(true);
         }
 
-        accountRepository.save(account);
+        accountRepository.saveAndFlush(account);
         refreshTokenRepository.revokeAllByAccount(account); // Xóa token cũ
     }
 

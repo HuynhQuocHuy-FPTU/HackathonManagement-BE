@@ -34,4 +34,6 @@ public interface RoundRepository extends JpaRepository<Round, Integer> {
     );
 
     List<Round> findByStatusAndAppealEndTimeBefore(RoundStatus status, LocalDateTime time);
+
+    Optional<Round> findRoundByHackathonEvent_EventIdAndOrderIndex(Integer hackathonEventEventId, Integer orderIndex);
 }

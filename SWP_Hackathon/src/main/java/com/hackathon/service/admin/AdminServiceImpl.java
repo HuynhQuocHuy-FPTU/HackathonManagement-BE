@@ -1,19 +1,19 @@
 package com.hackathon.service.admin;
 
+import com.hackathon.dto.AdminOverviewResponse;
+import com.hackathon.dto.AuditLogResponse;
 import com.hackathon.dto.UserAdminResponse;
 import com.hackathon.dto.admin.InviteAccountRequest;
 import com.hackathon.dto.admin.UpdateAccountStatusRequest;
 import com.hackathon.entity.Account;
+import com.hackathon.entity.AuditLog;
 import com.hackathon.entity.EventCoordinator;
 import com.hackathon.entity.Expert;
 import com.hackathon.entity.enums.AccountRole;
 import com.hackathon.entity.enums.AccountStatus;
 import com.hackathon.exception.ApiException;
 import com.hackathon.exception.BadRequestException;
-import com.hackathon.repository.AccountRepository;
-import com.hackathon.repository.EventCoordinatorRepository;
-import com.hackathon.repository.ExpertRepository;
-import com.hackathon.repository.RefreshTokenRepository;
+import com.hackathon.repository.*;
 import com.hackathon.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,6 +21,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -35,6 +37,7 @@ public class AdminServiceImpl implements AdminService {
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final AuditLogRepository auditLogRepository;
 
     @Override
     public List<UserAdminResponse> getAllUsers() {
@@ -153,6 +156,57 @@ public class AdminServiceImpl implements AdminService {
         if (request.getStatus() == AccountStatus.BANNED || request.getStatus() == AccountStatus.INACTIVE) {
             refreshTokenRepository.revokeAllByAccount(account);
         }
+    }
+
+    @Override
+    public AdminOverviewResponse getOverviewForAdmin() {
+
+        long totalRoles = AccountRole.values().length;
+        long highLevelAccounts = accountRepository.countByRole(AccountRole.EXPERT)
+                + accountRepository.countByRole(AccountRole.EVENTCOORDINATOR);
+        LocalDateTime time = LocalDateTime.now().minusHours(24);
+        long totalLogs24h = auditLogRepository.countTotalLogs24h(time);
+        long bannedAccounts = accountRepository.countByStatus(AccountStatus.BANNED)
+                + accountRepository.countByStatus(AccountStatus.INACTIVE);
+
+        // Metrics
+        AdminOverviewResponse.AdminMetricsResponse metrics = new AdminOverviewResponse.AdminMetricsResponse();
+        metrics.setSystemRoles(totalRoles);
+        metrics.setTotalLog24h(totalLogs24h);
+        metrics.setHighLevelAccounts(highLevelAccounts);
+        metrics.setBannedAccounts(bannedAccounts);
+        //Role distribution
+        long studentCount = accountRepository.countByRole(AccountRole.STUDENT);
+        long adminCount = accountRepository.countByRole(AccountRole.ADMIN);
+        long coordinatorCount = accountRepository.countByRole(AccountRole.EVENTCOORDINATOR);
+        long expertCount = accountRepository.countByRole(AccountRole.EXPERT);
+        long totalUser = studentCount + adminCount + coordinatorCount + expertCount;
+        AdminOverviewResponse.RoleDistributionResponse distribution = new AdminOverviewResponse.RoleDistributionResponse();
+        distribution.setStudentCount(studentCount);
+        distribution.setAdminCount(adminCount);
+        distribution.setCoordinatorCount(coordinatorCount);
+        distribution.setExpertCount(expertCount);
+        distribution.setTotalUsers(totalUser);
+        //RecentAuditLogs
+        List<AuditLog> list = auditLogRepository.findTop10ByOrderByCreatedAtDesc();
+        List<AuditLogResponse> recentLogs = new ArrayList<>();
+        for (AuditLog log : list) {
+            AuditLogResponse res = new AuditLogResponse();
+            res.setId(log.getId());
+            res.setAccountId(log.getAccount().getAccountId());
+            res.setAction(log.getAction().name());
+            res.setRole(log.getAccount().getRole());
+            res.setCreatedAt(log.getCreatedAt());
+            res.setActorName(log.getActorName());
+            recentLogs.add(res);
+        }
+        return new AdminOverviewResponse(
+                metrics,
+                distribution,
+                recentLogs
+        );
+
+
     }
 
 }

@@ -54,4 +54,5 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Integer>
 
 //    boolean hasLeader(boolean b);
 
+    long countByIsLeader(Boolean isLeader);
 }

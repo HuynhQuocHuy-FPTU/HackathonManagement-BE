@@ -38,4 +38,6 @@ public interface CategoryRoundRepository extends JpaRepository<CategoryRound, In
 
     List<CategoryRound> findByRound_HackathonEvent_EventId(Integer eventId);
 
+    List<CategoryRound> findCategoryRoundByRound_RoundId(Integer roundRoundId);
+
 }

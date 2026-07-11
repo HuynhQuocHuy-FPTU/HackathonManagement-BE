@@ -4,43 +4,41 @@ import com.hackathon.dto.auth.AuthResponse;
 import com.hackathon.dto.user.UpdateProfileRequest;
 import com.hackathon.entity.Account;
 import com.hackathon.entity.enums.AccountRole;
+import com.hackathon.entity.enums.EventStatus;
+import com.hackathon.entity.enums.ParticipantStatus;
 import com.hackathon.exception.ApiException;
 import com.hackathon.repository.AccountRepository;
+import com.hackathon.repository.ExpertRepository;
+import com.hackathon.repository.StudentRepository;
 import com.hackathon.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Lớp triển khai các nghiệp vụ liên quan đến quản lý thông tin Người dùng.
- * Chịu trách nhiệm đồng bộ dữ liệu giữa bảng Account cốt lõi và các bảng định danh chi tiết (Student, Expert, EventCoordinator).
- */
+import java.util.List;
+
+
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private final AccountRepository accountRepository;
+    private final StudentRepository studentRepository;
+    private final ExpertRepository expertRepository;
 
-    /**
-     * Lấy thông tin hồ sơ chi tiết của người dùng đang đăng nhập hiện tại.
-     * Tự động nhận diện Role và trích xuất các trường thông tin tương ứng từ các bảng con.
-     *
-     * @param userDetails Đối tượng chứa thông tin xác thực (Principal) từ Spring Security Context
-     * @return AuthResponse Payload chứa đầy đủ thông tin cá nhân (không cấp mới token)
-     */
     @Override
     public AuthResponse getCurrentUser(CustomUserDetails userDetails) {
         Account account = userDetails.getAccount();
 
-        // 1. Sử dụng Custom Query để lấy Full Name từ các bảng con (Tối ưu hóa Database Normalization)
+        // 1. Lấy Full Name (tối ưu hóa Database Normalization)
         String fullName = accountRepository.findFullNameByEmail(account.getEmail()).orElse(null);
 
-        // 2. Trích xuất tên trường Đại học (Chỉ áp dụng nếu Role là Sinh viên)
+        // 2. Trích xuất tên trường Đại học (Chỉ sinh viên mới có)
         String university = (account.getRole() == AccountRole.STUDENT && account.getStudent() != null)
                 ? account.getStudent().getUniversityName() : null;
 
-        // 3. Trích xuất tên Tổ chức/Đơn vị công tác (Chỉ áp dụng cho Giám khảo hoặc Ban tổ chức)
+        // 3. Trích xuất tên Tổ chức (Chỉ Giám khảo hoặc Ban tổ chức mới có)
         String organization = null;
         if (account.getRole() == AccountRole.EXPERT && account.getExpert() != null) {
             organization = account.getExpert().getOrganization();
@@ -48,11 +46,7 @@ public class UserServiceImpl implements UserService {
             organization = account.getEventCoordinator().getOrganization();
         }
 
-        // Đóng gói dữ liệu trả về cho Frontend hiển thị Profile
         return AuthResponse.builder()
-                .accessToken(null)
-                .refreshToken(null)
-                .expiresIn(0)
                 .accountId(account.getAccountId())
                 .fullName(fullName)
                 .email(account.getEmail())
@@ -67,78 +61,41 @@ public class UserServiceImpl implements UserService {
 
     /**
      * Xử lý luồng cập nhật hồ sơ người dùng đa quyền (Multi-role Profile Update).
-     * Áp dụng kỹ thuật Role-based data extraction để ngăn chặn hoàn toàn lỗ hổng Mass Assignment.
-     *
-     * @param userDetails Context người dùng hiện tại đang thực hiện request
-     * @param request     Unified DTO chứa toàn bộ các trường cập nhật có thể có từ Frontend
-     * @return AuthResponse chứa thông tin Profile đã được làm mới
+     * Áp dụng nguyên tắc SRP (Đơn trách nhiệm) để bóc tách logic theo từng Role.
      */
     @Override
-    @Transactional // Đảm bảo tính toàn vẹn dữ liệu: Cập nhật Account và bảng con phải cùng thành công hoặc cùng thất bại
+    @Transactional(rollbackFor = Exception.class) // Đảm bảo tính toàn vẹn: Lỗi ở bảng con thì bảng cha cũng Rollback
     public AuthResponse updateProfile(CustomUserDetails userDetails, UpdateProfileRequest request) {
         Account account = accountRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Không tìm thấy tài khoản"));
 
-        // Cập nhật thông tin dùng chung ở bảng cốt lõi
+        // 1. Cập nhật thông tin dùng chung ở bảng cốt lõi (Account)
         account.setPhone(request.getPhone());
 
         String university = null;
         String organization = null;
 
-        // BỨC TƯỜNG LỬA BẢO MẬT (Security Firewall):
-        // Chỉ map (gán) các trường dữ liệu được phép dựa trên Role thực tế của Account dưới Database.
-        // Mọi trường dữ liệu rác/vượt quyền do Frontend cố tình gửi lên sẽ bị rẽ nhánh này bỏ qua hoàn toàn.
+        // 2. ĐIỀU HƯỚNG LOGIC (Router)
+        // Dựa vào Role, hệ thống gọi đúng hàm xử lý tương ứng. Bỏ qua các data rác từ Frontend.
         switch (account.getRole()) {
             case STUDENT:
-                com.hackathon.entity.Student student = account.getStudent();
-                if (student != null) {
-                    student.setStudentName(request.getUserName()); // Đồng bộ tên xuống bảng Student
-                    if (request.getStudentCode() != null) student.setStudentCode(request.getStudentCode());
-                    if (request.getAddress() != null) student.setAddress(request.getAddress());
-                    if (request.getMajor() != null) student.setMajor(request.getMajor());
-
-                    if (request.getUniversityName() != null) student.setUniversityName(request.getUniversityName());
-                    university = student.getUniversityName();
-                }
+                university = updateStudentProfile(account, request);
                 break;
-
             case EXPERT:
-                com.hackathon.entity.Expert expert = account.getExpert();
-                if (expert != null) {
-                    expert.setExpertName(request.getUserName()); // Đồng bộ tên xuống bảng Expert
-                    if (request.getDepartment() != null) expert.setDepartment(request.getDepartment());
-                    if (request.getWorkplace() != null) expert.setWorkplace(request.getWorkplace());
-
-                    if (request.getOrganization() != null) expert.setOrganization(request.getOrganization());
-                    organization = expert.getOrganization();
-                }
+                organization = updateExpertProfile(account, request);
                 break;
-
             case EVENTCOORDINATOR:
-                com.hackathon.entity.EventCoordinator coordinator = account.getEventCoordinator();
-                if (coordinator != null) {
-                    coordinator.setCoordinatorName(request.getUserName()); // Đồng bộ tên xuống bảng EventCoordinator
-                    if (request.getDepartment() != null) coordinator.setDepartment(request.getDepartment());
-
-                    if (request.getOrganization() != null) coordinator.setOrganization(request.getOrganization());
-                    organization = coordinator.getOrganization();
-                }
+                organization = updateCoordinatorProfile(account, request);
                 break;
-
             default:
-                // Đối với các Role hệ thống (như ADMIN) không có bảng con, bỏ qua xử lý
                 break;
         }
 
-        // Nhờ cơ chế CascadeType.ALL cấu hình trên Entity Account,
-        // Hibernate sẽ tự động sinh câu lệnh UPDATE cho cả bảng Account và bảng con tương ứng.
+        // 3. Nhờ cơ chế CascadeType.ALL, lệnh save(account) tự động UPDATE cả bảng con (Student/Expert...)
         accountRepository.save(account);
 
-        // Trả về thông tin vừa được cập nhật để Frontend đồng bộ State (như Redux/Context)
+        // 4. Trả về state mới cho Frontend
         return AuthResponse.builder()
-                .accessToken(null)
-                .refreshToken(null)
-                .expiresIn(0)
                 .accountId(account.getAccountId())
                 .fullName(request.getUserName())
                 .email(account.getEmail())
@@ -149,5 +106,70 @@ public class UserServiceImpl implements UserService {
                 .createdAt(account.getCreatedAt())
                 .accountStatus(account.getStatus())
                 .build();
+    }
+
+    // =========================================================================
+    // CÁC HÀM XỬ LÝ PRIVATE (Tuân thủ nguyên tắc SRP và OCP)
+    // =========================================================================
+
+    private String updateStudentProfile(Account account, UpdateProfileRequest request) {
+        com.hackathon.entity.Student student = account.getStudent();
+        if (student == null) return null;
+
+        // BỨC TƯỜNG LỬA (Firewall): Chặn cập nhật nếu sinh viên đang trong giải đấu (Đang thi hoặc Đã qua vòng)
+        boolean isCompeting = studentRepository.isParticipatingInOngoingCompetition(
+                student.getStudentId(),
+                List.of(ParticipantStatus.ACTIVE, ParticipantStatus.PASSED)
+        );
+
+        if (isCompeting) {
+            throw new ApiException(HttpStatus.FORBIDDEN,
+                    "Hồ sơ đã bị khóa để đảm bảo tính công bằng vì bạn đang trong thời gian tham gia cuộc thi.");
+        }
+
+        // Thực hiện cập nhật
+        student.setStudentName(request.getUserName());
+        if (request.getStudentCode() != null) student.setStudentCode(request.getStudentCode());
+        if (request.getAddress() != null) student.setAddress(request.getAddress());
+        if (request.getMajor() != null) student.setMajor(request.getMajor());
+        if (request.getUniversityName() != null) student.setUniversityName(request.getUniversityName());
+
+        return student.getUniversityName();
+    }
+
+    private String updateExpertProfile(Account account, UpdateProfileRequest request) {
+        com.hackathon.entity.Expert expert = account.getExpert();
+        if (expert == null) return null;
+
+        // BỨC TƯỜNG LỬA (Firewall): Chặn cập nhật nếu BGK đang được phân công sự kiện (ACTIVE hoặc ONGOING)
+        boolean isAssignedToOngoingEvent = expertRepository.isAssignedToOngoingEvent(
+                expert.getExpertId(),
+                List.of(EventStatus.ACTIVE, EventStatus.ONGOING)
+        );
+
+        if (isAssignedToOngoingEvent) {
+            throw new ApiException(HttpStatus.FORBIDDEN,
+                    "Hồ sơ đã bị khóa vì bạn đang được phân công làm nhiệm vụ trong một cuộc thi đang diễn ra.");
+        }
+
+        // Thực hiện cập nhật
+        expert.setExpertName(request.getUserName());
+        if (request.getDepartment() != null) expert.setDepartment(request.getDepartment());
+        if (request.getWorkplace() != null) expert.setWorkplace(request.getWorkplace());
+        if (request.getOrganization() != null) expert.setOrganization(request.getOrganization());
+
+        return expert.getOrganization();
+    }
+
+    private String updateCoordinatorProfile(Account account, UpdateProfileRequest request) {
+        com.hackathon.entity.EventCoordinator coordinator = account.getEventCoordinator();
+        if (coordinator == null) return null;
+
+        // Ban tổ chức (Coordinator) thường được tự do cập nhật thông tin hơn
+        coordinator.setCoordinatorName(request.getUserName());
+        if (request.getDepartment() != null) coordinator.setDepartment(request.getDepartment());
+        if (request.getOrganization() != null) coordinator.setOrganization(request.getOrganization());
+
+        return coordinator.getOrganization();
     }
 }

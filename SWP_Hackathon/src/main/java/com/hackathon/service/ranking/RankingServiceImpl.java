@@ -187,19 +187,27 @@ public class RankingServiceImpl implements RankingService {
         }
         String logMessage;
         if (round.getStatus() == RoundStatus.PENDING_APPROVAL) {
-            logMessage = "Phê duyệt lại kết quả cuối cùng sau phúc khảo thành công cho vòng: "+round.getRoundName();
+            logMessage = "Phê duyệt lại kết quả cuối cùng sau phúc khảo thành công cho vòng: " + round.getRoundName();
         } else {
             logMessage = "Phê duyệt ranking lần 1 thành công của vòng: ";
         }
         round.setStatus(RoundStatus.APPROVED);
         roundRepository.save(round);
 
+        String jsonData = null;
+        try {
+            jsonData = objectMapper.writeValueAsString(categoriesRanking);
+        } catch (Exception e) {
+
+        }
+
         auditService.saveLog(
                 account,
                 AuditAction.APPROVE_RANKING,
                 AuditEntityType.ROUND,
                 roundId,
-                logMessage
+                logMessage,
+                jsonData
         );
 
         return CategoryRoundRankingResponse.builder()
@@ -247,8 +255,9 @@ public class RankingServiceImpl implements RankingService {
 
 
                 // CHUYỂN VỀ TRẠNG THÁI RE_EVALUATION TIẾN HÀNH CHẤM ĐIỂM LẠI
-                if (team.getEvaluations() != null) {
-                    for (Evaluation evaluation : team.getEvaluations()) {
+                List<Evaluation> evaluations = evaluationRepository.findBySubmission_TeamParticipant(team);
+                if (evaluations != null) {
+                    for (Evaluation evaluation : evaluations) {
                         evaluation.setStatus(EvaluationStatus.RE_EVALUATION);
                         evaluationsToSave.add(evaluation);
                         team.setRank(null);
@@ -260,22 +269,22 @@ public class RankingServiceImpl implements RankingService {
         }
         if (!evaluationsToSave.isEmpty()) {
             evaluationRepository.saveAll(evaluationsToSave);
-            if (!teamsToSave.isEmpty()) {
-                participantRepository.saveAll(teamsToSave);
-            }
-            round.setStatus(RoundStatus.RE_EVALUATING);
-
-            roundRepository.save(round);
-
-            auditService.saveLog(
-                    account,
-                    AuditAction.REJECT_RANKING,
-                    AuditEntityType.ROUND,
-                    roundId,
-                    "Từ chối phê duyệt ranking thành công của vòng: " + round.getRoundName()
-            );
-
         }
+        if (!teamsToSave.isEmpty()) {
+            participantRepository.saveAll(teamsToSave);
+        }
+        round.setStatus(RoundStatus.RE_EVALUATING);
+        roundRepository.save(round);
+
+        auditService.saveLog(
+                account,
+                AuditAction.SAVE_DRAFT,
+                AuditEntityType.ROUND,
+                roundId,
+                "Từ chối phê duyệt ranking thành công của vòng: " + round.getRoundName()
+        );
+
+
         return CategoryRoundRankingResponse.builder()
                 .roundId(round.getRoundId())
                 .roundName(round.getRoundName())
@@ -284,6 +293,7 @@ public class RankingServiceImpl implements RankingService {
     }
 
     @Override
+    @Transactional
     public void publishDraftRanking(Integer roundId, CustomUserDetails userDetails) {
         Account account = userDetails.getAccount();
         EventCoordinator eventCoordinator = eventCoordinatorRepository.findByAccount_AccountId(account.getAccountId())
@@ -332,22 +342,25 @@ public class RankingServiceImpl implements RankingService {
         roundRepository.save(round);
         log.info("Đã công bố bản nháp bảng xếp hạng vòng {}. Bắt đầu nhận phúc khảo.", roundId);
         try {
-            String jsonData = objectMapper.writeValueAsString(auditRankingData);
+
 
             auditService.saveLog(
                     account,
                     AuditAction.SAVE_DRAFT,
                     AuditEntityType.ROUND,
                     roundId,
-                    jsonData
+                    "Công bố kết quả tạm thời thành công.",
+                    objectMapper.writeValueAsString(auditRankingData)
             );
         } catch (JsonProcessingException e) {
+
             log.error("Lỗi khi tuần tự hóa dữ liệu xếp hạng vòng {} sang JSON", roundId, e);
             throw new BadRequestException("Không thể lưu lịch sử bảng xếp hạng do lỗi hệ thống.");
         }
     }
 
     @Override
+    @Transactional
     public void publishFinalRanking(Integer roundId, CustomUserDetails userDetails) {
         Account account = userDetails.getAccount();
         EventCoordinator eventCoordinator = eventCoordinatorRepository.findByAccount_AccountId(account.getAccountId())
@@ -356,7 +369,7 @@ public class RankingServiceImpl implements RankingService {
         // Check Round
         Round round = roundRepository.findById(roundId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy vòng thi này."));
-        if (round.getStatus() != RoundStatus.APPROVED ) {
+        if (round.getStatus() != RoundStatus.APPROVED) {
             throw new BadRequestException("Vòng thi phải ở trạng thái chờ duyệt hoặc đang phúc khảo mới có thể công bố kết quả chính thức.");
         }
 
@@ -412,26 +425,18 @@ public class RankingServiceImpl implements RankingService {
         round.setStatus(RoundStatus.COMPLETED);
         roundRepository.save(round);
         log.info("Đã công bố bản xếp hạng chính thức vòng {}. Đóng vòng đấu thành công!", roundId);
-
-//        Notification notification = new Notification();
-//        notification.setType(NotificationType.SYSTEM_ANNOUNCEMENT);
-//        notification.setChannel(NotificationChannel.WEB);
-//        notification.setTitle("KẾT QUẢ CUỘC THI.");
-//        notification.setMessage("Ban tổ chức đã công bố kết quả chính thức của " + round.getRoundName());
-//        notification.setCreatedAt(LocalDateTime.now());
-//        notificationRepository.save(notification);
-        notificationService.notifyRoundRankingPublished(account,roundId,true);
-
+        notificationService.notifyRoundRankingPublished(account, roundId, true);
 
         try {
-            String jsonData = objectMapper.writeValueAsString(auditRankingData);
+
 
             auditService.saveLog(
                     account,
                     AuditAction.PUBLISH_FINAL,
                     AuditEntityType.ROUND,
                     roundId,
-                    jsonData
+                    "Công bố bản xếp hạng chính thức của vòng " + round.getRoundName() + " thành công",
+                    objectMapper.writeValueAsString(auditRankingData)
             );
         } catch (JsonProcessingException e) {
             log.error("Lỗi khi tuần tự hóa dữ liệu xếp hạng vòng {} sang JSON", roundId, e);
@@ -487,5 +492,55 @@ public class RankingServiceImpl implements RankingService {
         );
 
     }
+
+    @Override
+    public CategoryRoundRankingResponse getTopNRanking(Integer roundId) {
+        Round round = roundRepository.findById(roundId).orElseThrow(
+                () -> new BadRequestException("Không tìm thấy vòng thi"));
+        List<CategoryRound> categoryRound = round.getCategoryRounds();
+        int topN = round.getTopN();
+
+        List<CategoryRankingResponse> categoriesRanking = new ArrayList<>();
+        for (CategoryRound cr : categoryRound) {
+            // Thông qua category Round lấy top N ranking
+            List<TeamParticipant> tp = cr.getTeamParticipants().stream()
+                    .filter(teamParticipant -> teamParticipant.getRank() <= topN)
+                    .sorted(Comparator.comparing(TeamParticipant::getRank))
+                    .toList();
+
+            List<RankingResponseDTO> rankingResponse = new ArrayList<>();
+
+            for (TeamParticipant participant : tp) {
+                String teamName = (participant.getRegistration() != null) ? participant.getRegistration().getTeam().getTeamName() : "N/A";
+                RankingResponseDTO dto = RankingResponseDTO.builder()
+                        .participantId(participant.getId())
+                        .totalScore(participant.getTotalScore())
+                        .rank(participant.getRank())
+                        .teamName(teamName)
+                        .status(participant.getStatus())
+                        .build();
+                rankingResponse.add(dto);
+            }
+            CategoryRankingResponse response = CategoryRankingResponse.builder()
+                    .categoryRoundId(cr.getCategoryRoundId())
+                    .categoryId(cr.getCategory().getCategoryId())
+                    .categoryName(cr.getCategory().getCategoryName())
+                    .teams(rankingResponse)
+                    .build();
+            categoriesRanking.add(response);
+        }
+
+
+        return CategoryRoundRankingResponse.builder()
+                .roundId(round.getRoundId())
+                .roundName(round.getRoundName())
+                .advancementRule(round.getAdvancementRule())
+                .topN(round.getTopN())
+                .orderIndex(round.getOrderIndex())
+                .roundStatus(round.getStatus())
+                .categoriesRanking(categoriesRanking)
+                .build();
+    }
+
 
 }

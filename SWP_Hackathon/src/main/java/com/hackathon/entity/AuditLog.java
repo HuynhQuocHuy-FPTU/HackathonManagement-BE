@@ -2,6 +2,7 @@ package com.hackathon.entity;
 
 import com.hackathon.entity.enums.AuditAction;
 import com.hackathon.entity.enums.AuditEntityType;
+import com.hackathon.entity.enums.AuditResult;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -37,12 +38,19 @@ public class AuditLog {
     @Enumerated(EnumType.STRING)
     private AuditEntityType entityType;
 
+    @Column(name ="Actor_Name" , columnDefinition = "NVARCHAR(255)")
+    private  String actorName;
+
     private Integer entityId;
 
     @Column(columnDefinition = "NVARCHAR(MAX)")
     private String description;
     @Column(nullable = false)
     private LocalDateTime createdAt;
+
+    @Lob
+    @Column(columnDefinition = "NVARCHAR(MAX)")
+    private String data;
 
     // N Auditlog - 1 Account
     @ManyToOne(fetch = FetchType.LAZY)
