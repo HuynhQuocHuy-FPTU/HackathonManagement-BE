@@ -32,4 +32,5 @@ public class StudentUpdateRequest {
     @NotBlank(message = "University không được để trống")
     @Size(max = 255, message = "University tối đa 255 ký tự")
     private String university;
+    private String avatar;
 }

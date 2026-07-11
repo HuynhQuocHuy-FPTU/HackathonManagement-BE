@@ -79,6 +79,7 @@ public class RoundResponse {
         this.maxFileCount = round.getMaxFileCount();
         this.maxTotalSizeMb = round.getMaxTotalSizeMb();
         this.advancementRule = round.getAdvancementRule();
+        this.submissionDeadline = round.getSubmissionDeadline();
         this.customCriteriaDetatils = criteriaList;
         this.categoryExperts = experts;
     }
