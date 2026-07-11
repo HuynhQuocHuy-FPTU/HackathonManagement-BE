@@ -140,6 +140,7 @@ public class SecurityConfig {
 
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/users/**").authenticated()
+                        .requestMatchers("/api/github/oauth/callback").permitAll()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

@@ -33,6 +33,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         String email = oAuth2User.getAttribute("email");
         String name = oAuth2User.getAttribute("name");
+        String picture = oAuth2User.getAttribute("picture");
 
         boolean exists = accountRepository.existsByEmail(email.trim());
         // Chưa có tài khoản -> đăng ký Google
@@ -40,11 +41,12 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
             authService.registerWithGoogle(email);
             AuthResponse authResponse = authService.loginWithGoogle(email);
             response.sendRedirect(
-                    "http://localhost:3000/complete-registration"
+                    "http://localhost:5174/complete-registration"
                             + "?accessToken="
                             + authResponse.getAccessToken()
                             + "&refreshToken="
                             + authResponse.getRefreshToken()
+                            + "&picture=" + picture
             );
 
             return;
@@ -58,10 +60,11 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         String accessToken = URLEncoder.encode(authResponse.getAccessToken(), StandardCharsets.UTF_8);
         String refreshToken = URLEncoder.encode(authResponse.getRefreshToken(), StandardCharsets.UTF_8);
         response.sendRedirect(
-                "http://localhost:3000/oauth2/redirect?accessToken="
+                "http://localhost:5174/oauth2/redirect?accessToken="
                         + accessToken
                         + "&refreshToken="
                         + refreshToken
+                        + "&picture=" + picture
         );
     }
 }

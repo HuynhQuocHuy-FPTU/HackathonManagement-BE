@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.thymeleaf.spring6.SpringTemplateEngine;
@@ -33,6 +34,7 @@ public class EmailServiceImpl implements EmailService {
     private boolean devLogLink;
 
     @Override
+    @Async
     public void sendVerificationEmail(String toEmail, String token) {
         String verifyUrl = frontendUrl + "/verify-account?token=" + token;
         String subject = "Xác thực tài khoản Hackathon";
@@ -64,6 +66,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    @Async
     public void sendForgotPasswordEmail(String toEmail, String otp) {
         String resetUrl = frontendUrl + "/reset-password";
         String subject = "[Hackathon System] Yêu cầu đặt lại mật khẩu";
@@ -98,6 +101,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    @Async
     public void sendRankingPublishEmail(String toEmail, String tile, String emailMessage) {
         if (!StringUtils.hasText(mailUsername)) {
             if (devLogLink) {
@@ -114,6 +118,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    @Async
     public void sendNotifyToExpertReEvaluation(String toEmail, String teamName) {
 
 
@@ -141,6 +146,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    @Async
     public void sendTemporaryPasswordEmail(String toEmail, String tempPassword, String fullName) {
         String loginUrl = frontendUrl + "/login";
         String subject = "[Hackathon System] Thông tin cấp tài khoản thành viên mới";
@@ -177,6 +183,7 @@ public class EmailServiceImpl implements EmailService {
 
 
     @Override
+    @Async
     public void sendEmail(MailRequest request, String templateName) throws MessagingException {
         try {
             MimeMessage message = mailSender.createMimeMessage();
