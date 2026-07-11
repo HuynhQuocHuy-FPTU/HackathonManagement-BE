@@ -21,6 +21,7 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Slf4j
@@ -215,7 +216,7 @@ public class RoundAdvancementService {
         boolean hasUngraded = evaluationRepository.existsBySubmission_TeamParticipant_CategoryRound_CategoryRoundIdAndStatus(categoryRoundId, EvaluationStatus.NOT_GRADED);
         if (hasUngraded) {
             throw new BadRequestException(
-                    "Category round " + categoryRoundId + " vẫn còn bài chưa được chấm điểm (NOT_GRADED). "
+                    "Category round " + categoryRoundId + " vẫn còn bài chưa được chấm điểm (NOT_GRADED)."
                             + "Vui lòng chấm xong hết trước khi thăng vòng.");
         }
     }
@@ -238,7 +239,7 @@ public class RoundAdvancementService {
         }
         BigDecimal sum = gradedEvaluations.stream()
                 .map(Evaluation::getScore)
-                .filter(java.util.Objects::nonNull)
+                .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return sum.divide(BigDecimal.valueOf(gradedEvaluations.size()), SCORE_SCALE, RoundingMode.HALF_UP);

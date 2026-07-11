@@ -80,7 +80,7 @@ public class GradingServiceImpl implements GradingService {
             evaluation = new Evaluation();
             evaluation.setExpertAssign(expertAssign);
             evaluation.setSubmission(submission);
-            evaluation.setTeamParticipant(participant); // Ràng buộc khóa ngoại đồng bộ cấu trúc DB của dự án
+//            evaluation.setTeamParticipant(participant); // Ràng buộc khóa ngoại đồng bộ cấu trúc DB của dự án
             evaluation.setIsReEvaluation(false);
         } else {
             // Trường hợp 2: Đã tồn tại bản ghi (Update) -> Chặn nếu thực thể đang nằm trong trạng thái xử lý Phúc khảo tách biệt

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hackathon.entity.enums.FileType;
 import com.hackathon.entity.enums.RoundStatus;
 import com.hackathon.entity.enums.SubmissionType;
-import com.hackathon.service.FileTypeConverter;
+import com.hackathon.service.submission.FileTypeConverter;
 import jakarta.persistence.*;
 import lombok.*;
 

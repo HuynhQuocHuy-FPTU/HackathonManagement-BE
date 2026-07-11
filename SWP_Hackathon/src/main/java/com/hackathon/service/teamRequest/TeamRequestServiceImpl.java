@@ -10,6 +10,7 @@ import com.hackathon.dto.team.TeamRequestResponse;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.*;
 import com.hackathon.exception.BadRequestException;
+import com.hackathon.exception.ResourceNotFoundException;
 import com.hackathon.repository.*;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.AuditService;
@@ -34,16 +35,12 @@ import java.util.Set;
 public class TeamRequestServiceImpl implements TeamRequestService {
     private final TeamRepository teamRepository;
     private final ExpertRepository expertRepository;
-    private final HackathonEventRepository hackathonEventRepository;
     private final ExpertAssignRepository expertAssignRepository;
     private final TeamRequestRepository teamRequestRepository;
-    private final TeamMemberRepository teamMemberRepository;
     private final StudentRepository studentRepository;
     private final RoundRepository roundRepository;
     private final EventCoordinatorRepository eventCoordinatorRepository;
-    private final NotificationRepository notificationRepository;
     private final EvaluationRepository evaluationRepository;
-    private final EvaluationDetailRepository evaluationDetailRepository;
     private final AuditService auditService;
     private final NotificationService notificationService;
 
@@ -208,7 +205,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                 AuditAction.MENTOR_ACCEPT_REQUEST,
                 AuditEntityType.TEAM,
                 teamRequest.getTeam().getTeamId(),
-                "Chấp nhận yêu câud hôz trợ từ team thành công"
+                "Chấp nhận yêu câud hỗ trợ từ team thành công"
         );
 
         if (responseMessage != null) {
@@ -627,6 +624,69 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         return result;
     }
 
+    @Override
+    public TeamRequestResponse sendRequestToCoordinator(CustomUserDetails userDetails, String requestMessage, Long notificationId) {
+        Account account = userDetails.getAccount();
+        if (account == null || account.getStudent() == null) {
+            throw new BadRequestException("Tài khoản này không phải là tài khoản student");
+        }
+        notificationService.checkResponseNoti(notificationId);
+        //Tìm Team mà Student này làm leader và đang trạng thái thi đấu
+        Team team = teamRepository.findActiveLeadingTeamByStudentId(account.getStudent().getStudentId())
+                .orElseThrow(() -> new BadRequestException("Bạn không phải leader của đội tham gia"));
+
+        boolean hasPendingRequest = teamRequestRepository.existsByTeam_TeamIdAndStatusAndRequestType(team.getTeamId(), RequestStatus.PENDING, RequestType.VERIFICATION);
+        if (hasPendingRequest) {
+            throw new BadRequestException("Đội của bạn đã có một yêu cầu đang nằm trong danh sách chờ. Vui lòng đợi xử lý trước khi gửi yêu cầu mới!");
+        }
+
+        TeamRequest newRequest = new TeamRequest();
+        newRequest.setTeam(team);
+        newRequest.setCreateDate(LocalDateTime.now());
+        newRequest.setStatus(RequestStatus.PENDING);
+        newRequest.setRequestMessage(requestMessage);
+        newRequest.setRequestType(RequestType.VERIFICATION);
+        TeamRequest saveTeamRequest = teamRequestRepository.save(newRequest);
+
+        return TeamRequestResponse.builder()
+                .requestId(saveTeamRequest.getRequestId())
+                .teamId(saveTeamRequest.getTeam().getTeamId())
+                .teamName(saveTeamRequest.getTeam().getTeamName())
+                .createDate(saveTeamRequest.getCreateDate())
+                .status(saveTeamRequest.getStatus())
+                .requestMessage(saveTeamRequest.getRequestMessage())
+                .build();
+    }
+    @Transactional
+    public void resolvedRequest(CustomUserDetails userDetails, Integer teamRequestId, String messageResponse) {
+        // 1. Kiểm tra quyền
+        EventCoordinator eventCoordinator = userDetails.getAccount().getEventCoordinator();
+        if(eventCoordinator == null) {
+            throw new ResourceNotFoundException("Bạn không phải là eventcoordinator");
+        }
+        // 2. Lấy request và kiểm tra
+        TeamRequest teamRequest = teamRequestRepository.findById(teamRequestId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy yêu cầu"));
+
+        if (teamRequest.getStatus() != RequestStatus.PENDING) {
+            throw new BadRequestException("Yêu cầu này đã được xử lý hoặc đã đóng.");
+        }
+        // 3. Cập nhật thông tin xử lý
+        teamRequest.setResponder(userDetails.getAccount());
+        teamRequest.setStatus(RequestStatus.ACCEPTED);
+        teamRequest.setResponseMessage(messageResponse);
+        teamRequestRepository.save(teamRequest);
+
+        // 4. Gửi thông báo
+        Student teamLeader = teamRequest.getTeam().getTeamMembers().stream()
+                .filter(TeamMember::getIsLeader)
+                .map(TeamMember::getStudent)
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Leader"));
+
+        notificationService.notiResolvedRequest(userDetails.getAccount(), teamLeader.getAccount(), teamRequest.getTeam().getTeamName());
+    }
+
 //    @Override
 //    public void reEvaluationSubmission(CustomUserDetails userDetails, ReDetailEvaluationRequest request) {
 //        Account account = userDetails.getAccount();
@@ -712,5 +772,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
 //        evaluationRepository.save(evaluation);
 //
 //    }
+
+
 }
 
