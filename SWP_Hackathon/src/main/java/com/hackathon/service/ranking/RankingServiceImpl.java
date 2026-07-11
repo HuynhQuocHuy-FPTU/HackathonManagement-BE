@@ -255,14 +255,15 @@ public class RankingServiceImpl implements RankingService {
 
 
                 // CHUYỂN VỀ TRẠNG THÁI RE_EVALUATION TIẾN HÀNH CHẤM ĐIỂM LẠI
-//                if (team.ge != null) {
-//                    for (Evaluation evaluation : team.getEvaluations()) {
-//                        evaluation.setStatus(EvaluationStatus.RE_EVALUATION);
-//                        evaluationsToSave.add(evaluation);
-//                        team.setRank(null);
-//
-//                    }
-//                }
+                List<Evaluation> evaluations = evaluationRepository.findBySubmission_TeamParticipant(team);
+                if (evaluations != null) {
+                    for (Evaluation evaluation : evaluations) {
+                        evaluation.setStatus(EvaluationStatus.RE_EVALUATION);
+                        evaluationsToSave.add(evaluation);
+                        team.setRank(null);
+
+                    }
+                }
 
             }
         }

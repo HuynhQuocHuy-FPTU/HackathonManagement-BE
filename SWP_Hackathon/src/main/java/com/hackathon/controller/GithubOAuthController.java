@@ -48,7 +48,6 @@ public class GithubOAuthController {
             redirect = frontendRedirectUri + "?githubLinked=false&error="
                     + java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
         }
-
         return ResponseEntity.status(HttpStatus.FOUND)
                 .location(URI.create(redirect))
                 .build();

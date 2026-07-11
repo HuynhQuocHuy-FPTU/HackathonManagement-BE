@@ -1,6 +1,5 @@
 package com.hackathon.service.grading;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.hackathon.dto.evaluation.*;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.*;
@@ -32,9 +31,9 @@ public class GradingServiceImpl implements GradingService {
 
     private final SubmissionRepository submissionRepository;
     private final EvaluationRepository evaluationRepository;
+    private final RoundRepository roundRepository;
     private final ExpertRepository expertRepository;
     private final TeamRequestRepository teamRequestRepository;
-
 
     // Tiêm các thành phần xử lý quy tắc nghiệp vụ (SOLID Components)
     private final JudgeAssignmentResolver assignmentResolver;
@@ -46,9 +45,92 @@ public class GradingServiceImpl implements GradingService {
     private final AuditService auditService;
     private final ObjectMapper objectMapper;
 
+
+    // =======================================================
+    // API: TRẢ RA DANH SÁCH BÀI CẦN CHẤM
+    // =======================================================
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    // Đảm bảo tính nguyên tử (Atomicity): Lỗi bất kỳ khâu nào sẽ phục hồi DB nguyên trạng
+    public List<AssignedSubmissionForJudgeResponse> listAssignedSubmissions(Account account, Integer categoryRoundId) {
+        Expert expert = assignmentResolver.resolveExpert(account);
+        ExpertAssign expertAssign = assignmentResolver.requireJudgeAssignment(expert, categoryRoundId);
+
+        // Kéo list bài thi final từ DB lên
+        List<Submission> submissions = submissionRepository.findFinalSubmissionsByCategoryRoundId(categoryRoundId);
+
+        // Map data để FE hiển thị trạng thái (Đã chấm hay chưa)
+        return submissions.stream().map(sub -> {
+            Evaluation eval = evaluationRepository.findByExpertAssignIdAndSubmissionId(expertAssign.getAssignId(), sub.getSubmissionId())
+                    .orElse(null);
+
+            return AssignedSubmissionForJudgeResponse.builder()
+                    .submissionId(sub.getSubmissionId())
+                    .teamName(sub.getTeam().getTeamName())
+                    .description(sub.getDescription())
+                    .githubUrl(sub.getGithubUrl())
+                    .submittedAt(sub.getCreateAt())
+                    .myEvaluationStatus(eval != null ? eval.getStatus().name() : "NOT_GRADED")
+                    .myTotalScore(eval != null ? eval.getScore() : null)
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
+    // =======================================================
+    // API: LẤY FORM TIÊU CHÍ
+    // =======================================================
+    @Override
+    public List<EvaluationCriteriaResponse> viewScoringCriteria(Integer roundId) {
+        Round round = roundRepository.findById(roundId)
+                .orElseThrow(() -> new ResourceNotFoundException("Vòng thi không tồn tại!"));
+
+        return round.getEvaluationCriterias().stream()
+                .map(c -> EvaluationCriteriaResponse.builder()
+                        .evaluationCriteriaId(c.getEvaluationCriteriaId())
+                        .criteriaName(c.getCriteriaName())
+                        .weight(c.getWeight())
+                        .description(c.getDescription())
+                        .type(c.getType())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    // =========================================================================
+    // API: XEM LẠI ĐIỂM CŨ ĐỂ SỬA
+    // =========================================================================
+    @Override
+    public JudgeEvaluationResponse viewMyEvaluation(Account account, Integer submissionId) {
+
+        // 1. Phân tích ngữ cảnh bảo mật: Xác thực Chuyên gia và Bài nộp
+        Expert expert = assignmentResolver.resolveExpert(account);
+        Submission submission = submissionRepository.findById(submissionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dữ liệu Bài nộp: " + submissionId));
+
+        Round round = submission.getTeamParticipant().getCategoryRound().getRound();
+
+        // 2. Xác minh quyền: Đảm bảo ông này là Judge của đúng Vòng thi đó
+        ExpertAssign expertAssign = assignmentResolver.requireJudgeAssignment(
+                expert, submission.getTeamParticipant().getCategoryRound().getCategoryRoundId());
+
+        // 3. Kéo bản ghi điểm số cũ lên
+        Evaluation evaluation = evaluationRepository.findByExpertAssignIdAndSubmissionId(expertAssign.getAssignId(), submissionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Giám khảo chưa từng chấm bài này. Vui lòng sử dụng luồng Chấm mới!"));
+
+        // 4. Kiểm tra xem thời gian hiện tại còn cho phép sửa điểm không?
+        // Nếu đã qua Deadline, cờ isEditable sẽ = false, Frontend dựa vào cờ này để disable (làm mờ) nút Lưu.
+        boolean isEditable = deadlinePolicy.isGradingOpen(round);
+
+        // 5. Lấy thông tin thời gian Deadline cấu hình
+        LocalDateTime deadline = deadlinePolicy.getGradingDeadline(round);
+
+        // 6. Map ra DTO trả về cho Client tái hiện giao diện
+        return evaluationMapper.toResponse(evaluation, isEditable, deadline);
+    }
+
+
+    // =======================================================
+    // API: UPSERT (LƯU ĐIỂM HOẶC CẬP NHẬT ĐIỂM)
+    // =======================================================
+    @Override
+    @Transactional(rollbackFor = Exception.class) // Đảm bảo tính nguyên tử (Atomicity): Lỗi bất kỳ khâu nào sẽ phục hồi DB nguyên trạng
     public JudgeEvaluationResponse submitOrUpdate(Account account, Integer submissionId, SubmitEvaluationRequest request) {
 
         // 1. Phân tích ngữ cảnh người dùng: Xác thực đối tượng Chuyên gia
@@ -91,7 +173,7 @@ public class GradingServiceImpl implements GradingService {
             evaluation = new Evaluation();
             evaluation.setExpertAssign(expertAssign);
             evaluation.setSubmission(submission);
-            evaluation.setTeamParticipant(participant); // Ràng buộc khóa ngoại đồng bộ cấu trúc DB của dự án
+//            evaluation.setTeamParticipant(participant);
             evaluation.setIsReEvaluation(false);
         } else {
             // Trường hợp 2: Đã tồn tại bản ghi (Update) -> Chặn nếu thực thể đang nằm trong trạng thái xử lý Phúc khảo tách biệt
@@ -113,6 +195,7 @@ public class GradingServiceImpl implements GradingService {
             EvaluationDetail detail = existingDetailsMap.getOrDefault(criteria.getEvaluationCriteriaId(), new EvaluationDetail());
             detail.setEvaluationCriteria(criteria);
             detail.setScore(scoreReq.getScore());
+            detail.setOriginalScore(scoreReq.getScore()); // Ghi vết điểm số gốc ban đầu phục vụ lưu vết dữ liệu
             detail.setComment(scoreReq.getComment());
             detail.setEvaluation(evaluation);
 
@@ -125,6 +208,7 @@ public class GradingServiceImpl implements GradingService {
         BigDecimal calculatedTotalScore = scoreCalculator.calculateWeightedTotal(evaluation.getEvaluationDetails());
 
         evaluation.setScore(calculatedTotalScore);
+        evaluation.setOriginalScore(calculatedTotalScore);
         evaluation.setComment(request.getComment());
         evaluation.setStatus(EvaluationStatus.GRADED); // Chuyển dịch trạng thái thực thể sang Đã chấm điểm
 
@@ -132,8 +216,9 @@ public class GradingServiceImpl implements GradingService {
         evaluation = evaluationRepository.save(evaluation);
         auditLogger.logGraded(account, evaluation, submission, expert.getExpertId(), isFirstTimeGrading, calculatedTotalScore);
 
+        LocalDateTime deadline = deadlinePolicy.getGradingDeadline(round);
         // 12. CHUYỂN ĐỔI DỮ LIỆU ĐẦU RA VÀ PHẢN HỒI PRESENTATION TẦNG
-        return evaluationMapper.toResponse(evaluation, true); // Khẳng định cờ isEditable = true vì đang nằm trong khung hạn cho phép sửa
+        return evaluationMapper.toResponse(evaluation, true, deadline); // Khẳng định cờ isEditable = true vì đang nằm trong khung hạn cho phép sửa
     }
 
 //    // Chấm điểm lại khi bị event coordinator từ chối
@@ -380,9 +465,8 @@ public class GradingServiceImpl implements GradingService {
                 "Ban giám khảo chấm lại điểm khi có yêu cầu phúc khảo thành công",
                 data);
 
-        return evaluationMapper.toResponse(evaluation, false);
+        return evaluationMapper.toResponse(evaluation, false, null);
 
     }
-
 
 }

@@ -1220,8 +1220,6 @@ public class TeamServiceImpl implements TeamService {
     // MENTOR CÓ CÙNG HẠNG MỤC THỂ XEM THÔNG TIN CHUNG VỀ TEAM MÌNH DC PHÂN CÔNG
     public List<TeamDetailResponse> getTeamInfo(Integer eventId, CustomUserDetails userDetails) {
 
-
-
         //1. Check coordinator , expert vs vai trò là mentor có thể xem.
         Account account = userDetails.getAccount();
         if (account.getRole() != AccountRole.EXPERT) {

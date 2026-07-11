@@ -5,17 +5,31 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 
 /**
- * Trách nhiệm: Hiện thực hóa chính sách ràng buộc thời gian chấm điểm (Business Rules Enforcement).
- * Giúp mã nguồn tuân thủ nguyên tắc Open/Closed (OCP): Thay đổi luật tính deadline chỉ cần can thiệp tại đây.
+ * Trách nhiệm: Quản lý thời gian khóa sổ chấm điểm.
+ * Logic: Deadline chấm điểm = Deadline nộp bài (Round EndTime) + X giờ.
  */
 @Component
 public class RoundEndTimeGradingPolicy {
 
+    // CẤU HÌNH SỐ GIỜ GIÁM KHẢO ĐƯỢC CHẤM SAU KHI VÒNG THI KẾT THÚC
+    private static final int EXTRA_HOURS_FOR_GRADING = 2;
+
     /**
-     * Kiểm tra thời gian hiện tại có nằm trong khung thời gian cho phép chấm điểm của Vòng thi hay không.
+     * Tính toán Deadline chính xác cho Giám khảo
+     */
+    public LocalDateTime getGradingDeadline(Round round) {
+        if (round.getEndTime() == null) {
+            return null; // Nếu vòng thi không setup giờ kết thúc -> Chấm vô thời hạn
+        }
+        // Lấy giờ kết thúc vòng thi cộng thêm số giờ cấu hình
+        return round.getEndTime().plusHours(EXTRA_HOURS_FOR_GRADING);
+    }
+
+    /**
+     * Kiểm tra xem còn trong thời gian chấm không
      */
     public boolean isGradingOpen(Round round) {
-        // Sử dụng giá trị EndTime của Round làm mốc hạn định thời gian chấm điểm mặc định
-        return round.getEndTime() == null || LocalDateTime.now().isBefore(round.getEndTime());
+        LocalDateTime deadline = getGradingDeadline(round);
+        return deadline == null || LocalDateTime.now().isBefore(deadline);
     }
 }

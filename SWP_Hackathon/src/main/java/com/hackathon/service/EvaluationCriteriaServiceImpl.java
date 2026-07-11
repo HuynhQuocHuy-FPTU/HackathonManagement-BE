@@ -29,9 +29,6 @@ import java.util.stream.Collectors;
 public class EvaluationCriteriaServiceImpl implements EvaluationCriteriaService {
 
     private final EvaluationCriteriaRepository evaluationCriteriaRepository;
-    private final RoundRepository roundRepository;
-    private final CriteriaDetailRepository criteriaDetailRepository;
-
     @Override
     public EvaluationCriteria createEvaluationCritera(EvaluationCriteriaRequestDTO request, int criteriaSetId, Round round) {
 
