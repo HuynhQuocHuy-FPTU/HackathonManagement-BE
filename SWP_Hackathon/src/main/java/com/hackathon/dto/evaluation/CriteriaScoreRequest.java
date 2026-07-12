@@ -18,7 +18,6 @@ public class CriteriaScoreRequest {
 
     @NotNull(message = "Điểm số không được để trống")
     @DecimalMin(value = "0.0", message = "Điểm số thấp nhất phải đạt 0.0")
-    @DecimalMax(value = "10.0", message = "Điểm số cao nhất không vượt quá 10.0")
     private BigDecimal score;
 
     private String comment;

@@ -3,7 +3,6 @@ package com.hackathon.service.teamRequest;
 import com.hackathon.dto.TeamAppealRequestDTO;
 import com.hackathon.dto.evaluation.EvaluationDetailResponse;
 import com.hackathon.dto.evaluation.EvaluationResponse;
-import com.hackathon.dto.evaluation.ReDetailEvaluationRequest;
 import com.hackathon.dto.submission.FileDTO;
 import com.hackathon.dto.submission.SubmissionResponse;
 import com.hackathon.dto.team.TeamRequestResponse;
@@ -21,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -35,6 +33,7 @@ import java.util.Set;
 public class TeamRequestServiceImpl implements TeamRequestService {
     private final TeamRepository teamRepository;
     private final ExpertRepository expertRepository;
+
     private final ExpertAssignRepository expertAssignRepository;
     private final TeamRequestRepository teamRequestRepository;
     private final StudentRepository studentRepository;
@@ -491,7 +490,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                     "Đội thi chưa có bài nộp trong vòng này.");
         }
 
-//        Set<Integer> notifiedAssignIds = new HashSet<>();
         List<Evaluation> evaluationsToUpdate = new ArrayList<>();
 
         Set<Account> expertsToNotify = new HashSet<>();
@@ -501,12 +499,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
             for (Evaluation evaluation : submission.getEvaluations()) {
                 evaluation.setStatus(EvaluationStatus.RE_EVALUATION);
                 evaluationsToUpdate.add(evaluation);
-
-//                ExpertAssign assign = evaluation.getExpertAssign();
-//                if (!notifiedAssignIds.add(assign.getAssignId())) {
-//                    continue;
-//                }
-
 
 
                 if (evaluation.getExpertAssign() != null) {

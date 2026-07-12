@@ -149,6 +149,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/roles/permissions").hasRole("ADMIN")
 
                         .requestMatchers("/api/users/**").authenticated()
+                        .requestMatchers("/api/github/oauth/callback").permitAll()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

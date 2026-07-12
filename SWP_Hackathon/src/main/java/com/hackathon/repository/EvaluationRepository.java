@@ -25,5 +25,7 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Integer>
     Optional<Evaluation> findByExpertAssignIdAndSubmissionId(
             @Param("assignId") Integer assignId,
             @Param("submissionId") Integer submissionId);
-}
+    List<Evaluation> findBySubmission_SubmissionId(Integer submissionId);
 
+
+}

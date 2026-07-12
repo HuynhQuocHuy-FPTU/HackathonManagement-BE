@@ -57,6 +57,7 @@ public class EventResponse {
         this.updateAt = event.getUpdateAt();
         this.bannerUrl = event.getBannerUrl();
         this.workshopStatus = event.getWorkshopStatus();
+        this.workshopTime = event.getWorkshopTime();
         this.categories = categories;
         this.rounds = rounds;
     }

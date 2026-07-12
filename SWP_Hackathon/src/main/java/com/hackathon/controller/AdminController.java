@@ -26,6 +26,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
+    private final AdminService adminService;
 
     private final AuditService auditService;
 
@@ -37,7 +38,6 @@ public class AdminController {
         return ResponseEntity.ok(list);
     }
 
-    private final AdminService adminService;
 
     /**
      * API: Lấy danh sách toàn bộ người dùng
@@ -90,7 +90,7 @@ public class AdminController {
      */
     @GetMapping("/overviews")
     public ResponseEntity<ApiResponse<AdminOverviewResponse>> getOverviewForAdmin() {
-        AdminOverviewResponse overViews = auditService.getOverviewForAdmin();
+        AdminOverviewResponse overViews = adminService.getOverviewForAdmin();
         return ResponseEntity.ok(ApiResponse.ok("Admin xem thông tin thành công", overViews));
     }
 

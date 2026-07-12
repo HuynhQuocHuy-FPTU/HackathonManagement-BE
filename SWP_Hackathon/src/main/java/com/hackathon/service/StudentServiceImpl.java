@@ -27,6 +27,7 @@ public class StudentServiceImpl {
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy tài khoản"));
 
         account.setPhone(request.getPhone());
+        account.setAvatarUrl(request.getAvatar());
         account = accountRepository.save(account);
 
         Student student = new Student();
