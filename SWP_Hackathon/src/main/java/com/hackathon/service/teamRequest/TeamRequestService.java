@@ -30,4 +30,7 @@ public interface TeamRequestService {
 
     // Đêr tạm ơr đây
 //    void reEvaluationSubmission(CustomUserDetails userDetails, ReDetailEvaluationRequest request );
+
+    TeamRequestResponse sendRequestToCoordinator(CustomUserDetails userDetails, String requestMessage, Long notificationId);
+    void resolvedRequest(CustomUserDetails userDetails, Integer teamRequestId, String messageResponse);
 }

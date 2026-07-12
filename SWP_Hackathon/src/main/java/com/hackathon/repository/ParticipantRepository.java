@@ -25,7 +25,7 @@ public interface ParticipantRepository extends JpaRepository<TeamParticipant, In
 
     boolean existsByCategoryRound_CategoryRoundIdAndRegistration_RegistrationId(int categoryRoundCategoryRoundId, int registrationRegistrationId);
 
-    List<TeamParticipant> findByRegistration_Team_TeamId(int registrationTeamTeamId);
+    List<TeamParticipant> findByCategoryRound_CategoryRoundId(int categoryRoundId);
 
-
+    boolean existsByRegistration_Team_TeamIdInAndCategoryRound_Round_RoundId(Collection<Integer> registrationTeamTeamIds, Integer categoryRoundRoundRoundId);
 }

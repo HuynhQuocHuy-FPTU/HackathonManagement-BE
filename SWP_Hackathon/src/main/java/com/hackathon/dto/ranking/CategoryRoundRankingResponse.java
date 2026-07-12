@@ -1,7 +1,7 @@
 package com.hackathon.dto.ranking;
 
 
-import com.hackathon.dto.ParticipantResponseDTO;
+import com.hackathon.dto.participant.ParticipantResponseDTO;
 import com.hackathon.entity.enums.RoundStatus;
 import lombok.*;
 

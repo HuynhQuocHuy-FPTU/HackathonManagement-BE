@@ -121,6 +121,7 @@ public class SecurityConfig {
                                 "/api/events/delete/**", "/api/events/update/**",
                                 "/api/events/restore/**", "/api/events/cancel/**", "/api/events/permanently/**")
                         .hasRole("EVENTCOORDINATOR")
+                        .requestMatchers(HttpMethod.POST, "/api/round/advancement/*").hasRole("EVENTCOORDINATOR")
 
 
                         // 2. các API xem danh sách sự kiện (GET)
@@ -129,9 +130,11 @@ public class SecurityConfig {
                         .hasRole("EVENTCOORDINATOR")
                         .requestMatchers("/api/criteriaSet/**")
                         .hasRole("EVENTCOORDINATOR")
+                        .requestMatchers(HttpMethod.GET, "/api/round/*/participant/detail").hasRole("EVENTCOORDINATOR")
 
                         .requestMatchers(HttpMethod.PUT, "/api/participants/teams/disqualify/**").hasRole("EVENTCOORDINATOR")
                         .requestMatchers(HttpMethod.PUT, "/api/events/*/draw-results/**").hasRole("EVENTCOORDINATOR")
+
 
 
                         // Dành cho COORDINATOR (Quản lý duyệt đơn)

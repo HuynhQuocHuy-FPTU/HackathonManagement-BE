@@ -68,5 +68,10 @@ public interface TeamRepository extends JpaRepository<Team, Integer> {
             "WHERE ex.expert.expertId = :expertId AND r.hackathonEvent.eventId = :eventId")
     List<Team> findTeamsByExpertAssignmentAndEvent(@Param("expertId") Integer expertId, @Param("eventId") Integer eventId);
 
+    @Query("SELECT t FROM Team t " +
+            "JOIN t.teamMembers tm " +
+            "WHERE tm.student.studentId =: studentId")
+    List<Team> findByStudent(@Param("studentId") Integer studentId );
+
 }
 

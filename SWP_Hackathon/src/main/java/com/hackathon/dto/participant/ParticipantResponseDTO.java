@@ -1,4 +1,4 @@
-package com.hackathon.dto;
+package com.hackathon.dto.participant;
 
 import com.hackathon.entity.enums.ParticipantStatus;
 import lombok.*;

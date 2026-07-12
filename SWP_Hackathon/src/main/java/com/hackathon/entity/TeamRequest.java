@@ -61,6 +61,11 @@ public class TeamRequest {
     @JoinColumn(name = "Round_ID")
     private Round round;
 
+//    // 1 EVENTCOORDINATOR - N REQUEST
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "EventCoordinator_ID")
+//    private EventCoordinator eventCoordinator;
+
     @Version
     private Integer version;
 

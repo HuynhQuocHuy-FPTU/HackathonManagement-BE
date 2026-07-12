@@ -21,7 +21,7 @@ public class DrawResultController {
     private final LuckyDrawResultService luckyDrawResultService;
     private final WorkshopService workshopService;
 
-    @PutMapping
+    @PutMapping("/import")
     public ResponseEntity<ApiResponse<Void>> importDrawResults(
             @PathVariable Integer eventId,
             @RequestBody List<DrawResultRequestDTO> drawResults,
@@ -38,6 +38,25 @@ public class DrawResultController {
 
         return ResponseEntity.ok(
                 ApiResponse.success(null, "Import kết quả bốc thăm thành công")
+        );
+    }
+    @PutMapping("/update")
+    public ResponseEntity<ApiResponse<Void>> updateDrawResults(
+            @PathVariable Integer eventId,
+            @RequestBody List<DrawResultRequestDTO> drawResults,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam Integer responseDeadline
+    ) {
+
+        luckyDrawResultService.updateDrawResults(
+                eventId,
+                drawResults,
+                userDetails,
+                responseDeadline
+        );
+
+        return ResponseEntity.ok(
+                ApiResponse.success(null, "Update kết quả bốc thăm thành công")
         );
     }
 

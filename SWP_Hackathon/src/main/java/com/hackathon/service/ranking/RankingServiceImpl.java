@@ -2,7 +2,7 @@ package com.hackathon.service.ranking;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hackathon.dto.ParticipantResponseDTO;
+import com.hackathon.dto.participant.ParticipantResponseDTO;
 import com.hackathon.dto.ranking.CategoryRankingResponse;
 import com.hackathon.dto.ranking.CategoryRoundRankingResponse;
 import com.hackathon.dto.ranking.OpenAppealRequestDTO;
