@@ -5,10 +5,7 @@ import com.hackathon.dto.category.CategoryExpertAssignRequestDTO;
 import com.hackathon.dto.criteria.EvaluationCriteriaRequestDTO;
 import com.hackathon.entity.enums.FileType;
 import com.hackathon.entity.enums.SubmissionType;
-import jakarta.validation.constraints.FutureOrPresent;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -43,8 +40,10 @@ public class CreateRoundRequest {
 
     private List<FileType> allowedFileTypes;
 
+    @Min(value = 0, message = "Giá trị của số lượng file phải lớn hơn 0")
     private Integer maxFileCount;
-
+    @Min(value = 0, message = "Giá trị tổng size của file phải lớn hơn 0 MB")
+    @Max(value = 1024, message = "Giá trị tổng size của file phải nhỏ hơn 1024 MB")
     private Integer maxTotalSizeMb;
 
     private List<EvaluationCriteriaRequestDTO> customCriteriaDetatils;

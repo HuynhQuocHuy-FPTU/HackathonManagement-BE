@@ -1,4 +1,4 @@
-package com.hackathon.service;
+package com.hackathon.service.submission;
 
 import com.hackathon.entity.enums.FileType;
 import jakarta.persistence.AttributeConverter;

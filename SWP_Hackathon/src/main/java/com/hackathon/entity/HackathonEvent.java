@@ -62,7 +62,7 @@ public class HackathonEvent {
     @Column(name = "Banner_Url", nullable = true)
     private String bannerUrl;
 
-    @Column(name = "Cancellation_Reason", nullable = true)
+    @Column(name = "Cancellation_Reason", nullable = true, columnDefinition = "NVARCHAR(255)")
     private String cancellationReason;
 
     // 1 HACKATHON - N CATEGORY

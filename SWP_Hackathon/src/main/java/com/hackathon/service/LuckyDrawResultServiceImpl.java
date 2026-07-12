@@ -74,7 +74,6 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
                     }
                 }
 
-
                 // 3. Lấy participant
                 TeamParticipant teamParticipant = participantRepository.findParticipantByRegistration_RegistrationId(registration.getRegistrationId())
                         .orElseThrow(() -> new BadRequestException("Không tìm thấy participant theo registration id " + registrationId));
@@ -98,11 +97,72 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
                         .findFirst()
                         .orElseThrow(() -> new BadRequestException("Không tìm thấy trưởng nhóm của team " + team.getTeamName()));
 
-                notificationService.notifyAssignedCategory(acc, accountLeader, team.getTeamName(), event.getEventName(), category.getCategoryName(), responseDeadline);
+                notificationService.notifyAssignedCategory(acc, accountLeader, team.getTeamName(), event.getEventName(), category.getCategoryName(), responseDeadline, "");
             }
         }
 
         return updateTeamParticipants;
+    }
+    @Transactional
+    @Override
+    public List<TeamParticipant> updateDrawResults(Integer eventId, List<DrawResultRequestDTO> drawResults, CustomUserDetails userDetails, Integer responseDeadline) {
+        Account acc = userDetails.getAccount();
+        List<TeamParticipant> updatedParticipants = new ArrayList<>();
+
+        // Tìm event
+        HackathonEvent event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy event"));
+
+        // Tìm round đầu tiên
+        Round firstRound = roundRepository.findFirstByHackathonEvent_EventIdOrderByOrderIndexAsc(eventId)
+                .orElseThrow(() -> new BadRequestException("Event " + eventId + " chưa có round nào"));
+
+        for (DrawResultRequestDTO dto : drawResults) {
+            Integer categoryId = dto.getCategoryId();
+
+            // 1. Tìm CategoryRound đích (để biết đội sẽ được gán vào đâu)
+            CategoryRound targetCategoryRound = categoryRoundRepository.findCategoryRoundByCategory_CategoryIdAndRound_RoundId(categoryId, firstRound.getRoundId()).orElseThrow(() -> new BadRequestException("Không tìm thấy CategoryRound cho category ID: " + categoryId));
+
+            for (Integer regId : dto.getRegistrationId()) {
+                // 2. TẬP TRUNG VÀO REGISTRATION (Chìa khóa xác thực)
+                Registration registration = registrationRepository.findRegistrationByRegistrationIdAndHackathonEvent_EventId(regId, eventId)
+                        .orElseThrow(() -> new BadRequestException("Registration " + regId + " không thuộc sự kiện này"));
+
+                if (registration.getStatus() != RegistrationStatus.APPROVED) {
+                    throw new BadRequestException("Đội " + registration.getTeam().getTeamName() + " chưa được APPROVED, không thể cập nhật hạng mục.");
+                }
+
+                // Lấy Participant tương ứng
+                TeamParticipant participant = participantRepository.findParticipantByRegistration_RegistrationId(regId)
+                        .orElseThrow(() -> new BadRequestException("Không tìm thấy participant cho registration ID: " + regId));
+
+                // 3. SO SÁNH ĐỂ TỐI ƯU (Tránh thông báo thừa)
+                // Chỉ cập nhật nếu Category hiện tại khác với Target
+                boolean isCategoryDifferent = participant.getCategoryRound() == null ||
+                        participant.getCategoryRound().getCategoryRoundId() != targetCategoryRound.getCategoryRoundId();
+
+                if (isCategoryDifferent) {
+                    String oldCategoryName = (participant.getCategoryRound() != null)
+                            ? participant.getCategoryRound().getCategory().getCategoryName() : "Chưa có";
+                    String newCategoryName = targetCategoryRound.getCategory().getCategoryName();
+
+                    // Thực hiện cập nhật
+                    participant.setCategoryRound(targetCategoryRound);
+                    participant = participantRepository.save(participant);
+                    updatedParticipants.add(participant);
+
+                    // 4. Thông báo cập nhật
+                    Account leader = registration.getTeam().getTeamMembers().stream()
+                            .filter(TeamMember::getIsLeader)
+                            .map(m -> m.getStudent().getAccount())
+                            .findFirst()
+                            .orElseThrow(() -> new BadRequestException("Không tìm thấy trưởng nhóm"));
+
+                    notificationService.notifyAssignedCategory(acc, leader, registration.getTeam().getTeamName(), event.getEventName(), newCategoryName, responseDeadline, oldCategoryName);
+                }
+            }
+        }
+        return updatedParticipants;
     }
 
 

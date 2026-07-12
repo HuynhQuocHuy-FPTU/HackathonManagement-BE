@@ -3,10 +3,12 @@ package com.hackathon.controller;
 import com.hackathon.dto.notification.NotiResponseRequest;
 import com.hackathon.dto.notification.NotificationWebResponse;
 import com.hackathon.dto.notification.ResponseEntry;
+import com.hackathon.entity.TeamRequest;
 import com.hackathon.entity.enums.NotificationType;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.NotificationService;
+import com.hackathon.service.teamRequest.TeamRequestService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,6 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NotificationController {
     private final NotificationService notificationService;
+    private final TeamRequestService teamRequestService;
 
     @GetMapping("/web/all")
     public ResponseEntity<ApiResponse<List<NotificationWebResponse>>> getAll(
@@ -120,11 +123,7 @@ public class NotificationController {
             @RequestBody NotiResponseRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        notificationService.responseCategoryAssignment(
-                notiId,
-                request.getMessage(),
-                userDetails
-        );
+        teamRequestService.sendRequestToCoordinator(userDetails, request.getMessage(), notiId );
 
         return ResponseEntity.ok(
                 ApiResponse.success(null, "Phản hồi thành công")

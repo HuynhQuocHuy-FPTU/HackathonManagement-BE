@@ -40,6 +40,4 @@ public class EventCoordinator {
     @JsonIgnore
     private List<CriteriaSet>criteriaSets = new ArrayList<>();
 
-
-
 }

@@ -26,18 +26,13 @@ public interface NotificationService {
 
     void notifyDisqualifyTeam(Account actor, Account teamLeaderAccount, String teamName, String eventName, String reason);
 
-    public void notifyAssignedCategory(Account actor, Account teamLeaderAccount, String teamName, String eventName, String category, Integer responseDeadline);
+    public void notifyAssignedCategory(Account actor, Account teamLeaderAccount, String teamName, String eventName, String category, Integer responseDeadline, String oldCategory);
 
     void notifyCancelledEvent(Account actor, List<Account> teamLeaderAccounts, String eventName, String reason);
 
-    void notifyCategoryAssignmentResponse(
-            Account actor,
-            String teamName,
-            String responseMessage);
+    void notiResolvedRequest(Account actor, Account teamLeaderAccount,String teamName);
 
-    void responseCategoryAssignment(
-            Long notificationId,
-            String responseMessage, CustomUserDetails userDetails);
+    void checkResponseNoti(Long notificationId);
 
     List<NotificationWebResponse> getNotifications(CustomUserDetails userDetails);
 

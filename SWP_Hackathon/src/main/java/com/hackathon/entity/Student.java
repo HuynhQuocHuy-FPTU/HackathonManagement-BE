@@ -30,12 +30,6 @@ public class Student {
     private  String universityName;
     @Column(name = "Major", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String major;
-    @Column(name = "Start_Date", nullable = false )
-    private LocalDateTime startDate;
-    @Column(name = "Status", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private StudentStatus status;
-
 
     //1 account - 1 student
     @OneToOne(fetch = FetchType.LAZY)

@@ -155,7 +155,6 @@ public class UserServiceImpl implements UserService {
         // Thực hiện cập nhật
         expert.setExpertName(request.getUserName());
         if (request.getDepartment() != null) expert.setDepartment(request.getDepartment());
-        if (request.getWorkplace() != null) expert.setWorkplace(request.getWorkplace());
         if (request.getOrganization() != null) expert.setOrganization(request.getOrganization());
 
         return expert.getOrganization();

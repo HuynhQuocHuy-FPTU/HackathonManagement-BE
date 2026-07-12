@@ -34,9 +34,6 @@ public class TeamRequest {
     @Column(name = "Response_At")
     private LocalDateTime responseAt;
     @Enumerated(EnumType.STRING)
-    @Column(name = "Response_Status")
-    private NotiResponseStatus responseStatus;
-    @Enumerated(EnumType.STRING)
     @Column(name = "Request_Type")
     private RequestType requestType;
 

@@ -1,5 +1,6 @@
 package com.hackathon.dto;
 
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
@@ -14,7 +15,7 @@ public class DrawResultRequestDTO {
     @NotNull(message = "Category id is required")
     private Integer categoryId;
 
-    @NotNull(message = "Registration id is required")
+    @NotEmpty(message = "Registration list cannot be empty")
     private List<Integer> registrationId;
 }
 

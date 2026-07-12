@@ -1,16 +1,13 @@
 package com.hackathon.service;
 
-import com.hackathon.dto.ExpertAssignedGroupDTO;
-import com.hackathon.dto.ParticipantResponseDTO;
-import com.hackathon.dto.ranking.CategoryRoundRankingResponse;
-import com.hackathon.dto.ranking.RankingResponseDTO;
-import com.hackathon.dto.team.CurrentParticipantDTO;
+import com.hackathon.dto.participant.ExpertAssignedGroupDTO;
+import com.hackathon.dto.participant.CurrentParticipantDTO;
+import com.hackathon.dto.participant.CategoryParticipantDTO;
+import com.hackathon.dto.participant.RoundParticipantDetailDTO;
 import com.hackathon.entity.TeamParticipant;
 import com.hackathon.entity.Registration;
-import com.hackathon.repository.ParticipantRepository;
 import com.hackathon.security.CustomUserDetails;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 
@@ -22,4 +19,6 @@ public interface ParticipantService {
     TeamParticipant saveParticipant(Registration registration);
 
     CurrentParticipantDTO getCurrentParticipant(CustomUserDetails userDetails);
+
+    RoundParticipantDetailDTO getDetailParticipantByRound(Integer roundId, CustomUserDetails userDetails);
 }

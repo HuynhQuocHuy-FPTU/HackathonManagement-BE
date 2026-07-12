@@ -41,7 +41,7 @@ public class SubmissionController {
     }
     @GetMapping("/leader/{roundId}")
     public ResponseEntity<ApiResponse<List<SubmissionResponse>>> getSubmissionForLeader(@PathVariable Integer roundId, @AuthenticationPrincipal CustomUserDetails userDetails){
-        List<SubmissionResponse> list = submissionService.getSubmissionForLeader(roundId, userDetails);
+        List<SubmissionResponse> list = submissionService.getSubmissionForStudent(roundId, userDetails);
         return ResponseEntity.ok(ApiResponse.success(list, "Lấy danh sách submision thành công"));
     }
 

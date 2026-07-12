@@ -103,10 +103,15 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setCreatedAt(LocalDateTime.now());
         notificationRepository.save(notification);
     }
+    public void notiResolvedRequest(Account actor, Account teamLeaderAccount,String teamName){
+        String title = "Giải quyết yêu cầu";
+        String message = "Yêu cầu của đội\"" + teamName + "\" đã được xử lý bạn hãy kiểm tra lại thông tin. Nếu vẫn còn vấn đề, bạn có thể tạo yêu cầu mới.";
+        createNotificationNoResponse(teamLeaderAccount, actor, NotificationType.ASSIGNED_CATEGORY, NotificationChannel.WEB, title, message);
+    }
 
     @Override
     public void notifyRegistrationApproved(Account actor, Account teamLeaderAccount, String teamName, String eventName) {
-        String title = "Registration Approved";
+        String title = "Chấp nhận đơn đăng ký tham gia cuộc thi";
         String message = "Team của bạn\"" + teamName + "\" đã được phê duyệt tham gia vào cuộc thi " + eventName;
 
         createNotificationNoResponse(
@@ -121,7 +126,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void notifyRegistrationRejected(Account actor, Account teamLeaderAccount, String teamName, String eventName, String reason) {
-        String title = "Registration Rejected";
+        String title = "Từ chối đơn đăng kí tham gia cuộc thi";
 
         String message = String.format(
                 "Đội của bạn \"%s\" đã bị từ chối đăng kí tham gia cuộc thi %s. Lý do: %s",
@@ -161,7 +166,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void notifyAssignedCategory(Account actor, Account teamLeaderAccount, String teamName, String eventName, String category, Integer responseDeadline) {
+    public void notifyAssignedCategory(Account actor, Account teamLeaderAccount, String teamName, String eventName, String category, Integer responseDeadline, String oldCategory) {
         String title = "Hạng mục tham gia";
 
         String message = String.format(
@@ -214,47 +219,13 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
-    public void notifyCategoryAssignmentResponse(Account actor, String teamName, String responseMessage) {
-        String title = "Category Assignment Feedback";
-
-        String message = String.format(
-                """
-                        Leader của team "%s" đã gửi phản hồi về kết quả phân category.
-                        
-                        Nội dung phản hồi:
-                        "%s"
-                        """,
-                teamName,
-                responseMessage
-        );
-        List<Account> coordinators = accountRepository.findAccountByRole(AccountRole.EVENTCOORDINATOR);
-
-        for (Account acc : coordinators) {
-            //gửi thông báo cho toàn bộ coordinator
-            createNotificationNoResponse(
-                    acc,
-                    actor,
-                    NotificationType.ASSIGNED_CATEGORY,
-                    NotificationChannel.WEB,
-                    title,
-                    message
-            );
-        }
-
-    }
-
-    @Override
-    @Transactional
-    public void responseCategoryAssignment(
-            Long notificationId,
-            String responseMessage, CustomUserDetails userDetails) {
-        Account acc = userDetails.getAccount();
+    public void checkResponseNoti(Long notificationId) {
         Notification notification = notificationRepository
                 .findById(notificationId)
                 .orElseThrow(() ->
                         new BadRequestException("Notification không tồn tại"));
-        if (LocalDateTime.now()
-                .isAfter(notification.getResponseDeadline())) {
+
+        if (LocalDateTime.now().isAfter(notification.getResponseDeadline())) {
             throw new BadRequestException(
                     "Đã hết thời gian phản hồi");
         }
@@ -262,29 +233,6 @@ public class NotificationServiceImpl implements NotificationService {
             throw new BadRequestException(
                     "Thông báo này không cho phép phản hồi");
         }
-
-        if (notification != null) {
-            if (notification.getResponseStatus() == NotiResponseStatus.NONE) {
-                notification.setResponseMessage(responseMessage);
-                System.out.println(notification.getResponseMessage());
-                notification.setResponseAt(LocalDateTime.now());
-                notification.setResponseStatus(NotiResponseStatus.PENDING);
-                System.out.println(notification.getResponseStatus());
-                notification = notificationRepository.saveAndFlush(notification);
-            } else {
-                throw new BadRequestException("Thông báo này đã được phản hồi");
-            }
-
-        }
-
-
-        // lấy ra team của leader đang phản hồi
-        Team team = notification.getAccount().getStudent().getTeamMembers().stream().map(TeamMember::getTeam).findFirst().orElseThrow(() -> new BadRequestException("Không tìm thấy Team của leader"));
-
-        this.notifyCategoryAssignmentResponse(
-                acc,
-                team.getTeamName(),
-                responseMessage);
     }
 
     @Override

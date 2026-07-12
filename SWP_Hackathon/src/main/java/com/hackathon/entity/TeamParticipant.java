@@ -2,6 +2,7 @@ package com.hackathon.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hackathon.entity.enums.ParticipantStatus;
+import com.hackathon.entity.enums.SubmissionStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -18,6 +19,10 @@ public class TeamParticipant {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
+    @Column(name = "Submission_Status", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private SubmissionStatus submissionStatus;
 
     @Column(name = "Disqualification_Reason", columnDefinition = "NVARCHAR(255)")
     private String disqualificationReason;
