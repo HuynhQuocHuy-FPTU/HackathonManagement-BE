@@ -33,7 +33,6 @@ public class TeamRequest {
     private String responseMessage;
     @Column(name = "Response_At")
     private LocalDateTime responseAt;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "Request_Type")
     private RequestType requestType;
@@ -58,7 +57,6 @@ public class TeamRequest {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "Round_ID")
     private Round round;
-
 
     @Version
     private Integer version;

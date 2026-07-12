@@ -23,8 +23,6 @@ public class EvaluationDetail {
     private String comment;
     @Column(name="Original_Score", precision = 10 , scale = 2, nullable = false)
     private BigDecimal originalScore;
-
-
     // 1 evaluation - N evaluation detail
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnore

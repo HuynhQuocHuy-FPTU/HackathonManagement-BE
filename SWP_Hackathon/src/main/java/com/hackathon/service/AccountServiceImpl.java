@@ -180,7 +180,7 @@ public class AccountServiceImpl implements AccountService {
                 .expertId(expert.getExpertId())
                 .expertName(expert.getExpertName())
                 .department(expert.getDepartment())
-                .type(expert.getType()).histories(histories).build();
+                .histories(histories).build();
     }
 
 }

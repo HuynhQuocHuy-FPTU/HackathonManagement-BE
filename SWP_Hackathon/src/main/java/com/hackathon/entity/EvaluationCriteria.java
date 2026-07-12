@@ -15,7 +15,7 @@ import java.util.List;
 @Setter
 @Table(name = "EvaluationCriteria")
 @Entity
-// Bang nay duoc dung de chinh sua cac tieu chi danh gia cho moi round
+
 public class EvaluationCriteria {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,11 +31,6 @@ public class EvaluationCriteria {
     @Column(name = "Criteria_Type", nullable = true)
     @Enumerated(EnumType.STRING)
     private CriteriaType type;
-
-
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "Criteria_Detail_ID", nullable = false)
-//    private CriteriaDetail criteriaDetail; // Lưu ID gốc từ bảng EvaluationDetail sang
 
     // 1 evaluationCriteria  - N evaluation detail
     @OneToMany(mappedBy = "evaluationCriteria", cascade = CascadeType.ALL, orphanRemoval = true)

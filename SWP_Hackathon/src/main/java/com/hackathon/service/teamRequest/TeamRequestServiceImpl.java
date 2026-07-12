@@ -148,7 +148,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                     .status(rq.getStatus())
                     .round(categoryRound != null ? categoryRound.getRound().getRoundName() : "N/A")
                     .categoryName(categoryRound != null ? categoryRound.getCategory().getCategoryName() : "N/A")
-//                    .responseStatus(rq.getResponseStatus())
                     .requestMessage(rq.getRequestMessage())
                     .build();
             responseList.add(response);
@@ -428,7 +427,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         if (appealRequest.getStatus() != RequestStatus.RE_EVALUATED) {
             throw new BadRequestException("Đơn khiếu nại này chưa hoàn thành quá trình  đánh giá lại từ giám khảo.");
         }
-
         appealRequest.setStatus(RequestStatus.ACCEPTED);
         appealRequest.setResponseMessage(responseMessage != null ? responseMessage : "BTC đã chấp nhận đơn khiếu nại sau khi có sự thay đổi về điểm số.");
         appealRequest.setResponder(account);

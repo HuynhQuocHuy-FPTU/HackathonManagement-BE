@@ -5,6 +5,7 @@ import com.hackathon.dto.team.TeamRequestResponse;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.teamRequest.TeamRequestService;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -127,6 +128,12 @@ public class TeamRequestController {
             @PathVariable Integer roundId) {
         List<TeamRequestResponse> response = teamRequestService.getAppealRequestsForJudge(userDetails, roundId);
         return ResponseEntity.ok(ApiResponse.success(response, "Ban giám khảo nhận các bài nộp yêu cầu phúc khảo thành công."));
+    }
+
+    @PutMapping("/resolved/{requestId}")
+    public ResponseEntity<ApiResponse<String>> resolvedRequest(@AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable Integer requestId, String messageResponse){
+        teamRequestService.resolvedRequest(userDetails,requestId, messageResponse);
+        return ResponseEntity.ok(ApiResponse.success("null", "Đã xử lý xong yêu cầu"));
     }
 
 }

@@ -18,17 +18,12 @@ public class Expert {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "Expert_ID")
     private int expertId;
-    @Column(name = "Expert_Name", columnDefinition = "NVARCHAR(50)", nullable = false)
+    @Column(name = "Expert_Name", columnDefinition = "NVARCHAR(255)", nullable = false)
     private String expertName;
     @Column(name = "Department", columnDefinition = "NVARCHAR(255)")
     private String department;
     @Column(name = "Organization", columnDefinition = "NVARCHAR(255)")
     private String organization;
-    @Column(name = "Type")
-    @Enumerated(EnumType.STRING)
-    private ExpertType type;
-    @Column(name = "Work_Place", columnDefinition = "NVARCHAR(255)")
-    private String workplace;
 
 
     //1 Account - 1 Expert
