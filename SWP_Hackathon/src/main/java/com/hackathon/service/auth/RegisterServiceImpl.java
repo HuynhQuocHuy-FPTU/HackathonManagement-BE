@@ -66,8 +66,6 @@ public class RegisterServiceImpl implements RegisterService {
         student.setAddress(request.getAddress());
         student.setUniversityName(request.getUniversity());
         student.setMajor(request.getMajor());
-        student.setStartDate(LocalDateTime.now());
-        student.setStatus(StudentStatus.STUDYING);
         student.setAccount(account);
         studentRepository.save(student);
         emailServiceImpl.sendVerificationEmail(account.getEmail(), verificationToken);

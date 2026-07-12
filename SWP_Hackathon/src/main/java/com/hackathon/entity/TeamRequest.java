@@ -34,9 +34,6 @@ public class TeamRequest {
     @Column(name = "Response_At")
     private LocalDateTime responseAt;
     @Enumerated(EnumType.STRING)
-    @Column(name = "Response_Status")
-    private NotiResponseStatus responseStatus;
-    @Enumerated(EnumType.STRING)
     @Column(name = "Request_Type")
     private RequestType requestType;
 
@@ -60,11 +57,6 @@ public class TeamRequest {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "Round_ID")
     private Round round;
-
-//    // 1 EVENTCOORDINATOR - N REQUEST
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "EventCoordinator_ID")
-//    private EventCoordinator eventCoordinator;
 
     @Version
     private Integer version;

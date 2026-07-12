@@ -88,9 +88,9 @@ public class DataInitializer implements CommandLineRunner {
         expertRepository.save(Expert.builder().expertName("Lê Huyền").department("Khoa kĩ thuật").account(acc3).build());
 
         //create student
-        studentRepository.save(Student.builder().studentCode("SE192345").studentName("Lê Hòa").major("Software engineer").status(StudentStatus.STUDYING).startDate(LocalDateTime.now()).account(acc4).build());
+        studentRepository.save(Student.builder().studentCode("SE192345").studentName("Lê Hòa").major("Software engineer").account(acc4).build());
 
-        studentRepository.save(Student.builder().studentCode("SE190934").studentName("Nguyễn Hà").status(StudentStatus.STUDYING).startDate(LocalDateTime.now()).major("Software engineer").account(acc5).build());
+        studentRepository.save(Student.builder().studentCode("SE190934").studentName("Nguyễn Hà").major("Software engineer").account(acc5).build());
 
         // tạo criteria set dưới database
         CriteriaSet criteriaSet1 = criteriaSetRepository.save(CriteriaSet.builder().criteriaSetName("Đánh giá ý tưởng và thiết kế/ nguyên mẫu").maxScore(100).eventCoordinator(eventCoordinator1).build());
@@ -149,8 +149,6 @@ public class DataInitializer implements CommandLineRunner {
                             .studentCode("SE" + (200000 + i))
                             .studentName("Student " + (i + 1))
                             .major("Software Engineering")
-                            .status(StudentStatus.STUDYING)
-                            .startDate(LocalDateTime.now())
                             .account(studentAccounts[i])
                             .build()
             );

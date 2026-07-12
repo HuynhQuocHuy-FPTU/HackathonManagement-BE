@@ -38,8 +38,7 @@ public class ExpertServiceImpl implements ExpertService{
         return ExpertInfoResponse.builder()
                 .expertId(expert.getExpertId())
                 .expertName(expert.getExpertName())
-                .type(expert.getType())
-                .workplace(expert.getWorkplace()).build();
+                .build();
     }
 
 

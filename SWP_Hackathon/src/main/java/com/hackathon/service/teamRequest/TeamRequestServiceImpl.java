@@ -56,7 +56,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                 .categoryName(cr != null ? cr.getCategory().getCategoryName() : "N/A")
                 .requestMessage(rq.getRequestMessage())
                 .responseMessage(rq.getResponseMessage())
-                .responseStatus(rq.getResponseStatus())
                 .build();
     }
 
@@ -103,7 +102,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         newRequest.setCreateDate(LocalDateTime.now());
         newRequest.setStatus(RequestStatus.PENDING);
         newRequest.setRequestMessage(requestMessage);
-        newRequest.setResponseStatus(NotiResponseStatus.PENDING);
         newRequest.setRequestType(RequestType.MENTOR_SUPPORT);
         TeamRequest saveTeam = teamRequestRepository.save(newRequest);
 
@@ -150,7 +148,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                     .status(rq.getStatus())
                     .round(categoryRound != null ? categoryRound.getRound().getRoundName() : "N/A")
                     .categoryName(categoryRound != null ? categoryRound.getCategory().getCategoryName() : "N/A")
-                    .responseStatus(rq.getResponseStatus())
                     .requestMessage(rq.getRequestMessage())
                     .build();
             responseList.add(response);
@@ -194,7 +191,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                 .orElseThrow(() -> new BadRequestException("Bạn không phải là Mentor phụ trách đội thi này ở vòng đấu hiện tại."));
 
         teamRequest.setStatus(RequestStatus.ACCEPTED);
-        teamRequest.setResponseStatus(NotiResponseStatus.NONE);
         teamRequest.setResponseAt(LocalDateTime.now());
         teamRequest.setExpertAssign(mySpecificAssign);
         teamRequest.setResponder(account);
@@ -258,7 +254,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
 
         teamRequest.setExpertAssign(mySpecificAssign);
         teamRequest.setStatus(RequestStatus.DECLINED);
-        teamRequest.setResponseStatus(NotiResponseStatus.NONE);
         teamRequest.setResponseAt(LocalDateTime.now());
         teamRequest.setResponder(account);
         if (responseMessage == null || responseMessage.isEmpty()) {
@@ -336,7 +331,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         teamRequest.setCreateDate(LocalDateTime.now());
         teamRequest.setStatus(RequestStatus.PENDING);
         teamRequest.setRound(round);
-        teamRequest.setResponseStatus(NotiResponseStatus.PENDING);
         teamRequest.setResponseMessage(null);
 
         TeamRequest saveTeam = teamRequestRepository.save(teamRequest);
@@ -372,7 +366,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                     .round(rq.getRound().getRoundName())
                     .requestMessage(rq.getRequestMessage())
                     .responseMessage(rq.getResponseMessage())
-                    .responseStatus(rq.getResponseStatus())
                     .responseAt(rq.getResponseAt())
                     .build();
             responseList.add(response);
@@ -396,7 +389,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         }
 
 
-        appealRequest.setResponseStatus(NotiResponseStatus.NONE);
         appealRequest.setStatus(RequestStatus.DECLINED);
         appealRequest.setResponseMessage(responseMessage != null ? responseMessage : "BTC từ chối đơn khiếu nại do điểm số không thay đổi.");
         appealRequest.setResponder(account);
@@ -435,7 +427,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         if (appealRequest.getStatus() != RequestStatus.RE_EVALUATED) {
             throw new BadRequestException("Đơn khiếu nại này chưa hoàn thành quá trình tái đánh giá từ giám khảo.");
         }
-        appealRequest.setResponseStatus(NotiResponseStatus.NONE);
         appealRequest.setStatus(RequestStatus.ACCEPTED);
         appealRequest.setResponseMessage(responseMessage != null ? responseMessage : "BTC đã chấp nhận đơn khiếu nại sau khi có sự thay đổi về điểm số.");
         appealRequest.setResponder(account);

@@ -53,7 +53,6 @@ public class Notification {
     @Column(name = "Response_Status")
     private NotiResponseStatus responseStatus;
 
-
     //N Notification - 1 Account
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_Id")
@@ -68,16 +67,6 @@ public class Notification {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "Team_ID")
     private Team team;
-//
-//    //N Notification - 1 event
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "Event_ID")
-//    private HackathonEvent event;
-//
-//    @PrePersist
-//    public void prePersist() {
-//        createdAt = LocalDateTime.now();
-//        isRead = false;
-//    }
+
 
 }
