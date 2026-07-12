@@ -191,11 +191,18 @@ public class GradingServiceImpl implements GradingService {
         for (CriteriaScoreRequest scoreReq : request.getCriteriaScores()) {
             EvaluationCriteria criteria = criteriaByIdMap.get(scoreReq.getEvaluationCriteriaId());
 
+            CriteriaSet criteriaSet = round.getCriteriaSet();
+            BigDecimal maxScore = BigDecimal.valueOf(criteriaSet.getMaxScore());
+
+            if (scoreReq.getScore().compareTo(BigDecimal.ZERO) < 0 || scoreReq.getScore().compareTo(maxScore) > 0) {
+                throw new BadRequestException(
+                        "Điểm của tiêu chí " + "phải nằm trong khoảng từ 0 đến " + maxScore + ".");
+            }
             // Tái sử dụng bản ghi chi tiết cũ để cập nhật đè dữ liệu, tránh tạo bản ghi trùng lặp rác dữ liệu
             EvaluationDetail detail = existingDetailsMap.getOrDefault(criteria.getEvaluationCriteriaId(), new EvaluationDetail());
             detail.setEvaluationCriteria(criteria);
             detail.setScore(scoreReq.getScore());
-            detail.setOriginalScore(scoreReq.getScore()); // Ghi vết điểm số gốc ban đầu phục vụ lưu vết dữ liệu
+//            detail.setOriginalScore(scoreReq.getScore()); // Ghi vết điểm số gốc ban đầu phục vụ lưu vết dữ liệu
             detail.setComment(scoreReq.getComment());
             detail.setEvaluation(evaluation);
 
@@ -208,7 +215,7 @@ public class GradingServiceImpl implements GradingService {
         BigDecimal calculatedTotalScore = scoreCalculator.calculateWeightedTotal(evaluation.getEvaluationDetails());
 
         evaluation.setScore(calculatedTotalScore);
-        evaluation.setOriginalScore(calculatedTotalScore);
+//        evaluation.setOriginalScore(calculatedTotalScore);
         evaluation.setComment(request.getComment());
         evaluation.setStatus(EvaluationStatus.GRADED); // Chuyển dịch trạng thái thực thể sang Đã chấm điểm
 
@@ -259,7 +266,6 @@ public class GradingServiceImpl implements GradingService {
         // 8. Cập nhật lại điểm số
         evaluation.setExpertAssign(expertAssign);
         evaluation.setSubmission(submission);
-//        evaluation.setTeamParticipant(participant);
 
         // 9. ĐỒNG BỘ HÓA DỮ LIỆU ĐIỂM CHI TIẾT (EvaluationDetail Mapping)
         Map<Integer, EvaluationDetail> existingDetailsMap = evaluation.getEvaluationDetails().stream()

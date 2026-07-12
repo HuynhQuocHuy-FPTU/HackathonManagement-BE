@@ -34,6 +34,9 @@ public enum AuditAction {
 
     SUBMIT_EVALUATION,
     UPDATE_EVALUATION,
-    RE_SUBMIT_EVALUATION;
+    RE_SUBMIT_EVALUATION,
+
+    REGISTER_EVENT
+    ;
 
 }

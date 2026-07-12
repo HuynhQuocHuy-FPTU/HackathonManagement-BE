@@ -69,8 +69,17 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
             if (reg.getStatus().equals(RegistrationStatus.APPROVED)) {
                 throw new BadRequestException("Đội của bạn đã được phê duyệt cho sự kiện này rồi.");
             }
+
             if (reg.getStatus().equals(RegistrationStatus.REJECTED)) {
-                throw new BadRequestException("Đội của bạn đã bị từ chối.Vui lòng kiểm tra lại thông tin đăng ký.");
+                reg.setStatus(RegistrationStatus.PENDING);
+                reg.setRegistrationDate(LocalDateTime.now());
+
+                registrationRepository.save(reg);
+
+                team.setStatus(TeamStatus.PENDING);
+                teamRepository.save(team);
+
+                return;
             }
         }
         //4.Check số lượng thành viên
@@ -102,6 +111,13 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
 
         team.setStatus(TeamStatus.PENDING);
         teamRepository.save(team);
+        auditService.saveLog(
+                currentAccount,
+                AuditAction.REGISTER_EVENT,
+                AuditEntityType.REGISTRATION,
+                registration.getRegistrationId(),
+                "Đăng ký tham gia sự kiện thành công"
+        );
     }
 
     //2. Lấy thông tin của all Team đk event để Coordinator phê duyệt
