@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.hackathon.dto.evaluation.EvaluationResponse;
 import com.hackathon.entity.enums.NotiResponseStatus;
 import com.hackathon.entity.enums.RequestStatus;
+import com.hackathon.entity.enums.RequestType;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -23,6 +24,7 @@ public class TeamRequestResponse {
     private LocalDateTime createDate;
     private RequestStatus status;
     private String round;
+    private RequestType requestType;
     private String categoryName;
     private String requestMessage;
     private String responseMessage;

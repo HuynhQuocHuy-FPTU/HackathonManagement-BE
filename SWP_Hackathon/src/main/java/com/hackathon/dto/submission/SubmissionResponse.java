@@ -4,6 +4,7 @@ import com.hackathon.entity.Submission;
 import com.hackathon.entity.enums.SubmissionStatus;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,4 +18,5 @@ public class SubmissionResponse {
     private String githubUrl;
     private List<FileDTO> fileDTOList;
     private SubmissionStatus status;
+    private LocalDateTime createAt;
 }
