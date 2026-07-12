@@ -21,6 +21,6 @@ public class CategoryRoundRankingResponse {
     private RoundStatus roundStatus;
     private List<CategoryRankingResponse> categoriesRanking;
     private List<ParticipantResponseDTO> teamsResult;
-
+    private String draftExcelUrl;
 
 }

@@ -17,5 +17,8 @@ public interface RankingService {
 
     void openAppeals(CustomUserDetails userDetails, OpenAppealRequestDTO request);
 
-    CategoryRoundRankingResponse getTopNRanking ( Integer roundId);
+    CategoryRoundRankingResponse getTopNRanking(Integer roundId);
+
+    CategoryRoundRankingResponse getRankingByAll(Integer roundId, CustomUserDetails userDetails);
+
 }

@@ -4,10 +4,13 @@ import com.hackathon.dto.ranking.CategoryRoundRankingResponse;
 import com.hackathon.dto.ranking.OpenAppealRequestDTO;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
+import com.hackathon.service.ExcelExportService;
 import com.hackathon.service.ParticipantService;
 import com.hackathon.service.ranking.RankingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("/api/ranking/rounds")
 public class RankingController {
-
+    private final ExcelExportService excelService;
     private final RankingService rankingService;
 
     /**
@@ -94,5 +97,15 @@ public class RankingController {
             @PathVariable Integer roundId) {
         CategoryRoundRankingResponse topN = rankingService.getTopNRanking(roundId);
         return ResponseEntity.ok(ApiResponse.success(topN, "Xem top N thành công."));
+    }
+    @GetMapping("/download-excel/{roundId}")
+    public ResponseEntity<ApiResponse<String>> downloadRankingExcel(
+            @PathVariable Integer roundId) {
+
+        String url = excelService.exportRankingToExcel(roundId);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(url, "Export Excel thành công")
+        );
     }
 }
