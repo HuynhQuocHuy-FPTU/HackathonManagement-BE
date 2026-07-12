@@ -1,9 +1,11 @@
 package com.hackathon.dto.evaluation;
 
+import com.hackathon.dto.submission.FileDTO;
 import lombok.Builder;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * DTO này đóng vai trò vận chuyển dữ liệu để Frontend vẽ danh sách (Table/Grid)
@@ -25,4 +27,5 @@ public class AssignedSubmissionForJudgeResponse {
     // "GRADED" -> Hiện nút màu xám "Xem/Sửa điểm" và show tổng điểm ra
     private String myEvaluationStatus;
     private BigDecimal myTotalScore;
+    private List<FileDTO> files;
 }

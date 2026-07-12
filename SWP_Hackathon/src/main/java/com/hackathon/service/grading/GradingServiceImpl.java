@@ -1,6 +1,7 @@
 package com.hackathon.service.grading;
 
 import com.hackathon.dto.evaluation.*;
+import com.hackathon.dto.submission.FileDTO;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.*;
 import com.hackathon.exception.BadRequestException;
@@ -16,6 +17,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,11 +64,18 @@ public class GradingServiceImpl implements GradingService {
             Evaluation eval = evaluationRepository.findByExpertAssignIdAndSubmissionId(expertAssign.getAssignId(), sub.getSubmissionId())
                     .orElse(null);
 
+            List<FileDTO> fileDTOList = new ArrayList<>();
+            if (sub.getFiles() != null) {
+                for (com.hackathon.entity.SubmissionFile f : sub.getFiles()) {
+                    fileDTOList.add(new FileDTO(f.getFileName(), f.getFileUrl()));
+                }
+            }
             return AssignedSubmissionForJudgeResponse.builder()
                     .submissionId(sub.getSubmissionId())
                     .teamName(sub.getTeam().getTeamName())
                     .description(sub.getDescription())
                     .githubUrl(sub.getGithubUrl())
+                    .files(fileDTOList)
                     .submittedAt(sub.getCreateAt())
                     .myEvaluationStatus(eval != null ? eval.getStatus().name() : "NOT_GRADED")
                     .myTotalScore(eval != null ? eval.getScore() : null)
