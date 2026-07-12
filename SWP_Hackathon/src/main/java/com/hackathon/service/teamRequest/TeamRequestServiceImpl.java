@@ -384,9 +384,12 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         if (appealRequest.getRequestType() != RequestType.APPEAL) {
             throw new BadRequestException("Đây không phải là đơn khiếu nại kết quả.");
         }
-        if (appealRequest.getStatus() != RequestStatus.RE_EVALUATED) {
+        if (appealRequest.getStatus() != RequestStatus.RE_EVALUATED
+        && appealRequest.getStatus() != RequestStatus.PENDING) {
             throw new BadRequestException("Đơn khiếu nại này chưa được ban giám khảo hoàn thành.");
         }
+        System.out.println("Status = " + appealRequest.getStatus());
+
 
 
         appealRequest.setStatus(RequestStatus.DECLINED);
@@ -421,11 +424,8 @@ public class TeamRequestServiceImpl implements TeamRequestService {
             throw new BadRequestException("Đây không phải là đơn khiếu nại kết quả.");
         }
 
-//        if (appealRequest.getStatus() != RequestStatus.IN_REVIEW) {
-//            throw new BadRequestException("Đơn khiếu nại này chưa được gửi cho Giám khảo rà soát hoặc đã xử lý xong rồi.");
-//        }
         if (appealRequest.getStatus() != RequestStatus.RE_EVALUATED) {
-            throw new BadRequestException("Đơn khiếu nại này chưa hoàn thành quá trình tái đánh giá từ giám khảo.");
+            throw new BadRequestException("Đơn khiếu nại này chưa hoàn thành quá trình  đánh giá lại từ giám khảo.");
         }
         appealRequest.setStatus(RequestStatus.ACCEPTED);
         appealRequest.setResponseMessage(responseMessage != null ? responseMessage : "BTC đã chấp nhận đơn khiếu nại sau khi có sự thay đổi về điểm số.");
@@ -670,91 +670,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         notificationService.notiResolvedRequest(userDetails.getAccount(), teamLeader.getAccount(), teamRequest.getTeam().getTeamName());
     }
 
-//    @Override
-//    public void reEvaluationSubmission(CustomUserDetails userDetails, ReDetailEvaluationRequest request) {
-//        Account account = userDetails.getAccount();
-//        Expert expert = expertRepository.findByAccount_AccountId(account.getAccountId())
-//                .orElseThrow(() -> new BadRequestException("Tài khoản này không phải là tài khoản của Expert, vì vậy bạn không được phép truy cập vào trình duyệt này."));
-//        //  Lấy tất cả đơn khiếu nại kết quả của vòng đấu này đang ở trạng thái INREVIEW
-//        TeamRequest appealRequest = teamRequestRepository.findById(request.getRequestId())
-//                .orElseThrow(() -> new BadRequestException("Không tìm thấy đơn khiếu nại phúc khảo nào."));
-//        if (appealRequest.getStatus() != RequestStatus.IN_REVIEW) {
-//            throw new BadRequestException("Đơn khiếu nại này không ở trạng thái INREVIEW");
-//        }
-//        // Từ ds khiếu nại lấy ra bài nộp để tiến hành chấm điểm lại
-//        Round round = appealRequest.getRound();
-//
-//        // 1 team thi nhiều hạng mục sau này sữa lại
-//        List<Submission> submissions = appealRequest.getTeam().getRegistrations().stream()
-//                .filter(registration -> registration.getStatus() == RegistrationStatus.APPROVED)
-//                .map(Registration::getParticipants)
-//                .flatMap(List::stream)
-//                .filter(teamParticipants -> teamParticipants.getCategoryRound() != null && teamParticipants.getCategoryRound().getRound().getRoundId().equals(round.getRoundId()))
-//                .map(TeamParticipant::getSubmissions)
-//                .flatMap(List::stream)
-//                .toList();
-//
-//        // Từ  bài nộp tìm ra expert này chấm
-//        Evaluation evaluation = null;
-//
-//        for (Submission submission : submissions) {
-//            if (submission.getEvaluations() == null || submission.getEvaluations().isEmpty()) {
-//                continue;
-//            }
-//
-//            for (Evaluation eval : submission.getEvaluations()) {
-//                if (eval.getExpertAssign() != null
-//                        && eval.getExpertAssign().getExpert() != null
-//                        && eval.getExpertAssign().getExpert().getExpertId() == expert.getExpertId()) {
-//                    evaluation = eval;
-//                    break;
-//                }
-//            }
-//        }
-//        if (evaluation == null) {
-//            throw new BadRequestException("Bạn không phải là giám khảo chấm bài của đội thi này.");
-//        }
-//
-//        if (evaluation.getStatus() != EvaluationStatus.RE_EVALUATION) {
-//            throw new BadRequestException("Bài đánh giá này chưa được yêu cầu để chấm lại.");
-//        }
-//
-//        if (evaluation.getOriginalScore() == null) {
-//            evaluation.setOriginalScore(evaluation.getScore());
-//        }
-//        BigDecimal finalNewTotalScore = BigDecimal.ZERO;
-//        for (ReDetailEvaluationRequest.EvaluationCriteriaRequest requestEval : request.getCriteriaScores()) {
-//
-//            EvaluationDetail detail = evaluationDetailRepository.findById(requestEval.getEvaluationDetailId())
-//                    .orElseThrow(() -> new BadRequestException("Không tìm thấy tiêu chí chi tiết."));
-//
-//            if(detail.getEvaluation().getEvaluationId() != evaluation.getEvaluationId()){
-//                throw new BadRequestException("Tiêu chí này không thuộc bài chấm đang được phúc khảo.");
-//
-//            }
-//
-//            if (detail.getScore().compareTo(BigDecimal.ZERO) < 0 || detail.getScore().compareTo(BigDecimal.valueOf(100)) > 100) {
-//                throw new BadRequestException("Điểm của từng tiêu chí không được nhỏ hơn 0 hoặc lớn hơn 100.");
-//            }
-//            //  lưu điểm cũ của tiêu chí này nếu là lần đầu chấm lại
-//            if (detail.getOriginalScore() == null) {
-//                detail.setOriginalScore(detail.getScore());
-//            }
-//
-//            detail.setScore(requestEval.getNewScore());
-//            evaluationDetailRepository.save(detail);
-//            finalNewTotalScore = finalNewTotalScore.add(requestEval.getNewScore());
-//
-//        }
-//
-//        evaluation.setComment(request.getComment());
-//        evaluation.setScore(finalNewTotalScore);
-//        evaluation.setStatus(EvaluationStatus.GRADED);
-//        evaluation.setIsReEvaluation(true);
-//
-//        evaluationRepository.save(evaluation);
-//
-//    }
 
 
 }
