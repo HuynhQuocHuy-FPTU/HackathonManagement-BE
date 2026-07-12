@@ -65,7 +65,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
     //---------------------------------------------//
     @Override
     @Transactional
-    public List<TeamRequestResponse> teamSendRequestToMentor(String requestMessage, CustomUserDetails userDetails) {
+    public List<TeamRequestResponse> teamSendRequestToMentor(TeamAppealRequestDTO request, CustomUserDetails userDetails) {
         Account account = userDetails.getAccount();
         if (account == null || account.getStudent() == null) {
             throw new BadRequestException("Tài khoản này không phải là tài khoản student");
@@ -73,6 +73,9 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         //Tìm Team mà Student này làm leader và đang trạng thái thi đấu
         Team team = teamRepository.findActiveLeadingTeamByStudentId(account.getStudent().getStudentId())
                 .orElseThrow(() -> new BadRequestException("Bạn không phải leader của đội đang tham gia thi đấu"));
+
+        Round round = roundRepository.findById(request.getRoundId())
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy vòng thi này."));
 
         // Kiểm tra xem Đội này đã có yêu cầu nào đang chờ (PENDING)  chưa
         // Nếu có ko dc gửi nx , tránh spam nhiều lần
@@ -101,7 +104,9 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         newRequest.setExpertAssign(null);
         newRequest.setCreateDate(LocalDateTime.now());
         newRequest.setStatus(RequestStatus.PENDING);
-        newRequest.setRequestMessage(requestMessage);
+        newRequest.setRequestMessage(request.getRequestMessage());
+        newRequest.setRound(round);
+        newRequest.setResponseStatus(NotiResponseStatus.PENDING);
         newRequest.setRequestType(RequestType.MENTOR_SUPPORT);
         TeamRequest saveTeam = teamRequestRepository.save(newRequest);
 
@@ -325,6 +330,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         }
         // Lưu đơn khiếu nại
         TeamRequest teamRequest = new TeamRequest();
+        System.out.println("Khiếu nại lời nhắn" + request.getRequestMessage());
         teamRequest.setRequestMessage(request.getRequestMessage());
         teamRequest.setTeam(teamMember.getTeam());
         teamRequest.setRequestType(RequestType.APPEAL);
@@ -373,6 +379,39 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         }
         return responseList;
     }
+
+    @Override
+    public List<TeamRequestResponse> getAppealRequestPublic(CustomUserDetails userDetails, Integer roundId) {
+        Account account = userDetails.getAccount();
+        if(account == null) {
+            throw new BadRequestException("Account không tồn tại");
+        }
+        List<TeamRequest> appealRequest = teamRequestRepository.findByRound_RoundId(roundId);
+        if (appealRequest == null || appealRequest.isEmpty()) {
+            throw new BadRequestException("Không tìm thấy đơn khiếu nại của round id: " + roundId);
+        }
+        List<TeamRequestResponse> responseList = new ArrayList<>();
+        for (TeamRequest rq : appealRequest) {
+            TeamRequestResponse response = TeamRequestResponse.
+                    builder()
+                    .requestId(rq.getRequestId())
+                    .teamId(rq.getTeam().getTeamId())
+                    .teamName(rq.getTeam().getTeamName())
+                    .requestType(rq.getRequestType())
+                    .createDate(rq.getCreateDate())
+                    .status(rq.getStatus())
+                    .round(rq.getRound().getRoundName())
+                    .requestMessage(rq.getRequestMessage())
+                    .responseMessage(rq.getResponseMessage())
+                    .responseStatus(rq.getResponseStatus())
+                    .responseAt(rq.getResponseAt())
+                    .build();
+            responseList.add(response);
+
+        }
+        return responseList;
+    }
+
 
     @Override
     public TeamRequestResponse rejectAppealRequest(CustomUserDetails userDetails, Integer requestId, String responseMessage) {

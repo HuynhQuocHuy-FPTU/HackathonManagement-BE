@@ -25,9 +25,9 @@ public class TeamRequestController {
     @PreAuthorize("hasRole('STUDENT')")
     @PostMapping
     public ResponseEntity<ApiResponse<List<TeamRequestResponse>>> teamSendRequestToMentor(
-            @RequestParam String requestMessage,
+            @RequestBody TeamAppealRequestDTO request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        List<TeamRequestResponse> response = teamRequestService.teamSendRequestToMentor(requestMessage, userDetails);
+        List<TeamRequestResponse> response = teamRequestService.teamSendRequestToMentor(request, userDetails);
         return ResponseEntity.ok(ApiResponse.success(response, "Team Leader gửi yêu cầu nhận sự hỗ trợ tới Mentor thành công."));
     }
 
@@ -86,6 +86,15 @@ public class TeamRequestController {
         List<TeamRequestResponse> response = teamRequestService.getAppealRequest(userDetails, roundId);
         return ResponseEntity.ok(ApiResponse.success(response, "Ban tổ chức lấy toàn bộ danh sách đơn phúc khảo thành công."));
     }
+
+    @GetMapping("/applicaion/view-all/{roundId}")
+    public ResponseEntity<ApiResponse<List<TeamRequestResponse>>> getAppealRequestPublic(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Integer roundId) {
+        List<TeamRequestResponse> response = teamRequestService.getAppealRequestPublic(userDetails, roundId);
+        return ResponseEntity.ok(ApiResponse.success(response, "Ban tổ chức lấy toàn bộ danh sách đơn phúc khảo thành công."));
+    }
+
 
     // từ chối đơn khiếu nại khi ko có sự thay đỏi dì
     @PatchMapping("/appeal/{requestId}/reject")
