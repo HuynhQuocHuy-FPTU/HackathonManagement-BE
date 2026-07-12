@@ -1,20 +1,10 @@
 package com.hackathon.service;
 
-import com.hackathon.dto.ParticipantResponseDTO;
-import com.hackathon.dto.ranking.CategoryRankingResponse;
-import com.hackathon.entity.*;
-import com.hackathon.entity.enums.EvaluationStatus;
-import com.hackathon.entity.enums.ParticipantStatus;
-import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.EvaluationRepository;
 import com.hackathon.repository.EventCoordinatorRepository;
 import com.hackathon.repository.RoundRepository;
-import com.hackathon.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @RequiredArgsConstructor
 @Service

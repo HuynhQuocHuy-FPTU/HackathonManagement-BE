@@ -25,9 +25,7 @@ public class Submission {
     private String description;
     @Column(name="Github_URL")
     private String githubUrl;
-    @Column(name = "Status", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private SubmissionStatus status;
+
     @Column(name = "Is_Final")
     private boolean isFinal;
 

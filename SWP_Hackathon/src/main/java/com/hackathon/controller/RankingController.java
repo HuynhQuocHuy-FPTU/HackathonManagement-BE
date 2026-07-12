@@ -1,12 +1,10 @@
 package com.hackathon.controller;
 
-import com.hackathon.dto.ParticipantResponseDTO;
 import com.hackathon.dto.ranking.CategoryRoundRankingResponse;
 import com.hackathon.dto.ranking.OpenAppealRequestDTO;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.ParticipantService;
-import com.hackathon.service.ParticipantServiceImpl;
 import com.hackathon.service.ranking.RankingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

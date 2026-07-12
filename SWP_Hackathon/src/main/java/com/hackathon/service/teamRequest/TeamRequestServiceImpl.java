@@ -587,7 +587,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                                 .teamName(evaluation.getSubmission().getTeam().getTeamName())
                                 .githubUrl(evaluation.getSubmission().getGithubUrl()).
                                 fileDTOList(fileDTOList)
-                                .status(evaluation.getSubmission().getStatus()).build();
+                                .build();
 
 
                         List<EvaluationDetailResponse> detailResponseList = new ArrayList<>();
