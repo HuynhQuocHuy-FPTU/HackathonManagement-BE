@@ -160,7 +160,13 @@ public class GradingServiceImpl implements GradingService {
 
         // 7. Thực hiện thẩm định tính toàn vẹn của danh sách tiêu chí gửi lên
         List<EvaluationCriteria> roundCriteria = round.getEvaluationCriterias();
-        criteriaValidator.validate(request, roundCriteria);
+        BigDecimal maxScale = BigDecimal.valueOf(10);
+
+        if (round.getCriteriaSet() != null && round.getCriteriaSet().getMaxScore() != null) {
+            maxScale = BigDecimal.valueOf(round.getCriteriaSet().getMaxScore());
+        }
+
+        criteriaValidator.validate(request, roundCriteria, maxScale);
 
         // 8. ÁP DỤNG MÔ HÌNH UPSERT (Update hoặc Insert độc lập)
         boolean isFirstTimeGrading = false;
@@ -261,7 +267,13 @@ public class GradingServiceImpl implements GradingService {
         }
         // 7. Thực hiện thẩm định tính toàn vẹn của danh sách tiêu chí gửi lên
         List<EvaluationCriteria> roundCriteria = round.getEvaluationCriterias();
-        criteriaValidator.validate(request, roundCriteria);
+        BigDecimal maxScale = BigDecimal.valueOf(10);
+
+        if (round.getCriteriaSet() != null && round.getCriteriaSet().getMaxScore() != null) {
+            maxScale = BigDecimal.valueOf(round.getCriteriaSet().getMaxScore());
+        }
+
+        criteriaValidator.validate(request, roundCriteria, maxScale);
 
         // 8. Cập nhật lại điểm số
         evaluation.setExpertAssign(expertAssign);

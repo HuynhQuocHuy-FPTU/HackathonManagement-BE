@@ -6,6 +6,8 @@ import com.hackathon.entity.EvaluationCriteria;
 import com.hackathon.entity.enums.CriteriaType;
 import com.hackathon.exception.BadRequestException;
 import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -21,7 +23,17 @@ public class CriteriaCompletenessValidator {
      * Ràng buộc nghiệp vụ: Cho phép chấm riêng lẻ từng Loại tiêu chí (Ví dụ: CODE / PRESENTATION),
      * nhưng yêu cầu khi đã chấm loại nào thì bắt buộc phải hoàn thiện toàn bộ tiêu chí thuộc loại đó để đảm bảo tính công bằng.
      */
-    public void validate(SubmitEvaluationRequest request, List<EvaluationCriteria> roundCriteria) {
+    public void validate(SubmitEvaluationRequest request, List<EvaluationCriteria> roundCriteria, BigDecimal maxScale) {
+
+        // KIỂM TRA ĐIỂM VƯỢT KHUNG DỰA TRÊN CẤU HÌNH BTC
+        for (CriteriaScoreRequest scoreReq : request.getCriteriaScores()) {
+            // So sánh: Nếu score lớn hơn maxScale thì bắn lỗi
+            if (scoreReq.getScore().compareTo(maxScale) > 0) {
+                throw new BadRequestException("Điểm số " + scoreReq.getScore() +
+                        " không hợp lệ! Vòng thi này sử dụng thang điểm tối đa là: " + maxScale);
+            }
+        }
+
         // Ánh xạ tập tiêu chí của vòng thi sang dạng Bản đồ để tối ưu hóa hiệu năng tra cứu O(1)
         Map<Integer, EvaluationCriteria> criteriaMap = roundCriteria.stream()
                 .collect(Collectors.toMap(EvaluationCriteria::getEvaluationCriteriaId, c -> c));
