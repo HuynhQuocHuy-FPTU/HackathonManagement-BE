@@ -1,7 +1,6 @@
-package com.hackathon.dto.team;
+package com.hackathon.dto.participant;
 
 import com.hackathon.dto.round.RoundStatusDTO;
-import com.hackathon.entity.enums.ParticipantStatus;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;

@@ -35,6 +35,7 @@ public class SubmissionService {
     private final RoundRepository roundRepository;
     private final StudentRepository studentRepository;
     private final GithubOAuthService githubOAuthService;
+    private final TeamRepository teamRepository;
 
     @Transactional
     public Submission createSubmission(Integer roundId, String gitHubUrl, CustomUserDetails userDetails, List<MultipartFile> files){
@@ -44,6 +45,8 @@ public class SubmissionService {
         // 2. Kiểm tra xem có phải là leader không
         Integer studentId = userDetails.getAccount().getStudent().getStudentId();
         Team team = getTeamAsLeader(studentId);
+        // 2. Validate (Giờ đây validator sẽ check list files)
+        submissionValidator.validateSubmission(round, files, gitHubUrl);
         // 2. Kiểm tra xem leader đã có liên kết tài khoản github chưa và có đúng với tài khoản đã liên kết không
         this.verifyGithubOwnership(gitHubUrl, userDetails);
         // 2. Lấy thông tin Participant (để xác định Team và người nộp)
@@ -55,14 +58,12 @@ public class SubmissionService {
 //            throw new BadRequestException("Đội thi của bạn chưa tham gia vào 1 category cụ thể nào");
 //        }
 
-        // 2. Validate (Giờ đây validator sẽ check list files)
-        submissionValidator.validateSubmission(round, files, gitHubUrl);
+
 
         // 5. Tạo bản ghi Submission (Header)
         Submission submission = new Submission();
         submission.setGithubUrl(gitHubUrl);
         submission.setCreateAt(LocalDateTime.now());
-        submission.setStatus(SubmissionStatus.SUBMITTED);
         submission.setFinal(false);
 
         // Thiết lập quan hệ
@@ -99,7 +100,6 @@ public class SubmissionService {
         response.setSubmissionId(submission.getSubmissionId());
         response.setTeamName(submission.getTeamParticipant().getRegistration().getTeam().getTeamName());
         response.setGithubUrl(submission.getGithubUrl());
-        response.setStatus(submission.getStatus());
         List<FileDTO> fileDTOList = new ArrayList<>();
         for(SubmissionFile f : submission.getFiles()){
             FileDTO fileDTO = new FileDTO(f.getFileName(), f.getFileUrl());
@@ -121,25 +121,42 @@ public class SubmissionService {
 
     public List<SubmissionResponse> getAllSubmission(){
         List<Submission> list = submissionRepository.findAll();
-
         return list.stream().map(this::mapToResponse).toList();
     }
 
-    public List<SubmissionResponse> getSubmissionForLeader(Integer roundId, CustomUserDetails userDetails){
+    public List<SubmissionResponse> getSubmissionForStudent(Integer roundId, CustomUserDetails userDetails){
+        roundRepository.findById(roundId).orElseThrow(() -> new ResourceNotFoundException("Vòng thi không tồn tại"));
+
         Student student = userDetails.getAccount().getStudent();
-        List<Submission> list = submissionRepository.findSubmissionForLeader(roundId, student.getStudentId());
+        List<Integer> teamIds = teamRepository.findByStudent(student.getStudentId()).stream().map(t -> t.getTeamId()).toList();
+        if(teamIds == null){
+            throw new BadRequestException("Bạn chưa tham gia vào team nào");
+        }
+
+        boolean isParticipating = participantRepository.existsByRegistration_Team_TeamIdInAndCategoryRound_Round_RoundId(teamIds, roundId);
+
+        if (!isParticipating) {
+            throw new BadRequestException("Bạn không tham gia vòng thi này");
+        }
+        List<Submission> list = submissionRepository.findSubmissionForStudent(roundId, teamIds);
+
+        if(list.isEmpty()){
+            throw new BadRequestException("Team bạn tham gia chưa nộp bài nào cho vòng thi này");
+        }
         return list.stream().map(this::mapToResponse).toList();
     }
     @Transactional
-    public void setNotFinal(Integer roundId, CustomUserDetails userDetails){
-        Student student = userDetails.getAccount().getStudent();
-        List<Submission> list = submissionRepository.findSubmissionForLeader(roundId, student.getStudentId());
-        for(Submission s : list){
-            if(s.isFinal()){
-                s.setFinal(false);
-                submissionRepository.save(s);
+    public void setNotFinal(Integer submissionId, CustomUserDetails userDetails){
+        Integer studentId = userDetails.getAccount().getStudent().getStudentId();
+        getTeamAsLeader(studentId);
+        Submission submission = submissionRepository.findById(submissionId).orElseThrow(() -> new BadRequestException("Không tìm thấy submisison") );
+
+            if(submission.isFinal()){
+                submission.setFinal(false);
+                submissionRepository.save(submission);
+            }else{
+                throw new BadRequestException("Submission này không phải là final");
             }
-        }
     }
 
     @Transactional
@@ -162,6 +179,7 @@ public class SubmissionService {
             if (sameTeam && isDifferentSubmission && s.isFinal()) {
                 s.setFinal(false);
                 submissionRepository.save(s);
+                s.getTeamParticipant().setSubmissionStatus(SubmissionStatus.SUBMITTED);
             }
         }
 
@@ -179,11 +197,9 @@ public class SubmissionService {
                 .findFirst()
                 .orElseThrow(() -> new BadRequestException("Bạn không phải là leader của đội"));
     }
-    /**
-     * Xác minh gitHubUrl mà leader nộp thực sự thuộc về (chính là owner của) tài khoản
-     * GitHub họ đã liên kết. Chặn trường hợp nộp repo của người khác/team khác.
-     */
+
     private void verifyGithubOwnership(String gitHubUrl, CustomUserDetails userDetails) {
+        if(gitHubUrl == null) return;
         String linkedGithubUsername = userDetails.getAccount().getGithubUsername();
         if (linkedGithubUsername == null || linkedGithubUsername.isBlank()) {
             throw new BadRequestException("Bạn cần liên kết tài khoản GitHub trước khi nộp bài");

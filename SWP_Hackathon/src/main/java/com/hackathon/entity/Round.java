@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hackathon.entity.enums.FileType;
 import com.hackathon.entity.enums.RoundStatus;
 import com.hackathon.entity.enums.SubmissionType;
-import com.hackathon.service.FileTypeConverter;
+import com.hackathon.service.submission.FileTypeConverter;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,15 +25,15 @@ public class Round {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "Round_ID")
     private Integer roundId;
-    @Column(name = "Round_Name", columnDefinition = "NVARCHAR(50)", nullable = true)
+    @Column(name = "Round_Name", columnDefinition = "NVARCHAR(255)", nullable = true)
     private String roundName;
-    @Column(name = "Description", columnDefinition = "NVARCHAR(500)")
+    @Column(name = "Description", columnDefinition = "NVARCHAR(MAX)")
     private String description;
     @Column(name = "Start_Time", nullable = true)
     private LocalDateTime startTime;
     @Column(name = "End_Time", nullable = true)
     private LocalDateTime endTime;
-    @Column(name = "Advancement_Rule", nullable = true)
+    @Column(name = "Advancement_Rule", nullable = true,columnDefinition = "NVARCHAR(MAX)")
     private String advancementRule;
     @Column(name = "Order_Index", nullable = true)
     private Integer orderIndex;

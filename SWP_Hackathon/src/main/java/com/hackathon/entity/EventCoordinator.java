@@ -40,6 +40,11 @@ public class EventCoordinator {
     @JsonIgnore
     private List<CriteriaSet>criteriaSets = new ArrayList<>();
 
+//    // 1 EventCoordinator - N Request
+//    @OneToMany(mappedBy = "eventCoordinator", cascade = CascadeType.ALL, orphanRemoval = true)
+//    @JsonIgnore
+//    private List<TeamRequest> teamRequests;
+
 
 
 }

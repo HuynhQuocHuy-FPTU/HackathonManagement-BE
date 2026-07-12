@@ -1,13 +1,13 @@
 package com.hackathon.controller;
 
-import com.hackathon.dto.ExpertAssignedGroupDTO;
-import com.hackathon.dto.team.CurrentParticipantDTO;
+import com.hackathon.dto.participant.ExpertAssignedGroupDTO;
+import com.hackathon.dto.participant.CurrentParticipantDTO;
+import com.hackathon.dto.participant.RoundParticipantDetailDTO;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.ParticipantServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -54,4 +54,5 @@ public class ParticipantController {
 
         return ResponseEntity.ok(ApiResponse.success(participantService.getCurrentParticipant(userDetails), "Lấy thông tin tham gia của student trong event đang diễn ra"));
     }
+
 }

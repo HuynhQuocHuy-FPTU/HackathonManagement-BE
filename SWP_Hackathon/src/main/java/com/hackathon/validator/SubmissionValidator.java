@@ -77,7 +77,8 @@ public class SubmissionValidator {
 
         boolean isAllowed = allowedTypes.stream().anyMatch(type -> type.name().equalsIgnoreCase(extension));
         if (!isAllowed) {
-            throw new BadRequestException("Loại file không được hỗ trợ: " + extension);
+            throw new BadRequestException("Loại file không được hỗ trợ: " + extension +
+                    ". Các loại file được phép là: " + allowedTypes);
         }
 
         // Kiểm tra dung lượng file lẻ

@@ -13,12 +13,12 @@ import java.util.List;
 public interface SubmissionRepository extends JpaRepository<Submission, Integer> {
 
     @Query("SELECT DISTINCT s FROM Submission s " +
-            "JOIN TeamParticipant  tp ON s.teamParticipant = tp " +
-            "JOIN CategoryRound cr ON tp.categoryRound = cr " +
-            "WHERE cr.round.roundId =:roundId " +
-            "AND s.team.teamId =:teamId")
-    List<Submission> findSubmissionForLeader(@Param("roundId") Integer roundId,
-                                           @Param("teamId") Integer teamId);
+            "JOIN TeamParticipant tp ON s.teamParticipant.id = tp.id " +
+            "JOIN CategoryRound cr ON tp.categoryRound.categoryRoundId = cr.categoryRoundId " +
+            "WHERE cr.round.roundId = :roundId " +
+            "AND s.team.teamId IN :teamIds")
+    List<Submission> findSubmissionForStudent(@Param("roundId") Integer roundId,
+                                              @Param("teamIds") List<Integer> teamIds);
 
     /**
      * Kéo toàn bộ danh sách Bài thi đã nộp bản cuối (isFinal = true) của một Vòng thi cụ thể.

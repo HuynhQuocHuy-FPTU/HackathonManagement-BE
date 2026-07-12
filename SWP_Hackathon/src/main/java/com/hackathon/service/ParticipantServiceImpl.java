@@ -1,12 +1,7 @@
 package com.hackathon.service;
 
-import com.hackathon.dto.ExpertAssignedGroupDTO;
-import com.hackathon.dto.ParticipantResponseDTO;
-import com.hackathon.dto.ranking.CategoryRankingResponse;
-import com.hackathon.dto.ranking.CategoryRoundRankingResponse;
-import com.hackathon.dto.ranking.RankingResponseDTO;
+import com.hackathon.dto.participant.*;
 import com.hackathon.dto.round.RoundStatusDTO;
-import com.hackathon.dto.team.CurrentParticipantDTO;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.*;
 import com.hackathon.exception.BadRequestException;
@@ -14,14 +9,11 @@ import com.hackathon.exception.ResourceNotFoundException;
 import com.hackathon.repository.*;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.validator.DisqualifyValidator;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -42,6 +34,8 @@ public class ParticipantServiceImpl implements ParticipantService {
     private final RoundRepository roundRepository;
     private final RoundAdvancementService roundAdvancementService;
     private final RegistrationRepository registrationRepository;
+    private final CategoryRoundRepository categoryRoundRepository;
+    private final EvaluationRepository evaluationRepository;
 
 
 
@@ -81,8 +75,12 @@ public class ParticipantServiceImpl implements ParticipantService {
         // 2. Validate: team phải thuộc event này VÀ đăng ký phải đã được APPROVED
         teamParticipants = disqualifyValidator.validateTeamBelongsToEventAndApproved(teamParticipants, teamId, eventId);
 
-        //Lưu lại teamparticipant passed ở round gần nhất mà team đã passed
-        TeamParticipant mostRecentlyPassed = teamParticipants.stream().filter(p -> p.getStatus() == ParticipantStatus.PASSED).max(Comparator.comparing(p -> p.getCategoryRound().getRound().getOrderIndex())).orElseThrow(null);
+        // Lưu lại teamParticipant PASSED ở round gần nhất mà team đã pass — LẤY TRƯỚC KHI
+        // vòng lặp bên dưới ghi đè status
+        TeamParticipant mostRecentlyPassed = teamParticipants.stream()
+                .filter(p -> p.getStatus() == ParticipantStatus.PASSED)
+                .max(Comparator.comparing(p -> p.getCategoryRound().getRound().getOrderIndex()))
+                .orElse(null);
 
         // 3. Đổi status từng Participant + lưu lý do loại
         for (TeamParticipant teamParticipant : teamParticipants) {
@@ -96,11 +94,22 @@ public class ParticipantServiceImpl implements ParticipantService {
         team.setStatus(TeamStatus.DRAFT);
         teamRepository.save(team);
 
-        // Lấy round tiếp theo
-        Round nextRound = roundRepository.findRoundByHackathonEvent_EventIdAndOrderIndex(eventId, mostRecentlyPassed.getCategoryRound().getRound().getOrderIndex() + 1).orElseThrow(null);
+        // 5. Nếu team từng PASSED 1 vòng nào đó, thử đôn team thay thế — CHỈ KHI round kế
+        // tiếp CHƯA bắt đầu.
+        if (mostRecentlyPassed != null) {
+            Round nextRound = roundRepository
+                    .findRoundByHackathonEvent_EventIdAndOrderIndex(
+                            eventId, mostRecentlyPassed.getCategoryRound().getRound().getOrderIndex() + 1)
+                    .orElse(null);
 
-        if(nextRound != null && LocalDateTime.now().isBefore(nextRound.getStartTime())){
-            roundAdvancementService.disqualifyRetroactively(mostRecentlyPassed, nextRound);
+            boolean nextRoundNotStartedYet = nextRound != null
+                    && (nextRound.getStartTime() == null || LocalDateTime.now().isBefore(nextRound.getStartTime()));
+
+            if (nextRoundNotStartedYet) {
+                roundAdvancementService.disqualifyRetroactively(mostRecentlyPassed, nextRound);
+            } else {
+                log.info("Team {} từng PASSED nhưng round kế tiếp đã bắt đầu hoặc không tồn tại, " + "không đôn team thay thế.", team.getTeamName());
+            }
         }
 
         Account accountLeader = team.getTeamMembers()
@@ -201,6 +210,56 @@ public class ParticipantServiceImpl implements ParticipantService {
         return CurrentParticipantDTO.builder().eventID(currentEvent.getEventId()).eventName(currentEvent.getEventName()).categoryName(category.getCategoryName()).categoryId(category.getCategoryId()).rounds(list).teamName(team.getTeamName()).build();
 
     }
+
+    @Override
+    public RoundParticipantDetailDTO getDetailParticipantByRound(Integer roundId, CustomUserDetails userDetails) {
+
+        EventCoordinator eventCoordinator = userDetails.getAccount().getEventCoordinator();
+        if(eventCoordinator == null){
+            throw new BadRequestException("Bạn không có quyền truy cập. Bạn phải là eventcoordinator");
+        }
+        // 1. Lấy thông tin Round
+        Round round = roundRepository.findById(roundId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy round với ID: " + roundId));
+
+        // 2. Lấy danh sách Category thuộc Round
+        List<CategoryRound> categoryRounds = categoryRoundRepository.findCategoryRoundByRound_RoundId(roundId);
+
+        // 3. Build danh sách CategoryParticipantDTO
+        List<CategoryParticipantDTO> categoryDTOs = categoryRounds.stream().map(cr -> {
+            List<TeamParticipant> participants = participantRepository.findByCategoryRound_CategoryRoundId(cr.getCategoryRoundId());
+
+            List<ParticipantDetailDTO> participantList = participants.stream()
+                    .map(p -> new ParticipantDetailDTO(
+                            p.getId(),
+                            p.getRegistration().getRegistrationId(),
+                            p.getRegistration().getTeam().getTeamId(),
+                            p.getRegistration().getTeam().getTeamName(),
+                            p.getStatus(),
+                            p.getDisqualificationReason(),
+                            p.getSubmissionStatus(),
+                            p.getTotalScore(),
+                            p.getRank()
+                    ))
+                    .sorted(Comparator.comparingInt(c -> c.rank() != null ? c.rank() : Integer.MAX_VALUE))
+                    .toList();
+
+            return CategoryParticipantDTO.builder()
+                    .roundName(round.getRoundName())
+                    .roundIndex(round.getOrderIndex())
+                    .categoryRoundId(cr.getCategoryRoundId())
+                    .categoryName(cr.getCategory().getCategoryName())
+                    .totalTeams(participants.size())
+                    .participants(participantList)
+                    .build();
+        }).toList();
+        return RoundParticipantDetailDTO.builder()
+                .roundId(round.getRoundId())
+                .roundName(round.getRoundName())
+                .categories(categoryDTOs)
+                .build();
+    }
+
     private RoundStatusDTO mapToRoundStatusDTO(TeamParticipant participant){
         Round round = participant.getCategoryRound().getRound();
         return RoundStatusDTO.builder()
