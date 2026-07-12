@@ -56,6 +56,7 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
 
         }
 
+
         //3. Check status hiện tại của Team(Draf, pending, approve)
         Optional<Registration> registrationEvent = registrationRepository.findByTeamAndHackathonEvent_EventId(team, event.getEventId());
 
@@ -82,6 +83,14 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
             throw new BadRequestException("Bạn không thể đăng ký cuộc thi. Số lượng thành viên tối đa của cuộc thi này là: " + event.getMaxTeamSize() +
                     " .Thành viên chính thức hiện tại bạn đang sở hữu là " + countMember);
         }
+
+        // 5. Check có account github chưa , nếu null ko cho đk
+        if (currentAccount.getGithubId() == null) {
+            throw new BadRequestException(
+                    "Bạn chưa liên kết tài khoản GitHub. " +
+                            "Bạn cần phải tạo tài khoản GitHub trước khi đăng ký tham gia sự kiện.");
+        }
+
 
         // 5. Tạo bảng registration để lưu thông tin đăng ký
         Registration registration = new Registration();

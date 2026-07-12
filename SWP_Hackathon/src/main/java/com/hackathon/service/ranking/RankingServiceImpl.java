@@ -117,9 +117,9 @@ public class RankingServiceImpl implements RankingService {
 
         Round round = roundRepository.findById(roundId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy vòng thi này"));
-        // Chỉ xử lý khi vòng đấu đang ở EVALUATING
-        if (round.getStatus() != RoundStatus.EVALUATING
-                && round.getStatus() != RoundStatus.PENDING_APPROVAL) {
+        // Chỉ xử lý khi vòng đấu đang ở TRẠNG THÁI CHỜ PHÊ DUYỆT
+        if (round.getStatus() != RoundStatus.PENDING_APPROVAL
+                && round.getStatus() != RoundStatus.PENDING_FINAL_APPROVAL) {
             throw new BadRequestException("Vòng đấu đã kết thúc hoặc không trong trạng thái có thể phê duyệt.");
         }
         List<CategoryRound> categoryRound = round.getCategoryRounds();
@@ -187,11 +187,18 @@ public class RankingServiceImpl implements RankingService {
         }
         String logMessage;
         if (round.getStatus() == RoundStatus.PENDING_APPROVAL) {
-            logMessage = "Phê duyệt lại kết quả cuối cùng sau phúc khảo thành công cho vòng: " + round.getRoundName();
+            logMessage = "Phê duyệt kết quả nháp thành công cho vòng: " + round.getRoundName();
         } else {
-            logMessage = "Phê duyệt ranking lần 1 thành công của vòng: ";
+            logMessage = "Phê duyệt kết quả chính thức sau phúc khảo thành công cho vòng: " + round.getRoundName();
         }
-        round.setStatus(RoundStatus.APPROVED);
+
+        if (round.getStatus() == RoundStatus.PENDING_APPROVAL) {
+            round.setStatus(RoundStatus.DRAFT_APPROVED);
+
+        } else if (round.getStatus() == RoundStatus.PENDING_FINAL_APPROVAL) {
+            round.setStatus(RoundStatus.FINAL_APPROVED);
+        }
+
         roundRepository.save(round);
 
         String jsonData = null;
@@ -235,10 +242,13 @@ public class RankingServiceImpl implements RankingService {
             throw new BadRequestException("Không tìm thấy hạng mục nào trong vòng thi này");
         }
 
+        // Khi chấm lại hoàn thành xong
         RoundStatus currentStatus = round.getStatus();
-        if (currentStatus != RoundStatus.EVALUATING &&
-                currentStatus != RoundStatus.APPROVED &&
-                currentStatus != RoundStatus.APPEALING) {
+        if (currentStatus != RoundStatus.PENDING_FINAL_APPROVAL &&
+                currentStatus != RoundStatus.PENDING_APPROVAL &&
+                currentStatus != RoundStatus.APPEALING &&
+                currentStatus != RoundStatus.DRAFT_APPROVED &&
+                currentStatus != RoundStatus.FINAL_APPROVED) {
             throw new BadRequestException("Vòng đấu đã đóng hoặc kết thúc, không thể thực hiện thao tác từ chối.");
         }
 
@@ -300,7 +310,7 @@ public class RankingServiceImpl implements RankingService {
                 .orElseThrow(() -> new BadRequestException("Bạn không phải là ban tổ chức vì vậy bạn không có quyền truy cập vào dữ liệu này."));
         Round round = roundRepository.findById(roundId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy vòng thi này."));
-        if (round.getStatus() != RoundStatus.APPROVED) {
+        if (round.getStatus() != RoundStatus.DRAFT_APPROVED) {
             throw new BadRequestException("Chỉ có thể công bố bảng xếp hạng tạm thời khi vòng thi đã được phê duyệt kết quả.");
         }
 
@@ -316,7 +326,7 @@ public class RankingServiceImpl implements RankingService {
                         || teamParticipant.getStatus() == ParticipantStatus.DISQUALIFIED
                         || teamParticipant.getStatus() == ParticipantStatus.WINNER);
         if (!hasAprroved) {
-            throw new BadRequestException("Bạn cần phải duyệt bảng xếp hạng trước khi công bố kết quả tạm thời.");
+            throw new BadRequestException("Bạn cần phải duyệt bảng xếp hạng trước khi công bố kết quả tạm thời.Do có team chưa đưọc cập nhật trạng thái nên không thể công bố");
 
         }
         // Công bố ranking nháp sau khi phê duyệt
@@ -369,7 +379,7 @@ public class RankingServiceImpl implements RankingService {
         // Check Round
         Round round = roundRepository.findById(roundId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy vòng thi này."));
-        if (round.getStatus() != RoundStatus.APPROVED) {
+        if (round.getStatus() != RoundStatus.FINAL_APPROVED) {
             throw new BadRequestException("Vòng thi phải ở trạng thái chờ duyệt hoặc đang phúc khảo mới có thể công bố kết quả chính thức.");
         }
 

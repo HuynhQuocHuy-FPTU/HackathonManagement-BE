@@ -88,20 +88,20 @@ public class GradingController {
 
         return ResponseEntity.ok(ApiResponse.ok("Tải dữ liệu điểm cũ thành công!", responseData));
     }
-    // Update điểm khi ban tổ chức từ chối xét duyệt
-//    @PostMapping("/submissions/{submissionId}/update")
-//    public ResponseEntity<ApiResponse<JudgeEvaluationResponse>>updateEvaluation(
-//            @PathVariable Integer submissionId,
-//            @Valid @RequestBody SubmitEvaluationRequest request, // Khởi chạy cơ chế Validation Bean đập lỗi ngay tại cửa ngõ
-//            @AuthenticationPrincipal CustomUserDetails userDetails){
-//        JudgeEvaluationResponse executionResult = gradingService.updateEvaluation(
-//                userDetails.getAccount(),
-//                submissionId,
-//                request
-//        );
-//        return ResponseEntity.ok(ApiResponse.ok("Cập nhật điểm số đánh giá thành công!", executionResult));
-//
-//    }
+//     Update điểm khi ban tổ chức từ chối xét duyệt
+    @PostMapping("/submissions/{submissionId}/update")
+    public ResponseEntity<ApiResponse<JudgeEvaluationResponse>>updateEvaluation(
+            @PathVariable Integer submissionId,
+            @Valid @RequestBody SubmitEvaluationRequest request, // Khởi chạy cơ chế Validation Bean đập lỗi ngay tại cửa ngõ
+            @AuthenticationPrincipal CustomUserDetails userDetails){
+        JudgeEvaluationResponse executionResult = gradingService.updateEvaluation(
+                userDetails.getAccount(),
+                submissionId,
+                request
+        );
+        return ResponseEntity.ok(ApiResponse.ok("Cập nhật điểm số đánh giá thành công!", executionResult));
+
+    }
 
     // Chấm điểm lại khi có yêu cầu phúc khảo
     @PostMapping("/submissions/re-evaluation")

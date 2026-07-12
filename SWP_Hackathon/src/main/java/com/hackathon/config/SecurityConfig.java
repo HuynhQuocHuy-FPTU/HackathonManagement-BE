@@ -46,7 +46,7 @@ public class SecurityConfig {
     private final CorsConfigurationSource corsConfigurationSource;
     private final CustomOAuth2UserService customOAuth2UserService;
     @Autowired
-    @Lazy // 2. Thêm @Lazy ở đây để hoãn khởi tạo AuthService
+    @Lazy // 2.  hoãn khởi tạo AuthService
     private AuthService authService;
     @Autowired
     @Lazy
@@ -60,7 +60,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // 2. TÍCH HỢP ĐĂNG NHẬP GOOGLE OAUTH2 VÀO ĐÂY
+                // 2. TÍCH HỢP ĐĂNG NHẬP GOOGLE OAUTH2
                 .oauth2Login(oauth2 -> oauth2
 
                         .authorizationEndpoint(authorization -> authorization
@@ -108,10 +108,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/teams/**").hasRole("STUDENT")
 
                         //EXPERT
-                        .requestMatchers(HttpMethod.GET, "/api/teams/team-requests/received").hasRole("EXPERT")
-                        .requestMatchers("/api/teams/team-requests/received").hasRole("EXPERT")
-                        .requestMatchers(HttpMethod.PATCH, "/api/teams/team-requests/*/reject").hasRole("EXPERT")
-                        .requestMatchers(HttpMethod.PATCH, "/api/teams/team-requests/*/accept").hasRole("EXPERT").requestMatchers("/api/expert/assigments/**").hasRole("EXPERT")
+                        .requestMatchers(HttpMethod.GET, "/api/team-requests/received").hasRole("EXPERT")
+                        .requestMatchers("/api/team-requests/received").hasRole("EXPERT")
+                        .requestMatchers(HttpMethod.PATCH, "/api/team-requests/*/reject").hasRole("EXPERT")
+                        .requestMatchers(HttpMethod.PATCH, "/api/team-requests/*/accept").hasRole("EXPERT")
+                        .requestMatchers("/api/expert/assigments/**").hasRole("EXPERT")
 
 
                         //Chỉ event coordinator
@@ -120,6 +121,7 @@ public class SecurityConfig {
                                 "/api/events/delete/**", "/api/events/update/**",
                                 "/api/events/restore/**", "/api/events/cancel/**", "/api/events/permanently/**")
                         .hasRole("EVENTCOORDINATOR")
+
 
                         // 2. các API xem danh sách sự kiện (GET)
                         .requestMatchers("/api/events/trash", "/api/events/experts",
@@ -139,6 +141,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/registrations/*/reject").hasRole("EVENTCOORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/api/registrations/*/pendingTeam").hasRole("EVENTCOORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/api/registrations/*/pendingTeam-detail").hasRole("EVENTCOORDINATOR")
+
+                        .requestMatchers(HttpMethod.PATCH, "/api/team-request/*/accept").hasRole("EVENTCOORDINATOR")
 
                         //Dành cho ADMIN
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
