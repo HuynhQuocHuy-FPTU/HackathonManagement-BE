@@ -30,16 +30,6 @@ public interface ExpertAssignRepository extends JpaRepository<ExpertAssign, Inte
     List<ExpertAssign> findExpertAssignments(@Param("expertId") Integer expertId, @Param("eventId") Integer eventId);
 
 
-    //  tìm ExpertAssign phụ trách đúng Team tại CategoryRound cụ thể
-//    @Query("SELECT ex FROM ExpertAssign ex " +
-//            "JOIN ex.categoryRound cr " +
-//            "JOIN TeamParticipant p ON p.categoryRound = cr " +
-//            "JOIN p.registration r " +
-//            "WHERE r.team.teamId = :teamId " +
-//            "AND cr.categoryRoundId = :categoryRoundId")
-//    Optional<ExpertAssign> findExpertAssignByTeamAndCategoryRound(
-//            @Param("teamId") Integer teamId,
-//            @Param("categoryRoundId") Integer categoryRoundId);
 
     @Query("SELECT DISTINCT e FROM HackathonEvent e " +
             "JOIN Round c ON c.hackathonEvent = e " +
@@ -131,12 +121,14 @@ public interface ExpertAssignRepository extends JpaRepository<ExpertAssign, Inte
     Optional<ExpertAssign> findMentorAssignment(
             @Param("categoryRoundId") Integer categoryRoundId,
             @Param("expertId") Integer expertId);
+
     @Query("SELECT ex FROM ExpertAssign ex " +
             "JOIN ex.categoryRound cr " +
             "JOIN cr.round r " +
             "WHERE ex.expert.expertId = :expertId " +
             "AND ex.role IN :role" )
-    List<ExpertAssign> findExpertAssignmentsByRoleIn(@Param("expertId") Integer expertId,
-                                                   @Param("role") ExpertRole role);
+    List<ExpertAssign> findExpertAssignmentsByRoleIn(@Param("expertId") Integer expertId, @Param("role") ExpertRole role);
+
+
 
 }
