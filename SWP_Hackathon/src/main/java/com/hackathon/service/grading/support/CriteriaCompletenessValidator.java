@@ -72,4 +72,39 @@ public class CriteriaCompletenessValidator {
             }
         }
     }
+
+    public void validatePartial(SubmitEvaluationRequest request, List<EvaluationCriteria> roundCriteria,
+                                BigDecimal maxScale, CriteriaType targetType) {
+
+        for (CriteriaScoreRequest scoreReq : request.getCriteriaScores()) {
+            if (scoreReq.getScore().compareTo(maxScale) > 0) {
+                throw new BadRequestException("Điểm số " + scoreReq.getScore() + " vượt quá thang điểm " + maxScale);
+            }
+        }
+
+        List<EvaluationCriteria> targetCriteriaList = roundCriteria.stream()
+                .filter(c -> c.getType() == targetType)
+                .collect(Collectors.toList());
+
+        if (targetCriteriaList.isEmpty()) {
+            throw new BadRequestException("Vòng thi này không cấu hình tiêu chí chấm điểm cho phần: " + targetType);
+        }
+
+        Map<Integer, EvaluationCriteria> targetCriteriaMap = targetCriteriaList.stream()
+                .collect(Collectors.toMap(EvaluationCriteria::getEvaluationCriteriaId, c -> c));
+
+        Set<Integer> requestIds = request.getCriteriaScores().stream()
+                .map(CriteriaScoreRequest::getEvaluationCriteriaId)
+                .collect(Collectors.toSet());
+
+        for (Integer reqId : requestIds) {
+            if (!targetCriteriaMap.containsKey(reqId)) {
+                throw new BadRequestException("Tiêu chí ID " + reqId + " không hợp lệ hoặc không thuộc phần " + targetType);
+            }
+        }
+
+        if (!requestIds.containsAll(targetCriteriaMap.keySet())) {
+            throw new BadRequestException("Bạn phải chấm ĐẦY ĐỦ tất cả các tiêu chí của phần " + targetType);
+        }
+    }
 }
