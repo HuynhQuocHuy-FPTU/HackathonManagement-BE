@@ -21,4 +21,5 @@ public interface RankingService {
 
     CategoryRoundRankingResponse getRankingByAll(Integer roundId, CustomUserDetails userDetails);
 
+    String getRankingPublicExcels(Integer roundId, String type);
 }

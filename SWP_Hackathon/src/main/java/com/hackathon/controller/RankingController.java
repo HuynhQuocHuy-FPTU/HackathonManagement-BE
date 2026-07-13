@@ -98,6 +98,7 @@ public class RankingController {
         CategoryRoundRankingResponse topN = rankingService.getTopNRanking(roundId);
         return ResponseEntity.ok(ApiResponse.success(topN, "Xem top N thành công."));
     }
+
     @GetMapping("/{roundId}/all")
     public ResponseEntity<ApiResponse<CategoryRoundRankingResponse>> getRanking(
             @PathVariable Integer roundId,
@@ -105,14 +106,27 @@ public class RankingController {
         CategoryRoundRankingResponse rank = rankingService.getRankingByAll(roundId, userDetails);
         return ResponseEntity.ok(ApiResponse.success(rank, "Xem ranking thành công."));
     }
-    @GetMapping("/download-excel/{roundId}")
+
+    // Hàm này dành cho event muốn xuất file lúc nào cx được
+    @PreAuthorize("hasRole('EVENTCOORDINATOR')")
+    @GetMapping("/coordinator/download-excel/{roundId}")
     public ResponseEntity<ApiResponse<String>> downloadRankingExcel(
             @PathVariable Integer roundId) {
-
         String url = excelService.exportRankingToExcel(roundId);
 
         return ResponseEntity.ok(
                 ApiResponse.success(url, "Export Excel thành công")
+        );
+    }
+
+    @GetMapping("all/download-excel/{roundId}")
+    public ResponseEntity<ApiResponse<String>> getRankingPublicExcels(
+            @PathVariable Integer roundId,
+            @RequestParam String type) {
+        String url = rankingService.getRankingPublicExcels(roundId, type);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(url, "Tải file ranking thành công")
         );
     }
 }

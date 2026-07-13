@@ -245,7 +245,8 @@ public class GradingServiceImpl implements GradingService {
     // Chấm điểm lại khi bị event coordinator từ chối
     @Override
     @Transactional
-    public JudgeEvaluationResponse updateEvaluation(Account account, Integer submissionId, SubmitEvaluationRequest request) {
+    public JudgeEvaluationResponse updateEvaluation(Account account, Integer submissionId, SubmitEvaluationRequest request
+    ,CriteriaType targetType) {
         // 1. Phân tích ngữ cảnh người dùng: Xác thực đối tượng Chuyên gia
         Expert expert = assignmentResolver.resolveExpert(account);
 
@@ -288,6 +289,7 @@ public class GradingServiceImpl implements GradingService {
         evaluation.setSubmission(submission);
 
         // 9. ĐỒNG BỘ HÓA DỮ LIỆU ĐIỂM CHI TIẾT (EvaluationDetail Mapping)
+
         Map<Integer, EvaluationDetail> existingDetailsMap = evaluation.getEvaluationDetails().stream()
                 .collect(Collectors.toMap(d -> d.getEvaluationCriteria().getEvaluationCriteriaId(), d -> d));
         Map<Integer, EvaluationCriteria> criteriaByIdMap = roundCriteria.stream()
@@ -297,13 +299,13 @@ public class GradingServiceImpl implements GradingService {
             EvaluationCriteria criteria = criteriaByIdMap.get(scoreReq.getEvaluationCriteriaId());
             if (criteria == null) continue;
 
-            CriteriaSet criteriaSet = round.getCriteriaSet();
-            BigDecimal maxScore = BigDecimal.valueOf(criteriaSet.getMaxScore());
-
-            if (scoreReq.getScore().compareTo(BigDecimal.ZERO) < 0 || scoreReq.getScore().compareTo(maxScore) > 0) {
-                throw new BadRequestException(
-                        "Điểm của tiêu chí " + "phải nằm trong khoảng từ 0 đến " + maxScore + ".");
-            }
+//            CriteriaSet criteriaSet = round.getCriteriaSet();
+//            BigDecimal maxScore = BigDecimal.valueOf(criteriaSet.getMaxScore());
+//
+//            if (scoreReq.getScore().compareTo(BigDecimal.ZERO) < 0 || scoreReq.getScore().compareTo(maxScore) > 0) {
+//                throw new BadRequestException(
+//                        "Điểm của tiêu chí " + "phải nằm trong khoảng từ 0 đến " + maxScore + ".");
+//            }
 
 
             // Tái sử dụng bản ghi chi tiết cũ để cập nhật đè dữ liệu, tránh tạo bản ghi trùng lặp rác dữ liệu
@@ -339,6 +341,21 @@ public class GradingServiceImpl implements GradingService {
         String description = String.format("Giám khảo (ExpertID: %d) đã cập nhật điểm cho Bài nộp (SubmissionID: %d). Tổng điểm ghi nhận: %s",
                 expertAssign.getAssignId(), submission.getSubmissionId(), calculatedTotalScore);
 
+        Map<String, Object> auditData = new LinkedHashMap<>();
+
+        auditData.put("oldTotalScore", evaluation.getOriginalScore());
+        auditData.put("newTotalScore", calculatedTotalScore);
+        auditData.put("details",
+                evaluation.getEvaluationDetails().stream()
+                        .map(detail -> Map.of(
+                                "criteriaId", detail.getEvaluationCriteria().getEvaluationCriteriaId(),
+                                "criteriaName", detail.getEvaluationCriteria().getCriteriaName(),
+                                "oldScore", detail.getOriginalScore() != null ? detail.getOriginalScore() : detail.getScore(),
+                                "newScore", detail.getScore()
+                        ))
+                        .toList());
+
+        String data = objectMapper.writeValueAsString(auditData);
         auditService.saveLog(
                 account,
                 AuditAction.UPDATE_EVALUATION,
@@ -356,7 +373,7 @@ public class GradingServiceImpl implements GradingService {
     @Override
     @Transactional
     public JudgeEvaluationResponse reEvaluationSubmission(CustomUserDetails userDetails, ReEvaluationRequest
-            request) {
+            request,CriteriaType targetType) {
         Account account = userDetails.getAccount();
         Expert expert = expertRepository.findByAccount_AccountId(account.getAccountId())
                 .orElseThrow(() -> new BadRequestException("Tài khoản này không phải là tài khoản của Expert, vì vậy bạn không được phép truy cập vào trình duyệt này."));
@@ -384,9 +401,6 @@ public class GradingServiceImpl implements GradingService {
         ExpertAssign expertAssign =
                 assignmentResolver.requireJudgeAssignment(expert, categoryRound.getCategoryRoundId());
 
-        // Đảm bảo resolver tìm đúng phân công chấm của ông Expert này tại CategoryRound đó
-
-
         Submission finalSubmission = participant.getSubmissions().stream()
                 .filter(Submission::isFinal)
                 .findFirst()
@@ -395,11 +409,6 @@ public class GradingServiceImpl implements GradingService {
         // Từ  bài nộp tìm ra expert này chấm
         Evaluation evaluation = evaluationRepository.findByExpertAssignIdAndSubmissionId(expertAssign.getAssignId(), finalSubmission.getSubmissionId())
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy dữ liệu chấm điểm cũ của bạn cho đội thi này."));
-
-
-        System.out.println(
-                evaluation.getExpertAssign().getExpert().getExpertId()
-        );
 
 
         if (evaluation.getStatus() != EvaluationStatus.RE_EVALUATION) {
@@ -414,8 +423,8 @@ public class GradingServiceImpl implements GradingService {
         Map<Integer, EvaluationDetail> detailsMap = evaluation.getEvaluationDetails().stream()
                 .filter(d -> d.getEvaluationCriteria() != null)
                 .collect(Collectors.toMap(d -> d.getEvaluationCriteria().getEvaluationCriteriaId(), d -> d));
-        for (CriteriaScoreRequest requestEval : request.getCriteriaScores()) {
 
+        for (CriteriaScoreRequest requestEval : request.getCriteriaScores()) {
             EvaluationDetail detail = detailsMap.get(requestEval.getEvaluationCriteriaId());
             if (detail == null) {
                 throw new BadRequestException("Tiêu chí này không nằm trong danh sách tiêu chí chấm điểm của vòng đấu này.");
@@ -436,7 +445,6 @@ public class GradingServiceImpl implements GradingService {
             }
 
             detail.setScore(requestEval.getScore());
-
 
         }
         BigDecimal finalNewTotalScore = scoreCalculator.calculateWeightedTotal(evaluation.getEvaluationDetails());
