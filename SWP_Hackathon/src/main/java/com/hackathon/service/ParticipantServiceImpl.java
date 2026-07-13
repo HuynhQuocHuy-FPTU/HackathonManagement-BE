@@ -36,6 +36,7 @@ public class ParticipantServiceImpl implements ParticipantService {
     private final RegistrationRepository registrationRepository;
     private final CategoryRoundRepository categoryRoundRepository;
     private final EvaluationRepository evaluationRepository;
+    private final StudentRepository studentRepository;
 
 
 
@@ -174,7 +175,9 @@ public class ParticipantServiceImpl implements ParticipantService {
 
     @Override
     public CurrentParticipantDTO getCurrentParticipant(CustomUserDetails userDetails) {
-        Student student = userDetails.getAccount().getStudent();
+        Student student = studentRepository.findByIdWithTeamMembers(
+                userDetails.getAccount().getStudent().getStudentId()
+        ).orElseThrow(() -> new BadRequestException("Tài khoản này không phải sinh viên, không có thông tin tham gia thi đấu"));
 
         if (student == null) {
             throw new BadRequestException("Tài khoản này không phải sinh viên, không có thông tin tham gia thi đấu");
