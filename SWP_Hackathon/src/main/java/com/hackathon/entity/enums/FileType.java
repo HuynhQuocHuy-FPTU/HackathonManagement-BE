@@ -17,6 +17,7 @@ public enum FileType {
     JPEG("image/jpeg", FileGroup.IMAGE),
     MP4("video/mp4", FileGroup.VIDEO);
 
+
     private final String mimeType;
     private final FileGroup group;
 

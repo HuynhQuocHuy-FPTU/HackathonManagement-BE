@@ -8,7 +8,7 @@ import com.hackathon.security.CustomUserDetails;
 import java.util.List;
 
 public interface TeamRequestService {
-    List<TeamRequestResponse> teamSendRequestToMentor(String requestMessage, CustomUserDetails userDetails);
+    List<TeamRequestResponse> teamSendRequestToMentor(TeamAppealRequestDTO request, CustomUserDetails userDetails);
 
     List<TeamRequestResponse> getTeamRequestsForExpert(CustomUserDetails userDetails);
 
@@ -20,9 +20,11 @@ public interface TeamRequestService {
 
     List<TeamRequestResponse> getAppealRequest(CustomUserDetails userDetails, Integer roundId);
 
-    TeamRequestResponse rejectAppealRequest(CustomUserDetails userDetails, Integer requestId,String responseMessage);
+    List<TeamRequestResponse> getAppealRequestPublic(CustomUserDetails userDetails, Integer roundId);
 
-    TeamRequestResponse acceptAppealRequest(CustomUserDetails userDetails, Integer requestId,String responseMessage);
+    TeamRequestResponse rejectAppealRequest(CustomUserDetails userDetails, Integer requestId, String responseMessage);
+
+    TeamRequestResponse acceptAppealRequest(CustomUserDetails userDetails, Integer requestId, String responseMessage);
 
     TeamRequestResponse requestExpertToReEvaluation(CustomUserDetails userDetails, Integer requestId);
 

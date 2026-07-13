@@ -13,7 +13,6 @@ import java.util.List;
 public class ReEvaluationRequest {
     private String comment;
     private Integer requestId;
-    private BigDecimal score;
     @NotEmpty(message = "Danh sách điểm số tiêu chí không được để trống")
     @Valid
     private List<CriteriaScoreRequest> criteriaScores;

@@ -55,4 +55,11 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Integer>
 //    boolean hasLeader(boolean b);
 
     long countByIsLeader(Boolean isLeader);
+
+    @Query("""
+                SELECT tm.team
+                FROM TeamMember tm
+                WHERE tm.student.studentId = :studentId
+            """)
+    Team findTeamByStudentId(@Param("studentId") int studentId);
 }

@@ -30,16 +30,12 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         String email = oAuth2User.getAttribute("email");
         String name = oAuth2User.getAttribute("name");
         String picture = oAuth2User.getAttribute("picture");
-//        String action = customAuthorizationRequestRepository.getAction(request);
 
         boolean exists = accountRepository.existsByEmail(email.trim());
         // Chưa có tài khoản -> đăng ký Google
         if (!exists) {
             authService.registerWithGoogle(email);
             AuthResponse authResponse = authService.loginWithGoogle(email);
-//            String encodedEmail = URLEncoder.encode(email, StandardCharsets.UTF_8);
-//            response.sendRedirect("http://localhost:3000/complete-registration?email=" + encodedEmail);
-//            return;
             response.sendRedirect(
                     "http://localhost:5174/complete-registration"
                             + "?accessToken="

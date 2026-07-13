@@ -52,5 +52,34 @@ public class CloudinaryService {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi xóa file trên hệ thống lưu trữ!");
         }
     }
+
+    /**
+     * Hàm tạo riêng  để upload file Excel hệ thống
+     */
+    public String uploadExcelFile(MultipartFile file) {
+        // Ép cứng resource_type là raw để không bị lỗi hỏng cấu trúc file Excel (.xlsx)
+        Map<String, Object> params = new HashMap<>();
+        params.put("resource_type", "raw");
+        params.put("folder", "hackathon_rankings");
+
+        if (file.getOriginalFilename() != null) {
+            params.put("public_id", file.getOriginalFilename()); // Truyền trọn vẹn tên kèm đuôi .xlsx
+        }
+        try {
+            log.info("Bắt đầu upload file Excel hệ thống lên Cloudinary: {}", file.getOriginalFilename());
+            Map uploadResult = cloudinary.uploader().upload(file.getBytes(), params);
+            return (String) uploadResult.get("secure_url");
+        } catch (IOException e) {
+            if (e.getCause() instanceof java.net.SocketTimeoutException) {
+                log.error("Cloudinary upload Excel timed out: {}", e.getMessage());
+                throw new ApiException(HttpStatus.GATEWAY_TIMEOUT, "Đường truyền quá chậm, không thể hoàn tất upload file Excel.");
+            }
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi kết nối Cloudinary khi upload Excel: " + e.getMessage());
+        } catch (Exception e) {
+            log.error("Lỗi upload Excel Cloudinary chi tiết: ", e);
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi tải file Excel lên hệ thống lưu trữ: " + e.getMessage());
+        }
+    }
+
 }
 

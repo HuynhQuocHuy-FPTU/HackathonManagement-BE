@@ -88,11 +88,11 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.ok("Đổi mật khẩu thành công! Vui lòng đăng nhập lại."));
     }
 
-//    @PostMapping("/register-google")
-//    public ResponseEntity<ApiResponse<Void>> registerWithGoogle(@RequestParam String email) {
-//        authService.registerWithGoogle(email);
-//        return ResponseEntity.ok(ApiResponse.ok("Đăng ký thành công"));
-//    }
+    @PostMapping("/register-google")
+    public ResponseEntity<ApiResponse<Void>> registerWithGoogle(@RequestParam String email) {
+        authService.registerWithGoogle(email);
+        return ResponseEntity.ok(ApiResponse.ok("Đăng ký thành công"));
+    }
 
     @GetMapping("/oauth2/google")
     public void googleLogin(HttpServletResponse response) throws IOException {

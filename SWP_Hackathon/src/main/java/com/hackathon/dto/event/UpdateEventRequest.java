@@ -40,6 +40,8 @@ public class UpdateEventRequest {
     @Min(value = 1, message = "Min team size must be at least 1")
     private Integer minTeamSize;
 
+    private String bannerUrl;
+
     private LocalDateTime workshopTime;
 
     private LocalDateTime registrationDeadline;

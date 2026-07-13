@@ -125,19 +125,28 @@ public class StatusSchedulerService {
     private RoundStatus resolveRoundStatus(Round round, LocalDateTime now) {
 
         RoundStatus currentStatus = round.getStatus();
+
+        System.out.println("CURRENT STATUS = " + currentStatus);
+        System.out.println("NOW = " + now);
+        System.out.println("APPEAL END = " + round.getAppealEndTime());
         // 1. Luồng tự động chuyển trạng thái SAU KHI HẾT HẠN PHÚC KHẢO
         if (currentStatus == RoundStatus.APPEALING && round.getAppealEndTime() != null) {
             if (now.isAfter(round.getAppealEndTime())) {
-                return RoundStatus.PENDING_APPROVAL;
+                return RoundStatus.PENDING_FINAL_APPROVAL;
             }
             return RoundStatus.APPEALING;
         }
 
         // 2. Các trạng thái đặc biệt do Admin/Coordinator chủ động điều khiển (Giữ nguyên)
-        if (currentStatus == RoundStatus.APPROVED ||
-                currentStatus == RoundStatus.PENDING_APPROVAL ||
-                currentStatus == RoundStatus.RE_EVALUATING ||
+        if (
+//                currentStatus == RoundStatus.APPEALING ||
+                currentStatus == RoundStatus.PENDING_FINAL_APPROVAL ||
+//                currentStatus == RoundStatus.PENDING_APPROVAL ||
+//                currentStatus == RoundStatus.RE_EVALUATING ||
+//                currentStatus == RoundStatus.DRAFT_APPROVED ||
+                currentStatus == RoundStatus.FINAL_APPROVED ||
                 currentStatus == RoundStatus.COMPLETED) {
+
             return currentStatus;
         }
 
@@ -153,9 +162,8 @@ public class StatusSchedulerService {
             return RoundStatus.EVALUATING;
         }
 
-
-        return currentStatus;
-//        return RoundStatus.COMPLETED;
+        // Hết thời gian chấm → chờ Coordinator duyệt lần đầu
+        return RoundStatus.PENDING_APPROVAL;
     }
 
     @Scheduled(fixedRate = 60000)

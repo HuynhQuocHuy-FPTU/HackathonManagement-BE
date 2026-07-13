@@ -28,7 +28,8 @@
         <url/>
     </scm>
     <properties>
-        <java.version>21</java.version> <jjwt.version>0.12.6</jjwt.version>
+        <java.version>21</java.version>
+        <jjwt.version>0.12.6</jjwt.version>
     </properties>
     <dependencies>
         <dependency>
@@ -84,14 +85,14 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc-test</artifactId>
-            <scope>test</scope>
+<!--            <scope>test</scope>-->
         </dependency>
-<!--        Swagger Open API Doccument Dependency -->
+        <!--        Swagger Open API Doccument Dependency -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>3.0.3</version>
-<!--            <version>2.5.0</version>-->
+            <!--            <version>2.5.0</version>-->
 
         </dependency>
         <!-- Source: https://mvnrepository.com/artifact/org.projectlombok/lombok -->
@@ -142,6 +143,12 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
+        <!--excels-->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.4.1</version>
+        </dependency>
 
     </dependencies>
     <build>
