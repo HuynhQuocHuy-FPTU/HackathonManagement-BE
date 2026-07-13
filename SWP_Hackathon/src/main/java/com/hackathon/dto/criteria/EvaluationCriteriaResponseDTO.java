@@ -15,7 +15,7 @@ public class EvaluationCriteriaResponseDTO {
 
     private Integer evaluationCriteriaId;
 
-    private String criteriaDetailName;
+    private String criteriaName;
 
     private BigDecimal customWeight;
 

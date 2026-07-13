@@ -106,7 +106,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         newRequest.setStatus(RequestStatus.PENDING);
         newRequest.setRequestMessage(request.getRequestMessage());
         newRequest.setRound(round);
-        newRequest.setResponseStatus(NotiResponseStatus.PENDING);
+//        newRequest.setResponseStatus(NotiResponseStatus.PENDING);
         newRequest.setRequestType(RequestType.MENTOR_SUPPORT);
         TeamRequest saveTeam = teamRequestRepository.save(newRequest);
 
@@ -403,7 +403,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                     .round(rq.getRound().getRoundName())
                     .requestMessage(rq.getRequestMessage())
                     .responseMessage(rq.getResponseMessage())
-                    .responseStatus(rq.getResponseStatus())
+//                    .responseStatus(rq.getResponseStatus())
                     .responseAt(rq.getResponseAt())
                     .build();
             responseList.add(response);

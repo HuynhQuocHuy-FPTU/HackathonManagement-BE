@@ -79,6 +79,12 @@ public class GlobalExceptionHandler {
     }
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleSql(DataIntegrityViolationException ex) {
+
+        Throwable root = ex.getRootCause();
+        if (root != null) {
+            System.out.println(root.getMessage());
+        }
+
         String msg = ex.getRootCause() != null ? ex.getRootCause().getMessage().toLowerCase() : "";
         if (msg.contains("duplicate") || msg.contains("unique"))
             return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.fail("Dữ liệu đã tồn tại"));

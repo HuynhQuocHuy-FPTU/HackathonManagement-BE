@@ -36,6 +36,7 @@ public class ParticipantServiceImpl implements ParticipantService {
     private final RegistrationRepository registrationRepository;
     private final CategoryRoundRepository categoryRoundRepository;
     private final EvaluationRepository evaluationRepository;
+    private final StudentRepository studentRepository;
 
 
 
@@ -166,6 +167,7 @@ public class ParticipantServiceImpl implements ParticipantService {
         TeamParticipant teamParticipant = new TeamParticipant();
         teamParticipant.setRegistration(registration);
         teamParticipant.setCategoryRound(null);
+        teamParticipant.setSubmissionStatus(SubmissionStatus.NOT_SUBMITTED);
         teamParticipant.setStatus(ParticipantStatus.ACTIVE);
 
         return participantRepository.save(teamParticipant);
@@ -173,7 +175,9 @@ public class ParticipantServiceImpl implements ParticipantService {
 
     @Override
     public CurrentParticipantDTO getCurrentParticipant(CustomUserDetails userDetails) {
-        Student student = userDetails.getAccount().getStudent();
+        Student student = studentRepository.findByIdWithTeamMembers(
+                userDetails.getAccount().getStudent().getStudentId()
+        ).orElseThrow(() -> new BadRequestException("Tài khoản này không phải sinh viên, không có thông tin tham gia thi đấu"));
 
         if (student == null) {
             throw new BadRequestException("Tài khoản này không phải sinh viên, không có thông tin tham gia thi đấu");
@@ -206,8 +210,15 @@ public class ParticipantServiceImpl implements ParticipantService {
         for(var teamParticipant : teamParticipants){
             list.add(this.mapToRoundStatusDTO(teamParticipant));
         }
-
-        return CurrentParticipantDTO.builder().eventID(currentEvent.getEventId()).eventName(currentEvent.getEventName()).categoryName(category.getCategoryName()).categoryId(category.getCategoryId()).rounds(list).teamName(team.getTeamName()).build();
+        return CurrentParticipantDTO
+                .builder()
+                .eventID(currentEvent.getEventId())
+                .eventName(currentEvent.getEventName())
+                .categoryName(category.getCategoryName())
+                .categoryId(category.getCategoryId())
+                .rounds(list)
+                .teamName(team.getTeamName())
+                .build();
 
     }
 
@@ -265,7 +276,13 @@ public class ParticipantServiceImpl implements ParticipantService {
         return RoundStatusDTO.builder()
                 .roundId(round.getRoundId())
                 .roundName(round.getRoundName())
-                .status(participant.getStatus()).build();
+                .status(participant.getStatus())
+                .evaluetionCriteria(round.getEvaluationCriterias())
+                .SubmissionDeadline(round.getSubmissionDeadline())
+                .StartTime(round.getStartTime())
+                .submissionType(round.getSubmissionType())
+                .EndTime(round.getEndTime())
+                .build();
     }
 
 

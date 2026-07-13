@@ -53,7 +53,7 @@ public class EvaluationCriteriaServiceImpl implements EvaluationCriteriaService 
         return EvaluationCriteriaResponseDTO.builder()
                 .evaluationCriteriaId(evaluationCriteria.getEvaluationCriteriaId())
                 .customWeight(evaluationCriteria.getWeight())
-                .criteriaDetailName(evaluationCriteria.getCriteriaName())
+                .criteriaName(evaluationCriteria.getCriteriaName())
                 .type(evaluationCriteria.getType())
                 .description(evaluationCriteria.getDescription())
                 .build();
