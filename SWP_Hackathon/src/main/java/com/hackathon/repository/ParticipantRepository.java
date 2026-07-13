@@ -7,6 +7,7 @@ import com.hackathon.entity.enums.ParticipantStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.Collection;
 import java.util.List;
@@ -28,4 +29,11 @@ public interface ParticipantRepository extends JpaRepository<TeamParticipant, In
     List<TeamParticipant> findByCategoryRound_CategoryRoundId(int categoryRoundId);
 
     boolean existsByRegistration_Team_TeamIdInAndCategoryRound_Round_RoundId(Collection<Integer> registrationTeamTeamIds, Integer categoryRoundRoundRoundId);
+
+    @Query("""
+            SELECT tp
+            FROM TeamParticipant tp
+            WHERE tp.categoryRound.round.roundId = :roundId
+            """)
+    List<TeamParticipant> findByRoundId(Integer roundId);
 }

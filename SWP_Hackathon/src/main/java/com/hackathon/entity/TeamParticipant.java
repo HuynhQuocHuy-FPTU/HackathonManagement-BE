@@ -36,6 +36,9 @@ public class TeamParticipant {
     @Column(name = "Rank")
     private Integer rank;
 
+    @Column(name ="Award", columnDefinition = "NVARCHAR(MAX)")
+    private String award;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "Registration_Id")
     private Registration registration;
@@ -44,8 +47,6 @@ public class TeamParticipant {
     @JoinColumn(name = "CategoryRound_ID")
     private CategoryRound categoryRound;
 
-//    @OneToMany(mappedBy = "teamParticipant", cascade = CascadeType.ALL)
-//    private List<Evaluation> evaluations = new ArrayList<>();
 
     @OneToMany(mappedBy = "teamParticipant", cascade = CascadeType.ALL)
     private List<Submission> submissions = new ArrayList<>();
