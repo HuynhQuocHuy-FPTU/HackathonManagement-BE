@@ -14,6 +14,7 @@ import com.hackathon.repository.*;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.AuditService;
 
+import com.hackathon.service.ExcelExportService;
 import com.hackathon.service.NotificationService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -21,9 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -38,6 +37,7 @@ public class RankingServiceImpl implements RankingService {
     private final EvaluationRepository evaluationRepository;
     private final TeamRequestRepository teamRequestRepository;
     private final NotificationService notificationService;
+    private final ExcelExportService excelExportService;
 
     //===============================================//
     //RANKING
@@ -348,6 +348,10 @@ public class RankingServiceImpl implements RankingService {
                     .teams(rankingTeams)
                     .build();
         }).toList();
+
+        String uploadUrl = excelExportService.exportRankingToExcel(roundId);
+        updateAndSaveExcalJson(round, uploadUrl);
+
         round.setStatus(RoundStatus.APPEALING);
         roundRepository.save(round);
         log.info("Đã công bố bản nháp bảng xếp hạng vòng {}. Bắt đầu nhận phúc khảo.", roundId);
@@ -432,6 +436,11 @@ public class RankingServiceImpl implements RankingService {
                     .teams(rankingTeams)
                     .build();
         }).toList();
+
+        String uploadUrl = excelExportService.exportRankingToExcel(roundId);
+        updateAndSaveExcalJson(round, uploadUrl);
+
+
         round.setStatus(RoundStatus.COMPLETED);
         roundRepository.save(round);
         log.info("Đã công bố bản xếp hạng chính thức vòng {}. Đóng vòng đấu thành công!", roundId);
@@ -507,6 +516,9 @@ public class RankingServiceImpl implements RankingService {
     public CategoryRoundRankingResponse getTopNRanking(Integer roundId) {
         Round round = roundRepository.findById(roundId).orElseThrow(
                 () -> new BadRequestException("Không tìm thấy vòng thi"));
+        if (round.getStatus() != RoundStatus.COMPLETED) {
+            throw new BadRequestException("Bạn không được phép xem bảng xếp hạng khi vòng thi chưa hoàn thành.");
+        }
         List<CategoryRound> categoryRound = round.getCategoryRounds();
         int topN = round.getTopN();
 
@@ -552,5 +564,111 @@ public class RankingServiceImpl implements RankingService {
                 .build();
     }
 
+    @Override
+    public CategoryRoundRankingResponse getRankingByAll(Integer roundId, CustomUserDetails userDetails) {
 
-}
+        Account account = userDetails.getAccount();
+        if (account == null) {
+            throw new BadRequestException("Bạn chưa đăng nhập tài khoản.");
+        }
+        boolean isEvenCoordinator = account.getRole().equals(AccountRole.EVENTCOORDINATOR);
+
+        Round round = roundRepository.findById(roundId)
+                .orElseThrow(() -> new BadRequestException("Không tìm thây vòng thi."));
+
+        //  Đang chấm hoặc chờ duyệt , event moiws dc voaf
+        if (round.getStatus() == RoundStatus.EVALUATING
+                || round.getStatus() == RoundStatus.RE_EVALUATING
+                || round.getStatus() == RoundStatus.PENDING_APPROVAL) {
+            if (!isEvenCoordinator) {
+                throw new BadRequestException("Bảng xếp hạng đang được chấm và kiểm duyệt. Bạn không được phép truy cập");
+            }
+        }
+
+        List<CategoryRankingResponse> categoriesRanking = new ArrayList<>();
+
+        // dang phuc khao thi sinh chi dc xem qua file exxcel
+        if (round.getStatus() == RoundStatus.PENDING_FINAL_APPROVAL
+                || round.getStatus() == RoundStatus.APPEALING) {
+            return CategoryRoundRankingResponse.builder()
+                    .roundId(round.getRoundId())
+                    .roundName(round.getRoundName())
+                    .orderIndex(round.getOrderIndex())
+                    .advancementRule(round.getAdvancementRule())
+                    .topN(round.getTopN())
+                    .roundStatus(round.getStatus())
+                    .draftExcelUrl(round.getExcelsUrl())
+                    .categoriesRanking(categoriesRanking).build();
+        }
+        if (round.getCategoryRounds() != null) {
+            for (CategoryRound cr : round.getCategoryRounds()) {
+
+                List<RankingResponseDTO> rankingResponse = cr.getTeamParticipants().stream()
+                        .sorted(Comparator.comparing(TeamParticipant::getRank, Comparator.nullsLast(Integer::compareTo)))
+                        .map(participant -> {
+                            String teamName = "N/A";
+                            if (participant.getRegistration() != null && participant.getRegistration().getTeam() != null) {
+                                teamName = participant.getRegistration().getTeam().getTeamName();
+                            }
+
+                            return RankingResponseDTO.builder()
+                                    .participantId(participant.getId())
+                                    .totalScore(participant.getTotalScore())
+                                    .rank(participant.getRank())
+                                    .teamName(teamName)
+                                    .status(participant.getStatus())
+                                    .build();
+                        })
+                        .toList();
+
+                CategoryRankingResponse response = CategoryRankingResponse.builder()
+                        .categoryRoundId(cr.getCategoryRoundId())
+                        .categoryId(cr.getCategory() != null ? cr.getCategory().getCategoryId() : null)
+                        .categoryName(cr.getCategory() != null ? cr.getCategory().getCategoryName() : "N/A")
+                        .teams(rankingResponse)
+                        .build();
+
+                categoriesRanking.add(response);
+            }
+        }
+
+        // 6. Trả về Response đầy đủ thông tin
+        return CategoryRoundRankingResponse.builder()
+                .roundId(round.getRoundId())
+                .roundName(round.getRoundName())
+                .orderIndex(round.getOrderIndex())
+                .advancementRule(round.getAdvancementRule())
+                .topN(round.getTopN())
+                .roundStatus(round.getStatus())
+                .draftExcelUrl(round.getExcelsUrl())
+                .categoriesRanking(categoriesRanking)
+                .build();
+    }
+    private  void updateAndSaveExcalJson(Round round, String url){
+        List<Map<String, Object>> currentFiles = new ArrayList<>();
+        String oldJson = round.getExcelsUrl();
+
+        if (oldJson != null && !oldJson.trim().isEmpty()) {
+            try {
+                currentFiles = objectMapper.readValue(oldJson, new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {});
+            } catch (Exception e) {
+                currentFiles = new ArrayList<>();
+            }
+        }
+        // Thêm bản ghi file mới
+        Map<String, Object> newExcelFile = new HashMap<>();
+        newExcelFile.put("version", currentFiles.size() + 1);
+        newExcelFile.put("status", round.getStatus().name()); // Lưu lại trạng thái của round trước khi đổi
+        newExcelFile.put("url", url);
+        newExcelFile.put("createdAt", java.time.LocalDateTime.now().toString());
+        currentFiles.add(newExcelFile);
+
+        try {
+            round.setExcelsUrl(objectMapper.writeValueAsString(currentFiles));
+        } catch (JsonProcessingException e) {
+            throw new BadRequestException("Lỗi hệ thống khi tuần tự hóa dữ liệu file Excel.");
+        }
+    }
+
+
+    }

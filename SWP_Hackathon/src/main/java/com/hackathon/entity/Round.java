@@ -41,6 +41,8 @@ public class Round {
     private LocalDateTime appealStartTime;
     @Column(name = "Appeal_EndTime", nullable = true)
     private LocalDateTime appealEndTime;
+    @Column(name ="Url_Excels", columnDefinition = "NVARCHAR(MAX)")
+    private String excelsUrl ;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "Submission_Type", nullable = true)
