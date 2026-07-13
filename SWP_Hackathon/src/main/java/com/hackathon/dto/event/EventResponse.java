@@ -29,13 +29,13 @@ public class EventResponse {
     private Integer maxTeam;
     private Integer maxTeamSize;
     private Integer minTeamSize;
+    private String bannerUrl;
     private LocalDateTime registrationDeadline;
     private LocalDateTime workshopTime;
     private WorkshopStatus workshopStatus;
     private EventStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updateAt;
-    private String bannerUrl;
     private List<CategoryResponse> categories;
     private List<RoundResponse> rounds;
 

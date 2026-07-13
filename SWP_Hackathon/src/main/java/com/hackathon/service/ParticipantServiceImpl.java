@@ -210,8 +210,15 @@ public class ParticipantServiceImpl implements ParticipantService {
         for(var teamParticipant : teamParticipants){
             list.add(this.mapToRoundStatusDTO(teamParticipant));
         }
-
-        return CurrentParticipantDTO.builder().eventID(currentEvent.getEventId()).eventName(currentEvent.getEventName()).categoryName(category.getCategoryName()).categoryId(category.getCategoryId()).rounds(list).teamName(team.getTeamName()).build();
+        return CurrentParticipantDTO
+                .builder()
+                .eventID(currentEvent.getEventId())
+                .eventName(currentEvent.getEventName())
+                .categoryName(category.getCategoryName())
+                .categoryId(category.getCategoryId())
+                .rounds(list)
+                .teamName(team.getTeamName())
+                .build();
 
     }
 
@@ -269,7 +276,13 @@ public class ParticipantServiceImpl implements ParticipantService {
         return RoundStatusDTO.builder()
                 .roundId(round.getRoundId())
                 .roundName(round.getRoundName())
-                .status(participant.getStatus()).build();
+                .status(participant.getStatus())
+                .evaluetionCriteria(round.getEvaluationCriterias())
+                .SubmissionDeadline(round.getSubmissionDeadline())
+                .StartTime(round.getStartTime())
+                .submissionType(round.getSubmissionType())
+                .EndTime(round.getEndTime())
+                .build();
     }
 
 

@@ -70,7 +70,7 @@ public interface TeamRepository extends JpaRepository<Team, Integer> {
 
     @Query("SELECT t FROM Team t " +
             "JOIN t.teamMembers tm " +
-            "WHERE tm.student.studentId =: studentId")
+            "WHERE tm.student.studentId = :studentId")
     List<Team> findByStudent(@Param("studentId") Integer studentId );
 
 }
