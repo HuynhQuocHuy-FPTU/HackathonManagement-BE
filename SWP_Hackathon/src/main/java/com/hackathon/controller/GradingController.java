@@ -104,27 +104,51 @@ public class GradingController {
         return ResponseEntity.ok(ApiResponse.ok("Tải dữ liệu điểm cũ thành công!", responseData));
     }
 //     Update điểm khi ban tổ chức từ chối xét duyệt
-    @PostMapping("/submissions/{submissionId}/update")
-    public ResponseEntity<ApiResponse<JudgeEvaluationResponse>>updateEvaluation(
+    @PostMapping("/submissions/{submissionId}/update/presentation")
+    public ResponseEntity<ApiResponse<JudgeEvaluationResponse>>updateEvaluationPresentation(
             @PathVariable Integer submissionId,
             @Valid @RequestBody SubmitEvaluationRequest request, // Khởi chạy cơ chế Validation Bean đập lỗi ngay tại cửa ngõ
             @AuthenticationPrincipal CustomUserDetails userDetails){
         JudgeEvaluationResponse executionResult = gradingService.updateEvaluation(
                 userDetails.getAccount(),
                 submissionId,
-                request
+                request,
+                CriteriaType.PRESENTATION
+        );
+        return ResponseEntity.ok(ApiResponse.ok("Cập nhật điểm số  phần thuyết trình thành công!", executionResult));
+
+    }
+
+    @PostMapping("/submissions/{submissionId}/update/code")
+    public ResponseEntity<ApiResponse<JudgeEvaluationResponse>>updateEvaluationCode(
+            @PathVariable Integer submissionId,
+            @Valid @RequestBody SubmitEvaluationRequest request, // Khởi chạy cơ chế Validation Bean đập lỗi ngay tại cửa ngõ
+            @AuthenticationPrincipal CustomUserDetails userDetails){
+        JudgeEvaluationResponse executionResult = gradingService.updateEvaluation(
+                userDetails.getAccount(),
+                submissionId,
+                request,
+                CriteriaType.SUBMISSION
         );
         return ResponseEntity.ok(ApiResponse.ok("Cập nhật điểm số đánh giá thành công!", executionResult));
 
     }
 
     // Chấm điểm lại khi có yêu cầu phúc khảo
-    @PostMapping("/submissions/re-evaluation")
-    public ResponseEntity<ApiResponse<JudgeEvaluationResponse>>reEvaluationSubmission(
+    @PostMapping("/submissions/re-evaluation/code")
+    public ResponseEntity<ApiResponse<JudgeEvaluationResponse>>reEvaluationSubmissionCode(
             @Valid @RequestBody ReEvaluationRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails){
-        JudgeEvaluationResponse executionResult = gradingService.reEvaluationSubmission(userDetails, request);
+        JudgeEvaluationResponse executionResult = gradingService.reEvaluationSubmission(userDetails, request,CriteriaType.SUBMISSION);
         return ResponseEntity.ok(ApiResponse.ok("Ban giám khảo chấm lại điểm số phúc khảo thành công!", executionResult));
+
+    }
+    @PostMapping("/submissions/re-evaluation/presentation")
+    public ResponseEntity<ApiResponse<JudgeEvaluationResponse>>reEvaluationSubmissionPresentation(
+            @Valid @RequestBody ReEvaluationRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails){
+        JudgeEvaluationResponse executionResult = gradingService.reEvaluationSubmission(userDetails, request,CriteriaType.PRESENTATION);
+        return ResponseEntity.ok(ApiResponse.ok("Ban giám khảo chấm lại điểm số phúc khảo phần thuyết trình thành công!", executionResult));
 
     }
 }

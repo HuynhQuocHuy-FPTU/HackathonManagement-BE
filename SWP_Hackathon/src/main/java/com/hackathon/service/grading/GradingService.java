@@ -19,9 +19,9 @@ public interface GradingService {
 
     JudgeEvaluationResponse viewMyEvaluation(Account account, Integer submissionId);
 
-    JudgeEvaluationResponse reEvaluationSubmission(CustomUserDetails userDetails, ReEvaluationRequest request);
+    JudgeEvaluationResponse reEvaluationSubmission(CustomUserDetails userDetails, ReEvaluationRequest request,CriteriaType targetType);
 
-    JudgeEvaluationResponse updateEvaluation(Account account, Integer submissionId, SubmitEvaluationRequest request);
+    JudgeEvaluationResponse updateEvaluation(Account account, Integer submissionId, SubmitEvaluationRequest request,CriteriaType targetType);
 
     JudgeEvaluationResponse submitPartialEvaluation(Account account, Integer submissionId, SubmitEvaluationRequest request, CriteriaType targetType);
 
