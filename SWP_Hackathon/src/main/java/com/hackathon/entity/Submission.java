@@ -12,6 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @Getter
 @Setter
+@Builder
 @Entity
 @Table(name="Submission")
 public class Submission {
@@ -25,6 +26,8 @@ public class Submission {
     private String description;
     @Column(name="Github_URL", nullable = true)
     private String githubUrl;
+    @Column(name = "Latest_Commit_Sha", nullable = true)
+    private String latestCommitSha;
 
     @Column(name = "Is_Final")
     private boolean isFinal;
@@ -48,9 +51,5 @@ public class Submission {
     @OneToMany(mappedBy = "submission", cascade = CascadeType.ALL,orphanRemoval = true)
     private List<SubmissionFile> files;
 
-//    //1 categoryRound- N submission
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JsonIgnore
-//    @JoinColumn(name = "Category_Round_ID",nullable = false)
-//    private CategoryRound categoryRound;
+
 }
