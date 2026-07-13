@@ -164,35 +164,31 @@ public class RoundServiceImpl implements RoundService{
 
             }
 
-            // 6. Xóa các tiêu chí cũ trước khi chèn lại tiêu chí mới từ request
-            if (saveRound.getEvaluationCriterias() != null && !saveRound.getEvaluationCriterias().isEmpty()) {
-                saveRound.getEvaluationCriterias().clear();
-                roundRepository.saveAndFlush(saveRound);
-            }
-
         } else {
-            // --- TRƯỜNG HỢP TẠO MỚI ---
-            // Gọi sang createRound, bên trong đã có sẵn validator nên an toàn
+            // --- TRƯỜNG HỢP TẠO MỚI -----
             saveRound = this.createRound(roundRequest, eventId);
         }
 
         // 7. Chèn lại Custom Criteria mới từ request (áp dụng cho cả sửa lẫn tạo mới)
-        if(roundRequest.getCriteriaSetId() != null){
-            BigDecimal totalWeight = BigDecimal.ZERO;
-            BigDecimal hundred = new BigDecimal("100");
-            if (roundRequest.getCustomCriteriaDetatils() != null && !roundRequest.getCustomCriteriaDetatils().isEmpty()) {
-                for (EvaluationCriteriaRequestDTO customCriteria : roundRequest.getCustomCriteriaDetatils()) {
-                    evaluationCriteriaService.createEvaluationCritera(customCriteria, roundRequest.getCriteriaSetId(), saveRound);
-                    BigDecimal weight = customCriteria.getCustomWeight() != null ? customCriteria.getCustomWeight() : BigDecimal.ZERO;
-                    totalWeight = totalWeight.add(weight);
-                }
-                // Ép đồng bộ tiêu chí mới xuống DB ngay lập tức
-                evaluationCriteriaRepository.flush();
-                if(totalWeight.compareTo(hundred) != 0){
-                    throw new BadRequestException("Tổng trọng số phải bằng 100");
-                }
-            }else {
+        if (roundRequest.getCriteriaSetId() != null) {
+            // Validate dữ liệu tiêu chí trước khi xóa dữ liệu cũ
+            if (roundRequest.getCustomCriteriaDetatils() == null || roundRequest.getCustomCriteriaDetatils().isEmpty()) {
                 throw new BadRequestException("Danh sách tiêu chí không được để trống.");
+            }
+
+            BigDecimal totalWeight = roundRequest.getCustomCriteriaDetatils().stream()
+                    .map(c -> c.getCustomWeight() != null ? c.getCustomWeight() : BigDecimal.ZERO)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            if (totalWeight.compareTo(new BigDecimal("100")) != 0) {
+                throw new BadRequestException("Tổng trọng số phải bằng 100");
+            }
+
+            // Thực hiện xóa và cập nhật
+            evaluationCriteriaRepository.deleteByRound_RoundId(saveRound.getRoundId());
+
+            for (EvaluationCriteriaRequestDTO customCriteria : roundRequest.getCustomCriteriaDetatils()) {
+                evaluationCriteriaService.createEvaluationCritera(customCriteria, roundRequest.getCriteriaSetId(), saveRound);
             }
         }
         // 8. Lưu và trả về round đã đồng bộ

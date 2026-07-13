@@ -166,6 +166,7 @@ public class ParticipantServiceImpl implements ParticipantService {
         TeamParticipant teamParticipant = new TeamParticipant();
         teamParticipant.setRegistration(registration);
         teamParticipant.setCategoryRound(null);
+        teamParticipant.setSubmissionStatus(SubmissionStatus.NOT_SUBMITTED);
         teamParticipant.setStatus(ParticipantStatus.ACTIVE);
 
         return participantRepository.save(teamParticipant);

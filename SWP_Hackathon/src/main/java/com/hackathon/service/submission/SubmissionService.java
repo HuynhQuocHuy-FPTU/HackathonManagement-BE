@@ -179,10 +179,12 @@ public class SubmissionService {
             if (sameTeam && isDifferentSubmission && s.isFinal()) {
                 s.setFinal(false);
                 submissionRepository.save(s);
-                s.getTeamParticipant().setSubmissionStatus(SubmissionStatus.SUBMITTED);
+
             }
         }
-
+        TeamParticipant teamParticipant = submission.getTeamParticipant();
+        teamParticipant.setSubmissionStatus(SubmissionStatus.SUBMITTED);
+        participantRepository.save(teamParticipant);
         submission.setFinal(true);
         submissionRepository.save(submission);
     }

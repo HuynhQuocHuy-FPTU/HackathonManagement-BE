@@ -21,9 +21,9 @@ public class Submission {
     private int submissionId;
     @Column(name  ="Create_date")
     private LocalDateTime createAt;
-    @Column(name = "Description", nullable = false, columnDefinition = "NVARCHAR(500)")
+    @Column(name = "Description", nullable = true, columnDefinition = "NVARCHAR(500)")
     private String description;
-    @Column(name="Github_URL")
+    @Column(name="Github_URL", nullable = true)
     private String githubUrl;
 
     @Column(name = "Is_Final")
@@ -37,12 +37,12 @@ public class Submission {
     // 1 TEAM - N SUBMISSION
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnore
-    @JoinColumn(name = "Team_ID",nullable = false)
+    @JoinColumn(name = "Team_ID",nullable = true)
     private Team team;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnore
-    @JoinColumn(name = "Team_Participant_Id", nullable = false)
+    @JoinColumn(name = "Team_Participant_Id", nullable = true)
     private TeamParticipant teamParticipant;
 
     @OneToMany(mappedBy = "submission", cascade = CascadeType.ALL,orphanRemoval = true)
