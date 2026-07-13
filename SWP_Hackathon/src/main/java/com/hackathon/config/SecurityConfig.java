@@ -88,6 +88,8 @@ public class SecurityConfig {
                                 "/api/ranking/rounds/*/topN"
                         ).permitAll()
 
+                        // all
+                        .requestMatchers(HttpMethod.GET,"/api/ranking/rounds/*/all").hasAnyRole("EVENTCOORDINATOR","EXPERT", "STUDENT","ADMIN")
                         //EXPERT
                         .requestMatchers(HttpMethod.GET, "/api/participants/teams/**").hasRole("EXPERT")
 

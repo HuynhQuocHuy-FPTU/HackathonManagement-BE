@@ -3,7 +3,6 @@ package com.hackathon.service;
 import com.hackathon.entity.CategoryRound;
 import com.hackathon.entity.Round;
 import com.hackathon.entity.TeamParticipant;
-import com.hackathon.entity.enums.FileType;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.RoundRepository;
 import com.hackathon.service.submission.CloudinaryService;
@@ -17,7 +16,6 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;

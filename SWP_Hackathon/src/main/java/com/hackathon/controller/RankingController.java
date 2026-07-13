@@ -98,6 +98,13 @@ public class RankingController {
         CategoryRoundRankingResponse topN = rankingService.getTopNRanking(roundId);
         return ResponseEntity.ok(ApiResponse.success(topN, "Xem top N thành công."));
     }
+    @GetMapping("/{roundId}/all")
+    public ResponseEntity<ApiResponse<CategoryRoundRankingResponse>> getRanking(
+            @PathVariable Integer roundId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        CategoryRoundRankingResponse rank = rankingService.getRankingByAll(roundId, userDetails);
+        return ResponseEntity.ok(ApiResponse.success(rank, "Xem ranking thành công."));
+    }
     @GetMapping("/download-excel/{roundId}")
     public ResponseEntity<ApiResponse<String>> downloadRankingExcel(
             @PathVariable Integer roundId) {
