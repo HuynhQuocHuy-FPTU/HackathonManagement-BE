@@ -13,7 +13,7 @@ import java.util.List;
 public interface GradingService {
 //  JudgeEvaluationResponse submitOrUpdate(Account account, Integer submissionId, SubmitEvaluationRequest request);
 
-    List<AssignedSubmissionForJudgeResponse> listAssignedSubmissions(Account account, Integer categoryRoundId);
+    JudgeDashboardResponse listAssignedSubmissions(Account account, Integer categoryRoundId);
 
     List<EvaluationCriteriaResponse> viewScoringCriteria(Integer roundId);
 

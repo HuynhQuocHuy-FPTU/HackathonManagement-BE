@@ -32,12 +32,12 @@ public class GradingController {
      * Cú pháp gọi endpoint: GET /api/grading/category-round/{categoryRoundId}/submissions
      */
     @GetMapping("/category-round/{categoryRoundId}/submissions")
-    public ResponseEntity<ApiResponse<List<AssignedSubmissionForJudgeResponse>>> listAssignedSubmissions(
+    public ResponseEntity<ApiResponse<JudgeDashboardResponse>> listAssignedSubmissions(
             @PathVariable Integer categoryRoundId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         // Gọi Service và ném kết quả vào ApiResponse chuẩn
-        List<AssignedSubmissionForJudgeResponse> responseData = gradingService.listAssignedSubmissions(userDetails.getAccount(), categoryRoundId);
+        JudgeDashboardResponse responseData = gradingService.listAssignedSubmissions(userDetails.getAccount(), categoryRoundId);
 
         return ResponseEntity.ok(ApiResponse.ok("Kéo danh sách bài thi thành công", responseData));
     }
