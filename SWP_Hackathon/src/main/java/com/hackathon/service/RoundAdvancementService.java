@@ -111,7 +111,9 @@ public class RoundAdvancementService {
         List<Evaluation> gradedEvaluations = evaluationRepository
                 .findBySubmission_TeamParticipant(participant)
                 .stream()
-                .filter(evaluation -> evaluation.getStatus() == EvaluationStatus.GRADED)
+                .filter(evaluation -> evaluation.getStatus() == EvaluationStatus.GRADED
+                        || evaluation.getStatus() == EvaluationStatus.RE_EVALUATED
+                )
                 .toList();
 
         BigDecimal average = computeAverage(gradedEvaluations);

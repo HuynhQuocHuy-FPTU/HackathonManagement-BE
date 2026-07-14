@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class GardingDashBoardService {
+public class GradingDashBoardService {
     private final EvaluationRepository evaluationRepository;
     private final CategoryRoundRepository categoryRoundRepository;
     private final ScoreStatisticsUtil statisticsUtil;

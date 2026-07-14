@@ -300,15 +300,6 @@ public class GradingServiceImpl implements GradingService {
             EvaluationCriteria criteria = criteriaByIdMap.get(scoreReq.getEvaluationCriteriaId());
             if (criteria == null) continue;
 
-//            CriteriaSet criteriaSet = round.getCriteriaSet();
-//            BigDecimal maxScore = BigDecimal.valueOf(criteriaSet.getMaxScore());
-//
-//            if (scoreReq.getScore().compareTo(BigDecimal.ZERO) < 0 || scoreReq.getScore().compareTo(maxScore) > 0) {
-//                throw new BadRequestException(
-//                        "Điểm của tiêu chí " + "phải nằm trong khoảng từ 0 đến " + maxScore + ".");
-//            }
-
-
             // Tái sử dụng bản ghi chi tiết cũ để cập nhật đè dữ liệu, tránh tạo bản ghi trùng lặp rác dữ liệu
             EvaluationDetail detail = existingDetailsMap.get(criteria.getEvaluationCriteriaId());
             boolean isNewDetail = false;

@@ -12,6 +12,7 @@ import com.hackathon.repository.HackathonEventRepository;
 import com.hackathon.repository.ParticipantRepository;
 import com.hackathon.repository.RoundRepository;
 import com.hackathon.security.CustomUserDetails;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +26,7 @@ public class PrizeServiceImpl {
     private final RoundRepository roundRepository;
     private final ParticipantRepository participantRepository;
 
+    @Transactional
     public void assignPrize(CustomUserDetails userDetails, Integer eventId, List<PrizeRequestDTO> request) {
         EventCoordinator eventCoordinator = eventCoordinatorRepository.findByAccount_AccountId(userDetails.getAccount().getAccountId())
                 .orElseThrow(() -> new BadRequestException("Bạn không phải là EventCoordinator."));
@@ -37,6 +39,7 @@ public class PrizeServiceImpl {
         // Lấy ds giải thưởng
         List<Prize> prizes = finalRound.getHackathonEvent().getDescription().prizes();
         List<TeamParticipant> rankings = participantRepository.findByRoundId(finalRound.getRoundId());
+
 
         //1.Dựa vào rank để xếp giải thưởng tự động
         if (!rankings.isEmpty() && prizes != null && !prizes.isEmpty()) {
