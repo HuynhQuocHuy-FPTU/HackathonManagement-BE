@@ -87,6 +87,7 @@ public class EventServiceImpl implements EventService {
         event.setEventCoordinator(coordinator);
         event.setCreateAt(LocalDateTime.now());
         event.setStatus(EventStatus.DRAFT);
+        log.info("Before save eventId = {}", event.getEventId());
 
         // 4. Lưu sơ bộ để sinh EventId
         HackathonEvent savedEvent = eventRepository.save(event);
@@ -139,8 +140,7 @@ public class EventServiceImpl implements EventService {
     @PreAuthorize("hasRole('EVENTCOORDINATOR')")
     public EventResponse updateEvent(UpdateEventRequest request, Integer eventId) {
 
-        CustomUserDetails userDetails =
-                (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         Account account = userDetails.getAccount();
 

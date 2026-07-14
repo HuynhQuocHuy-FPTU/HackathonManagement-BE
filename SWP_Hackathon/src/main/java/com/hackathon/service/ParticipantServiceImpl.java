@@ -95,8 +95,7 @@ public class ParticipantServiceImpl implements ParticipantService {
         team.setStatus(TeamStatus.DRAFT);
         teamRepository.save(team);
 
-        // 5. Nếu team từng PASSED 1 vòng nào đó, thử đôn team thay thế — CHỈ KHI round kế
-        // tiếp CHƯA bắt đầu.
+        // 5. Nếu team từng PASSED 1 vòng nào đó, thử đôn team thay thế — CHỈ KHI round kế tiếp CHƯA bắt đầu.
         if (mostRecentlyPassed != null) {
             Round nextRound = roundRepository
                     .findRoundByHackathonEvent_EventIdAndOrderIndex(

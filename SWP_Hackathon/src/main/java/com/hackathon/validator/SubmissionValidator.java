@@ -33,7 +33,9 @@ public class SubmissionValidator {
         switch (round.getSubmissionType()) {
             case GITHUB_URL:
                 if (githubUrl == null || githubUrl.isBlank()) throw new BadRequestException("Vòng này yêu cầu nộp link GitHub!");
-                gitHubService.isValidGithubUrl(githubUrl);
+                if(!gitHubService.isValidGithubUrl(githubUrl)){
+                    throw new BadRequestException("Link github không hợp lệ! Vui lòng nhập đúng định dạng: https://github.com/username/repository-name");
+                }
                 break;
             case FILE:
                 if (files == null || files.isEmpty()) throw new BadRequestException("Vòng này yêu cầu nộp file!");
@@ -42,7 +44,9 @@ public class SubmissionValidator {
             case BOTH:
                 if ((githubUrl == null || githubUrl.isBlank()) || (files == null || files.isEmpty()))
                     throw new BadRequestException("Vòng này yêu cầu nộp cả GitHub và File!");
-                gitHubService.isValidGithubUrl(githubUrl);
+                if(!gitHubService.isValidGithubUrl(githubUrl)){
+                    throw new BadRequestException("Link github không hợp lệ! Vui lòng nhập đúng định dạng: https://github.com/username/repository-name");
+                }
                 validateFiles(files, round);
                 break;
         }

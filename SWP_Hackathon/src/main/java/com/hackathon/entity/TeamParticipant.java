@@ -20,32 +20,33 @@ public class TeamParticipant {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "Submission_Status", nullable = false)
+    @Column(name = "Submission_Status", nullable = true)
     @Enumerated(EnumType.STRING)
     private SubmissionStatus submissionStatus;
 
-    @Column(name = "Disqualification_Reason", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "Disqualification_Reason", columnDefinition = "NVARCHAR(255)", nullable = true)
     private String disqualificationReason;
 
     @Enumerated(EnumType.STRING)
     private ParticipantStatus status;
 
-    @Column(name = "Total_Score")
+    @Column(name = "Total_Score", nullable = true)
     private BigDecimal totalScore;
 
-    @Column(name = "Rank")
+    @Column(name = "Rank", nullable = true)
     private Integer rank;
+
+    @Column(name ="Award", columnDefinition = "NVARCHAR(MAX)")
+    private String award;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "Registration_Id")
     private Registration registration;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "CategoryRound_ID")
+    @JoinColumn(name = "CategoryRound_ID", nullable = true)
     private CategoryRound categoryRound;
 
-//    @OneToMany(mappedBy = "teamParticipant", cascade = CascadeType.ALL)
-//    private List<Evaluation> evaluations = new ArrayList<>();
 
     @OneToMany(mappedBy = "teamParticipant", cascade = CascadeType.ALL)
     private List<Submission> submissions = new ArrayList<>();

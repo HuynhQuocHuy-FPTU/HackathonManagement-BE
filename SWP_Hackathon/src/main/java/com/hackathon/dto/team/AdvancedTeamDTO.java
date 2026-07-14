@@ -15,5 +15,6 @@ public class AdvancedTeamDTO {
     private Integer teamId;
     private String teamName;
     private BigDecimal totalScore;
+    private Integer rank;
     private Integer newTeamParticipantId;
 }

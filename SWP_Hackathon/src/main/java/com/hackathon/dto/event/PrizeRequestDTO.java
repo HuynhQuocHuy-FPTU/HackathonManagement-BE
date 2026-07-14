@@ -1,0 +1,12 @@
+package com.hackathon.dto.event;
+
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class PrizeRequestDTO {
+    private Integer teamParticipantId;
+//    private String prizeReward; phần thưởng gồm dì
+    private String prizeTitle;
+}
