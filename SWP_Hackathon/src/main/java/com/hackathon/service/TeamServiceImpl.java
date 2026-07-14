@@ -37,7 +37,7 @@ public class TeamServiceImpl implements TeamService {
     private final AuditService auditService;
     private static final int MAX_TEAM_SIZE = 5;
     private static final long LOCK_BEFORE_DEADLINE_HOURS = 24;
-    private static final long INVITATION_EXPIRE_HOURS = 3;
+    private static final long INVITATION_EXPIRE_DAYS = 3;
 
 
     // Nếu Đội đã nộp đơn và thời gian hiện tại cách thời gian đk event dưới 24 giờ -> CHẶN
@@ -639,7 +639,7 @@ public class TeamServiceImpl implements TeamService {
         if (LocalDateTime.now().isAfter(expiredAt)) {
             // Neu loi moi het han , thi vo hieu hoa loi moi(cap nhat trang thai thong bao)
             notification.setTitle("EXPIRED. Lời mời tham gia : " + team.getTeamName() + " hết hạn.");
-            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_HOURS + " ngày");
+            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_DAYS + " ngày");
             notification.setStatus(InvitationStatus.EXPIRED);
             notificationRepository.save(notification);
             throw new BadRequestException("Lời mời tham gia của bạn hết hạn");
@@ -750,7 +750,7 @@ public class TeamServiceImpl implements TeamService {
         if (LocalDateTime.now().isAfter(expiredAt)) {
             // Neu loi moi het han , thi vo hieu hoa loi moi(cap nhat trang thai thong bao)
             notification.setTitle("EXPIRED. Lời mời tham gia : " + team.getTeamName() + " hết hạn.");
-            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_HOURS + " ngày");
+            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_DAYS + " ngày");
             notification.setStatus(InvitationStatus.EXPIRED);
             notificationRepository.save(notification);
             throw new BadRequestException("Lời mời tham gia của bạn hết hạn");
@@ -855,7 +855,7 @@ public class TeamServiceImpl implements TeamService {
         if (LocalDateTime.now().isAfter(expiredAt)) {
             // Neu loi moi het han , thi vo hieu hoa loi moi(cap nhat trang thai thong bao)
             notification.setTitle("EXPIRED. Lời mời tham gia : " + team.getTeamName() + " hết hạn.");
-            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_HOURS + " ngày");
+            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_DAYS + " ngày");
             notification.setStatus(InvitationStatus.EXPIRED);
             notificationRepository.save(notification);
             throw new BadRequestException("Lời mời tham gia của bạn hết hạn");
@@ -892,7 +892,7 @@ public class TeamServiceImpl implements TeamService {
         if (LocalDateTime.now().isAfter(expiredAt)) {
             // Neu loi moi het han , thi vo hieu hoa loi moi(cap nhat trang thai thong bao)
             notification.setTitle("EXPIRED. Lời mời tham gia : " + team.getTeamName() + " hết hạn.");
-            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_HOURS + " ngày");
+            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_DAYS + " ngày");
             notification.setStatus(InvitationStatus.EXPIRED);
             notificationRepository.save(notification);
             throw new BadRequestException("Lời mời tham gia của bạn hết hạn");

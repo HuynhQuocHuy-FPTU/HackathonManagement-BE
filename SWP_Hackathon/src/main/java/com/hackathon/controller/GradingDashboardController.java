@@ -3,7 +3,7 @@ package com.hackathon.controller;
 
 
 import com.hackathon.dto.CriteriaVarianceDTO;
-import com.hackathon.service.grading.GardingDashBoardService;
+import com.hackathon.service.grading.GradingDashBoardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,10 +18,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GradingDashboardController {
 
-    private final GardingDashBoardService gardingDashBoardService;
+    private final GradingDashBoardService gradingDashBoardService;
 
     @GetMapping("/category-rounds/{categoryRoundId}/criteria-variance")
     public ResponseEntity<List<CriteriaVarianceDTO>> getCriteriaVariance(@PathVariable Integer categoryRoundId) {
-        return ResponseEntity.ok(gardingDashBoardService.getCriteriaVarianceDashboard(categoryRoundId));
+        return ResponseEntity.ok(gradingDashBoardService.getCriteriaVarianceDashboard(categoryRoundId));
     }
 }
