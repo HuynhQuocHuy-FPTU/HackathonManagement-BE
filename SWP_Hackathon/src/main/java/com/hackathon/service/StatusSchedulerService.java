@@ -6,6 +6,7 @@ import com.hackathon.repository.HackathonEventRepository;
 import com.hackathon.repository.RoundRepository;
 import com.hackathon.repository.TeamRequestRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,13 +16,56 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-
+@Slf4j
 public class StatusSchedulerService {
 
     private final RoundService roundService;
     private final HackathonEventRepository eventRepository;
     private final RoundRepository roundRepository;
     private final TeamRequestRepository teamRequestRepository;
+    private final RoundAdvancementService roundAdvancementService;
+
+    @Scheduled(fixedRate = 60000)
+    public void autoCalculateScores() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Round> rounds = roundRepository
+                .findBySubmissionDeadlineLessThanEqualAndScoringProcessedAtIsNull(now);
+
+        for (Round round : rounds) {
+            try {
+                roundAdvancementService.calculateRoundScoresAutomatically(round.getRoundId());
+                log.info("Đã tự động tính điểm cho round {}.", round.getRoundId());
+            } catch (Exception exception) {
+                log.warn(
+                        "Chưa thể tự động tính điểm cho round {}: {}",
+                        round.getRoundId(),
+                        exception.getMessage()
+                );
+            }
+        }
+    }
+
+    @Scheduled(fixedRate = 60000)
+    public void autoAdvanceRounds() {
+        LocalDateTime deadline = LocalDateTime.now().minusHours(1);
+        List<Round> rounds = roundRepository
+                .findByAppealEndTimeLessThanEqualAndAdvancementProcessedAtIsNull(deadline);
+
+        for (Round round : rounds) {
+            try {
+                roundAdvancementService.advanceRoundAutomatically(round.getRoundId());
+                log.info("Đã tự động thăng vòng cho round {}.", round.getRoundId());
+            } catch (Exception exception) {
+                // Giữ chưa xử lý để scheduler thử lại ở lần chạy sau.
+                log.error(
+                        "Không thể tự động thăng vòng cho round {}: {}",
+                        round.getRoundId(),
+                        exception.getMessage(),
+                        exception
+                );
+            }
+        }
+    }
 
     @Scheduled(fixedRate = 60000)
     @Transactional

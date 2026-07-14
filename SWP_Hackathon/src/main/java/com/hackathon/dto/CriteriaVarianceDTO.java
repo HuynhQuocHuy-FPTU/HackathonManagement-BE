@@ -15,7 +15,9 @@ public class CriteriaVarianceDTO {
         private String criteriaName;
 
         private BigDecimal overallMean;       // trung bình của các judgeMean (không phải trung bình điểm thô)
-        private BigDecimal standardDeviation; // độ lệch chuẩn giữa các judgeMean
+        private BigDecimal variance;          // trung bình phương sai giữa giám khảo trên cùng bài
+        private BigDecimal standardDeviation;
+        private int comparedSubmissionCount;
 
         private List<JudgeMeanDTO> judgeMeans;
         @Data

@@ -2,12 +2,10 @@ package com.hackathon.validator;
 
 import com.hackathon.entity.CategoryRound;
 import com.hackathon.entity.Round;
-import com.hackathon.entity.enums.EvaluationStatus;
 import com.hackathon.entity.enums.RoundStatus;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.exception.ResourceNotFoundException;
 import com.hackathon.repository.CategoryRoundRepository;
-import com.hackathon.repository.EvaluationRepository;
 import com.hackathon.repository.RoundRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -16,7 +14,6 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AdvancementValidator {
 
-    private final EvaluationRepository evaluationRepository;
     private final RoundRepository roundRepository;
     private final CategoryRoundRepository categoryRoundRepository;
 
@@ -35,8 +32,6 @@ public class AdvancementValidator {
         // 4. Kiểm tra xem Chuyên mục (Category) này đã được cấu hình ở vòng tiếp theo chưa
         validateNextCategoryRoundConfigured(currentCategoryRound);
 
-        // 5. Kiểm tra xem tất cả các bài nộp trong CategoryRound này đã được chấm xong chưa
-        assertGradingComplete(currentCategoryRound.getCategoryRoundId());
     }
 
     private void validateEvaluationPeriod(Round currentRound) {
@@ -67,7 +62,6 @@ public class AdvancementValidator {
     private void validateNextCategoryRoundConfigured(CategoryRound currentCategoryRound) {
         Round currentRound = currentCategoryRound.getRound();
 
-        // Chắc chắn bước này sẽ lấy được vì đã đi qua validateHasNextRound ở trên
         Round nextRound = roundRepository.findRoundByHackathonEvent_EventIdAndOrderIndex(
                 currentRound.getHackathonEvent().getEventId(),
                 currentRound.getOrderIndex() + 1
@@ -85,12 +79,4 @@ public class AdvancementValidator {
         }
     }
 
-    private void assertGradingComplete(Integer categoryRoundId) {
-        boolean hasUngraded = evaluationRepository.existsBySubmission_TeamParticipant_CategoryRound_CategoryRoundIdAndStatus(categoryRoundId, EvaluationStatus.NOT_GRADED);
-
-        if (hasUngraded) {
-            throw new BadRequestException(
-                    "Không thể thăng vòng: Vẫn còn bài thi thuộc nhánh thi này ở trạng thái chưa chấm (NOT_GRADED). Vui lòng hoàn thành chấm điểm.");
-        }
-    }
 }
