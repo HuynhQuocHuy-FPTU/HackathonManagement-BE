@@ -1,6 +1,7 @@
 package com.hackathon.service.ranking;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hackathon.dto.participant.ParticipantResponseDTO;
 import com.hackathon.dto.ranking.CategoryRankingResponse;
@@ -38,6 +39,7 @@ public class RankingServiceImpl implements RankingService {
     private final TeamRequestRepository teamRequestRepository;
     private final NotificationService notificationService;
     private final ExcelExportService excelExportService;
+
 
     //===============================================//
     //RANKING
@@ -350,7 +352,7 @@ public class RankingServiceImpl implements RankingService {
         }).toList();
 
         String uploadUrl = excelExportService.exportRankingToExcel(roundId);
-        updateAndSaveExcalJson(round, uploadUrl);
+        updateAndSaveExcelJson(round, uploadUrl, "DRAFT");
 
         round.setStatus(RoundStatus.APPEALING);
         roundRepository.save(round);
@@ -438,7 +440,7 @@ public class RankingServiceImpl implements RankingService {
         }).toList();
 
         String uploadUrl = excelExportService.exportRankingToExcel(roundId);
-        updateAndSaveExcalJson(round, uploadUrl);
+        updateAndSaveExcelJson(round, uploadUrl, "FINAL");
 
 
         round.setStatus(RoundStatus.COMPLETED);
@@ -644,13 +646,48 @@ public class RankingServiceImpl implements RankingService {
                 .categoriesRanking(categoriesRanking)
                 .build();
     }
-    private  void updateAndSaveExcalJson(Round round, String url){
+
+
+    @Override
+    public String getRankingPublicExcels(Integer roundId, String type) {
+        Round round = roundRepository.findById(roundId)
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy vòng thi"));
+        try {
+
+            List<Map<String, Object>> files =
+                    objectMapper.readValue(
+                            round.getExcelsUrl(),
+                            new TypeReference<List<Map<String, Object>>>() {
+                            }
+                    );
+
+            return files.stream()
+                    .filter(file -> type.equals(file.get("type")))
+                    .map(file -> file.get("url").toString())
+                    .findFirst()
+                    .orElseThrow(() ->
+                            new BadRequestException(
+                                    "Chưa có file " + type + " được công bố"
+                            )
+                    );
+
+        } catch (JsonProcessingException e) {
+            throw new BadRequestException(
+                    "Lỗi đọc dữ liệu file Excel"
+            );
+        }
+
+
+    }
+
+    private void updateAndSaveExcelJson(Round round, String url, String fileType) {
         List<Map<String, Object>> currentFiles = new ArrayList<>();
         String oldJson = round.getExcelsUrl();
 
         if (oldJson != null && !oldJson.trim().isEmpty()) {
             try {
-                currentFiles = objectMapper.readValue(oldJson, new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {});
+                currentFiles = objectMapper.readValue(oldJson, new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {
+                });
             } catch (Exception e) {
                 currentFiles = new ArrayList<>();
             }
@@ -658,7 +695,7 @@ public class RankingServiceImpl implements RankingService {
         // Thêm bản ghi file mới
         Map<String, Object> newExcelFile = new HashMap<>();
         newExcelFile.put("version", currentFiles.size() + 1);
-        newExcelFile.put("status", round.getStatus().name()); // Lưu lại trạng thái của round trước khi đổi
+        newExcelFile.put("type", fileType); // Lưu lại trạng thái của round trước khi đổi
         newExcelFile.put("url", url);
         newExcelFile.put("createdAt", java.time.LocalDateTime.now().toString());
         currentFiles.add(newExcelFile);
@@ -670,5 +707,4 @@ public class RankingServiceImpl implements RankingService {
         }
     }
 
-
-    }
+}

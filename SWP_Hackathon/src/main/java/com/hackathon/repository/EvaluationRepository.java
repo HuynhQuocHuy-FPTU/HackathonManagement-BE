@@ -28,7 +28,40 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Integer>
     Optional<Evaluation> findByExpertAssignIdAndSubmissionId(
             @Param("assignId") Integer assignId,
             @Param("submissionId") Integer submissionId);
+
     List<Evaluation> findBySubmission_SubmissionId(Integer submissionId);
 
+    /**
+     * ĐẾM
+     */
+    @Query("""
+                SELECT COUNT(e)
+                FROM Evaluation e
+                WHERE e.expertAssign.expert.expertId = :expertId
+                                  AND e.expertAssign.categoryRound.round.hackathonEvent.eventId = :eventId
+                            
+            """)
+    long countTotalAssigned(@Param("expertId") Integer expertId, @Param("eventId") Integer eventId);
+
+    @Query("SELECT COUNT (e) " +
+            "FROM Evaluation e " +
+            "WHERE e.expertAssign.expert.expertId = :expertId " +
+            "AND e.expertAssign.categoryRound.round.hackathonEvent.eventId = :eventId " +
+            "AND e.status IN('RE_EVALUATED', 'GRADED')")
+    long countCompletedReviews(@Param("expertId") Integer expertId,@Param("eventId") Integer eventId);
+
+    @Query("SELECT COUNT (e) " +
+            "FROM Evaluation e " +
+            "WHERE e.expertAssign.expert.expertId = :expertId " +
+            "AND e.expertAssign.categoryRound.round.hackathonEvent.eventId = :eventId " +
+            "AND e.status IN('NOT_GRADED', 'RE_EVALUATION')")
+
+    long countPendingReviews(@Param("expertId") Integer expertId,@Param("eventId") Integer eventId);
+    @Query("SELECT COUNT (e) " +
+            "FROM Evaluation e " +
+            "WHERE e.expertAssign.expert.expertId = :expertId " +
+            "AND e.expertAssign.categoryRound.round.hackathonEvent.eventId = :eventId " +
+            "AND e.status IN('RE_EVALUATION')")
+    long reEvaluationReviews(@Param("expertId") Integer expertId,@Param("eventId") Integer eventId);
 
 }
