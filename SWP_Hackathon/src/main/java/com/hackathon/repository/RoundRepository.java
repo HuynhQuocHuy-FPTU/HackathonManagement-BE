@@ -6,6 +6,7 @@ import com.hackathon.entity.enums.RoundStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import jakarta.persistence.LockModeType;
 
 @Component
 public interface RoundRepository extends JpaRepository<Round, Integer> {
@@ -34,6 +36,18 @@ public interface RoundRepository extends JpaRepository<Round, Integer> {
     );
 
     List<Round> findByStatusAndAppealEndTimeBefore(RoundStatus status, LocalDateTime time);
+
+    List<Round> findByAppealEndTimeLessThanEqualAndAdvancementProcessedAtIsNull(
+            LocalDateTime appealEndTime
+    );
+
+    List<Round> findBySubmissionDeadlineLessThanEqualAndScoringProcessedAtIsNull(
+            LocalDateTime submissionDeadline
+    );
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT r FROM Round r WHERE r.roundId = :roundId")
+    Optional<Round> findByIdForAdvancement(@Param("roundId") Integer roundId);
 
     Optional<Round> findRoundByHackathonEvent_EventIdAndOrderIndex(Integer hackathonEventEventId, Integer orderIndex);
 

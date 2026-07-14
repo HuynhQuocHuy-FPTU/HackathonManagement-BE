@@ -30,137 +30,416 @@ import java.util.Objects;
 @Slf4j
 @RequiredArgsConstructor
 public class RoundAdvancementService {
+
+    private static final int SCORE_SCALE = 2;
+
     private final CategoryRoundRepository categoryRoundRepository;
     private final RoundRepository roundRepository;
     private final EvaluationRepository evaluationRepository;
     private final ParticipantRepository participantRepository;
     private final AdvancementValidator advancementValidator;
-    private static final int SCORE_SCALE = 2;
+    //tính điểm và ranking
+    @Transactional
+    public List<AdvancedTeamDTO> calculateScoresAndRanking(Integer categoryRoundId) {
+        CategoryRound categoryRound = categoryRoundRepository.findById(categoryRoundId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Không tìm thấy category round hiện tại."));
+
+        Round currentRound = categoryRound.getRound();
+
+        List<TeamParticipant> participants = isRoundFinal(currentRound)
+                ? getParticipantsInRound(currentRound)
+                : getListTeamParticipant(categoryRound.getCategoryRoundId());
+
+        return recalculateScoresAndRanking(participants).stream()
+                .map(participant -> mapTo(participant, null))
+                .toList();
+    }
+
+    // Scheduler gọi sau khi hết thời gian nộp bài.
+    @Transactional
+    public void calculateRoundScoresAutomatically(Integer roundId) {
+        Round round = roundRepository.findByIdForAdvancement(roundId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Không tìm thấy round hiện tại."));
+
+        if (round.getScoringProcessedAt() != null) {
+            return;
+        }
+
+        List<CategoryRound> categoryRounds = round.getCategoryRounds();
+        if (categoryRounds == null || categoryRounds.isEmpty()) {
+            throw new BadRequestException("Round chưa có category nào.");
+        }
+
+        if (isRoundFinal(round)) {
+            calculateScoresAndRanking(categoryRounds.get(0).getCategoryRoundId());
+        } else {
+            for (CategoryRound categoryRound : categoryRounds) {
+                calculateScoresAndRanking(categoryRound.getCategoryRoundId());
+            }
+        }
+
+        boolean hasTeamWithoutScore = getParticipantsInRound(round).stream()
+                .anyMatch(participant -> participant.getTotalScore() == null);
+
+        if (hasTeamWithoutScore) {
+            throw new BadRequestException(
+                    "Vẫn còn đội chưa có điểm, hệ thống sẽ thử tính lại sau."
+            );
+        }
+
+        round.setScoringProcessedAt(LocalDateTime.now());
+        roundRepository.save(round);
+    }
+
+    private List<TeamParticipant> recalculateScoresAndRanking(
+            List<TeamParticipant> participants
+    ) {
+        if (participants.isEmpty()) {
+            throw new BadRequestException("Chưa có đội tham gia.");
+        }
+
+        participants.forEach(this::calculateTotalScore);
+        participantRepository.saveAll(participants);
+
+        return calculateRanking(participants);
+    }
 
     @Transactional
+    public BigDecimal calculateTotalScore(TeamParticipant participant) {
+        List<Evaluation> gradedEvaluations = evaluationRepository
+                .findBySubmission_TeamParticipant(participant)
+                .stream()
+                .filter(evaluation -> evaluation.getStatus() == EvaluationStatus.GRADED)
+                .toList();
+
+        BigDecimal average = computeAverage(gradedEvaluations);
+        participant.setTotalScore(average);
+        return average;
+    }
+
+    private BigDecimal computeAverage(List<Evaluation> gradedEvaluations) {
+        if (gradedEvaluations == null || gradedEvaluations.isEmpty()) {
+            return null;
+        }
+
+        List<BigDecimal> validScores = gradedEvaluations.stream()
+                .map(Evaluation::getScore)
+                .filter(Objects::nonNull)
+                .toList();
+
+        if (validScores.isEmpty()) {
+            return null;
+        }
+
+        BigDecimal sum = validScores.stream()
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return sum.divide(
+                BigDecimal.valueOf(validScores.size()),
+                SCORE_SCALE,
+                RoundingMode.HALF_UP
+        );
+    }
+
+    private List<TeamParticipant> calculateRanking(
+            List<TeamParticipant> participants
+    ) {
+        participants.sort(
+                Comparator.comparing(
+                                TeamParticipant::getTotalScore,
+                                Comparator.nullsLast(Comparator.reverseOrder())
+                        )
+                        .thenComparing(
+                                this::getFinalSubmissionTime,
+                                Comparator.nullsLast(Comparator.naturalOrder())
+                        )
+        );
+
+        int rank = 1;
+        for (TeamParticipant participant : participants) {
+            participant.setRank(rank++);
+        }
+
+        participantRepository.saveAll(participants);
+        return participants;
+    }
+
+    //thăng vòng theo từng
+    @Transactional
     public List<AdvancedTeamDTO> advanceTopTeams(Integer currentCategoryRoundId) {
-        CategoryRound currentCategoryRound = categoryRoundRepository.findById(currentCategoryRoundId).orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy category round hiện tại."));
+        CategoryRound currentCategoryRound = categoryRoundRepository
+                .findById(currentCategoryRoundId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Không tìm thấy category round hiện tại."));
 
         Round currentRound = currentCategoryRound.getRound();
 
-        // Chạy toàn bộ validate nghiệp vụ (thời gian chấm điểm, TopN, còn round tiếp theo không, đã cấu hình category ở round sau chưa, chấm xong chưa) TRƯỚC khi làm gì khác — tránh việc tính điểm/xếp hạng xong rồi mới phát hiện lỗi cấu hình.
+        if (isRoundFinal(currentRound)) {
+            return selectFinalWinners(currentRound);
+        }
+
         advancementValidator.validateCategoryRoundAdvancement(currentCategoryRound);
 
+        List<TeamParticipant> participants =
+                getListTeamParticipant(currentCategoryRoundId);
+        validateRankingCalculated(participants);
+        sortByRank(participants);
+
+        int topN = resolveTopN(currentRound);
+        CategoryRound nextCategoryRound = findNextCategoryRound(currentCategoryRound);
+
+        return advanceToNextRound(participants, nextCategoryRound, topN);
+    }
+
+    private List<AdvancedTeamDTO> advanceToNextRound(
+            List<TeamParticipant> participants,
+            CategoryRound nextCategoryRound,
+            int topN
+    ) {
         List<AdvancedTeamDTO> result = new ArrayList<>();
-            List<TeamParticipant> teamParticipants = getListTeamParticipant(currentCategoryRoundId);
 
-            //Tính totalScore cho mỗi team từ nhiều ban giám khảo cham (trung bình điểm từ các evaluation đã GRADE), sắp xếp giảm dần
-            teamParticipants = recalculateScoresAndRanking(teamParticipants);
+        for (TeamParticipant participant : participants) {
+            boolean passed = participant.getRank() <= topN;
+            participant.setStatus(
+                    passed ? ParticipantStatus.PASSED : ParticipantStatus.FAILED
+            );
 
-            int effectiveTopN = resolveTopN(currentRound);
+            if (!passed) {
+                continue;
+            }
 
-            //tìm categoryRound tương ứng của category trước đó ở vòng tiếp theo
-            CategoryRound nextCategoryRound = findNextCategoryRound(currentCategoryRound);
+            Registration registration = participant.getRegistration();
+            boolean alreadyAdvanced = participantRepository
+                    .existsByCategoryRound_CategoryRoundIdAndRegistration_RegistrationId(
+                            nextCategoryRound.getCategoryRoundId(),
+                            registration.getRegistrationId()
+                    );
 
-            for (int i = 0; i < teamParticipants.size(); i++) {
-                TeamParticipant current = teamParticipants.get(i);
-                if (i < effectiveTopN) {
-                    current.setStatus(ParticipantStatus.PASSED);
-                    participantRepository.save(current);
+            if (alreadyAdvanced) {
+                log.info(
+                        "Team {} đã được thăng vòng trước đó, bỏ qua.",
+                        registration.getTeam().getTeamName()
+                );
+                continue;
+            }
 
-                    Registration registration = current.getRegistration();
+            TeamParticipant nextParticipant = TeamParticipant.builder()
+                    .status(ParticipantStatus.ACTIVE)
+                    .categoryRound(nextCategoryRound)
+                    .registration(registration)
+                    .build();
 
-                    boolean alreadyAdvanced = participantRepository.existsByCategoryRound_CategoryRoundIdAndRegistration_RegistrationId(nextCategoryRound.getCategoryRoundId(), registration.getRegistrationId());
+            TeamParticipant savedParticipant =
+                    participantRepository.save(nextParticipant);
 
-                    if (alreadyAdvanced) {
-                        log.info("Team {} đã được thăng vòng trước đó, bỏ qua", registration.getTeam().getTeamName());
-                        continue;
-                    }
-                    TeamParticipant nextParticipant = TeamParticipant.builder()
-                            .status(ParticipantStatus.ACTIVE)
-                            .categoryRound(nextCategoryRound)
-                            .registration(registration)
-                            .build();
-
-                    TeamParticipant savedTeamParticipant = participantRepository.save(nextParticipant);
-                    Team team = registration.getTeam();
-                    result.add(new AdvancedTeamDTO(team.getTeamId(), team.getTeamName(), current.getTotalScore(), current.getRank(),savedTeamParticipant.getId()));
-                } else {
-                    current.setStatus(ParticipantStatus.FAILED);
-                    participantRepository.save(current);
-                }
+            result.add(mapTo(participant, savedParticipant.getId()));
         }
+
+        participantRepository.saveAll(participants);
         return result;
+    }
+
+    // thăng vòng cho vòng cuối
+    private List<AdvancedTeamDTO> selectFinalWinners(Round finalRound) {
+        List<TeamParticipant> participants = getParticipantsInRound(finalRound);
+        validateRankingCalculated(participants);
+        sortByRank(participants);
+
+        int topN = resolveTopN(finalRound);
+
+        for (TeamParticipant participant : participants) {
+            participant.setStatus(
+                    participant.getRank() <= topN
+                            ? ParticipantStatus.PASSED
+                            : ParticipantStatus.FAILED
+            );
         }
 
+        participantRepository.saveAll(participants);
+
+        return participants.stream()
+                .filter(participant -> participant.getStatus() == ParticipantStatus.PASSED)
+                .map(participant -> mapTo(participant, null))
+                .toList();
+    }
+    //thăng vòng
     @Transactional
-    public List<CategoryAdvancementResultDTO> advanceAllCategoriesInRound(Integer roundId, CustomUserDetails userDetails) {
-        EventCoordinator eventCoordinator = userDetails.getAccount().getEventCoordinator();
-        if(eventCoordinator == null)
-            throw new BadRequestException("Bạn không có quyền thực hiện. Bạn phải là eventcoordinator");
+    public List<CategoryAdvancementResultDTO> advanceAllCategoriesInRound(
+            Integer roundId,
+            CustomUserDetails userDetails
+    ) {
+        EventCoordinator eventCoordinator =
+                userDetails.getAccount().getEventCoordinator();
 
-        Round currentRound = roundRepository.findById(roundId).orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy round hiện tại "));
-        if(isRoundFinal(currentRound)){
-            return List.of(new CategoryAdvancementResultDTO(null, selectFinalWinner(currentRound), null));
+        if (eventCoordinator == null) {
+            throw new BadRequestException(
+                    "Bạn không có quyền thực hiện. Bạn phải là event coordinator."
+            );
         }
-        List<CategoryRound> categoryRounds = categoryRoundRepository.findCategoryRoundByRound_RoundId(roundId);
+
+        return processRoundAdvancement(roundId);
+    }
+
+    // Được scheduler gọi khi đã hết thời gian chờ thăng vòng.
+    @Transactional
+    public List<CategoryAdvancementResultDTO> advanceRoundAutomatically(Integer roundId) {
+        return processRoundAdvancement(roundId);
+    }
+
+    private List<CategoryAdvancementResultDTO> processRoundAdvancement(Integer roundId) {
+        Round currentRound = roundRepository.findByIdForAdvancement(roundId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Không tìm thấy round hiện tại."));
+
+        // API hoặc scheduler đã xử lý trước đó.
+        if (currentRound.getAdvancementProcessedAt() != null) {
+            return List.of();
+        }
+
+        if (isRoundFinal(currentRound)) {
+            List<CategoryAdvancementResultDTO> result = List.of(new CategoryAdvancementResultDTO(
+                    null,
+                    selectFinalWinners(currentRound),
+                    null
+            ));
+            markAdvancementProcessed(currentRound);
+            return result;
+        }
+
+        List<CategoryRound> categoryRounds = categoryRoundRepository
+                .findCategoryRoundByRound_RoundId(roundId);
 
         if (categoryRounds.isEmpty()) {
-            throw new ResourceNotFoundException("Không tìm thấy category nào thuộc round này");
+            throw new ResourceNotFoundException(
+                    "Không tìm thấy category nào thuộc round này."
+            );
         }
 
         List<CategoryAdvancementResultDTO> results = new ArrayList<>();
 
         for (CategoryRound categoryRound : categoryRounds) {
             int categoryRoundId = categoryRound.getCategoryRoundId();
-                List<AdvancedTeamDTO> advanced = advanceTopTeams(categoryRoundId);
-                results.add(new CategoryAdvancementResultDTO(categoryRoundId, advanced, null));
+            List<AdvancedTeamDTO> advanced = advanceTopTeams(categoryRoundId);
+
+            results.add(new CategoryAdvancementResultDTO(
+                    categoryRoundId,
+                    advanced,
+                    null
+            ));
         }
+
+        markAdvancementProcessed(currentRound);
         return results;
     }
 
+    private void markAdvancementProcessed(Round round) {
+        round.setAdvancementProcessedAt(LocalDateTime.now());
+        roundRepository.save(round);
+    }
 
-    private CategoryRound findNextCategoryRound(CategoryRound currentCategoryRound) {
+    private void validateRankingCalculated(List<TeamParticipant> participants) {
+        boolean notCalculated = participants.stream()
+                .anyMatch(participant ->
+                        participant.getTotalScore() == null
+                                || participant.getRank() == null
+                );
+
+        if (notCalculated) {
+            throw new BadRequestException(
+                    "Chưa tính điểm hoặc xếp hạng. "
+                            + "Vui lòng tính điểm trước khi thực hiện thăng vòng."
+            );
+        }
+    }
+
+    private void sortByRank(List<TeamParticipant> participants) {
+        participants.sort(Comparator.comparing(
+                TeamParticipant::getRank,
+                Comparator.nullsLast(Comparator.naturalOrder())
+        ));
+    }
+
+    private CategoryRound findNextCategoryRound(
+            CategoryRound currentCategoryRound
+    ) {
         Category category = currentCategoryRound.getCategory();
         Round currentRound = currentCategoryRound.getRound();
 
-        Round nextRound = roundRepository.findRoundByHackathonEvent_EventIdAndOrderIndex(currentRound.getHackathonEvent().getEventId(), currentRound.getOrderIndex() + 1
+        Round nextRound = roundRepository
+                .findRoundByHackathonEvent_EventIdAndOrderIndex(
+                        currentRound.getHackathonEvent().getEventId(),
+                        currentRound.getOrderIndex() + 1
                 )
-                .orElseThrow(() -> new BadRequestException("Đây đã là vòng cuối cùng, không có vòng tiếp theo"));
+                .orElseThrow(() -> new BadRequestException(
+                        "Đây đã là vòng cuối cùng, không có vòng tiếp theo."
+                ));
 
-        return categoryRoundRepository.findCategoryRoundByCategory_CategoryIdAndRound_RoundId(category.getCategoryId(), nextRound.getRoundId()).orElseThrow(() -> new ResourceNotFoundException(
-                        "Chưa cấu hình category này cho vòng tiếp theo (thiếu CategoryRound)"));
+        return categoryRoundRepository
+                .findCategoryRoundByCategory_CategoryIdAndRound_RoundId(
+                        category.getCategoryId(),
+                        nextRound.getRoundId()
+                )
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Chưa cấu hình category này cho vòng tiếp theo "
+                                + "(thiếu CategoryRound)."
+                ));
     }
 
-
+    //Loại đội bổ sung
     @Transactional
-    public void disqualifyRetroactively(TeamParticipant oldTeamParticipant, Round nextRound) {
+    public void disqualifyRetroactively(
+            TeamParticipant oldTeamParticipant,
+            Round nextRound
+    ) {
         CategoryRound categoryRound = oldTeamParticipant.getCategoryRound();
         Category category = categoryRound.getCategory();
 
-        List<TeamParticipant> teamParticipantFailed = new ArrayList<>(
+        List<TeamParticipant> failedParticipants = new ArrayList<>(
                 categoryRound.getTeamParticipants().stream()
-                        .filter(p -> p.getStatus() == ParticipantStatus.FAILED)
+                        .filter(participant ->
+                                participant.getStatus() == ParticipantStatus.FAILED
+                        )
                         .toList()
         );
 
-        List<TeamParticipant> teamParticipants = this.getListTeamParticipant(categoryRound.getCategoryRoundId());
-//        teamParticipants.remove(oldTeamParticipant);
-        System.out.println(teamParticipants.remove(oldTeamParticipant));
+        List<TeamParticipant> participants =
+                getListTeamParticipant(categoryRound.getCategoryRoundId());
+        participants.remove(oldTeamParticipant);
 
-        teamParticipantFailed.sort(Comparator.comparing(TeamParticipant::getTotalScore, Comparator.nullsLast(Comparator.reverseOrder())));
+        failedParticipants.sort(Comparator.comparing(
+                TeamParticipant::getTotalScore,
+                Comparator.nullsLast(Comparator.reverseOrder())
+        ));
 
-        if (teamParticipantFailed.isEmpty()) {
-            log.warn("Không có team FAILED nào để đôn thay thế cho categoryRound {}", categoryRound.getCategoryRoundId());
+        if (failedParticipants.isEmpty()) {
+            log.warn(
+                    "Không có team FAILED nào để đôn thay thế cho categoryRound {}.",
+                    categoryRound.getCategoryRoundId()
+            );
         } else {
-            TeamParticipant replaceTeam = teamParticipantFailed.getFirst();
-            replaceTeam.setStatus(ParticipantStatus.PASSED);
-            participantRepository.save(replaceTeam);
+            TeamParticipant replacement = failedParticipants.get(0);
+            replacement.setStatus(ParticipantStatus.PASSED);
+            participantRepository.save(replacement);
 
-            Registration registration = replaceTeam.getRegistration();
+            Registration registration = replacement.getRegistration();
 
             CategoryRound nextCategoryRound = categoryRoundRepository
-                    .findCategoryRoundByCategory_CategoryIdAndRound_RoundId(category.getCategoryId(), nextRound.getRoundId())
+                    .findCategoryRoundByCategory_CategoryIdAndRound_RoundId(
+                            category.getCategoryId(),
+                            nextRound.getRoundId()
+                    )
                     .orElseThrow(() -> new ResourceNotFoundException(
-                            "Chưa cấu hình category này cho vòng tiếp theo (thiếu CategoryRound)"));
+                            "Chưa cấu hình category này cho vòng tiếp theo "
+                                    + "(thiếu CategoryRound)."
+                    ));
 
-            boolean alreadyAdvanced = participantRepository.existsByCategoryRound_CategoryRoundIdAndRegistration_RegistrationId(
-                    nextCategoryRound.getCategoryRoundId(), registration.getRegistrationId());
+            boolean alreadyAdvanced = participantRepository
+                    .existsByCategoryRound_CategoryRoundIdAndRegistration_RegistrationId(
+                            nextCategoryRound.getCategoryRoundId(),
+                            registration.getRegistrationId()
+                    );
 
             if (!alreadyAdvanced) {
                 TeamParticipant nextParticipant = TeamParticipant.builder()
@@ -171,56 +450,49 @@ public class RoundAdvancementService {
                 participantRepository.save(nextParticipant);
             }
 
-            log.info("Đội {} đã được đôn lên thay thế.", registration.getTeam().getTeamName());
+            log.info(
+                    "Đội {} đã được đôn lên thay thế.",
+                    registration.getTeam().getTeamName()
+            );
         }
 
-        // Cập nhật lại Ranking cho toàn bộ CategoryRound đó — sau khi loại 1 đội và
-        // (có thể) đôn 1 đội, thứ hạng hiện tại đã thay đổi
-        calculateRanking( teamParticipants);
+        calculateRanking(participants);
     }
 
-    private List<TeamParticipant> recalculateScoresAndRanking(List<TeamParticipant> participants) {
-        if(participants.isEmpty()){
-            throw new BadRequestException("Chưa có đội tham gia");
-        }
+//---------------------------------------------
 
-        // 2. Tính toán điểm số
-        for (TeamParticipant participant : participants) {
-            this.calculateTotalScore(participant);
-        }
+    private List<TeamParticipant> getListTeamParticipant(
+            Integer categoryRoundId
+    ) {
+        List<TeamParticipant> participants = participantRepository
+                .findByCategoryRound_CategoryRoundIdAndStatusIsNotIn(
+                        categoryRoundId,
+                        List.of(
+                                ParticipantStatus.DISQUALIFIED,
+                                ParticipantStatus.WITHDRAWN
+                        )
+                );
 
-        // Lưu các thay đổi về điểm số (nếu có)
-        participantRepository.saveAll(participants);
-
-        // 3. Gọi hàm xếp hạng sau khi đã có điểm
-        return calculateRanking(participants);
-    }
-    private List<TeamParticipant>  getListTeamParticipant(Integer categoryRoundId){
-        // 1. Lấy danh sách hợp lệ
-        List<TeamParticipant> participants = participantRepository.findByCategoryRound_CategoryRoundIdAndStatusIsNotIn(
-                categoryRoundId,
-                List.of(ParticipantStatus.DISQUALIFIED, ParticipantStatus.WITHDRAWN)
-        );
         if (participants.isEmpty()) {
-            throw new BadRequestException("Chưa có đội tham gia");
+            throw new BadRequestException("Chưa có đội tham gia.");
         }
 
         return participants;
     }
 
-    private List<TeamParticipant> calculateRanking(List<TeamParticipant> participants) {
-        // 1. Sắp xếp theo điểm số (giảm dần)
-        participants.sort(Comparator.comparing(
-                TeamParticipant::getTotalScore,
-                Comparator.nullsLast(Comparator.reverseOrder())
-        ).thenComparing(t -> this.getFinalSubmissionTime(t), Comparator.nullsLast(Comparator.naturalOrder())));
-        // 2. Gán hạng
-        int rank = 1;
-        for (TeamParticipant teamParticipant : participants) {
-            teamParticipant.setRank(rank++);
+    private List<TeamParticipant> getParticipantsInRound(Round round) {
+        List<TeamParticipant> participants = new ArrayList<>();
+
+        for (CategoryRound categoryRound : round.getCategoryRounds()) {
+            participants.addAll(
+                    getListTeamParticipant(categoryRound.getCategoryRoundId())
+            );
         }
-        // 3. Lưu toàn bộ danh sách đã có thứ hạng
-        participantRepository.saveAll(participants);
+
+        if (participants.isEmpty()) {
+            throw new BadRequestException("Chưa có đội tham gia trong round.");
+        }
+
         return participants;
     }
 
@@ -228,72 +500,44 @@ public class RoundAdvancementService {
         if (currentRound.getTopN() != null && currentRound.getTopN() > 0) {
             return currentRound.getTopN();
         }
+
         throw new BadRequestException(
-                "Round chưa được cấu hình Top_N. Vui lòng cập nhật Top_N cho round trước khi thăng vòng.");
+                "Round chưa được cấu hình Top_N. "
+                        + "Vui lòng cập nhật Top_N trước khi thăng vòng."
+        );
     }
 
-
-    @Transactional
-    public BigDecimal calculateTotalScore(TeamParticipant participant) {
-        List<Evaluation> gradedEvaluations = evaluationRepository.findBySubmission_TeamParticipant(participant).stream().filter(e -> e.getStatus() == EvaluationStatus.GRADED).toList();
-
-        BigDecimal average = computeAverage(gradedEvaluations);
-
-        participant.setTotalScore(average);
-        return average;
+    private boolean isRoundFinal(Round round) {
+        return roundRepository
+                .findRoundByHackathonEvent_EventIdAndOrderIndex(
+                        round.getHackathonEvent().getEventId(),
+                        round.getOrderIndex() + 1
+                )
+                .isEmpty();
     }
 
-    private BigDecimal computeAverage(List<Evaluation> gradedEvaluations) {
-        if (gradedEvaluations == null || gradedEvaluations.isEmpty()) {
-            return null;
-        }
-        BigDecimal sum = gradedEvaluations.stream()
-                .map(Evaluation::getScore)
-                .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    private AdvancedTeamDTO mapTo(
+            TeamParticipant participant,
+            Integer newTeamParticipantId
+    ) {
+        Team team = participant.getRegistration().getTeam();
 
-        return sum.divide(BigDecimal.valueOf(gradedEvaluations.size()), SCORE_SCALE, RoundingMode.HALF_UP);
+        return new AdvancedTeamDTO(
+                team.getTeamId(),
+                team.getTeamName(),
+                participant.getTotalScore(),
+                participant.getRank(),
+                newTeamParticipantId
+        );
     }
 
-    private boolean isRoundFinal(Round round){
-        return roundRepository.findRoundByHackathonEvent_EventIdAndOrderIndex(round.getHackathonEvent().getEventId(), round.getOrderIndex() + 1).isEmpty();
-    }
-
-    private List<AdvancedTeamDTO> selectFinalWinner(Round finalRound){
-
-        List<TeamParticipant> teamParticipants = new ArrayList<>();
-        //lấy tất cả team tham gia trong round cuối
-        for(CategoryRound cr: finalRound.getCategoryRounds()){
-            teamParticipants.addAll(this.getListTeamParticipant(cr.getCategoryRoundId()));
-        }
-        teamParticipants = this.recalculateScoresAndRanking(teamParticipants);
-
-        int topN = resolveTopN(finalRound);
-
-        for (TeamParticipant participant : teamParticipants) {
-
-            participant.setStatus(
-                    participant.getRank() <= topN
-                            ? ParticipantStatus.PASSED
-                            : ParticipantStatus.FAILED
-            );
-        }
-        participantRepository.saveAll(teamParticipants);
-
-        return teamParticipants.stream().map(t -> this.mapTo(t, null)).toList();
-    }
-
-    private AdvancedTeamDTO mapTo(TeamParticipant teamParticipant, Integer newTeamParticipantId){
-        Team team = teamParticipant.getRegistration().getTeam();
-        return new AdvancedTeamDTO(team.getTeamId(), team.getTeamName(), teamParticipant.getTotalScore(),teamParticipant.getRank(), newTeamParticipantId );
-    }
-
-    public LocalDateTime getFinalSubmissionTime(TeamParticipant teamParticipant) {
-        return teamParticipant.getSubmissions().stream()
-                .filter(Submission::isFinal) // Lọc bài nộp cuối cùng
-                .map(Submission::getCreateAt) // thời gian nộp bài
+    public LocalDateTime getFinalSubmissionTime(
+            TeamParticipant participant
+    ) {
+        return participant.getSubmissions().stream()
+                .filter(Submission::isFinal)
+                .map(Submission::getCreateAt)
                 .findFirst()
                 .orElse(null);
     }
-
 }

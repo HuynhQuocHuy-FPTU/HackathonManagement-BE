@@ -41,6 +41,12 @@ public class Round {
     private LocalDateTime appealStartTime;
     @Column(name = "Appeal_EndTime", nullable = true)
     private LocalDateTime appealEndTime;
+
+    @Column(name = "Advancement_Processed_At")
+    private LocalDateTime advancementProcessedAt;
+
+    @Column(name = "Scoring_Processed_At")
+    private LocalDateTime scoringProcessedAt;
     @Column(name ="Url_Excels", columnDefinition = "NVARCHAR(MAX)")
     private String excelsUrl ;
 
