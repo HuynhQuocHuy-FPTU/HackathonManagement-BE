@@ -75,4 +75,11 @@ public class EvaluationCriteriaServiceImpl implements EvaluationCriteriaService 
         //3. Sử dụng Stream API để map taonf bộ danh sách entity sang response
         return evaluationCriterias.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
+
+    @Override
+    public void deletedEvaluationCriteria(Integer roundId) {
+        evaluationCriteriaRepository.deleteByRound_RoundId(roundId);
+    }
+
+
 }

@@ -12,6 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @Getter
 @Setter
+@Builder
 @Entity
 @Table(name="Submission")
 public class Submission {
@@ -21,10 +22,12 @@ public class Submission {
     private int submissionId;
     @Column(name  ="Create_date")
     private LocalDateTime createAt;
-    @Column(name = "Description", nullable = false, columnDefinition = "NVARCHAR(500)")
+    @Column(name = "Description", nullable = true, columnDefinition = "NVARCHAR(500)")
     private String description;
-    @Column(name="Github_URL")
+    @Column(name="Github_URL", nullable = true)
     private String githubUrl;
+    @Column(name = "Latest_Commit_Sha", nullable = true)
+    private String latestCommitSha;
 
     @Column(name = "Is_Final")
     private boolean isFinal;
@@ -37,20 +40,16 @@ public class Submission {
     // 1 TEAM - N SUBMISSION
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnore
-    @JoinColumn(name = "Team_ID",nullable = false)
+    @JoinColumn(name = "Team_ID",nullable = true)
     private Team team;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnore
-    @JoinColumn(name = "Team_Participant_Id", nullable = false)
+    @JoinColumn(name = "Team_Participant_Id", nullable = true)
     private TeamParticipant teamParticipant;
 
     @OneToMany(mappedBy = "submission", cascade = CascadeType.ALL,orphanRemoval = true)
     private List<SubmissionFile> files;
 
-//    //1 categoryRound- N submission
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JsonIgnore
-//    @JoinColumn(name = "Category_Round_ID",nullable = false)
-//    private CategoryRound categoryRound;
+
 }

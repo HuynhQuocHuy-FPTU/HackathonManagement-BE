@@ -36,6 +36,7 @@ public class SubmissionService {
     private final StudentRepository studentRepository;
     private final GithubOAuthService githubOAuthService;
     private final TeamRepository teamRepository;
+    private final GitHubService gitHubService;
 
     @Transactional
     public Submission createSubmission(Integer roundId, String gitHubUrl, CustomUserDetails userDetails, List<MultipartFile> files){
@@ -49,20 +50,19 @@ public class SubmissionService {
         submissionValidator.validateSubmission(round, files, gitHubUrl);
         // 2. Kiểm tra xem leader đã có liên kết tài khoản github chưa và có đúng với tài khoản đã liên kết không
         this.verifyGithubOwnership(gitHubUrl, userDetails);
+        String latestCommitSha = gitHubService.getLatestCommitSha(gitHubUrl);
         // 2. Lấy thông tin Participant (để xác định Team và người nộp)
         Registration approvedRegistration = registrationRepository.findByEventIdAndTeamId(round.getHackathonEvent().getEventId(), team.getTeamId()).orElseThrow(() -> new ResourceNotFoundException("Đội của bạn chưa tham gia vào event"));
         TeamParticipant participant = participantRepository.findTeamParticipantByRegistration_RegistrationIdAndStatus(approvedRegistration.getRegistrationId(), ParticipantStatus.ACTIVE).orElseThrow(() -> new ResourceNotFoundException("Đội của bạn không được phép nộp bài"));
 
-
-//        if(participant.getCategoryRound() == null){
-//            throw new BadRequestException("Đội thi của bạn chưa tham gia vào 1 category cụ thể nào");
-//        }
-
-
+        if(participant.getCategoryRound() == null){
+            throw new BadRequestException("Đội thi của bạn chưa tham gia vào 1 category cụ thể nào");
+        }
 
         // 5. Tạo bản ghi Submission (Header)
         Submission submission = new Submission();
         submission.setGithubUrl(gitHubUrl);
+        submission.setLatestCommitSha(latestCommitSha);
         submission.setCreateAt(LocalDateTime.now());
         submission.setFinal(false);
 
@@ -97,9 +97,10 @@ public class SubmissionService {
     public SubmissionResponse mapToResponse(Submission submission){
 
         SubmissionResponse response = new SubmissionResponse();
+        String commitUrl = submission.getGithubUrl() + "/commit/" + submission.getLatestCommitSha();
         response.setSubmissionId(submission.getSubmissionId());
         response.setTeamName(submission.getTeamParticipant().getRegistration().getTeam().getTeamName());
-        response.setGithubUrl(submission.getGithubUrl());
+        response.setGithubUrl(commitUrl);
         List<FileDTO> fileDTOList = new ArrayList<>();
         for(SubmissionFile f : submission.getFiles()){
             FileDTO fileDTO = new FileDTO(f.getFileName(), f.getFileUrl());
@@ -179,10 +180,12 @@ public class SubmissionService {
             if (sameTeam && isDifferentSubmission && s.isFinal()) {
                 s.setFinal(false);
                 submissionRepository.save(s);
-                s.getTeamParticipant().setSubmissionStatus(SubmissionStatus.SUBMITTED);
+
             }
         }
-
+        TeamParticipant teamParticipant = submission.getTeamParticipant();
+        teamParticipant.setSubmissionStatus(SubmissionStatus.SUBMITTED);
+        participantRepository.save(teamParticipant);
         submission.setFinal(true);
         submissionRepository.save(submission);
     }

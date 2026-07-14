@@ -12,4 +12,6 @@ public interface EvaluationCriteriaService {
         public EvaluationCriteriaResponseDTO mapToResponse(EvaluationCriteria evaluationCriteria);
 
         List<EvaluationCriteriaResponseDTO> getEvaluationCirteriaResponse(Round round);
+
+        public void deletedEvaluationCriteria(Integer roundId);
 }
