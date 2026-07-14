@@ -46,21 +46,31 @@ public class GradingServiceImpl implements GradingService {
     private final EvaluationAuditLogger auditLogger;
     private final AuditService auditService;
     private final ObjectMapper objectMapper;
+    private final CategoryRoundRepository categoryRoundRepository;
 
 
     // =======================================================
     // API: TRẢ RA DANH SÁCH BÀI CẦN CHẤM
     // =======================================================
     @Override
-    public List<AssignedSubmissionForJudgeResponse> listAssignedSubmissions(Account account, Integer categoryRoundId) {
+    public JudgeDashboardResponse listAssignedSubmissions(Account account, Integer categoryRoundId) {
         Expert expert = assignmentResolver.resolveExpert(account);
         ExpertAssign expertAssign = assignmentResolver.requireJudgeAssignment(expert, categoryRoundId);
 
-        // Kéo list bài thi final từ DB lên
+        // 1. Lấy thông tin Vòng thi để tính toán Deadline
+        CategoryRound categoryRound = categoryRoundRepository.findById(categoryRoundId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy CategoryRound"));
+        Round round = categoryRound.getRound();
+
+        // Lấy thông tin thời gian từ Policy
+        LocalDateTime deadline = deadlinePolicy.getGradingDeadline(round);
+        boolean isOpen = deadlinePolicy.isGradingOpen(round);
+
+        // 2. Kéo list bài thi final từ DB lên (giữ nguyên logic cũ)
         List<Submission> submissions = submissionRepository.findFinalSubmissionsByCategoryRoundId(categoryRoundId);
 
-        // Map data để FE hiển thị trạng thái (Đã chấm hay chưa)
-        return submissions.stream().map(sub -> {
+        // 3. Map data bài thi
+        List<AssignedSubmissionForJudgeResponse> submissionResponses = submissions.stream().map(sub -> {
             Evaluation eval = evaluationRepository.findByExpertAssignIdAndSubmissionId(expertAssign.getAssignId(), sub.getSubmissionId())
                     .orElse(null);
 
@@ -70,7 +80,7 @@ public class GradingServiceImpl implements GradingService {
                     fileDTOList.add(new FileDTO(f.getFileName(), f.getFileUrl()));
                 }
             }
-            String commitUrl = sub.getGithubUrl() + "/commit/" + sub.getLatestCommitSha();
+
             return AssignedSubmissionForJudgeResponse.builder()
                     .submissionId(sub.getSubmissionId())
                     .teamName(sub.getTeam().getTeamName())
@@ -82,6 +92,13 @@ public class GradingServiceImpl implements GradingService {
                     .myTotalScore(eval != null ? eval.getScore() : null)
                     .build();
         }).collect(Collectors.toList());
+
+        // 4. Đóng gói toàn bộ vào DTO mới và trả về
+        return JudgeDashboardResponse.builder()
+                .gradingDeadline(deadline)
+                .isGradingOpen(isOpen)
+                .submissions(submissionResponses)
+                .build();
     }
 
     // =======================================================
