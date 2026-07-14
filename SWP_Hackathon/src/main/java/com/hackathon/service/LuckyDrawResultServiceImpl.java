@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,6 +33,8 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
         // Tìm event
         HackathonEvent event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy event"));
+
+        validateDrawResultTime(event);
 
         if (event.getWorkshopStatus() != WorkshopStatus.COMPLETED) {
             throw new BadRequestException("Chỉ có thể gán kết quả bốc thăm sau khi Workshop đã hoàn thành!");
@@ -113,6 +116,8 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
         HackathonEvent event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy event"));
 
+        validateDrawResultTime(event);
+
         // Tìm round đầu tiên
         Round firstRound = roundRepository.findFirstByHackathonEvent_EventIdOrderByOrderIndexAsc(eventId)
                 .orElseThrow(() -> new BadRequestException("Event " + eventId + " chưa có round nào"));
@@ -163,6 +168,21 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
             }
         }
         return updatedParticipants;
+    }
+
+    private void validateDrawResultTime(HackathonEvent event) {
+        if (event.getStartDate() == null) {
+            throw new BadRequestException(
+                    "Sự kiện chưa cấu hình thời gian bắt đầu"
+            );
+        }
+
+        if (!LocalDateTime.now().isBefore(event.getStartDate())) {
+            throw new BadRequestException(
+                    "Không thể nhập hoặc cập nhật kết quả bốc thăm "
+                            + "sau khi sự kiện đã bắt đầu"
+            );
+        }
     }
 
 

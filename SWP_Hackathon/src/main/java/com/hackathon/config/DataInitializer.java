@@ -207,77 +207,77 @@ public class DataInitializer implements CommandLineRunner {
 //            }
 //        }
 
-        HackathonEvent event = eventRepository.findById(3)
-                .orElseThrow(() -> new RuntimeException("Event not found"));
-
-        List<Team> teamList = teamRepository.findAll();
-        List<ExpertAssign> expertList = expertAssignRepository.findAll();
-
-        if (expertList.isEmpty()) {
-            throw new RuntimeException("Chưa có ExpertAssign nào được cấu hình");
-        }
-
-        int expertIndex = 0; // Biến để xoay vòng người chấm
-
-        for (Team team : teamList) {
-            // 1. Tạo Registration
-            Registration registration = Registration.builder()
-                    .team(team)
-                    .hackathonEvent(event)
-                    .status(RegistrationStatus.APPROVED)
-                    .registrationDate(LocalDateTime.now())
-                    .build();
-            registrationRepository.save(registration);
-
-            // 2. Tạo TeamParticipant
-            TeamParticipant participant = TeamParticipant.builder()
-                    .registration(registration)
-                    .status(ParticipantStatus.ACTIVE)
-                    .submissionStatus(SubmissionStatus.SUBMITTED)
-                    .build();
-            participantRepository.save(participant);
-
-            // 3. Duyệt qua từng vòng thi
-            for (Round round : event.getRounds()) {
-                // Tạo Submission
-                Submission submission = Submission.builder()
-                        .createAt(LocalDateTime.now())
-                        .description("Dự án cho vòng: " + round.getRoundName())
-                        .githubUrl("https://github.com/HoThuyDiep/Smart-Medical-Management")
-                        .latestCommitSha("7d1b31e741256b7ea6727284b39b06886e8e8156")
-                        .isFinal(true)
-                        .team(team)
-                        .teamParticipant(participant)
-                        .build();
-                submissionRepository.save(submission);
-
-                // Phân bổ người chấm (xoay vòng qua danh sách expertList)
-                ExpertAssign currentExpert = expertList.get(expertIndex % expertList.size());
-                expertIndex++;
-
-                // Tạo Evaluation
-                Evaluation evaluation = Evaluation.builder()
-                        .score(new BigDecimal("9.50"))
-                        .status(EvaluationStatus.GRADED)
-                        .submission(submission)
-                        .expertAssign(currentExpert)
-                        .build();
-                evaluationRepository.save(evaluation);
-
-                // Tạo EvaluationDetails cho tiêu chí của vòng thi hiện tại
-                List<EvaluationCriteria> criteriaList = evaluationCriteriaRepository.findByRound_RoundId(round.getRoundId());
-                for (EvaluationCriteria criteria : criteriaList) {
-                    EvaluationDetail detail = EvaluationDetail.builder()
-                            .evaluation(evaluation)
-                            .evaluationCriteria(criteria)
-                            .score(new BigDecimal("9.00"))
-                            .comment("Đạt yêu cầu tiêu chí " + criteria.getCriteriaName())
-                            .build();
-                    evaluationDetailRepository.save(detail);
-                }
-            }
-        }
-        System.out.println("Đã khởi tạo xong toàn bộ dữ liệu mẫu!");
+//        HackathonEvent event = eventRepository.findById(3)
+//                .orElseThrow(() -> new RuntimeException("Event not found"));
+//
+//        List<Team> teamList = teamRepository.findAll();
+//        List<ExpertAssign> expertList = expertAssignRepository.findAll();
+//
+//        if (expertList.isEmpty()) {
+//            throw new RuntimeException("Chưa có ExpertAssign nào được cấu hình");
+//        }
+//
+//        int expertIndex = 0; // Biến để xoay vòng người chấm
+//
+//        for (Team team : teamList) {
+//            // 1. Tạo Registration
+//            Registration registration = Registration.builder()
+//                    .team(team)
+//                    .hackathonEvent(event)
+//                    .status(RegistrationStatus.APPROVED)
+//                    .registrationDate(LocalDateTime.now())
+//                    .build();
+//            registrationRepository.save(registration);
+//
+//            // 2. Tạo TeamParticipant
+//            TeamParticipant participant = TeamParticipant.builder()
+//                    .registration(registration)
+//                    .status(ParticipantStatus.ACTIVE)
+//                    .submissionStatus(SubmissionStatus.SUBMITTED)
+//                    .build();
+//            participantRepository.save(participant);
+//
+//            // 3. Duyệt qua từng vòng thi
+//            for (Round round : event.getRounds()) {
+//                // Tạo Submission
+//                Submission submission = Submission.builder()
+//                        .createAt(LocalDateTime.now())
+//                        .description("Dự án cho vòng: " + round.getRoundName())
+//                        .githubUrl("https://github.com/HoThuyDiep/Smart-Medical-Management")
+//                        .latestCommitSha("7d1b31e741256b7ea6727284b39b06886e8e8156")
+//                        .isFinal(true)
+//                        .team(team)
+//                        .teamParticipant(participant)
+//                        .build();
+//                submissionRepository.save(submission);
+//
+//                // Phân bổ người chấm (xoay vòng qua danh sách expertList)
+//                ExpertAssign currentExpert = expertList.get(expertIndex % expertList.size());
+//                expertIndex++;
+//
+//                // Tạo Evaluation
+//                Evaluation evaluation = Evaluation.builder()
+//                        .score(new BigDecimal("9.50"))
+//                        .status(EvaluationStatus.GRADED)
+//                        .submission(submission)
+//                        .expertAssign(currentExpert)
+//                        .build();
+//                evaluationRepository.save(evaluation);
+//
+//                // Tạo EvaluationDetails cho tiêu chí của vòng thi hiện tại
+//                List<EvaluationCriteria> criteriaList = evaluationCriteriaRepository.findByRound_RoundId(round.getRoundId());
+//                for (EvaluationCriteria criteria : criteriaList) {
+//                    EvaluationDetail detail = EvaluationDetail.builder()
+//                            .evaluation(evaluation)
+//                            .evaluationCriteria(criteria)
+//                            .score(new BigDecimal("9.00"))
+//                            .comment("Đạt yêu cầu tiêu chí " + criteria.getCriteriaName())
+//                            .build();
+//                    evaluationDetailRepository.save(detail);
+//                }
+//            }
+//        }
+//        System.out.println("Đã khởi tạo xong toàn bộ dữ liệu mẫu!");
     }
 
 

@@ -51,7 +51,10 @@ public class SubmissionService {
         submissionValidator.validateSubmission(round, files, gitHubUrl);
         // 2. Kiểm tra xem leader đã có liên kết tài khoản github chưa và có đúng với tài khoản đã liên kết không
         this.verifyGithubOwnership(gitHubUrl, userDetails);
-        String latestCommitSha = gitHubService.getLatestCommitSha(gitHubUrl);
+        String latestCommitSha = null;
+        if (gitHubUrl != null && !gitHubUrl.isBlank()) {
+            latestCommitSha = gitHubService.getLatestCommitSha(gitHubUrl);
+        }
         // 2. Lấy thông tin Participant (để xác định Team và người nộp)
         Registration approvedRegistration = registrationRepository.findByEventIdAndTeamId(round.getHackathonEvent().getEventId(), team.getTeamId()).orElseThrow(() -> new ResourceNotFoundException("Đội của bạn chưa tham gia vào event"));
         TeamParticipant participant = participantRepository.findTeamParticipantByRegistration_RegistrationIdAndStatus(approvedRegistration.getRegistrationId(), ParticipantStatus.ACTIVE).orElseThrow(() -> new ResourceNotFoundException("Đội của bạn không được phép nộp bài"));
@@ -117,10 +120,15 @@ public class SubmissionService {
     public SubmissionResponse mapToResponse(Submission submission){
 
         SubmissionResponse response = new SubmissionResponse();
-        String commitUrl = submission.getGithubUrl() + "/commit/" + submission.getLatestCommitSha();
+        String latestCommitSha = null;
+
+        if (submission.getGithubUrl() != null && !submission.getGithubUrl().isBlank()) {
+            latestCommitSha = gitHubService.getLatestCommitSha(submission.getGithubUrl());
+        }
+        String githubCommitUrl = submission.getGithubUrl() + "/commit/" + latestCommitSha;
         response.setSubmissionId(submission.getSubmissionId());
         response.setTeamName(submission.getTeamParticipant().getRegistration().getTeam().getTeamName());
-        response.setGithubUrl(commitUrl);
+        response.setGithubUrl(githubCommitUrl);
         List<FileDTO> fileDTOList = new ArrayList<>();
         for(SubmissionFile f : submission.getFiles()){
             FileDTO fileDTO = new FileDTO(f.getFileName(), f.getFileUrl());
@@ -221,7 +229,7 @@ public class SubmissionService {
     }
 
     private void verifyGithubOwnership(String gitHubUrl, CustomUserDetails userDetails) {
-        if(gitHubUrl == null) return;
+        if(gitHubUrl == null || gitHubUrl.isBlank()) return;
         String linkedGithubUsername = userDetails.getAccount().getGithubUsername();
         if (linkedGithubUsername == null || linkedGithubUsername.isBlank()) {
             throw new BadRequestException("Bạn cần liên kết tài khoản GitHub trước khi nộp bài");
