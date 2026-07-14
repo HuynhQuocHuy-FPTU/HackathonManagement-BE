@@ -18,11 +18,11 @@ public class RoundEndTimeGradingPolicy {
      * Tính toán Deadline chính xác cho Giám khảo
      */
     public LocalDateTime getGradingDeadline(Round round) {
-        if (round.getEndTime() == null) {
+        if (round.getSubmissionDeadline() == null) {
             return null; // Nếu vòng thi không setup giờ kết thúc -> Chấm vô thời hạn
         }
         // Lấy giờ kết thúc vòng thi cộng thêm số giờ cấu hình
-        return round.getEndTime().plusHours(EXTRA_HOURS_FOR_GRADING);
+        return round.getSubmissionDeadline().plusHours(EXTRA_HOURS_FOR_GRADING);
     }
 
     /**
