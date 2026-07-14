@@ -36,4 +36,5 @@ public interface RegistrationRepository extends JpaRepository<Registration, Inte
     List<Registration> findByTeam_TeamIdAndStatus(int teamTeamId, RegistrationStatus status);
 
 
+
 }

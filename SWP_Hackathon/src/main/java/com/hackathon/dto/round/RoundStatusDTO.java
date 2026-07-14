@@ -11,6 +11,7 @@ import java.util.List;
 @Builder
 public record RoundStatusDTO(
         Integer roundId,
+        Integer categoryRound,
         String roundName,
         SubmissionType submissionType,
         ParticipantStatus status,

@@ -276,6 +276,7 @@ public class ParticipantServiceImpl implements ParticipantService {
         return RoundStatusDTO.builder()
                 .roundId(round.getRoundId())
                 .roundName(round.getRoundName())
+                .categoryRound(participant.getCategoryRound().getCategoryRoundId())
                 .status(participant.getStatus())
                 .evaluetionCriteria(round.getEvaluationCriterias())
                 .SubmissionDeadline(round.getSubmissionDeadline())

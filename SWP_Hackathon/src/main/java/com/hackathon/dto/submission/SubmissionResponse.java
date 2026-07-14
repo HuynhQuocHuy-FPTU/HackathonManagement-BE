@@ -4,6 +4,7 @@ import com.hackathon.entity.Submission;
 import com.hackathon.entity.enums.SubmissionStatus;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 @NoArgsConstructor
