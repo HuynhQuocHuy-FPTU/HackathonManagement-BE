@@ -1,5 +1,6 @@
 package com.hackathon.controller;
 
+import com.hackathon.dto.submission.ResultSubmissionResponse;
 import com.hackathon.dto.submission.SubmissionResponse;
 import com.hackathon.entity.Submission;
 import com.hackathon.exception.ApiResponse;
@@ -45,14 +46,16 @@ public class SubmissionController {
         return ResponseEntity.ok(ApiResponse.success(list, "Lấy danh sách submision thành công"));
     }
 
+    @GetMapping("/evluated/{categoryRound}")
+    public ResponseEntity<ApiResponse<ResultSubmissionResponse>> getEvaluatedSubmission(@PathVariable Integer categoryRound, @AuthenticationPrincipal CustomUserDetails userDetails){
+        return ResponseEntity.ok(ApiResponse.success(submissionService.getResultOfSubmission(userDetails, categoryRound), "Lấy danh sách submision thành công"));
+    }
+
     @PatchMapping("/{roundId}/choose-final/{submissionId}")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<Void>> chooseFinalSubmission(@PathVariable Integer roundId, @PathVariable Integer submissionId, @AuthenticationPrincipal CustomUserDetails userDetails){
         submissionService.chooseFinalSubmission(submissionId, userDetails);
         return ResponseEntity.ok(ApiResponse.success(null, "Đã chọn bài nộp thành công"));
     }
-
-
-
 
 }

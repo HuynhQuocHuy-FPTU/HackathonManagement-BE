@@ -144,17 +144,17 @@ public class DataInitializer implements CommandLineRunner {
 //        criteriaDetailRepository.save(CriteriaDetail.builder().criteriaSet(criteriaSet2).criteriaName("Trải nghiệm người dùng").description("Mượt mà, ít lỗi, dễ tiếp cận").criteriaType(CriteriaType.PRESENTATION).weight(new BigDecimal(15)).build());
 //
 //        criteriaDetailRepository.save(CriteriaDetail.builder().criteriaSet(criteriaSet2).criteriaName("Trình bày và demo").description("Logic, rõ ràng, trả lời tất cả câu hỏi của ban giám khảo").criteriaType(CriteriaType.PRESENTATION).weight(new BigDecimal(25)).build());
-//
-//        Account[] studentAccounts = new Account[15];
-//        Student[] students = new Student[15];
-//        Team[] teams = new Team[5];
+////
+//        Account[] studentAccounts = new Account[75];
+//        Student[] students = new Student[75];
+//        Team[] teams = new Team[25];
 //
 //        int studentIndex = 0;
-//
-//// =======================
-//// 1. CREATE 15 STUDENTS
-//// =======================
-//        for (int i = 0; i < 15; i++) {
+////
+////// =======================
+////// 1. CREATE 60 STUDENTS
+////// =======================
+//        for (int i = 0; i < 75; i++) {
 //
 //            studentAccounts[i] = accountRepository.save(
 //                    Account.builder()
@@ -178,9 +178,9 @@ public class DataInitializer implements CommandLineRunner {
 //        }
 //
 //// =======================
-//// 2. CREATE 5 TEAMS + TEAM MEMBERS
+//// 2. CREATE 20 TEAMS + TEAM MEMBERS
 //// =======================
-//        for (int i = 0; i < 5; i++) {
+//        for (int i = 0; i < 25; i++) {
 //
 //            Team team = teamRepository.save(
 //                    Team.builder()

@@ -1,6 +1,7 @@
 package com.hackathon.service.submission;
 
 import com.hackathon.dto.submission.FileDTO;
+import com.hackathon.dto.submission.ResultSubmissionResponse;
 import com.hackathon.dto.submission.SubmissionResponse;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.*;
@@ -93,6 +94,25 @@ public class SubmissionService {
         return savedSubmission;
     }
 
+    public ResultSubmissionResponse getResultOfSubmission(CustomUserDetails userDetails, Integer categoryRound) {
+        Student student = userDetails.getAccount().getStudent();
+        Team team = teamRepository.findCurrentTeamByStudent(student.getStudentId(), TeamStatus.BUSY);
+        if(team == null){
+            throw new BadRequestException("Đội bạn chưa tham gia cuộc thi nào");
+        }
+        Submission submission = submissionRepository.findFinalSubmission(categoryRound, team.getTeamId());
+        System.out.println("bài nộp nè" + submission);
+        if(submission == null){
+            throw new BadRequestException("Bạn chưa có bài nộp cuối cùng hoặc chưa có điểm");
+        }
+        return ResultSubmissionResponse.builder()
+                .submissionId(submission.getSubmissionId())
+                .totalScore(submission.getTeamParticipant().getTotalScore())
+                .submissionStatus(submission.getTeamParticipant().getSubmissionStatus())
+                .rank(submission.getTeamParticipant().getRank())
+                .build();
+    }
+
 
     public SubmissionResponse mapToResponse(Submission submission){
 
@@ -107,7 +127,6 @@ public class SubmissionService {
             fileDTOList.add(fileDTO);
         }
         response.setFileDTOList(fileDTOList);
-
         return response;
     }
 
