@@ -170,9 +170,6 @@ public class StatusSchedulerService {
 
         RoundStatus currentStatus = round.getStatus();
 
-        System.out.println("CURRENT STATUS = " + currentStatus);
-        System.out.println("NOW = " + now);
-        System.out.println("APPEAL END = " + round.getAppealEndTime());
         // 1. Luồng tự động chuyển trạng thái SAU KHI HẾT HẠN PHÚC KHẢO
 
         if (currentStatus == RoundStatus.APPEALING
