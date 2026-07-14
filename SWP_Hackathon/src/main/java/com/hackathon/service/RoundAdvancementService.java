@@ -46,48 +46,47 @@ public class RoundAdvancementService {
         // Chạy toàn bộ validate nghiệp vụ (thời gian chấm điểm, TopN, còn round tiếp theo không, đã cấu hình category ở round sau chưa, chấm xong chưa) TRƯỚC khi làm gì khác — tránh việc tính điểm/xếp hạng xong rồi mới phát hiện lỗi cấu hình.
         advancementValidator.validateCategoryRoundAdvancement(currentCategoryRound);
 
-        List<TeamParticipant> teamParticipants = this.getListTeamParticipant(currentCategoryRoundId);
-
-        //Tính totalScore cho mỗi team từ nhiều ban giám khảo cham (trung bình điểm từ các evaluation đã GRADE), sắp xếp giảm dần
-        teamParticipants = this.recalculateScoresAndRanking(teamParticipants);
-
-        int effectiveTopN = resolveTopN(currentRound);
-
-        //tìm categoryRound tương ứng của category trước đó ở vòng tiếp theo
-        CategoryRound nextCategoryRound = this.findNextCategoryRound(currentCategoryRound);
-
         List<AdvancedTeamDTO> result = new ArrayList<>();
+            List<TeamParticipant> teamParticipants = getListTeamParticipant(currentCategoryRoundId);
 
-        for (int i = 0; i < teamParticipants.size(); i++) {
-            TeamParticipant current = teamParticipants.get(i);
-            if (i < effectiveTopN) {
-                current.setStatus(ParticipantStatus.PASSED);
-                participantRepository.save(current);
+            //Tính totalScore cho mỗi team từ nhiều ban giám khảo cham (trung bình điểm từ các evaluation đã GRADE), sắp xếp giảm dần
+            teamParticipants = recalculateScoresAndRanking(teamParticipants);
 
-                Registration registration = current.getRegistration();
+            int effectiveTopN = resolveTopN(currentRound);
 
-                boolean alreadyAdvanced = participantRepository.existsByCategoryRound_CategoryRoundIdAndRegistration_RegistrationId(nextCategoryRound.getCategoryRoundId(), registration.getRegistrationId());
+            //tìm categoryRound tương ứng của category trước đó ở vòng tiếp theo
+            CategoryRound nextCategoryRound = findNextCategoryRound(currentCategoryRound);
 
-                if (alreadyAdvanced) {
-                    log.info("Team {} đã được thăng vòng trước đó, bỏ qua", registration.getTeam().getTeamName());
-                    continue;
+            for (int i = 0; i < teamParticipants.size(); i++) {
+                TeamParticipant current = teamParticipants.get(i);
+                if (i < effectiveTopN) {
+                    current.setStatus(ParticipantStatus.PASSED);
+                    participantRepository.save(current);
+
+                    Registration registration = current.getRegistration();
+
+                    boolean alreadyAdvanced = participantRepository.existsByCategoryRound_CategoryRoundIdAndRegistration_RegistrationId(nextCategoryRound.getCategoryRoundId(), registration.getRegistrationId());
+
+                    if (alreadyAdvanced) {
+                        log.info("Team {} đã được thăng vòng trước đó, bỏ qua", registration.getTeam().getTeamName());
+                        continue;
+                    }
+                    TeamParticipant nextParticipant = TeamParticipant.builder()
+                            .status(ParticipantStatus.ACTIVE)
+                            .categoryRound(nextCategoryRound)
+                            .registration(registration)
+                            .build();
+
+                    TeamParticipant savedTeamParticipant = participantRepository.save(nextParticipant);
+                    Team team = registration.getTeam();
+                    result.add(new AdvancedTeamDTO(team.getTeamId(), team.getTeamName(), current.getTotalScore(), current.getRank(),savedTeamParticipant.getId()));
+                } else {
+                    current.setStatus(ParticipantStatus.FAILED);
+                    participantRepository.save(current);
                 }
-                TeamParticipant nextParticipant = TeamParticipant.builder()
-                        .status(ParticipantStatus.ACTIVE)
-                        .categoryRound(nextCategoryRound)
-                        .registration(registration)
-                        .build();
-
-                TeamParticipant savedTeamParticipant = participantRepository.save(nextParticipant);
-                Team team = registration.getTeam();
-                result.add(new AdvancedTeamDTO(team.getTeamId(), team.getTeamName(), current.getTotalScore(), savedTeamParticipant.getId()));
-            } else {
-                current.setStatus(ParticipantStatus.FAILED);
-                participantRepository.save(current);
-            }
         }
         return result;
-    }
+        }
 
     @Transactional
     public List<CategoryAdvancementResultDTO> advanceAllCategoriesInRound(Integer roundId, CustomUserDetails userDetails) {
@@ -139,6 +138,11 @@ public class RoundAdvancementService {
                         .filter(p -> p.getStatus() == ParticipantStatus.FAILED)
                         .toList()
         );
+
+        List<TeamParticipant> teamParticipants = this.getListTeamParticipant(categoryRound.getCategoryRoundId());
+//        teamParticipants.remove(oldTeamParticipant);
+        System.out.println(teamParticipants.remove(oldTeamParticipant));
+
         teamParticipantFailed.sort(Comparator.comparing(TeamParticipant::getTotalScore, Comparator.nullsLast(Comparator.reverseOrder())));
 
         if (teamParticipantFailed.isEmpty()) {
@@ -172,12 +176,7 @@ public class RoundAdvancementService {
 
         // Cập nhật lại Ranking cho toàn bộ CategoryRound đó — sau khi loại 1 đội và
         // (có thể) đôn 1 đội, thứ hạng hiện tại đã thay đổi
-        calculateRanking(
-                participantRepository.findByCategoryRound_CategoryRoundIdAndStatusIsNotIn(
-                        categoryRound.getCategoryRoundId(),
-                        List.of(ParticipantStatus.DISQUALIFIED, ParticipantStatus.WITHDRAWN)
-                )
-        );
+        calculateRanking( teamParticipants);
     }
 
     private List<TeamParticipant> recalculateScoresAndRanking(List<TeamParticipant> participants) {
@@ -286,7 +285,7 @@ public class RoundAdvancementService {
 
     private AdvancedTeamDTO mapTo(TeamParticipant teamParticipant, Integer newTeamParticipantId){
         Team team = teamParticipant.getRegistration().getTeam();
-        return new AdvancedTeamDTO(team.getTeamId(), team.getTeamName(), teamParticipant.getTotalScore(), newTeamParticipantId );
+        return new AdvancedTeamDTO(team.getTeamId(), team.getTeamName(), teamParticipant.getTotalScore(),teamParticipant.getRank(), newTeamParticipantId );
     }
 
     public LocalDateTime getFinalSubmissionTime(TeamParticipant teamParticipant) {

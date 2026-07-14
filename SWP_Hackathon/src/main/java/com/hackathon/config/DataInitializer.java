@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -56,8 +57,23 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired
     private SubmissionRepository submissionRepository;
 
-    @Autowired ParticipantRepository participantRepository;
+    @Autowired
+    private ParticipantRepository participantRepository;
 
+    @Autowired
+    private ExpertAssignRepository expertAssignRepository;
+
+    @Autowired
+    private EvaluationDetailRepository evaluationDetailRepository;
+
+    @Autowired
+    private EvaluationCriteriaRepository evaluationCriteriaRepository;
+
+    @Autowired
+    private EvaluationRepository evaluationRepository;
+
+
+    @Transactional
     @Override
     public void run(String... args) throws Exception {
         if (!initData) {
@@ -195,13 +211,20 @@ public class DataInitializer implements CommandLineRunner {
                 .orElseThrow(() -> new RuntimeException("Event not found"));
 
         List<Team> teamList = teamRepository.findAll();
+        List<ExpertAssign> expertList = expertAssignRepository.findAll();
+
+        if (expertList.isEmpty()) {
+            throw new RuntimeException("Chưa có ExpertAssign nào được cấu hình");
+        }
+
+        int expertIndex = 0; // Biến để xoay vòng người chấm
 
         for (Team team : teamList) {
-            // 1. Tạo Registration[cite: 4]
+            // 1. Tạo Registration
             Registration registration = Registration.builder()
                     .team(team)
                     .hackathonEvent(event)
-                    .status(RegistrationStatus.PENDING)
+                    .status(RegistrationStatus.APPROVED)
                     .registrationDate(LocalDateTime.now())
                     .build();
             registrationRepository.save(registration);
@@ -210,24 +233,52 @@ public class DataInitializer implements CommandLineRunner {
             TeamParticipant participant = TeamParticipant.builder()
                     .registration(registration)
                     .status(ParticipantStatus.ACTIVE)
-                    .submissionStatus(SubmissionStatus.SUBMITTED) // Cập nhật trạng thái sau khi có bài nộp[cite: 3]
+                    .submissionStatus(SubmissionStatus.SUBMITTED)
                     .build();
             participantRepository.save(participant);
 
-            // 3. Tạo Submission
-            Submission submission = Submission.builder()
-                    .createAt(LocalDateTime.now())
-                    .description("Dự án demo cho vòng thi này")
-                    .githubUrl("https://github.com/HoThuyDiep/Smart-Medical-Management")
-                    .latestCommitSha("7d1b31e741256b7ea6727284b39b06886e8e8156") // Commit chuẩn 40 ký tự[cite: 1]
-                    .isFinal(true)
-                    .team(team) // Liên kết với Team[cite: 1]
-                    .teamParticipant(participant) // Liên kết với TeamParticipant[cite: 1, 3]
-                    .build();
+            // 3. Duyệt qua từng vòng thi
+            for (Round round : event.getRounds()) {
+                // Tạo Submission
+                Submission submission = Submission.builder()
+                        .createAt(LocalDateTime.now())
+                        .description("Dự án cho vòng: " + round.getRoundName())
+                        .githubUrl("https://github.com/HoThuyDiep/Smart-Medical-Management")
+                        .latestCommitSha("7d1b31e741256b7ea6727284b39b06886e8e8156")
+                        .isFinal(true)
+                        .team(team)
+                        .teamParticipant(participant)
+                        .build();
+                submissionRepository.save(submission);
 
-            submissionRepository.save(submission);
+                // Phân bổ người chấm (xoay vòng qua danh sách expertList)
+                ExpertAssign currentExpert = expertList.get(expertIndex % expertList.size());
+                expertIndex++;
 
-            System.out.println("Đã tạo bộ dữ liệu hoàn chỉnh cho đội: " + team.getTeamName());
+                // Tạo Evaluation
+                Evaluation evaluation = Evaluation.builder()
+                        .score(new BigDecimal("9.50"))
+                        .status(EvaluationStatus.GRADED)
+                        .submission(submission)
+                        .expertAssign(currentExpert)
+                        .build();
+                evaluationRepository.save(evaluation);
+
+                // Tạo EvaluationDetails cho tiêu chí của vòng thi hiện tại
+                List<EvaluationCriteria> criteriaList = evaluationCriteriaRepository.findByRound_RoundId(round.getRoundId());
+                for (EvaluationCriteria criteria : criteriaList) {
+                    EvaluationDetail detail = EvaluationDetail.builder()
+                            .evaluation(evaluation)
+                            .evaluationCriteria(criteria)
+                            .score(new BigDecimal("9.00"))
+                            .comment("Đạt yêu cầu tiêu chí " + criteria.getCriteriaName())
+                            .build();
+                    evaluationDetailRepository.save(detail);
+                }
+            }
+        }
+        System.out.println("Đã khởi tạo xong toàn bộ dữ liệu mẫu!");
     }
-}
+
+
 }

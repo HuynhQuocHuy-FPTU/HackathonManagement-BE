@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Getter
 @Setter
+@Builder
 @Entity
 @Table(name = "EvaluationDetail")
 public class EvaluationDetail {
@@ -21,7 +22,7 @@ public class EvaluationDetail {
     private BigDecimal score;
     @Column(name = "Comment", columnDefinition = "NVARCHAR(500)")
     private String comment;
-    @Column(name="Original_Score", precision = 10 , scale = 2, nullable = false)
+    @Column(name="Original_Score", precision = 10 , scale = 2)
     private BigDecimal originalScore;
     // 1 evaluation - N evaluation detail
     @ManyToOne(fetch = FetchType.LAZY)
