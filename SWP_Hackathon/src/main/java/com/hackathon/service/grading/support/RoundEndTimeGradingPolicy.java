@@ -1,6 +1,7 @@
 package com.hackathon.service.grading.support;
 
 import com.hackathon.entity.Round;
+import com.hackathon.exception.BadRequestException;
 import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 
@@ -30,6 +31,7 @@ public class RoundEndTimeGradingPolicy {
      */
     public boolean isGradingOpen(Round round) {
         LocalDateTime deadline = getGradingDeadline(round);
+        if(LocalDateTime.now().isBefore(round.getSubmissionDeadline())) throw new BadRequestException("Chưa đến thời gian chấm bài");
         return deadline == null || LocalDateTime.now().isBefore(deadline);
     }
 }

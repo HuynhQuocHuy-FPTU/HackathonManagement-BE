@@ -68,10 +68,7 @@ public class GithubOAuthService {
                 .toUriString();
     }
 
-    /**
-     * Bước 2: Xử lý callback từ GitHub — đổi code lấy access_token, lấy thông tin user,
-     * lưu githubId/githubUsername vào Account tương ứng với accountId đã mã hoá trong state.
-     */
+    //Bước 2: Xử lý callback từ GitHub — đổi code lấy access_token, lấy thông tin user
     @Transactional
     public void handleCallback(String code, String state) {
         Integer accountId;
@@ -133,11 +130,11 @@ public class GithubOAuthService {
                 .body(GithubUserInfoResponse.class);
     }
 
-    /**
-     * Dùng khi nộp bài: lấy owner login chính xác từ GitHub API (xử lý cả trường hợp
-     * public repo bị đổi tên / redirect), không cần access token vì chỉ áp dụng cho repo public.
-     * Trả về null nếu repo không tồn tại hoặc không truy cập được (coi như không xác minh được).
-     */
+
+      //Dùng khi nộp bài: lấy owner login chính xác từ GitHub API (xử lý cả trường hợp
+     //public repo bị đổi tên / redirect), không cần access token vì chỉ áp dụng cho repo public.
+      //Trả về null nếu repo không tồn tại hoặc không truy cập được (coi như không xác minh được)
+
     public String fetchRepoOwnerLogin(String gitHubUrl) {
         Matcher matcher = GITHUB_URL_PATTERN.matcher(gitHubUrl.trim());
         if (!matcher.matches()) {

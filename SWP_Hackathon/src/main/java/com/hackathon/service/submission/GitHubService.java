@@ -24,6 +24,10 @@ public class GitHubService {
 
     //Lấy lần commit cuối cùng
     public String getLatestCommitSha(String repoUrl) {
+        if (repoUrl == null || repoUrl.isBlank()) {
+            return null;
+        }
+
         String repoFullName = extractRepoFullName(repoUrl);
 
         try {

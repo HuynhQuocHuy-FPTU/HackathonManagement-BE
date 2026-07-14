@@ -202,9 +202,9 @@ public class StatusSchedulerService {
             return RoundStatus.ONGOING;
         }
 
-        if (now.isBefore(round.getEndTime())) {
-            return RoundStatus.EVALUATING;
-        }
+//        if(!now.isBefore(round.getSubmissionDeadline().plusHours(2)) && currentStatus == RoundStatus.EVALUATING){
+//            return RoundStatus.PENDING_APPROVAL;
+//        }
 
         // Hết thời gian chấm → chờ Coordinator duyệt lần đầu
         return RoundStatus.PENDING_APPROVAL;
