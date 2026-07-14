@@ -12,8 +12,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -25,9 +27,8 @@ public class ScoreExportService {
             "ItemID", "RaterID", "CriteriaID", "CriteriaName", "Score", "Weight"
     };
 
-    /**
-     * Xuất CSV ẩn danh cho toàn bộ điểm GRADED trong 1 categoryRound.
-     */
+    //Xuất CSV ẩn danh cho toàn bộ điểm GRADED trong 1 categoryRound.
+
     public byte[] exportAnonymizedScores(Integer categoryRoundId) {
         categoryRoundRepository.findById(categoryRoundId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy category round"));
@@ -35,8 +36,10 @@ public class ScoreExportService {
         List<Evaluation> evaluations = evaluationRepository.findBySubmission_TeamParticipant_CategoryRound_CategoryRoundIdAndStatus(categoryRoundId, EvaluationStatus.GRADED);
 
         // Map ẩn danh — chỉ tồn tại trong phạm vi 1 lần gọi hàm này, không lưu lại ở đâu.
-        Map<Integer, String> itemAnonymizedIds = new LinkedHashMap<>(); // key: teamParticipant.id
-        Map<Integer, String> raterAnonymizedIds = new LinkedHashMap<>(); // key: expert.id
+        evaluations.sort(
+                Comparator.comparing((Evaluation e) -> e.getSubmission().getSubmissionId())
+                        .thenComparing(e -> e.getExpertAssign().getExpert().getExpertId())
+        );
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try (PrintWriter writer = new PrintWriter(out, true, StandardCharsets.UTF_8)) {
@@ -45,15 +48,19 @@ public class ScoreExportService {
             writeRow(writer, HEADER);
 
             for (Evaluation evaluation : evaluations) {
-                TeamParticipant participant = evaluation.getSubmission().getTeamParticipant();
                 Expert expert = evaluation.getExpertAssign().getExpert();
 
-                String itemId = itemAnonymizedIds.computeIfAbsent(
-                        participant.getId(), k -> "Item-" + (itemAnonymizedIds.size() + 1));
-                String raterId = raterAnonymizedIds.computeIfAbsent(
-                        expert.getExpertId(), k -> "Rater-" + (raterAnonymizedIds.size() + 1));
+                String itemId = anonymize("Item", evaluation.getSubmission().getSubmissionId());
+                String raterId = anonymize("Rater", expert.getExpertId());
 
-                for (EvaluationDetail detail : evaluation.getEvaluationDetails()) {
+                List<EvaluationDetail> details = evaluation.getEvaluationDetails().stream()
+                        .sorted(Comparator.comparing(detail ->
+                                detail.getEvaluationCriteria() != null
+                                        ? detail.getEvaluationCriteria().getEvaluationCriteriaId()
+                                        : Integer.MAX_VALUE))
+                        .toList();
+
+                for (EvaluationDetail detail : details) {
                     EvaluationCriteria criteria = detail.getEvaluationCriteria();
 
                     writeRow(writer,
@@ -71,6 +78,15 @@ public class ScoreExportService {
         return out.toByteArray();
     }
 
+    private String anonymize(String prefix, Integer sourceId) {
+        String source = prefix + ":" + sourceId;
+        String token = UUID.nameUUIDFromBytes(source.getBytes(StandardCharsets.UTF_8))
+                .toString()
+                .replace("-", "")
+                .substring(0, 12);
+        return prefix + "-" + token;
+    }
+
     private void writeRow(PrintWriter writer, String... columns) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < columns.length; i++) {
@@ -80,10 +96,6 @@ public class ScoreExportService {
         writer.println(sb);
     }
 
-    /**
-     * Escape đúng chuẩn CSV: nếu giá trị chứa dấu phẩy, dấu ngoặc kép, hoặc xuống dòng
-     * thì bọc trong ngoặc kép và nhân đôi ngoặc kép bên trong (theo RFC 4180).
-     */
     private String escapeCsv(String value) {
         if (value == null) return "";
         boolean needsQuoting = value.contains(",") || value.contains("\"") || value.contains("\n") || value.contains("\r");

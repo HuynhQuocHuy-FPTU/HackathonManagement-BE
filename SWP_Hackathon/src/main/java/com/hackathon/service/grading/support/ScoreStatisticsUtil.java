@@ -15,18 +15,22 @@ public class ScoreStatisticsUtil {
         return sum.divide(BigDecimal.valueOf(values.size()), 2, RoundingMode.HALF_UP);
     }
 
-    /**
-     * Độ lệch chuẩn mẫu (sample standard deviation, dùng n-1) — trả về 0 nếu < 2 giá trị
-     * (không đủ dữ liệu để có ý nghĩa thống kê).
-     */
-    public BigDecimal standardDeviation(List<BigDecimal> values, BigDecimal mean) {
+
+    public BigDecimal variance(List<BigDecimal> values, BigDecimal mean) {
         if (values == null || values.size() < 2) return BigDecimal.ZERO;
 
         BigDecimal sumSquaredDiff = values.stream()
                 .map(v -> v.subtract(mean).pow(2))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal variance = sumSquaredDiff.divide(BigDecimal.valueOf(values.size() - 1), MathContext.DECIMAL64);
-        return variance.sqrt(MathContext.DECIMAL64).setScale(2, RoundingMode.HALF_UP);
+        return sumSquaredDiff
+                .divide(BigDecimal.valueOf(values.size() - 1), MathContext.DECIMAL64)
+                .setScale(2, RoundingMode.HALF_UP);
     }
+
+    public BigDecimal squareRoot(BigDecimal value) {
+        if (value == null || value.signum() <= 0) return BigDecimal.ZERO;
+        return value.sqrt(MathContext.DECIMAL64).setScale(2, RoundingMode.HALF_UP);
+    }
+
 }
