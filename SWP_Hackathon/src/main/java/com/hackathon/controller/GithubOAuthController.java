@@ -1,6 +1,5 @@
 package com.hackathon.controller;
 
-import com.hackathon.dto.github.GithubUserInfoResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.GithubOAuthService;
 import lombok.RequiredArgsConstructor;

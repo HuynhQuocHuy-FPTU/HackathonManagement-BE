@@ -19,8 +19,6 @@ public interface EventService {
     public void restoreEvent(Integer eventId);
     public void permanentlyDeleteEvent(Integer eventId);
     void cancelEvent(Integer eventId, String reason, CustomUserDetails currentUser);
-//    public List<EventResponse> searchEventByName(String eventName);
-
     // Information about HackathonEvent Detail
     public EventResponse  getEventDetail(Integer eventID);
     //Search HackathonEvent by Name

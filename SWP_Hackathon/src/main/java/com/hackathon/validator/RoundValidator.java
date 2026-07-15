@@ -2,12 +2,16 @@ package com.hackathon.validator;
 
 import com.hackathon.dto.round.CreateRoundRequest;
 import com.hackathon.dto.round.UpdateRoundRequest;
+import com.hackathon.dto.round.UpdateTimeRoundRequest;
 import com.hackathon.entity.HackathonEvent;
 import com.hackathon.entity.Round;
+import com.hackathon.entity.enums.RoundStatus;
 import com.hackathon.exception.BadRequestException;
 import lombok.Data;
 import org.springframework.stereotype.Component;
 
+import javax.swing.plaf.PanelUI;
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 
@@ -142,4 +146,100 @@ public class RoundValidator {
             }
         }
     }
+
+    public void validateTimeRound(Round round, UpdateTimeRoundRequest request){
+        if (round == null || request == null) {
+            throw new BadRequestException(
+                    "Thông tin cập nhật thời gian vòng thi không hợp lệ"
+            );
+        }
+        if (round.getStatus() == RoundStatus.COMPLETED) {
+            throw new BadRequestException(
+                    "Không thể cập nhật thời gian của vòng thi đã hoàn thành"
+            );
+        }
+
+        LocalDateTime startTime = request.getStart_Time();
+        LocalDateTime submissionDeadline = request.getSubmissionDeadline();
+        LocalDateTime evaluationDeadline = request.getEvaluationDeadline();
+        LocalDateTime resolveAppealDeadline =
+                request.getResolveAppealDeadline();
+        LocalDateTime endTime = request.getEnd_Time();
+
+        // Kiểm tra thứ tự thời gian trong round.
+        if (!startTime.isBefore(submissionDeadline)) {
+            throw new BadRequestException(
+                    "Hạn nộp bài phải sau thời gian bắt đầu vòng"
+            );
+        }
+
+        if (!submissionDeadline.isBefore(evaluationDeadline)) {
+            throw new BadRequestException(
+                    "Thời gian kết thúc đánh giá phải sau hạn nộp bài"
+            );
+        }
+
+        if (!evaluationDeadline.isBefore(resolveAppealDeadline)) {
+            throw new BadRequestException(
+                    "Thời gian xử lý khiếu nại phải sau thời gian đánh giá"
+            );
+        }
+
+        if (resolveAppealDeadline.isAfter(endTime)) {
+            throw new BadRequestException(
+                    "Thời gian xử lý khiếu nại không được sau thời gian kết thúc vòng"
+            );
+        }
+
+        HackathonEvent event = round.getHackathonEvent();
+
+        if (event == null) {
+            throw new BadRequestException("Vòng thi chưa thuộc sự kiện nào");
+        }
+
+        if (startTime.isBefore(event.getStartDate())
+                || endTime.isAfter(event.getEndDate())) {
+            throw new BadRequestException("Thời gian vòng thi phải nằm trong thời gian của sự kiện"
+            );
+        }
+
+        if (event.getRounds() == null) {
+            return;
+        }
+
+        // Kiểm tra timeline với các round khác.
+        for (Round otherRound : event.getRounds()) {
+            if (otherRound.getRoundId().equals(round.getRoundId())) {
+                continue;
+            }
+
+            // Round hiện tại phải bắt đầu sau các round đứng trước.
+            if (otherRound.getOrderIndex() < round.getOrderIndex()
+                    && startTime.isBefore(otherRound.getEndTime())) {
+                throw new BadRequestException(String.format(
+                        "Vòng thứ %d phải bắt đầu sau khi vòng '%s' kết thúc lúc %s",
+                        round.getOrderIndex(),
+                        otherRound.getRoundName(),
+                        otherRound.getEndTime()
+                ));
+            }
+
+            // Round hiện tại phải kết thúc trước các round đứng sau.
+            if (otherRound.getOrderIndex() > round.getOrderIndex()
+                    && endTime.isAfter(otherRound.getStartTime())) {
+                throw new BadRequestException(String.format(
+                        "Vòng thứ %d phải kết thúc trước khi vòng '%s' bắt đầu lúc %s",
+                        round.getOrderIndex(),
+                        otherRound.getRoundName(),
+                        otherRound.getStartTime()
+                ));
+            }
+        }
+
+
+    }
+
+
+
+
 }

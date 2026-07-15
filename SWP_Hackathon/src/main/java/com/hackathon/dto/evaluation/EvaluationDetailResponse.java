@@ -17,6 +17,8 @@ import java.math.BigDecimal;
 
 public class EvaluationDetailResponse {
     private Integer evaluationDetailId;
+    private String criteriaName;
+    private String criteriaDescription;
     private BigDecimal score;
     private String comment;
 }

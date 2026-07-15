@@ -17,7 +17,7 @@ public class EvaluationResponse {
     private BigDecimal totalScore;
     private EvaluationStatus status;
     private String comment;
-    private List<SubmissionResponse> listSubmission;
+//    private List<SubmissionResponse> listSubmission;
     private List<EvaluationDetailResponse> listEvaluationDetail;
 
 }

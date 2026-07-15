@@ -32,10 +32,6 @@ public class CreateRoundRequest {
     private Integer criteriaSetId;
 
     private Integer orderIndex;
-
-    @FutureOrPresent(message = "Ngày phải là thời điểm trong tương lai")
-    private LocalDateTime submissionDeadline;
-
     private SubmissionType submissionType;
 
     private List<FileType> allowedFileTypes;
@@ -45,6 +41,14 @@ public class CreateRoundRequest {
     @Min(value = 0, message = "Giá trị tổng size của file phải lớn hơn 0 MB")
     @Max(value = 1024, message = "Giá trị tổng size của file phải nhỏ hơn 1024 MB")
     private Integer maxTotalSizeMb;
+
+    private LocalDateTime submissionDeadline;
+
+    private LocalDateTime evaluationDeadline;
+
+    private LocalDateTime resolveAppealDeadline;
+
+
 
     private List<EvaluationCriteriaRequestDTO> customCriteriaDetatils;
 

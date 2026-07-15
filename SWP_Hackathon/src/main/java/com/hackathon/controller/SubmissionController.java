@@ -1,10 +1,13 @@
 package com.hackathon.controller;
 
+import com.hackathon.dto.evaluation.EvaluationResponse;
 import com.hackathon.dto.submission.ResultSubmissionResponse;
 import com.hackathon.dto.submission.SubmissionResponse;
+import com.hackathon.entity.Evaluation;
 import com.hackathon.entity.Submission;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
+import com.hackathon.service.EvaluationDetailService;
 import com.hackathon.service.submission.SubmissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -23,6 +26,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SubmissionController {
     private final SubmissionService submissionService;
+    private final EvaluationDetailService evaluationDetailService;
     @Operation(summary = "Nộp bài cho 1 vòng thi")
     @PostMapping(value = "/{roundId}/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('STUDENT')")
@@ -51,9 +55,15 @@ public class SubmissionController {
         return ResponseEntity.ok(ApiResponse.success(submissionService.getResultOfSubmission(userDetails, categoryRound), "Lấy danh sách submision thành công"));
     }
 
-    @PatchMapping("/{roundId}/choose-final/{submissionId}")
+    @GetMapping("/{submissionId}/evaluatedDetail")
+    public ResponseEntity<ApiResponse<List<EvaluationResponse>>> getEvaluationDetail(@PathVariable Integer submissionId){
+        List<EvaluationResponse> list = evaluationDetailService.getEvaluated(submissionId);
+        return ResponseEntity.ok(ApiResponse.success(list, "Lấy chi tiết bài nộp được chấm thành công"));
+    }
+
+    @PatchMapping("/choose-final/{submissionId}")
     @PreAuthorize("hasRole('STUDENT')")
-    public ResponseEntity<ApiResponse<Void>> chooseFinalSubmission(@PathVariable Integer roundId, @PathVariable Integer submissionId, @AuthenticationPrincipal CustomUserDetails userDetails){
+    public ResponseEntity<ApiResponse<Void>> chooseFinalSubmission(@PathVariable Integer submissionId, @AuthenticationPrincipal CustomUserDetails userDetails){
         submissionService.chooseFinalSubmission(submissionId, userDetails);
         return ResponseEntity.ok(ApiResponse.success(null, "Đã chọn bài nộp thành công"));
     }

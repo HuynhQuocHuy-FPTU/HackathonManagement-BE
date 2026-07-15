@@ -293,6 +293,8 @@ public class RoundAdvancementService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Không tìm thấy round hiện tại."));
 
+        validateAppealFinished(currentRound);
+
         // API hoặc scheduler đã xử lý trước đó.
         if (currentRound.getAdvancementProcessedAt() != null) {
             return List.of();
@@ -337,6 +339,20 @@ public class RoundAdvancementService {
     private void markAdvancementProcessed(Round round) {
         round.setAdvancementProcessedAt(LocalDateTime.now());
         roundRepository.save(round);
+    }
+
+    private void validateAppealFinished(Round round) {
+        if (round.getAppealEndTime() == null) {
+            throw new BadRequestException(
+                    "Vòng thi chưa cấu hình thời gian kết thúc khiếu nại"
+            );
+        }
+
+        if (LocalDateTime.now().isBefore(round.getAppealEndTime())) {
+            throw new BadRequestException(
+                    "Chưa kết thúc thời gian khiếu nại, không thể thăng vòng"
+            );
+        }
     }
 
     private void validateRankingCalculated(List<TeamParticipant> participants) {
@@ -467,11 +483,8 @@ public class RoundAdvancementService {
         List<TeamParticipant> participants = participantRepository
                 .findByCategoryRound_CategoryRoundIdAndStatusIsNotIn(
                         categoryRoundId,
-                        List.of(
-                                ParticipantStatus.DISQUALIFIED,
-                                ParticipantStatus.WITHDRAWN
-                        )
-                );
+                        List.of(ParticipantStatus.DISQUALIFIED,
+                                ParticipantStatus.WITHDRAWN));
 
         if (participants.isEmpty()) {
             throw new BadRequestException("Chưa có đội tham gia.");

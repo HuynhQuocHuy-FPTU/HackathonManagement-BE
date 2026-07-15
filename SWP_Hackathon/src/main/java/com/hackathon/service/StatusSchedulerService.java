@@ -28,8 +28,7 @@ public class StatusSchedulerService {
     @Scheduled(fixedRate = 60000)
     public void autoCalculateScores() {
         LocalDateTime now = LocalDateTime.now();
-        List<Round> rounds = roundRepository
-                .findBySubmissionDeadlineLessThanEqualAndScoringProcessedAtIsNull(now);
+        List<Round> rounds = roundRepository.findBySubmissionDeadlineLessThanEqualAndScoringProcessedAtIsNull(now);
 
         for (Round round : rounds) {
             try {
@@ -205,6 +204,9 @@ public class StatusSchedulerService {
 //        if(!now.isBefore(round.getSubmissionDeadline().plusHours(2)) && currentStatus == RoundStatus.EVALUATING){
 //            return RoundStatus.PENDING_APPROVAL;
 //        }
+        if(!now.isBefore(round.getSubmissionDeadline())){
+            return RoundStatus.EVALUATING;
+        }
 
         // Hết thời gian chấm → chờ Coordinator duyệt lần đầu
         return RoundStatus.PENDING_APPROVAL;
@@ -276,6 +278,4 @@ public class StatusSchedulerService {
         // 3. MẶC ĐỊNH: Quá thời gian quy định (24h)
         return WorkshopStatus.COMPLETED;
     }
-
-
 }
