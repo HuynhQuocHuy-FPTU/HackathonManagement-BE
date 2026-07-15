@@ -349,15 +349,9 @@ public class RoundAdvancementService {
             );
         }
 
-//        if (round.getStatus() != RoundStatus.FINAL_RESULT) {
-//            throw new BadRequestException(
-//                    "Chưa kết thúc thời gian khiếu nại, không thể thăng vòng"
-//            );
-//        }
         if (LocalDateTime.now().isBefore(round.getResolveAppealDeadline())) {
             throw new BadRequestException(
-                    "Thời gian nộp đơn khiếu nại của thí sinh vẫn chưa kết thúc, không thể thăng vòng!"
-            );
+                    "Chưa hết thời hạn giải quyết khiếu nại của Ban tổ chức, không thể thăng vòng."            );
         }
     }
 

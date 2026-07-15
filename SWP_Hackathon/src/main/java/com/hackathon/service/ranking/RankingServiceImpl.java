@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
+
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -117,8 +118,8 @@ public class RankingServiceImpl implements RankingService {
         Round round = roundRepository.findById(roundId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy vòng thi này."));
 
-        if (round.getStatus() != RoundStatus.EVALUATING) {
-            throw new BadRequestException("Vòng đấu phải ở trạng thái đang chấm điểm mới có thể công bố kết quả.");
+        if (round.getStatus() != RoundStatus.PENDING) {
+            throw new BadRequestException("Vòng đấu phải ở trạng thái PENDING mới có thể công bố kết quả.");
         }
 
         if (hoursAmount == null || hoursAmount <= 0) {
@@ -165,10 +166,14 @@ public class RankingServiceImpl implements RankingService {
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy vòng thi này."));
 
         // Công bố ranking chính thức sau khi phê duyệt và kết thúc thời gian phúc khảo
-        if (round.getStatus() != RoundStatus.APPEALING
-                && round.getStatus() != RoundStatus.PENDING) {
-            return;
+        if (round.getResolveAppealDeadline() != null
+                && LocalDateTime.now().isBefore(round.getResolveAppealDeadline())) {
+            throw new BadRequestException(
+                    "Chưa tới thời gian công bố kết quả cuối"
+            );
         }
+        log.info("Round status = {}", round.getStatus());
+
 
         List<CategoryRound> categoryRounds = round.getCategoryRounds();
         if (categoryRounds == null || categoryRounds.isEmpty()) {
@@ -177,11 +182,12 @@ public class RankingServiceImpl implements RankingService {
 
         for (CategoryRound cr : categoryRounds) {
             log.info("Step 1");
+            log.info("Before advance");
 
             roundAdvancementService.calculateScoresAndRanking(cr.getCategoryRoundId());
-
         }
         log.info("Step 2");
+        log.info("After advance");
 
         roundAdvancementService.advanceAllCategoriesInRound(roundId);
 
@@ -199,15 +205,18 @@ public class RankingServiceImpl implements RankingService {
 
         round.setStatus(RoundStatus.FINAL_RESULT);
         roundRepository.save(round);
-        log.info("Đã công bố bản xếp hạng chính thức vòng {}. Đóng vòng đấu thành công!", roundId);
+        log.info("Đã công bố bản xếp hạng chính thức vòng {}. ", roundId);
         notificationService.notifyRoundRankingPublished(null, roundId, true);
 
         List<CategoryRankingResponse> auditRankingData = auditRankingData(categoryRounds);
 
+        Account systemAccount = accountRepository
+                .findByEmail("system@hackathon.com")
+                .orElseThrow();
         try {
 
             auditService.saveLog(
-                    null,
+                    systemAccount,
                     AuditAction.PUBLISH_FINAL,
                     AuditEntityType.ROUND,
                     roundId,
