@@ -120,21 +120,24 @@ public class SubmissionService {
     public SubmissionResponse mapToResponse(Submission submission){
 
         SubmissionResponse response = new SubmissionResponse();
-        String latestCommitSha = null;
-
-        if (submission.getGithubUrl() != null && !submission.getGithubUrl().isBlank()) {
-            latestCommitSha = gitHubService.getLatestCommitSha(submission.getGithubUrl());
-        }
-        String githubCommitUrl = submission.getGithubUrl() + "/commit/" + latestCommitSha;
+//        String latestCommitSha = null;
+//
+//        if (submission.getGithubUrl() != null && !submission.getGithubUrl().isBlank()) {
+//            latestCommitSha = gitHubService.getLatestCommitSha(submission.getGithubUrl());
+//        }
+//        String githubCommitUrl = submission.getGithubUrl() + "/commit/" + latestCommitSha;
         response.setSubmissionId(submission.getSubmissionId());
         response.setTeamName(submission.getTeamParticipant().getRegistration().getTeam().getTeamName());
-        response.setGithubUrl(githubCommitUrl);
+        response.setGithubUrl(submission.getGithubUrl() + "/commit/" + submission.getLatestCommitSha());
         List<FileDTO> fileDTOList = new ArrayList<>();
         for(SubmissionFile f : submission.getFiles()){
             FileDTO fileDTO = new FileDTO(f.getFileName(), f.getFileUrl());
             fileDTOList.add(fileDTO);
         }
         response.setFileDTOList(fileDTOList);
+        response.setCreateAt(submission.getCreateAt());
+        response.setFinal(submission.isFinal());
+        response.setStatus(submission.getTeamParticipant().getSubmissionStatus());
         return response;
     }
 

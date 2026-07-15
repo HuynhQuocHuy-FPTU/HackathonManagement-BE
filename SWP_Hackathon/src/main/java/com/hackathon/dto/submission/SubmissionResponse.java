@@ -20,4 +20,5 @@ public class SubmissionResponse {
     private List<FileDTO> fileDTOList;
     private SubmissionStatus status;
     private LocalDateTime createAt;
+    private boolean isFinal;
 }
