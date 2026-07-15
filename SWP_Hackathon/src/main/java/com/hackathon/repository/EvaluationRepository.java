@@ -14,7 +14,7 @@ import java.util.Optional;
 
 @Repository
 public interface EvaluationRepository extends JpaRepository<Evaluation, Integer> {
-    List<Evaluation> findBySubmission_SubmissionIdAndStatus(int submissionSubmissionId, EvaluationStatus status);
+    List<Evaluation> findBySubmission_SubmissionIdAndSubmission_IsFinal(int submissionSubmissionId, boolean submissionIsFinal);
 
     boolean existsBySubmission_TeamParticipant_CategoryRound_CategoryRoundIdAndStatus(Integer categoryRoundId, EvaluationStatus status);
 

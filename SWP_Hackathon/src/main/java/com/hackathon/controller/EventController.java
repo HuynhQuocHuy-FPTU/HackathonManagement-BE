@@ -5,12 +5,14 @@ import com.hackathon.dto.event.CreateEventRequest;
 import com.hackathon.dto.event.EventResponse;
 import com.hackathon.dto.event.UpdateEventRequest;
 import com.hackathon.dto.expert.ExpertInfoResponse;
+import com.hackathon.dto.round.UpdateTimeRoundRequest;
 import com.hackathon.dto.team.TeamResponse;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.CategoryService;
 import com.hackathon.service.ExpertService;
 import com.hackathon.service.RegistrationEventService;
+import com.hackathon.service.RoundService;
 import com.hackathon.service.event.EventService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,9 +33,11 @@ public class EventController {
     private ExpertService expertService;
     @Autowired
     private CategoryService categoryService;
+    @Autowired
+    private RoundService roundService;
 
     // =========================================================
-    // PUBLIC ENDPOINTS (Dành cho Guest/Student/Admin)
+    // PUBLIC (Dành cho Guest/Student/Admin)
     // =========================================================
 
     @GetMapping("/public")
@@ -167,6 +171,22 @@ public class EventController {
         eventService.cancelEvent(eventId, reason, userDetails);
         return ResponseEntity.ok(
                 ApiResponse.success(null, "Đã hủy cuộc thi và gửi thông báo đến các team")
+        );
+    }
+
+    // =========================================================
+    // UPDATE ROUND TIME
+    // =========================================================
+
+    @PutMapping("/update-time-round/{roundId}")
+    public ResponseEntity<ApiResponse<Void>> updateTimeRound(
+            @PathVariable Integer roundId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody UpdateTimeRoundRequest request
+    ) {
+        roundService.updateTimeRound(request,userDetails, roundId);
+        return ResponseEntity.ok(
+                ApiResponse.success(null, "Đã chỉnh sửa thời gian của round thành công")
         );
     }
 
