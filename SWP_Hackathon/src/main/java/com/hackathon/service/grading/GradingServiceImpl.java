@@ -80,6 +80,7 @@ public class GradingServiceImpl implements GradingService {
                     fileDTOList.add(new FileDTO(f.getFileName(), f.getFileUrl()));
                 }
             }
+            String commitUrl = sub.getGithubUrl() + "/commit/" +sub.getLatestCommitSha();
 
             return AssignedSubmissionForJudgeResponse.builder()
                     .submissionId(sub.getSubmissionId())

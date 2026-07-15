@@ -207,7 +207,7 @@ public class DataInitializer implements CommandLineRunner {
 //            }
 //        }
 
-        HackathonEvent event = eventRepository.findById(1)
+        HackathonEvent event = eventRepository.findById(4)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
 
         List<Team> teamList = teamRepository.findAll();

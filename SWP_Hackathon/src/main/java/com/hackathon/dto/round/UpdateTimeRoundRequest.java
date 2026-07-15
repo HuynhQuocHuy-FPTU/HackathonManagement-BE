@@ -13,9 +13,9 @@ import java.time.LocalDateTime;
 @Setter
 public class UpdateTimeRoundRequest {
 
-     LocalDateTime start_Time;
+     LocalDateTime startDate;
 
-     LocalDateTime end_Time;
+     LocalDateTime endDate;
 
      LocalDateTime submissionDeadline;
 

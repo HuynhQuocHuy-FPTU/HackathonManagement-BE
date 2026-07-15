@@ -36,6 +36,4 @@ public interface RoundService {
 
     void updateTimeRound(UpdateTimeRoundRequest updateTimeRoundRequest, CustomUserDetails userDetails, Integer roundId);
 
-    List<UpdateTimeRoundRequest> getTimeInRound(Round round);
-
 }

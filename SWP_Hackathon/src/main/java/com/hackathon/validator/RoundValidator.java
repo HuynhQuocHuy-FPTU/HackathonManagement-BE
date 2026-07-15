@@ -20,15 +20,13 @@ import java.util.List;
 public class RoundValidator {
 
     public void validatorCreate(CreateRoundRequest request, HackathonEvent event) throws BadRequestException {
-        // Check time cơ bản
-        if(request.getStartDate().isAfter(request.getEndDate())){
-            throw new BadRequestException("Start date must be before end date");
-        }
-
-        // Kiểm tra hạn nộp bài cho mỗi vòng
-        if(request.getSubmissionDeadline().isBefore(request.getStartDate()) || request.getSubmissionDeadline().isAfter(request.getEndDate())){
-            throw new BadRequestException("Submission deadline phải sau startDate và trước endDate");
-        }
+        validateDeadlineOrder(
+                request.getStartDate(),
+                request.getSubmissionDeadline(),
+                request.getEvaluationDeadline(),
+                request.getResolveAppealDeadline(),
+                request.getEndDate()
+        );
 
         // Kiểm tra ngày bắt đầu và kết thúc của round có sau ngày bắt đầu của event và trước ngày kết thúc của event
         if(request.getStartDate().isBefore(event.getStartDate()) || request.getEndDate().isAfter(event.getEndDate())){
@@ -37,17 +35,13 @@ public class RoundValidator {
     }
 
     public void validatorUpdate(UpdateRoundRequest request) throws BadRequestException {
-        // Check time cơ bản
-        if(request.getStartDate().isAfter(request.getEndDate())){
-            throw new BadRequestException("Start date must be before end date");
-        }
-
-        //  BỔ SUNG: Kiểm tra hạn nộp bài khi update
-        if(request.getSubmissionDeadline() != null) {
-            if(request.getSubmissionDeadline().isBefore(request.getStartDate()) || request.getSubmissionDeadline().isAfter(request.getEndDate())){
-                throw new BadRequestException("Submission deadline phải sau startDate và trước endDate");
-            }
-        }
+        validateDeadlineOrder(
+                request.getStartDate(),
+                request.getSubmissionDeadline(),
+                request.getEvaluationDeadline(),
+                request.getResolveAppealDeadline(),
+                request.getEndDate()
+        );
     }
 
     public void validateTimelineByOrderIndex(CreateRoundRequest request, List<Round> currentRounds) throws BadRequestException {
@@ -159,37 +153,20 @@ public class RoundValidator {
             );
         }
 
-        LocalDateTime startTime = request.getStart_Time();
+        LocalDateTime startTime = request.getStartDate();
         LocalDateTime submissionDeadline = request.getSubmissionDeadline();
         LocalDateTime evaluationDeadline = request.getEvaluationDeadline();
         LocalDateTime resolveAppealDeadline =
                 request.getResolveAppealDeadline();
-        LocalDateTime endTime = request.getEnd_Time();
+        LocalDateTime endTime = request.getEndDate();
 
-        // Kiểm tra thứ tự thời gian trong round.
-        if (!startTime.isBefore(submissionDeadline)) {
-            throw new BadRequestException(
-                    "Hạn nộp bài phải sau thời gian bắt đầu vòng"
-            );
-        }
-
-        if (!submissionDeadline.isBefore(evaluationDeadline)) {
-            throw new BadRequestException(
-                    "Thời gian kết thúc đánh giá phải sau hạn nộp bài"
-            );
-        }
-
-        if (!evaluationDeadline.isBefore(resolveAppealDeadline)) {
-            throw new BadRequestException(
-                    "Thời gian xử lý khiếu nại phải sau thời gian đánh giá"
-            );
-        }
-
-        if (resolveAppealDeadline.isAfter(endTime)) {
-            throw new BadRequestException(
-                    "Thời gian xử lý khiếu nại không được sau thời gian kết thúc vòng"
-            );
-        }
+        validateDeadlineOrder(
+                startTime,
+                submissionDeadline,
+                evaluationDeadline,
+                resolveAppealDeadline,
+                endTime
+        );
 
         HackathonEvent event = round.getHackathonEvent();
 
@@ -237,6 +214,36 @@ public class RoundValidator {
         }
 
 
+    }
+
+    private void validateDeadlineOrder(
+            LocalDateTime startTime,
+            LocalDateTime submissionDeadline,
+            LocalDateTime evaluationDeadline,
+            LocalDateTime resolveAppealDeadline,
+            LocalDateTime endTime
+    ) {
+        if (startTime == null || submissionDeadline == null
+                || evaluationDeadline == null || resolveAppealDeadline == null
+                || endTime == null) {
+            throw new BadRequestException("Các mốc thời gian của vòng thi không được để trống");
+        }
+
+        if (!startTime.isBefore(submissionDeadline)) {
+            throw new BadRequestException("Hạn nộp bài phải sau thời gian bắt đầu vòng");
+        }
+
+        if (!submissionDeadline.isBefore(evaluationDeadline)) {
+            throw new BadRequestException("Thời gian kết thúc đánh giá phải sau hạn nộp bài");
+        }
+
+        if (!evaluationDeadline.isBefore(resolveAppealDeadline)) {
+            throw new BadRequestException("Thời gian xử lý khiếu nại phải sau thời gian kết thúc đánh giá");
+        }
+
+        if (resolveAppealDeadline.isAfter(endTime)) {
+            throw new BadRequestException("Thời gian xử lý khiếu nại không được sau thời gian kết thúc vòng");
+        }
     }
 
 
