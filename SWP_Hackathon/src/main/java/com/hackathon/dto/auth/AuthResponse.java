@@ -15,6 +15,8 @@ public class AuthResponse {
 
     private String accessToken;
     private String refreshToken;
+    private Long githubId;
+    private String githubUsername;
     private long expiresIn;
     private int accountId;
     private String avatarUrl;

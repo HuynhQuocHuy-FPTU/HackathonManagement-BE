@@ -48,6 +48,8 @@ public class UserServiceImpl implements UserService {
 
         return AuthResponse.builder()
                 .accountId(account.getAccountId())
+                .githubUsername(account.getGithubUsername())
+                .githubId(account.getGithubId())
                 .fullName(fullName)
                 .email(account.getEmail())
                 .role(account.getRole())

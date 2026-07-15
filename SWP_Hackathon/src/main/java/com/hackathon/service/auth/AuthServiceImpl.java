@@ -250,10 +250,15 @@ public class AuthServiceImpl implements AuthService {
             organization = account.getEventCoordinator().getOrganization();
         }
 
+        System.out.println(account.getGithubId());
+        System.out.println(account.getGithubUsername());
+
         return AuthResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshTokenValue)
                 .expiresIn(jwtService.getAccessExpirationMs() / 1000)
+                .githubId(account.getGithubId())
+                .githubUsername(account.getGithubUsername())
                 .accountId(account.getAccountId())
                 .fullName(fullName)
                 .email(account.getEmail())
