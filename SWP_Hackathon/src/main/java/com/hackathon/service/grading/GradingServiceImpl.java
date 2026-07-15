@@ -457,7 +457,6 @@ public class GradingServiceImpl implements GradingService {
         if (isAllJudgesFinished) {
             // Nếu tất cả bgk đã sửa điểm xong. Đóng đơn khiếu nại hoàn toàn
             appealRequest.setStatus(RequestStatus.RE_EVALUATED);
-            round.setStatus(RoundStatus.PENDING_APPROVAL);
             appealRequest.setResponseMessage("Toàn bộ hội đồng Giám khảo đã hoàn tất cập nhật lại điểm số phúc khảo.");
         } else {
             // Nếu vẫn còn giám khảo chưa chấm lại giữ nguyên IN_REVIEW
