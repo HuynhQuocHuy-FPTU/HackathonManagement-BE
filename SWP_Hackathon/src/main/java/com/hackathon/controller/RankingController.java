@@ -46,15 +46,6 @@ public class RankingController {
         return ResponseEntity.ok(ApiResponse.success(null, "Ban tổ chức công bố bảng xếp hạng tạm thời thành công"));
     }
 
-//    @PostMapping("/{roundId}/publish-final")
-//    @PreAuthorize("hasRole('EVENTCOORDINATOR')")
-//    public ResponseEntity<ApiResponse<Void>> publishFinalRanking(
-//            @PathVariable Integer roundId,
-//            @AuthenticationPrincipal CustomUserDetails userDetails) {
-//        rankingService.publishFinalRanking(roundId, userDetails);
-//        return ResponseEntity.ok(ApiResponse.success(null, "Ban tổ chức công bố bảng xếp hạng chính thức thành công"));
-//    }
-
     @GetMapping("/{roundId}/topN")
     @PreAuthorize("hasRole('EVENTCOORDINATOR')")
     public ResponseEntity<ApiResponse<CategoryRoundRankingResponse>> getTopNRanking(

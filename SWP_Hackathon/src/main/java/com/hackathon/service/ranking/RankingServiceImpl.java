@@ -17,11 +17,11 @@ import com.hackathon.service.AuditService;
 import com.hackathon.service.ExcelExportService;
 import com.hackathon.service.NotificationService;
 import com.hackathon.service.RoundAdvancementService;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -36,6 +36,7 @@ public class RankingServiceImpl implements RankingService {
     private final NotificationService notificationService;
     private final ExcelExportService excelExportService;
     private final RoundAdvancementService roundAdvancementService;
+    private final AccountRepository accountRepository;
 
 
     //===============================================//
@@ -120,7 +121,7 @@ public class RankingServiceImpl implements RankingService {
             throw new BadRequestException("Vòng đấu phải ở trạng thái đang chấm điểm mới có thể công bố kết quả.");
         }
 
-        if ( hoursAmount== null || hoursAmount <= 0) {
+        if (hoursAmount == null || hoursAmount <= 0) {
             throw new BadRequestException("Vui lòng nhập số giờ mở cổng khiếu nại hợp lệ (lớn hơn 0).");
         }
 
@@ -157,14 +158,15 @@ public class RankingServiceImpl implements RankingService {
     }
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void publishFinalRanking(Integer roundId) {
         // Check Round
         Round round = roundRepository.findById(roundId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy vòng thi này."));
 
         // Công bố ranking chính thức sau khi phê duyệt và kết thúc thời gian phúc khảo
-        if (round.getStatus() != RoundStatus.APPEALING) {
+        if (round.getStatus() != RoundStatus.APPEALING
+                && round.getStatus() != RoundStatus.PENDING) {
             return;
         }
 
@@ -173,25 +175,27 @@ public class RankingServiceImpl implements RankingService {
             throw new BadRequestException("Không tìm thấy hạng mục nào trong vòng thi này.");
         }
 
-
         for (CategoryRound cr : categoryRounds) {
+            log.info("Step 1");
+
             roundAdvancementService.calculateScoresAndRanking(cr.getCategoryRoundId());
 
-            for (TeamParticipant tp : cr.getTeamParticipants()) {
-                if (tp.getStatus() == ParticipantStatus.ACTIVE) {
-                    throw new BadRequestException("Không thể công bố kết quả chính thức vì vẫn còn đội thi chưa được chấm điểm/xếp hạng (Trạng thái ACTIVE).");
-                }
-            }
-
         }
+        log.info("Step 2");
+
+        roundAdvancementService.advanceAllCategoriesInRound(roundId);
 
         // 3. REFRESH DATA TRONG HIBERNATE SESSION ĐỂ TRÁNH LẤY ĐIỂM/RANK CŨ TRONG CACHE
         roundRepository.flush();
         round = roundRepository.findById(roundId).orElseThrow();
         categoryRounds = round.getCategoryRounds();
 
+        log.info("Bắt đầu export FINAL Excel round {}", roundId);
+
         String uploadUrl = excelExportService.exportRankingToExcel(roundId, "FINAL");
         updateAndSaveExcelJson(round, uploadUrl, "FINAL");
+        log.info("Export thành công: {}", uploadUrl);
+
 
         round.setStatus(RoundStatus.FINAL_RESULT);
         roundRepository.save(round);
@@ -199,8 +203,8 @@ public class RankingServiceImpl implements RankingService {
         notificationService.notifyRoundRankingPublished(null, roundId, true);
 
         List<CategoryRankingResponse> auditRankingData = auditRankingData(categoryRounds);
-        try {
 
+        try {
 
             auditService.saveLog(
                     null,

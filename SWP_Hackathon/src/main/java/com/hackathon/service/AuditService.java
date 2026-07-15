@@ -30,7 +30,10 @@ public class AuditService {
 
     public void saveLog(Account acc, AuditAction action, AuditEntityType entityType, Integer entityId, String description, String data) {
         String actorName = "N/A";
-        if (acc != null && acc.getRole() != null) {
+        if (acc == null) {
+            actorName = "SYSTEM";
+        } else if (acc.getRole() != null) {
+
             int accountId = acc.getAccountId();
             switch (acc.getRole().name()) {
                 case "EVENTCOORDINATOR":
@@ -97,7 +100,6 @@ public class AuditService {
         Page<AuditLog> list = auditLogRepository.findAll(pageable);
         return list.map(this::toResponse);
     }
-
 
 
 }

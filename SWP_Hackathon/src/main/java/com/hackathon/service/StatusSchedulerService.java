@@ -171,7 +171,7 @@ public class StatusSchedulerService {
     }
 
 
-    private RoundStatus resolveRoundStatus(Round round, LocalDateTime now) {
+        private RoundStatus resolveRoundStatus(Round round, LocalDateTime now) {
         RoundStatus currentStatus = round.getStatus();
 
         if (currentStatus == RoundStatus.COMPLETED
@@ -179,9 +179,9 @@ public class StatusSchedulerService {
             return RoundStatus.COMPLETED;
         }
 
-        if (currentStatus == FINAL_RESULT) {
-            return RoundStatus.FINAL_RESULT;
-        }
+//        if (currentStatus == FINAL_RESULT) {
+//            return RoundStatus.FINAL_RESULT;
+//        }
 
         if (now.isBefore(round.getStartTime())) {
             return RoundStatus.UPCOMING;
@@ -210,6 +210,8 @@ public class StatusSchedulerService {
         return RoundStatus.FINAL_RESULT;
     }
 
+
+
     @Scheduled(fixedRate = 60000)
     @Transactional
     public void autoManageRoundTimelines() {
@@ -220,33 +222,29 @@ public class StatusSchedulerService {
                 RoundStatus.UPCOMING,
                 RoundStatus.EVALUATING,
                 RoundStatus.PENDING,
-                RoundStatus.APPEALING,
-                FINAL_RESULT
+                RoundStatus.APPEALING
         );
         // Tim các vòng đang mở khiếu nại (APPEALING)
         List<Round> activeAppealingRounds = roundRepository.findByStatusIn(activeStatuses);
 
         for (Round round : activeAppealingRounds) {
             try {
-                LocalDateTime deadline = round.getEndTime().minusHours(2);
-
                 // thời gian round kết thúc thì tự động chuyển snag completed
                 if (now.isAfter(round.getEndTime())) {
-                    log.info("Vòng đấu {} đã hết thời gian hoạt động (Chạm mốc endTime). Tự động chuyển sang COMPLETED.", round.getRoundId());
+                    log.info("Vòng đấu {} đã hết thời gian hoạt động. Tự động chuyển sang COMPLETED.", round.getRoundId());
                     round.setStatus(RoundStatus.COMPLETED);
                     roundRepository.save(round);
                     continue;
                 }
-                // thời gian khiếu nại kết thúc trước 2 tiếng , thời gian kết thúc round thì chuyển snag final
-                if (round.getStatus() == RoundStatus.APPEALING) {
-
-
+                if (round.getStatus() == RoundStatus.APPEALING
+                || round.getStatus() == RoundStatus.PENDING) {
                     if (now.isAfter(round.getResolveAppealDeadline())) {
-
                         rankingService.publishFinalRanking(round.getRoundId());
                     }
                 }
             } catch (Exception e) {
+                log.error("Round {} failed: {}", round.getRoundId(), e.getMessage(), e);
+
                 log.error("Lỗi xảy ra khi tự động quét dòng thời gian của Vòng đấu {}: ", round.getRoundId(), e);
             }
         }
