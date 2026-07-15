@@ -179,7 +179,9 @@ public class StatusSchedulerService {
         }
 
         // 1. Kiểm tra time kết thúc muộn của Event trước (endTime - 2h)
-        if (currentStatus == RoundStatus.APPEALING) {
+        if (currentStatus == RoundStatus.APPEALING
+                || round.getStatus() == RoundStatus.PENDING
+        ) {
             LocalDateTime deadline = round.getEndTime().minusHours(2);
             if (now.isAfter(deadline)) {
                 return RoundStatus.FINAL_RESULT;
@@ -197,10 +199,11 @@ public class StatusSchedulerService {
             return RoundStatus.UPCOMING;
         }
 
-        if (!now.isBefore(round.getSubmissionDeadline())) {
-            return RoundStatus.EVALUATING;
-        }
-        if(!now.isBefore(round.getSubmissionDeadline().plusHours(2))) {
+//        if (now.isBefore(round.getSubmissionDeadline())) {
+//            return RoundStatus.EVALUATING;
+//        }
+//
+        if(now.isBefore(round.getSubmissionDeadline().plusHours(2))) {
             return RoundStatus.EVALUATING;
         }
 

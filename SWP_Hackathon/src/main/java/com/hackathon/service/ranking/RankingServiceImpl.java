@@ -175,13 +175,14 @@ public class RankingServiceImpl implements RankingService {
 
 
         for (CategoryRound cr : categoryRounds) {
+            roundAdvancementService.calculateScoresAndRanking(cr.getCategoryRoundId());
+
             for (TeamParticipant tp : cr.getTeamParticipants()) {
                 if (tp.getStatus() == ParticipantStatus.ACTIVE) {
                     throw new BadRequestException("Không thể công bố kết quả chính thức vì vẫn còn đội thi chưa được chấm điểm/xếp hạng (Trạng thái ACTIVE).");
                 }
             }
-            roundAdvancementService.calculateScoresAndRanking(cr.getCategoryRoundId());
-            
+
         }
 
         // 3. REFRESH DATA TRONG HIBERNATE SESSION ĐỂ TRÁNH LẤY ĐIỂM/RANK CŨ TRONG CACHE
@@ -427,5 +428,6 @@ public class RankingServiceImpl implements RankingService {
             throw new BadRequestException("Lỗi hệ thống khi tuần tự hóa dữ liệu file Excel.");
         }
     }
+
 
 }
