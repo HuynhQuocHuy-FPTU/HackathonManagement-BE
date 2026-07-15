@@ -178,11 +178,8 @@ public class StatusSchedulerService {
             return RoundStatus.FINAL_RESULT;
         }
 
-        // 1. Kiểm tra
-        // time kết thúc muộn của Event trước (endTime - 2h)
         if (currentStatus == RoundStatus.APPEALING || round.getStatus() == RoundStatus.PENDING) {
-            LocalDateTime deadline = round.getEndTime().minusHours(2);
-            if (now.isAfter(deadline)) {
+            if (now.isAfter(round.getResolveAppealDeadline())) {
                 return RoundStatus.FINAL_RESULT;
             }
 
@@ -201,7 +198,7 @@ public class StatusSchedulerService {
             return RoundStatus.ONGOING;
         }
 
-        if (now.isBefore(round.getSubmissionDeadline().plusHours(2))) {
+        if (now.isBefore(round.getResolveAppealDeadline())) {
             return RoundStatus.EVALUATING;
         }
 
@@ -230,7 +227,7 @@ public class StatusSchedulerService {
 
                 // thời gian round kết thúc thì tự động chuyển snag completed
                 if (now.isAfter(round.getEndTime())) {
-                    log.info("Vòng đấu {} đã hết thời gian hoạt động (Chạm mốc endTime). Tự động chuyển sang COMPLETED.", round.getRoundId());
+                    log.info("Vòng đấu {} đã hết thời gian hoạt động. Tự động chuyển sang COMPLETED.", round.getRoundId());
                     round.setStatus(RoundStatus.COMPLETED);
                     roundRepository.save(round);
                     continue;
@@ -247,9 +244,8 @@ public class StatusSchedulerService {
                 // thời gian khiếu nại kết thúc trước 2 tiếng , thời gian kết thúc round thì chuyển snag final
                 if (round.getStatus() == RoundStatus.APPEALING
                         || round.getStatus() == RoundStatus.PENDING) {
-                    LocalDateTime adminDeadline = round.getEndTime().minusHours(2);
 
-                    if (now.isAfter(adminDeadline)) {
+                    if (now.isAfter(round.getResolveAppealDeadline())) {
                         rankingService.publishFinalRanking(round.getRoundId());
                     }
                 }
