@@ -12,4 +12,6 @@ public interface AnalyticsService {
 
     ReliabilityResultDTO calculateReliabilityMetrics(Integer eventId);
 
+    byte[] exportAnonymizedCsv(String scope, Integer id);
+
 }
