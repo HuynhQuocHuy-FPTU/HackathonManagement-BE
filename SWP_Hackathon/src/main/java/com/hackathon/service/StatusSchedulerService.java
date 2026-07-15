@@ -178,10 +178,9 @@ public class StatusSchedulerService {
             return RoundStatus.FINAL_RESULT;
         }
 
-        // 1. Kiểm tra time kết thúc muộn của Event trước (endTime - 2h)
-        if (currentStatus == RoundStatus.APPEALING
-                || round.getStatus() == RoundStatus.PENDING
-        ) {
+        // 1. Kiểm tra
+        // time kết thúc muộn của Event trước (endTime - 2h)
+        if (currentStatus == RoundStatus.APPEALING || round.getStatus() == RoundStatus.PENDING) {
             LocalDateTime deadline = round.getEndTime().minusHours(2);
             if (now.isAfter(deadline)) {
                 return RoundStatus.FINAL_RESULT;
@@ -198,12 +197,11 @@ public class StatusSchedulerService {
         if (now.isBefore(round.getStartTime())) {
             return RoundStatus.UPCOMING;
         }
+        if (now.isBefore(round.getSubmissionDeadline())) {
+            return RoundStatus.ONGOING;
+        }
 
-//        if (now.isBefore(round.getSubmissionDeadline())) {
-//            return RoundStatus.EVALUATING;
-//        }
-//
-        if(now.isBefore(round.getSubmissionDeadline().plusHours(2))) {
+        if (now.isBefore(round.getSubmissionDeadline().plusHours(2))) {
             return RoundStatus.EVALUATING;
         }
 
@@ -217,6 +215,7 @@ public class StatusSchedulerService {
         // TÌM TẤT CẢ VÒNG ĐẤU ĐNAG HOẠT ĐỘNG
         List<RoundStatus> activeStatuses = List.of(
                 RoundStatus.ONGOING,
+                RoundStatus.UPCOMING,
                 RoundStatus.EVALUATING,
                 RoundStatus.PENDING,
                 RoundStatus.APPEALING,
@@ -236,12 +235,21 @@ public class StatusSchedulerService {
                     roundRepository.save(round);
                     continue;
                 }
+
+                //  TỰ ĐỘNG CHUYỂN UPCOMING -> ONGOING KHI ĐẾN GIỜ
+                if (round.getStatus() == RoundStatus.UPCOMING && !now.isBefore(round.getStartTime())) {
+                    log.info("Vòng đấu {} đến giờ bắt đầu. Tự động kích hoạt sang ONGOING.", round.getRoundId());
+                    round.setStatus(RoundStatus.ONGOING);
+                    roundRepository.save(round);
+                    continue;
+                }
+
                 // thời gian khiếu nại kết thúc trước 2 tiếng , thời gian kết thúc round thì chuyển snag final
-                if (round.getStatus() == RoundStatus.APPEALING) {
+                if (round.getStatus() == RoundStatus.APPEALING
+                        || round.getStatus() == RoundStatus.PENDING) {
                     LocalDateTime adminDeadline = round.getEndTime().minusHours(2);
 
                     if (now.isAfter(adminDeadline)) {
-                        log.info("Vòng {} chạm mốc giới hạn xử lý khiếu nại (2h trước khi kết thúc). Tự động chốt kết quả Final...", round.getRoundId());
                         rankingService.publishFinalRanking(round.getRoundId());
                     }
                 }
