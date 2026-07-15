@@ -5,6 +5,7 @@ import com.hackathon.dto.team.CategoryAdvancementResultDTO;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.EvaluationStatus;
 import com.hackathon.entity.enums.ParticipantStatus;
+import com.hackathon.entity.enums.RoundStatus;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.exception.ResourceNotFoundException;
 import com.hackathon.repository.CategoryRoundRepository;
@@ -350,7 +351,7 @@ public class RoundAdvancementService {
             );
         }
 
-        if (LocalDateTime.now().isBefore(round.getAppealEndTime())) {
+        if (round.getStatus() != RoundStatus.FINAL_RESULT) {
             throw new BadRequestException(
                     "Chưa kết thúc thời gian khiếu nại, không thể thăng vòng"
             );

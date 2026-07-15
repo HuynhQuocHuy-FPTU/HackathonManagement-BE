@@ -6,7 +6,6 @@ import com.hackathon.entity.enums.RoundStatus;
 import com.hackathon.entity.enums.SubmissionType;
 import com.hackathon.service.submission.FileTypeConverter;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.FutureOrPresent;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -63,11 +62,9 @@ public class Round {
     private LocalDateTime submissionDeadline;
 
     @Column(name = "Evaluation_Deadline", nullable = true)
-    @FutureOrPresent(message = "Ngày phải là thời điểm trong tương lai")
     private LocalDateTime evaluationDeadline;
 
     @Column(name = "Resolve_Apeal_Deadline", nullable = true)
-    @FutureOrPresent(message = "Ngày phải là thời điểm trong tương lai")
     private LocalDateTime resolveAppealDeadline;
 
     @Column(name = "Max_File_Count", nullable = true)

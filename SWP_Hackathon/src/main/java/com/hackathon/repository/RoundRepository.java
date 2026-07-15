@@ -42,8 +42,8 @@ public interface RoundRepository extends JpaRepository<Round, Integer> {
             LocalDateTime appealEndTime
     );
 
-    List<Round> findBySubmissionDeadlineLessThanEqualAndScoringProcessedAtIsNull(
-            LocalDateTime submissionDeadline
+    List<Round> findByEvaluationDeadlineLessThanEqualAndScoringProcessedAtIsNull(
+            LocalDateTime evaluationDeadline
     );
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

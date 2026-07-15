@@ -282,26 +282,12 @@ public class RoundServiceImpl implements RoundService{
 
         roundValidator.validateTimeRound(round, updateTimeRoundRequest);
 
-        round.setStartTime(updateTimeRoundRequest.getStart_Time());
-        round.setEndTime(updateTimeRoundRequest.getEnd_Time());
+        round.setStartTime(updateTimeRoundRequest.getStartDate());
+        round.setEndTime(updateTimeRoundRequest.getEndDate());
         round.setSubmissionDeadline(updateTimeRoundRequest.getSubmissionDeadline());
         round.setEvaluationDeadline(updateTimeRoundRequest.getEvaluationDeadline());
         round.setResolveAppealDeadline(updateTimeRoundRequest.getResolveAppealDeadline());
         roundRepository.save(round);
-    }
-
-    @Override
-    public List<UpdateTimeRoundRequest> getTimeInRound(Round round) {
-        List<UpdateTimeRoundRequest> result = new ArrayList<>();
-
-        UpdateTimeRoundRequest request = new UpdateTimeRoundRequest();
-        request.setEnd_Time(round.getEndTime());
-        request.setEvaluationDeadline(round.getEvaluationDeadline());
-        request.setResolveAppealDeadline(round.getResolveAppealDeadline());
-
-        result.add(request);
-
-        return result;
     }
 
 
