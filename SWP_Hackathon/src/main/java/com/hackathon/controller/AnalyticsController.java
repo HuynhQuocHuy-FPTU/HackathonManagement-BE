@@ -1,6 +1,7 @@
 package com.hackathon.controller;
 
 import com.hackathon.dto.analytics.MetricResultDTO;
+import com.hackathon.dto.analytics.ReliabilityResultDTO;
 import com.hackathon.service.analytics.AnalyticsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -31,5 +32,13 @@ public class AnalyticsController {
     @GetMapping("/submissions/{submissionId}/criteria-stats")
     public ResponseEntity<List<MetricResultDTO>> getSubmissionCriteriaStats(@PathVariable Integer submissionId) {
         return ResponseEntity.ok(analyticsService.getCriteriaStats("submission", submissionId));
+    }
+
+    // ==========================================
+    // NHÓM 2: CHỈ SỐ ĐỘ TIN CẬY (ICC & ALPHA)
+    // ==========================================
+    @GetMapping("/events/{eventId}/reliability")
+    public ResponseEntity<ReliabilityResultDTO> getEventReliabilityMetrics(@PathVariable Integer eventId) {
+        return ResponseEntity.ok(analyticsService.calculateReliabilityMetrics(eventId));
     }
 }
