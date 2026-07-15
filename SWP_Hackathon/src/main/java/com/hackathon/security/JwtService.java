@@ -75,6 +75,9 @@ public class JwtService {
                 // Custom Claims: Gắn thêm ID và Role để Frontend tiện sử dụng mà không cần gọi thêm API
                 .claim("accountId", account.getAccountId())
                 .claim("role", account.getRole().name())
+                .claim("accountStatus", account.getStatus().name())
+                .claim("githubId", account.getGithubId())
+                .claim("githubUsername", account.getGithubUsername())
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(getSigningKey()) // Tự động nhận diện thuật toán mã hóa từ độ dài của Key
