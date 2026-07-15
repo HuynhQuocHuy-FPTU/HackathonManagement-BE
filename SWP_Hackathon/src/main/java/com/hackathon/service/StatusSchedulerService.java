@@ -206,6 +206,9 @@ public class StatusSchedulerService {
         if (now.isBefore(round.getSubmissionDeadline())) {
             return RoundStatus.ONGOING;
         }
+        if(!now.isBefore(round.getSubmissionDeadline().plusHours(2))) {
+            return RoundStatus.EVALUATING;
+        }
 
 //        if(!now.isBefore(round.getSubmissionDeadline().plusHours(2)) && currentStatus == RoundStatus.EVALUATING){
 //            return RoundStatus.PENDING_APPROVAL;

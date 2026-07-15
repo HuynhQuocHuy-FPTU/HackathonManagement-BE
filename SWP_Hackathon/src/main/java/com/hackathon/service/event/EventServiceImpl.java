@@ -425,7 +425,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public List<EventResponse> getPublicEvents() {
-        return eventRepository.findByStatus(EventStatus.ACTIVE).stream().map(event -> mapToResponse(event, event.getRounds(), event.getCategories()
+        return eventRepository.findByStatusNotIn(List.of(EventStatus.DRAFT, EventStatus.DELETED, EventStatus.CANCELLED)).stream().map(event -> mapToResponse(event, event.getRounds(), event.getCategories()
                 )).toList();
     }
 
