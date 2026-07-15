@@ -270,17 +270,15 @@ public class RoundAdvancementService {
     //thăng vòng
     @Transactional
     public List<CategoryAdvancementResultDTO> advanceAllCategoriesInRound(
-            Integer roundId,
-            CustomUserDetails userDetails
-    ) {
-        EventCoordinator eventCoordinator =
-                userDetails.getAccount().getEventCoordinator();
-
-        if (eventCoordinator == null) {
-            throw new BadRequestException(
-                    "Bạn không có quyền thực hiện. Bạn phải là event coordinator."
-            );
-        }
+            Integer roundId) {
+//        EventCoordinator eventCoordinator =
+//                userDetails.getAccount().getEventCoordinator();
+//
+//        if (eventCoordinator == null) {
+//            throw new BadRequestException(
+//                    "Bạn không có quyền thực hiện. Bạn phải là event coordinator."
+//            );
+//        }
 
         return processRoundAdvancement(roundId);
     }
@@ -351,9 +349,14 @@ public class RoundAdvancementService {
             );
         }
 
-        if (round.getStatus() != RoundStatus.FINAL_RESULT) {
+//        if (round.getStatus() != RoundStatus.FINAL_RESULT) {
+//            throw new BadRequestException(
+//                    "Chưa kết thúc thời gian khiếu nại, không thể thăng vòng"
+//            );
+//        }
+        if (LocalDateTime.now().isBefore(round.getResolveAppealDeadline())) {
             throw new BadRequestException(
-                    "Chưa kết thúc thời gian khiếu nại, không thể thăng vòng"
+                    "Thời gian nộp đơn khiếu nại của thí sinh vẫn chưa kết thúc, không thể thăng vòng!"
             );
         }
     }

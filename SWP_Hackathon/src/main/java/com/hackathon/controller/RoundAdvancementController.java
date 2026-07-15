@@ -26,11 +26,11 @@ public class RoundAdvancementController {
         return ResponseEntity.ok(ApiResponse.success(participantService.getDetailParticipantByRound(roundId, userDetails), "Thông tin chi tiết của từng team trong round chia theo category"));
     }
 
-    @PostMapping("/advancement/{roundId}")
-    public ResponseEntity<ApiResponse<List<CategoryAdvancementResultDTO>>> advanceRound(@PathVariable Integer roundId, @AuthenticationPrincipal CustomUserDetails userDetails){
-        List<CategoryAdvancementResultDTO> list = roundAdvancementService.advanceAllCategoriesInRound(roundId, userDetails);
-        return ResponseEntity.ok(ApiResponse.success(list, "Thăng vòng thành công"));
-    }
+//    @PostMapping("/advancement/{roundId}")
+//    public ResponseEntity<ApiResponse<List<CategoryAdvancementResultDTO>>> advanceRound(@PathVariable Integer roundId, @AuthenticationPrincipal CustomUserDetails userDetails){
+//        List<CategoryAdvancementResultDTO> list = roundAdvancementService.advanceAllCategoriesInRound(roundId, userDetails);
+//        return ResponseEntity.ok(ApiResponse.success(list, "Thăng vòng thành công"));
+//    }
 
 
 
