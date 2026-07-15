@@ -7,11 +7,14 @@ import com.hackathon.dto.criteria.EvaluationCriteriaResponseDTO;
 import com.hackathon.dto.round.CreateRoundRequest;
 import com.hackathon.dto.round.RoundResponse;
 import com.hackathon.dto.round.UpdateRoundRequest;
+import com.hackathon.dto.round.UpdateTimeRoundRequest;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.AccountStatus;
 import com.hackathon.entity.enums.RoundStatus;
 import com.hackathon.exception.BadRequestException;
+import com.hackathon.exception.ResourceNotFoundException;
 import com.hackathon.repository.*;
+import com.hackathon.security.CustomUserDetails;
 import com.hackathon.validator.RoundValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -51,7 +54,7 @@ public class RoundServiceImpl implements RoundService{
         HackathonEvent event = eventRepository.findById(eventId).orElseThrow(() -> new
                 RuntimeException("Not found event with ID: " + eventId));
         if(request.getCriteriaSetId() != null){
-            CriteriaSet criteriaSet = criteriaSetRepository.findById(request.getCriteriaSetId()).orElseThrow(() -> new BadRequestException("Không tìm thấy criteria set ") );
+            CriteriaSet criteriaSet = criteriaSetRepository.findById(request.getCriteriaSetId()).orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy criteria set ") );
         }
 
 
@@ -70,6 +73,8 @@ public class RoundServiceImpl implements RoundService{
         round.setAdvancementRule(request.getAdvancementRule());
         round.setTopN(request.getTopN());
         round.setSubmissionDeadline(request.getSubmissionDeadline());
+        round.setEvaluationDeadline(request.getEvaluationDeadline());
+        round.setResolveAppealDeadline(request.getResolveAppealDeadline());
         round.setSubmissionType(request.getSubmissionType());
         round.setAllowedFileType(request.getAllowedFileTypes());
         round.setMaxFileCount(request.getMaxFileCount());
@@ -152,6 +157,8 @@ public class RoundServiceImpl implements RoundService{
             saveRound.setTopN(roundRequest.getTopN());
             saveRound.setOrderIndex(roundRequest.getOrderIndex());
             saveRound.setSubmissionDeadline(roundRequest.getSubmissionDeadline());
+            saveRound.setEvaluationDeadline(roundRequest.getEvaluationDeadline());
+            saveRound.setResolveAppealDeadline(roundRequest.getResolveAppealDeadline());
             saveRound.setSubmissionType(roundRequest.getSubmissionType());
             saveRound.setAllowedFileType(roundRequest.getAllowedFileTypes());
             saveRound.setMaxFileCount(roundRequest.getMaxFileCount());
@@ -259,6 +266,42 @@ public class RoundServiceImpl implements RoundService{
     @Override
     public Optional<Round> findById(Integer roundId) {
         return roundRepository.findById(roundId);
+    }
+
+    @Override
+    @Transactional
+    public void updateTimeRound(UpdateTimeRoundRequest updateTimeRoundRequest, CustomUserDetails userDetails, Integer roundId) {
+
+        EventCoordinator eventCoordinator = userDetails.getAccount().getEventCoordinator();
+
+        if(eventCoordinator == null){
+            throw new BadRequestException("Bạn không có quyền truy cập. Bạn phải là event coordinator");
+        }
+
+        Round round = roundRepository.findById(roundId).orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy vòng thi"));
+
+        roundValidator.validateTimeRound(round, updateTimeRoundRequest);
+
+        round.setStartTime(updateTimeRoundRequest.getStart_Time());
+        round.setEndTime(updateTimeRoundRequest.getEnd_Time());
+        round.setSubmissionDeadline(updateTimeRoundRequest.getSubmissionDeadline());
+        round.setEvaluationDeadline(updateTimeRoundRequest.getEvaluationDeadline());
+        round.setResolveAppealDeadline(updateTimeRoundRequest.getResolveAppealDeadline());
+        roundRepository.save(round);
+    }
+
+    @Override
+    public List<UpdateTimeRoundRequest> getTimeInRound(Round round) {
+        List<UpdateTimeRoundRequest> result = new ArrayList<>();
+
+        UpdateTimeRoundRequest request = new UpdateTimeRoundRequest();
+        request.setEnd_Time(round.getEndTime());
+        request.setEvaluationDeadline(round.getEvaluationDeadline());
+        request.setResolveAppealDeadline(round.getResolveAppealDeadline());
+
+        result.add(request);
+
+        return result;
     }
 
 

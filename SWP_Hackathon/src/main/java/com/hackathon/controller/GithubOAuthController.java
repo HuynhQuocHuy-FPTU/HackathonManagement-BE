@@ -1,6 +1,5 @@
 package com.hackathon.controller;
 
-import com.hackathon.dto.github.GithubUserInfoResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.GithubOAuthService;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +40,7 @@ public class GithubOAuthController {
         String redirect;
         try {
             githubOAuthService.handleCallback(code, state);
-            redirect = frontendRedirectUri + "?githubLinked=true";
+            redirect = "http://localhost:5174/profile";
         } catch (Exception e) {
             // Redirect về frontend kèm lỗi thay vì trả JSON thô, vì đây là request
             // browser tự chuyển hướng tới (không phải gọi API từ SPA).

@@ -85,7 +85,7 @@ public class GradingServiceImpl implements GradingService {
                     .submissionId(sub.getSubmissionId())
                     .teamName(sub.getTeam().getTeamName())
                     .description(sub.getDescription())
-                    .githubUrl(sub.getGithubUrl())
+                    .githubUrl(commitUrl)
                     .files(fileDTOList)
                     .submittedAt(sub.getCreateAt())
                     .myEvaluationStatus(eval != null ? eval.getStatus().name() : "NOT_GRADED")

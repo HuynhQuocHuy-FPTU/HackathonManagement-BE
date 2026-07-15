@@ -6,6 +6,7 @@ import com.hackathon.entity.enums.RoundStatus;
 import com.hackathon.entity.enums.SubmissionType;
 import com.hackathon.service.submission.FileTypeConverter;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.FutureOrPresent;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -61,6 +62,14 @@ public class Round {
     @Column(name = "Submission_Deadline", nullable = true)
     private LocalDateTime submissionDeadline;
 
+    @Column(name = "Evaluation_Deadline", nullable = true)
+    @FutureOrPresent(message = "Ngày phải là thời điểm trong tương lai")
+    private LocalDateTime evaluationDeadline;
+
+    @Column(name = "Resolve_Apeal_Deadline", nullable = true)
+    @FutureOrPresent(message = "Ngày phải là thời điểm trong tương lai")
+    private LocalDateTime resolveAppealDeadline;
+
     @Column(name = "Max_File_Count", nullable = true)
     private Integer maxFileCount;
 
@@ -71,9 +80,10 @@ public class Round {
     @Enumerated(EnumType.STRING)
     private RoundStatus status;
 
-    //Top 5 của category
     @Column(name = "Top_N", nullable = true)
     private Integer topN;
+
+
 
     // 1 round - N category_round
     @OneToMany(mappedBy = "round", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -93,9 +103,4 @@ public class Round {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CriteriaSet_ID")
     private CriteriaSet criteriaSet;
-//
-//    // 1 Round - N Request
-//    @OneToMany(mappedBy = "round", cascade = CascadeType.ALL, orphanRemoval = true)
-//    private List<TeamRequest> teamRequests;
-
 }
