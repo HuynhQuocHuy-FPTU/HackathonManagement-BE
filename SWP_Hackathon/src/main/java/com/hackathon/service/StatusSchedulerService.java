@@ -5,6 +5,7 @@ import com.hackathon.entity.enums.*;
 import com.hackathon.repository.HackathonEventRepository;
 import com.hackathon.repository.RoundRepository;
 import com.hackathon.repository.TeamRequestRepository;
+import com.hackathon.service.ranking.RankingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,13 +23,14 @@ public class StatusSchedulerService {
     private final RoundService roundService;
     private final HackathonEventRepository eventRepository;
     private final RoundRepository roundRepository;
-    private final TeamRequestRepository teamRequestRepository;
+    private final RankingService rankingService;
     private final RoundAdvancementService roundAdvancementService;
 
     @Scheduled(fixedRate = 60000)
     public void autoCalculateScores() {
         LocalDateTime now = LocalDateTime.now();
-        List<Round> rounds = roundRepository.findBySubmissionDeadlineLessThanEqualAndScoringProcessedAtIsNull(now);
+        List<Round> rounds = roundRepository
+                .findBySubmissionDeadlineLessThanEqualAndScoringProcessedAtIsNull(now);
 
         for (Round round : rounds) {
             try {
@@ -165,94 +167,91 @@ public class StatusSchedulerService {
         return null;
     }
 
+
     private RoundStatus resolveRoundStatus(Round round, LocalDateTime now) {
 
         RoundStatus currentStatus = round.getStatus();
-
-        System.out.println("CURRENT STATUS = " + currentStatus);
-        System.out.println("NOW = " + now);
-        System.out.println("APPEAL END = " + round.getAppealEndTime());
-        // 1. Luồng tự động chuyển trạng thái SAU KHI HẾT HẠN PHÚC KHẢO
-        if (currentStatus == RoundStatus.APPEALING && round.getAppealEndTime() != null) {
-            if (now.isAfter(round.getAppealEndTime())) {
-                return RoundStatus.PENDING_FINAL_APPROVAL;
-            }
-            return RoundStatus.APPEALING;
+        if (currentStatus == RoundStatus.COMPLETED || now.isAfter(round.getEndTime())) {
+            return RoundStatus.COMPLETED;
+        }
+        if (currentStatus == RoundStatus.FINAL_RESULT) {
+            return RoundStatus.FINAL_RESULT;
         }
 
-        // 2. Các trạng thái đặc biệt do Admin/Coordinator chủ động điều khiển (Giữ nguyên)
-        if (
-//                currentStatus == RoundStatus.APPEALING ||
-                currentStatus == RoundStatus.PENDING_FINAL_APPROVAL ||
-//                currentStatus == RoundStatus.PENDING_APPROVAL ||
-//                currentStatus == RoundStatus.RE_EVALUATING ||
-//                currentStatus == RoundStatus.DRAFT_APPROVED ||
-                currentStatus == RoundStatus.FINAL_APPROVED ||
-                currentStatus == RoundStatus.COMPLETED) {
+        // 1. Kiểm tra time kết thúc muộn của Event trước (endTime - 2h)
+        if (currentStatus == RoundStatus.APPEALING
+                || round.getStatus() == RoundStatus.PENDING
+        ) {
+            LocalDateTime deadline = round.getEndTime().minusHours(2);
+            if (now.isAfter(deadline)) {
+                return RoundStatus.FINAL_RESULT;
+            }
 
-            return currentStatus;
+            // Nếu đã quá hạn nộp đơn của thí sinh (appealEndTime) nhưng chưa tới hạn xử lý của Event thì chuyển sang PENDING
+            // Để event xử lý các đơn nộp muộn
+            if (round.getAppealEndTime() != null && now.isAfter(round.getAppealEndTime())) {
+                return RoundStatus.PENDING;
+            }
+            return RoundStatus.APPEALING;
         }
 
         if (now.isBefore(round.getStartTime())) {
             return RoundStatus.UPCOMING;
         }
 
-        if (now.isBefore(round.getSubmissionDeadline())) {
-            return RoundStatus.ONGOING;
-        }
-
-//        if(!now.isBefore(round.getSubmissionDeadline().plusHours(2)) && currentStatus == RoundStatus.EVALUATING){
-//            return RoundStatus.PENDING_APPROVAL;
+//        if (now.isBefore(round.getSubmissionDeadline())) {
+//            return RoundStatus.EVALUATING;
 //        }
-        if(!now.isBefore(round.getSubmissionDeadline())){
+//
+        if(now.isBefore(round.getSubmissionDeadline().plusHours(2))) {
             return RoundStatus.EVALUATING;
         }
 
-        // Hết thời gian chấm → chờ Coordinator duyệt lần đầu
-        return RoundStatus.PENDING_APPROVAL;
+        return RoundStatus.PENDING;
     }
 
     @Scheduled(fixedRate = 60000)
     @Transactional
-    public void checkAndProcessExpiredAppeals() {
+    public void autoManageRoundTimelines() {
         LocalDateTime now = LocalDateTime.now();
-
-        // 1. Tìm các vòng thi đang ở trạng thái APPEALING và đã quá hạn phúc khảo ban đầu
-        List<Round> expiredRounds = roundRepository.findByStatusAndAppealEndTimeBefore(
-                RoundStatus.APPEALING, now
+        // TÌM TẤT CẢ VÒNG ĐẤU ĐNAG HOẠT ĐỘNG
+        List<RoundStatus> activeStatuses = List.of(
+                RoundStatus.ONGOING,
+                RoundStatus.EVALUATING,
+                RoundStatus.PENDING,
+                RoundStatus.APPEALING,
+                RoundStatus.FINAL_RESULT
         );
+        // Tim các vòng đang mở khiếu nại (APPEALING)
+        List<Round> activeAppealingRounds = roundRepository.findByStatusIn(activeStatuses);
 
-        for (Round round : expiredRounds) {
-            Integer roundId = round.getRoundId();
+        for (Round round : activeAppealingRounds) {
+            try {
+                LocalDateTime deadline = round.getEndTime().minusHours(2);
 
-            // 2. Kiểm tra xem vòng này còn đơn phúc khảo nào chưa xử lý (PENDING hoặc IN_REVIEW) không
-            List<TeamRequest> pendingOrInReviewRequests = teamRequestRepository
-                    .findByRound_RoundIdAndRequestTypeAndStatusIn(
-                            roundId,
-                            RequestType.APPEAL,
-                            List.of(RequestStatus.PENDING, RequestStatus.IN_REVIEW)
-                    );
-
-            if (pendingOrInReviewRequests != null && !pendingOrInReviewRequests.isEmpty()) {
-                //  CHƯA XỬ LÝ XONG -> TỰ GIA HẠN 10 PHÚT
-                if (now.isAfter(round.getAppealEndTime().plusMinutes(10))) {
-                    // SAU 10P VẪN CH XƯR LÝ HỆ THÔNGS TỰ ĐỘNG TỪ CHỐI
-                    for (TeamRequest req : pendingOrInReviewRequests) {
-                        req.setStatus(RequestStatus.DECLINED);
-                    }
-                    teamRequestRepository.saveAll(pendingOrInReviewRequests);
-                    round.setStatus(RoundStatus.PENDING_APPROVAL);
+                // thời gian round kết thúc thì tự động chuyển snag completed
+                if (now.isAfter(round.getEndTime())) {
+                    log.info("Vòng đấu {} đã hết thời gian hoạt động (Chạm mốc endTime). Tự động chuyển sang COMPLETED.", round.getRoundId());
+                    round.setStatus(RoundStatus.COMPLETED);
                     roundRepository.save(round);
+                    continue;
                 }
+                // thời gian khiếu nại kết thúc trước 2 tiếng , thời gian kết thúc round thì chuyển snag final
+                if (round.getStatus() == RoundStatus.APPEALING) {
+                    LocalDateTime adminDeadline = round.getEndTime().minusHours(2);
 
-            } else {
-                //  ĐÃ XỬ LÝ XONG XUÔI -> TỰ CHUYỂN TRẠNG THÁI
-                round.setStatus(RoundStatus.PENDING_APPROVAL);
-                roundRepository.save(round);
-
+                    if (now.isAfter(adminDeadline)) {
+                        log.info("Vòng {} chạm mốc giới hạn xử lý khiếu nại (2h trước khi kết thúc). Tự động chốt kết quả Final...", round.getRoundId());
+                        rankingService.publishFinalRanking(round.getRoundId());
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Lỗi xảy ra khi tự động quét dòng thời gian của Vòng đấu {}: ", round.getRoundId(), e);
             }
         }
+
     }
+
 
     private WorkshopStatus calculateStatus(HackathonEvent event, LocalDateTime now) {
         if (event == null || event.getWorkshopTime() == null) return null;
@@ -278,4 +277,6 @@ public class StatusSchedulerService {
         // 3. MẶC ĐỊNH: Quá thời gian quy định (24h)
         return WorkshopStatus.COMPLETED;
     }
+
+
 }

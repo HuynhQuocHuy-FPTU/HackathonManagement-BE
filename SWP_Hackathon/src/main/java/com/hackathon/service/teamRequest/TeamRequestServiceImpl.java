@@ -626,7 +626,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                                 .totalScore(evaluation.getScore())
                                 .status(evaluation.getStatus())
                                 .comment(evaluation.getComment())
-//                                .listSubmission(List.of(response))
+                                .submissions(response)
                                 .listEvaluationDetail(detailResponseList).build();
                         evaluationResponseList.add(evaluationResponse);
 
