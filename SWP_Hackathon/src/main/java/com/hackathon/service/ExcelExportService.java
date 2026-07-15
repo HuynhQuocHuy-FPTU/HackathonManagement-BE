@@ -1,8 +1,5 @@
 package com.hackathon.service;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.core.JsonProcessingException;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.hackathon.entity.CategoryRound;
 import com.hackathon.entity.Round;
 import com.hackathon.entity.TeamParticipant;
@@ -35,7 +32,7 @@ public class ExcelExportService {
     private final RoundRepository roundRepository;
     private final CloudinaryService cloudinaryService;
 
-    public String exportRankingToExcel(Integer roundId) {
+    public String exportRankingToExcel(Integer roundId, String fileType) {
         Round round = roundRepository.findById(roundId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy vòng thi."));
         String eventName = round.getHackathonEvent().getEventName().replaceAll("\\s+", "_");
@@ -111,29 +108,14 @@ public class ExcelExportService {
             }
             workbook.write(out);
             byte[] excelBytes = out.toByteArray();
-            String rankingType;
-
-            if (round.getStatus() == RoundStatus.DRAFT_APPROVED) {
-                rankingType = "Draft";
-            } else if (round.getStatus() == RoundStatus.COMPLETED) {
-                rankingType = "Final";
-            } else {
-                throw new BadRequestException(
-                        "Kết quả vòng thi chưa được duyệt hoặc chưa công bố, không thể xuất file"
-                );
-            }
-            String fileName = eventName + " Ranking_Round_" + round.getRoundName() + "_" + rankingType + "_" + System.currentTimeMillis() + ".xlsx";
+            String fileName = eventName + " Ranking_Round_" + round.getRoundName() + "_" + fileType.toUpperCase() + "_" + System.currentTimeMillis() + ".xlsx";
             MultipartFile multipartFile = new MockMultipartFile(
                     "file",
                     fileName,
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     excelBytes
             );
-//            Path path = Paths.get(System.getProperty("user.home"), "Desktop", "ranking_test.xlsx");
-//            System.out.println("Saving to: " + path.toAbsolutePath());
-//
-//            Files.write(path, excelBytes);
-//            System.out.println("Saved successfully");
+
             return cloudinaryService.uploadExcelFile(multipartFile);
         } catch (IOException e) {
             log.error("Lỗi chi tiết trong quá trình tạo/ghi file Excel cho vòng {}: ", roundId, e);

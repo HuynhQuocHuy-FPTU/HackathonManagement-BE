@@ -31,7 +31,8 @@ public class RoundEndTimeGradingPolicy {
      */
     public boolean isGradingOpen(Round round) {
         LocalDateTime deadline = getGradingDeadline(round);
-        if(LocalDateTime.now().isBefore(round.getSubmissionDeadline())) throw new BadRequestException("Chưa đến thời gian chấm bài");
+        if(LocalDateTime.now().isBefore(round.getSubmissionDeadline()))
+            throw new BadRequestException("Chưa đến thời gian chấm bài");
         return deadline == null || LocalDateTime.now().isBefore(deadline);
     }
 }
