@@ -100,7 +100,6 @@ public class GradingServiceImpl implements GradingService {
                 .submissions(submissionResponses)
                 .build();
     }
-
     // =======================================================
     // API: LẤY FORM TIÊU CHÍ
     // =======================================================
@@ -211,7 +210,7 @@ public class GradingServiceImpl implements GradingService {
             evaluation.setEvaluationDetails(new ArrayList<>());
         } else {
             // Trường hợp 2: Đã tồn tại bản ghi (Update) -> Chặn nếu thực thể đang nằm trong trạng thái xử lý Phúc khảo
-            if (evaluation.getStatus() != null && "RE_EVALUATION".equals(evaluation.getStatus().name())) {
+            if (evaluation.getStatus() != null && evaluation.getStatus().equals(EvaluationStatus.RE_EVALUATION)) {
                 throw new BadRequestException("Hành động bị chặn: Thực thể đánh giá đang nằm trong trạng thái Khiếu nại/Phúc khảo hệ thống.");
             }
         }

@@ -20,6 +20,7 @@ public interface HackathonEventRepository extends JpaRepository<HackathonEvent, 
     @Query("DELETE FROM HackathonEvent e WHERE e.eventId = :eventId")
     void deleteByEventId(@Param("eventId") Integer eventId);
 
+    List<HackathonEvent> findByStatusNotIn(List<EventStatus> status);
     List<HackathonEvent> findByStatus(EventStatus status);
 
     List<HackathonEvent> findByEventNameContainingIgnoreCase(String eventName);
