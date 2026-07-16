@@ -4,6 +4,7 @@ import com.hackathon.entity.CategoryRound;
 import com.hackathon.entity.Evaluation;
 import com.hackathon.entity.TeamParticipant;
 import com.hackathon.entity.enums.EvaluationStatus;
+import com.hackathon.entity.enums.ExpertRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -38,30 +39,49 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Integer>
                 SELECT COUNT(e)
                 FROM Evaluation e
                 WHERE e.expertAssign.expert.expertId = :expertId
-                                  AND e.expertAssign.categoryRound.round.hackathonEvent.eventId = :eventId
-                            
+                AND e.expertAssign.categoryRound.round.hackathonEvent.eventId = :eventId
+                AND e.expertAssign.role IN :roles
+          
             """)
-    long countTotalAssigned(@Param("expertId") Integer expertId, @Param("eventId") Integer eventId);
+    long countTotalAssigned(@Param("expertId") Integer expertId,
+                            @Param("eventId") Integer eventId,
+                            @Param("roles") List<ExpertRole> roles
+    );
+
+
+    @Query("""
+                SELECT COUNT(e)
+                FROM Evaluation e
+                WHERE e.expertAssign.expert.expertId = :expertId
+                  AND e.expertAssign.categoryRound.round.hackathonEvent.eventId = :eventId
+                  AND e.status IN :statuses
+                  AND e.expertAssign.role IN :roles
+            """)
+    long countCompletedReviews(@Param("expertId") Integer expertId,
+                               @Param("eventId") Integer eventId,
+                               @Param("statuses") List<EvaluationStatus> statuses,
+                               @Param("roles") List<ExpertRole> roles);
 
     @Query("SELECT COUNT (e) " +
             "FROM Evaluation e " +
             "WHERE e.expertAssign.expert.expertId = :expertId " +
             "AND e.expertAssign.categoryRound.round.hackathonEvent.eventId = :eventId " +
-            "AND e.status IN('RE_EVALUATED', 'GRADED')")
-    long countCompletedReviews(@Param("expertId") Integer expertId,@Param("eventId") Integer eventId);
+            "AND e.status IN :statuses " +
+            " AND e.expertAssign.role IN :roles")
+    long countPendingReviews(@Param("expertId") Integer expertId,
+                             @Param("eventId") Integer eventId,
+                             @Param("statuses") List<EvaluationStatus> statuses,
+                             @Param("roles") List<ExpertRole> roles);
 
     @Query("SELECT COUNT (e) " +
             "FROM Evaluation e " +
             "WHERE e.expertAssign.expert.expertId = :expertId " +
             "AND e.expertAssign.categoryRound.round.hackathonEvent.eventId = :eventId " +
-            "AND e.status IN('NOT_GRADED', 'RE_EVALUATION')")
-
-    long countPendingReviews(@Param("expertId") Integer expertId,@Param("eventId") Integer eventId);
-    @Query("SELECT COUNT (e) " +
-            "FROM Evaluation e " +
-            "WHERE e.expertAssign.expert.expertId = :expertId " +
-            "AND e.expertAssign.categoryRound.round.hackathonEvent.eventId = :eventId " +
-            "AND e.status IN('RE_EVALUATION')")
-    long reEvaluationReviews(@Param("expertId") Integer expertId,@Param("eventId") Integer eventId);
+            "AND e.status IN:statuses " +
+            " AND e.expertAssign.role IN :roles")
+    long reEvaluationReviews(@Param("expertId") Integer expertId,
+                             @Param("eventId") Integer eventId,
+                             @Param("statuses") List<EvaluationStatus> statuses,
+                             @Param("roles") List<ExpertRole> roles);
 
 }

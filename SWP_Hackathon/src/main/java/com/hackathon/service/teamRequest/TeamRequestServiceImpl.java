@@ -27,13 +27,11 @@ import java.util.List;
 import java.util.Set;
 
 @Slf4j
-
 @Service
 @RequiredArgsConstructor
 public class TeamRequestServiceImpl implements TeamRequestService {
     private final TeamRepository teamRepository;
     private final ExpertRepository expertRepository;
-
     private final ExpertAssignRepository expertAssignRepository;
     private final TeamRequestRepository teamRequestRepository;
     private final StudentRepository studentRepository;
@@ -42,7 +40,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
     private final EvaluationRepository evaluationRepository;
     private final AuditService auditService;
     private final NotificationService notificationService;
-
     private TeamRequestResponse mapToResponse(TeamRequest rq, CategoryRound cr, Integer expertId) {
         return TeamRequestResponse.builder()
                 .requestId(rq.getRequestId())
@@ -106,7 +103,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         newRequest.setStatus(RequestStatus.PENDING);
         newRequest.setRequestMessage(request.getRequestMessage());
         newRequest.setRound(round);
-//        newRequest.setResponseStatus(NotiResponseStatus.PENDING);
         newRequest.setRequestType(RequestType.MENTOR_SUPPORT);
         TeamRequest saveTeam = teamRequestRepository.save(newRequest);
 
@@ -697,7 +693,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         teamRequest.setStatus(RequestStatus.ACCEPTED);
         teamRequest.setResponseMessage(messageResponse);
         teamRequestRepository.save(teamRequest);
-
         // 4. Gửi thông báo
         Student teamLeader = teamRequest.getTeam().getTeamMembers().stream()
                 .filter(TeamMember::getIsLeader)
@@ -707,8 +702,5 @@ public class TeamRequestServiceImpl implements TeamRequestService {
 
         notificationService.notiResolvedRequest(userDetails.getAccount(), teamLeader.getAccount(), teamRequest.getTeam().getTeamName());
     }
-
-
-
 }
 

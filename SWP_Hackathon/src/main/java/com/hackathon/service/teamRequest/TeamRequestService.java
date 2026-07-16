@@ -30,9 +30,7 @@ public interface TeamRequestService {
 
     List<TeamRequestResponse> getAppealRequestsForJudge(CustomUserDetails userDetails, Integer roundId);
 
-    // Đêr tạm ơr đây
-//    void reEvaluationSubmission(CustomUserDetails userDetails, ReDetailEvaluationRequest request );
-
     TeamRequestResponse sendRequestToCoordinator(CustomUserDetails userDetails, String requestMessage, Long notificationId);
+
     void resolvedRequest(CustomUserDetails userDetails, Integer teamRequestId, String messageResponse);
 }
