@@ -168,15 +168,24 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
         if (registration.getStatus() != RegistrationStatus.PENDING) {
             throw new BadRequestException("Chỉ có thể duyệt Registration ở trạng thái PENDING");
         }
+
+        Team team = registration.getTeam();
+        if (team == null) {
+            throw new BadRequestException(
+                    "Registration không liên kết với team");
+        }
+
+        validateNoOverlappingApprovedEvent(
+                team,
+                registration.getHackathonEvent()
+        );
+
         //Cập nhật trạng thái Registration
         registration.setStatus(RegistrationStatus.APPROVED);
         registration = registrationRepository.save(registration);
 
         //cập nhật trạng thái của team
-        Team team = registration.getTeam();
-        if (team != null) {
-            team.setStatus(TeamStatus.BUSY);
-        }
+        team.setStatus(TeamStatus.BUSY);
 
         //tạo participant lưu các team đã được approve trước
         participantService.saveParticipant(registration);
@@ -195,6 +204,41 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
         Account leaderAccount = leader.getStudent().getAccount();
         notificationService.notifyRegistrationApproved(account, leaderAccount, registration.getTeam().getTeamName(), registration.getHackathonEvent().getEventName());
         return registration;
+    }
+
+    private void validateNoOverlappingApprovedEvent(
+            Team team,
+            HackathonEvent targetEvent
+    ) {
+        if (targetEvent == null
+                || targetEvent.getStartDate() == null
+                || targetEvent.getEndDate() == null) {
+            throw new BadRequestException(
+                    "Event chưa cấu hình đầy đủ thời gian bắt đầu và kết thúc");
+        }
+
+        List<Registration> approvedRegistrations =
+                registrationRepository.findByTeam_TeamIdAndStatus(
+                        team.getTeamId(),
+                        RegistrationStatus.APPROVED
+                );
+
+        boolean hasOverlap = approvedRegistrations.stream()
+                .map(Registration::getHackathonEvent)
+                .filter(event -> event != null
+                        && event.getStartDate() != null
+                        && event.getEndDate() != null)
+                .filter(event -> event.getEventId()
+                        != targetEvent.getEventId())
+                .anyMatch(event ->
+                        event.getStartDate().isBefore(targetEvent.getEndDate())
+                        && targetEvent.getStartDate().isBefore(event.getEndDate())
+                );
+
+        if (hasOverlap) {
+            throw new BadRequestException(
+                    "Team đã được duyệt tham gia một event khác trùng thời gian");
+        }
     }
 
     //Coordinator từ chối Registration - Chuyển trạng thái sang REJECTED

@@ -68,5 +68,8 @@ public class Notification {
     @JoinColumn(name = "Team_ID")
     private Team team;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "Round_ID")
+    private Round round;
 
 }

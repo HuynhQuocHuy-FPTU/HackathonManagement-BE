@@ -9,4 +9,7 @@ import lombok.Setter;
 public class NotiResponseRequest {
     @NotBlank
     private String message;
+
+    // Bắt buộc khi phản hồi notification RANKING_DRAFT.
+    private Integer roundId;
 }

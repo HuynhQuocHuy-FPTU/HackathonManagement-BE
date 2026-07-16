@@ -109,11 +109,18 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/submissions/*/create").hasRole("STUDENT")
                         .requestMatchers("/api/teams/**").hasRole("STUDENT")
 
-                        //EXPERT
-                        .requestMatchers(HttpMethod.GET, "/api/team-requests/received").hasRole("EXPERT")
-                        .requestMatchers("/api/team-requests/received").hasRole("EXPERT")
-                        .requestMatchers(HttpMethod.PATCH, "/api/team-requests/*/reject").hasRole("EXPERT")
-                        .requestMatchers(HttpMethod.PATCH, "/api/team-requests/*/accept").hasRole("EXPERT")
+                        // TeamRequest - STUDENT
+                        .requestMatchers(HttpMethod.POST, "/api/team-request/direct").hasRole("STUDENT")
+                        .requestMatchers(HttpMethod.POST, "/api/team-request").hasRole("STUDENT")
+
+                        // TeamRequest - EXPERT
+                        .requestMatchers(HttpMethod.GET, "/api/team-request/received").hasRole("EXPERT")
+                        .requestMatchers(HttpMethod.PATCH, "/api/team-request/*/reject").hasRole("EXPERT")
+                        .requestMatchers(HttpMethod.PATCH, "/api/team-request/*/accept").hasRole("EXPERT")
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/team-request/appeal/*/review-submissions"
+                        ).hasRole("EXPERT")
                         .requestMatchers("/api/expert/assigments/**").hasRole("EXPERT")
 
 
@@ -149,7 +156,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/registrations/*/pendingTeam").hasRole("EVENTCOORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/api/registrations/*/pendingTeam-detail").hasRole("EVENTCOORDINATOR")
 
-                        .requestMatchers(HttpMethod.PATCH, "/api/team-request/*/accept").hasRole("EVENTCOORDINATOR")
+                        // TeamRequest - EVENT COORDINATOR
+                        .requestMatchers(HttpMethod.PATCH, "/api/team-request/*/process").hasRole("EVENTCOORDINATOR")
+                        .requestMatchers(HttpMethod.GET, "/api/team-request/event/*").hasRole("EVENTCOORDINATOR")
+                        .requestMatchers(HttpMethod.GET, "/api/team-request/appeal/*").hasRole("EVENTCOORDINATOR")
 
                         //Dành cho ADMIN
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

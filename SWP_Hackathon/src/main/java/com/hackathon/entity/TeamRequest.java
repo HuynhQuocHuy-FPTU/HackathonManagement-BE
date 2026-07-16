@@ -58,6 +58,10 @@ public class TeamRequest {
     @JoinColumn(name = "Round_ID")
     private Round round;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "Source_Notification_ID")
+    private Notification sourceNotification;
+
     @Version
     private Integer version;
 

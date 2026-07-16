@@ -3,6 +3,7 @@ package com.hackathon.controller;
 import com.hackathon.dto.notification.NotiResponseRequest;
 import com.hackathon.dto.notification.NotificationWebResponse;
 import com.hackathon.dto.notification.ResponseEntry;
+import com.hackathon.dto.team.TeamRequestResponse;
 import com.hackathon.entity.TeamRequest;
 import com.hackathon.entity.enums.NotificationType;
 import com.hackathon.exception.ApiResponse;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -118,15 +120,16 @@ public class NotificationController {
     }
 
     @PostMapping("/web/response/{notiId}")
-    public ResponseEntity<ApiResponse<Void>> responseCategoryAssigment(
+    public ResponseEntity<ApiResponse<TeamRequestResponse>> responseNotification(
             @PathVariable Long notiId,
-            @RequestBody NotiResponseRequest request,
+            @Valid @RequestBody NotiResponseRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        teamRequestService.sendRequestToCoordinator(userDetails, request.getMessage(), notiId );
+        TeamRequestResponse response = teamRequestService.respondNotification(
+                userDetails, notiId, request);
 
         return ResponseEntity.ok(
-                ApiResponse.success(null, "Phản hồi thành công")
+                ApiResponse.success(response, "Phản hồi thành công")
         );
     }
     @GetMapping("/web/pending-response")
