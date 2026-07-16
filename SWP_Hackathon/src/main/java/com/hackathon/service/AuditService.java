@@ -52,7 +52,7 @@ public class AuditService {
                             .orElse("N/A");
                     break;
                 default:
-                    actorName = "ADMIN";
+                    actorName = "SYSTEM";
                     break;
             }
         }

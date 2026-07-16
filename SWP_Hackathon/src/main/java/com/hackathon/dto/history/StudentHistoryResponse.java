@@ -1,5 +1,6 @@
 package com.hackathon.dto.history;
 
+import com.hackathon.dto.round.RoundStatusDTO;
 import com.hackathon.entity.enums.ExpertRole;
 import com.hackathon.entity.enums.RegistrationStatus;
 import lombok.*;
@@ -33,9 +34,8 @@ public class StudentHistoryResponse {
         private LocalDateTime registrationDate;// ngay dk event
         private boolean isLeader;
         private Integer ranking;
-        private String roundName;
-        private String categoryName;
-//        private String reward;
+        private List<RoundStatusDTO> listRounds;
+        private String reward;
 
 
     }

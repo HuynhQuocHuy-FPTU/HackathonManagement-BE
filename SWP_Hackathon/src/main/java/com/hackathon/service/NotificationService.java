@@ -67,7 +67,7 @@ public interface NotificationService {
     void deleteNotification(Long notificationId, CustomUserDetails userDetails);
 
     //
-    void notifyRoundRankingPublished(Account actor, Integer roundId, boolean isFinal);
+    void notifyRoundRankingPublished(Account actor, Integer roundId, boolean isFinal, Integer responseDeadline);
 
     void notifyExpertReEvaluation(Account actor, Set<Account> expertsToNotify, String teamName);
 }

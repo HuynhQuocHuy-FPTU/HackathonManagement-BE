@@ -21,12 +21,9 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
-
     private final AccountRepository accountRepository;
-    private final HackathonEventRepository eventRepository;
     private final RoundRepository roundRepository;
     private final EmailService emailService;
-    private final TeamRequestRepository teamRequestRepository;
 
     @Transactional
     @Override
@@ -103,7 +100,8 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setCreatedAt(LocalDateTime.now());
         notificationRepository.save(notification);
     }
-    public void notiResolvedRequest(Account actor, Account teamLeaderAccount,String teamName){
+
+    public void notiResolvedRequest(Account actor, Account teamLeaderAccount, String teamName) {
         String title = "Giải quyết yêu cầu";
         String message = "Yêu cầu của đội\"" + teamName + "\" đã được xử lý bạn hãy kiểm tra lại thông tin. Nếu vẫn còn vấn đề, bạn có thể tạo yêu cầu mới.";
         createNotificationNoResponse(teamLeaderAccount, actor, NotificationType.ASSIGNED_CATEGORY, NotificationChannel.WEB, title, message);
@@ -363,7 +361,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
-    public void notifyRoundRankingPublished(Account actor, Integer roundId, boolean isFinal) {
+    public void notifyRoundRankingPublished(Account actor, Integer roundId, boolean isFinal, Integer responseDeadline) {
         Round round = roundRepository.findById(roundId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy vòng thi."));
         String eventName = round.getHackathonEvent().getEventName();
@@ -398,14 +396,27 @@ public class NotificationServiceImpl implements NotificationService {
             accounts = accountRepository.findParticipantsByRoundId(roundId);
         }
         for (Account acc : accounts) {
-            createNotificationNoResponse(
-                    acc,
-                    actor,
-                    isFinal ? NotificationType.RANKING_OFFICIAL : NotificationType.RANKING_DRAFT,
-                    NotificationChannel.WEB,
-                    title,
-                    message
-            );
+            if (isFinal) {
+                createNotificationNoResponse(
+                        acc,
+                        actor,
+                        NotificationType.RANKING_OFFICIAL,
+                        NotificationChannel.WEB,
+                        title,
+                        message
+                );
+            } else {
+                createNotificationHaveResponse(
+                        acc,
+                        actor,
+                        NotificationType.RANKING_DRAFT,
+                        NotificationChannel.WEB,
+                        title,
+                        message,
+                        true,
+                        responseDeadline
+                );
+            }
             try {
                 emailService.sendRankingPublishEmail(acc.getEmail(), title, message);
                 createNotificationNoResponse(
@@ -467,7 +478,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .build();
     }
 
-    private ResponseEntry mapToNotiResponse(Notification notification){
+    private ResponseEntry mapToNotiResponse(Notification notification) {
         return ResponseEntry.builder().senderId(notification.getActor().getAccountId()).senderName(notification.getActor().getStudent().getStudentName()).message(notification.getResponseMessage()).build();
     }
 

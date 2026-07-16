@@ -41,8 +41,9 @@ public class RankingController {
     public ResponseEntity<ApiResponse<Void>> publishDraftRanking(
             @PathVariable Integer roundId,
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam Integer hoursAmount) {
-        rankingService.publishDraftRankingAndOpenAppeals(roundId, userDetails, hoursAmount);
+            @RequestParam Integer hoursAmount,
+            @RequestParam Integer responseDeadline) {
+        rankingService.publishDraftRankingAndOpenAppeals(roundId, userDetails, hoursAmount, responseDeadline);
         return ResponseEntity.ok(ApiResponse.success(null, "Ban tổ chức công bố bảng xếp hạng tạm thời thành công"));
     }
 

@@ -21,8 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-//Class nay duoc dung de luu lai tieu chi cham diem da duoc chinh sua or custom tu tieu chi mau
-
 @Service
 @RequiredArgsConstructor
 
