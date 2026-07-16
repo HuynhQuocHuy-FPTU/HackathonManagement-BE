@@ -102,13 +102,7 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     @Async
-    public void sendRankingPublishEmail(String toEmail, String tile, String emailMessage) {
-        if (!StringUtils.hasText(mailUsername)) {
-            if (devLogLink) {
-                log.info("=== DEV: Temporary password for {} ===\nPassword: {}\nLogin URL: {}", toEmail);
-            }
-            return;
-        }
+    public void sendGeneralEmail(String toEmail, String tile, String emailMessage) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(mailUsername);
         message.setTo(toEmail);
@@ -207,6 +201,5 @@ public class EmailServiceImpl implements EmailService {
 
         }
     }
-
 
 }

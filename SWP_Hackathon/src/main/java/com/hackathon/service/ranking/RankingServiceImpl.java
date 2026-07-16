@@ -111,7 +111,7 @@ public class RankingServiceImpl implements RankingService {
     // Khi chấm điểm xong thì sẽ public Draft
     @Override
     @Transactional
-    public void publishDraftRankingAndOpenAppeals(Integer roundId, CustomUserDetails userDetails, Integer hoursAmount, Integer reponseDeadline) {
+    public void publishDraftRankingAndOpenAppeals(Integer roundId, CustomUserDetails userDetails, Integer hoursAmount) {
         Account account = userDetails.getAccount();
         EventCoordinator eventCoordinator = eventCoordinatorRepository.findByAccount_AccountId(account.getAccountId())
                 .orElseThrow(() -> new BadRequestException("Bạn không phải là ban tổ chức vì vậy bạn không có quyền truy cập vào dữ liệu này."));
@@ -140,7 +140,7 @@ public class RankingServiceImpl implements RankingService {
         round.setAppealEndTime(LocalDateTime.now().plusHours(hoursAmount));
         roundRepository.save(round);
         log.info("Đã công bố bản nháp bảng xếp hạng vòng {}. Bắt đầu nhận phúc khảo.", roundId);
-        notificationService.notifyRoundRankingPublished(null, roundId, false, reponseDeadline);
+        notificationService.notifyRoundRankingPublished(null, roundId, false, hoursAmount);
 
         List<CategoryRankingResponse> auditRankingData = auditRankingData(categoryRounds);
         try {

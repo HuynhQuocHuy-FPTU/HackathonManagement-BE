@@ -9,6 +9,7 @@ import com.hackathon.entity.enums.NotificationChannel;
 import com.hackathon.entity.enums.NotificationType;
 import com.hackathon.security.CustomUserDetails;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 
@@ -56,4 +57,5 @@ public interface NotificationService {
     void notifyRoundRankingPublished(Account actor, Integer roundId, boolean isFinal, Integer responseDeadline);
 
     void notifyExpertReEvaluation(Account actor, Set<Account> expertsToNotify, String teamName);
+    void notifyResponseAppeal(Account actor, Account account , String teamName, boolean isChanged );
 }

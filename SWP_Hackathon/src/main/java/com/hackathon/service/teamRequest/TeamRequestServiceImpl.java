@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -40,6 +41,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
     private final EvaluationRepository evaluationRepository;
     private final AuditService auditService;
     private final NotificationService notificationService;
+
     private TeamRequestResponse mapToResponse(TeamRequest rq, CategoryRound cr, Integer expertId) {
         return TeamRequestResponse.builder()
                 .requestId(rq.getRequestId())
@@ -124,10 +126,15 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         Expert expert = expertRepository.findByAccount_AccountId(account.getAccountId())
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin Expert tương ứng với tài khoản này."));
         // Lấy ds các Team gửi request
-        List<TeamRequest> listRequest = teamRequestRepository.findRequestForExpertRoleMentor(expert.getExpertId());
+        List<TeamRequest> listRequest = teamRequestRepository.findRequestForExpertRoleMentor(expert.getExpertId(),
+                RequestStatus.PENDING,
+                RegistrationStatus.APPROVED,
+                RoundStatus.ONGOING,
+                ExpertRole.MENTOR);
         if (listRequest == null || listRequest.isEmpty()) {
             return new ArrayList<>();
         }
+
 
         List<TeamRequestResponse> responseList = new ArrayList<>();
         for (TeamRequest rq : listRequest) {
@@ -201,7 +208,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                 AuditAction.MENTOR_ACCEPT_REQUEST,
                 AuditEntityType.TEAM,
                 teamRequest.getTeam().getTeamId(),
-                "Chấp nhận yêu câud hỗ trợ từ team thành công"
+                "Chấp nhận yêu cầu hỗ trợ từ team thành công"
         );
 
         if (responseMessage != null) {
@@ -379,7 +386,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
     @Override
     public List<TeamRequestResponse> getAppealRequestPublic(CustomUserDetails userDetails, Integer roundId) {
         Account account = userDetails.getAccount();
-        if(account == null) {
+        if (account == null) {
             throw new BadRequestException("Account không tồn tại");
         }
         List<TeamRequest> appealRequest = teamRequestRepository.findByRound_RoundId(roundId);
@@ -419,17 +426,24 @@ public class TeamRequestServiceImpl implements TeamRequestService {
             throw new BadRequestException("Đây không phải là đơn khiếu nại kết quả.");
         }
         if (appealRequest.getStatus() != RequestStatus.RE_EVALUATED
-        && appealRequest.getStatus() != RequestStatus.PENDING) {
+                && appealRequest.getStatus() != RequestStatus.PENDING) {
             throw new BadRequestException("Đơn khiếu nại này chưa được ban giám khảo hoàn thành.");
         }
         System.out.println("Status = " + appealRequest.getStatus());
-
 
 
         appealRequest.setStatus(RequestStatus.DECLINED);
         appealRequest.setResponseMessage(responseMessage != null ? responseMessage : "BTC từ chối đơn khiếu nại do điểm số không thay đổi.");
         appealRequest.setResponder(account);
         appealRequest.setResponseAt(LocalDateTime.now());
+
+        // 4. Gửi thông báo
+        Student teamLeader = appealRequest.getTeam().getTeamMembers().stream()
+                .filter(TeamMember::getIsLeader)
+                .map(TeamMember::getStudent)
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Leader"));
+        notificationService.notifyResponseAppeal(account, teamLeader.getAccount(), appealRequest.getTeam().getTeamName(), true);
         auditService.saveLog(
                 account,
                 AuditAction.REJECT_APPEAL_REQUEST,
@@ -465,6 +479,15 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         appealRequest.setResponseMessage(responseMessage != null ? responseMessage : "BTC đã chấp nhận đơn khiếu nại sau khi có sự thay đổi về điểm số.");
         appealRequest.setResponder(account);
         appealRequest.setResponseAt(LocalDateTime.now());
+
+        // 4. Gửi thông báo
+        Student teamLeader = appealRequest.getTeam().getTeamMembers().stream()
+                .filter(TeamMember::getIsLeader)
+                .map(TeamMember::getStudent)
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Leader"));
+        notificationService.notifyResponseAppeal(account, teamLeader.getAccount(), appealRequest.getTeam().getTeamName(), true);
+
         auditService.saveLog(
                 account,
                 AuditAction.ACCEPT_APPEAL_REQUEST,
@@ -674,11 +697,12 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                 .requestMessage(saveTeamRequest.getRequestMessage())
                 .build();
     }
+
     @Transactional
     public void resolvedRequest(CustomUserDetails userDetails, Integer teamRequestId, String messageResponse) {
         // 1. Kiểm tra quyền
         EventCoordinator eventCoordinator = userDetails.getAccount().getEventCoordinator();
-        if(eventCoordinator == null) {
+        if (eventCoordinator == null) {
             throw new ResourceNotFoundException("Bạn không phải là eventcoordinator");
         }
         // 2. Lấy request và kiểm tra

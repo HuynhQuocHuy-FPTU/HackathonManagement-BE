@@ -8,6 +8,6 @@ public interface EmailService {
     void sendTemporaryPasswordEmail(String toEmail, String tempPassword, String fullName);
     void sendVerificationEmail(String toEmail, String token);
     void sendForgotPasswordEmail(String toEmail, String otp);
-    void sendRankingPublishEmail(String toEmail, String tile, String emailMessage);
+    void sendGeneralEmail(String toEmail, String tile, String emailMessage);
     void sendNotifyToExpertReEvaluation(String email, String teamName);
 }

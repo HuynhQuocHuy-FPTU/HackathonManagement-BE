@@ -28,8 +28,9 @@ public class TeamRequestResponse {
     private String categoryName;
     private String requestMessage;
     private String responseMessage;
-//    private NotiResponseStatus responseStatus;
     private Integer responseId;
     private LocalDateTime responseAt;// thời gian phàn hồi của mentor
     private List<EvaluationResponse> listEvaluation;
+    private long acceptedRequests;
+    private long rejectedRequests;
 }

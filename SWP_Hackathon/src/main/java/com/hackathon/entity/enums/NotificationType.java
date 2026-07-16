@@ -25,7 +25,8 @@ public enum NotificationType {
 
     SYSTEM_ANNOUNCEMENT,
     RANKING_DRAFT,
-    RANKING_OFFICIAL
+    RANKING_OFFICIAL,
+    RESULT_APPEAL
 
 
 }

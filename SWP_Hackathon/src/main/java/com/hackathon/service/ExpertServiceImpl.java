@@ -26,9 +26,6 @@ public class ExpertServiceImpl implements ExpertService {
     private ExpertRepository expertRepository;
     @Autowired
     private EvaluationRepository evaluationRepository;
-    @Autowired
-    private SubmissionRepository submissionRepository;
-
     @Override
     public List<ExpertInfoResponse> getAllExperts() {
         List<Expert> experts = expertRepository.findAll();
@@ -57,20 +54,29 @@ public class ExpertServiceImpl implements ExpertService {
     public ExpertOverviewResponse getExpertOverview(CustomUserDetails userDetails, Integer eventId) {
         Expert expert = expertRepository.findByAccount_AccountId(userDetails.getAccount().getAccountId())
                 .orElseThrow(() -> new BadRequestException("Bạn không phải là Expert."));
-        long totalAssigned = evaluationRepository.countTotalAssigned(expert.getExpertId(), eventId,
-                List.of(ExpertRole.CORE_JUDGE, ExpertRole.GUEST_JUDGE));
-        // Số bài đã hoàn thành ở thời điểm hiện tại.
-        long completedReviews = evaluationRepository.countCompletedReviews(expert.getExpertId(), eventId,
+
+        List<ExpertRole> judgeRoles = List.of(ExpertRole.CORE_JUDGE, ExpertRole.GUEST_JUDGE);
+
+        long totalAssigned = evaluationRepository.countTotalAssigned(expert.getExpertId(), eventId, judgeRoles);
+
+        long completedReviews = evaluationRepository.countReviewsByStatuses(
+                expert.getExpertId(),
+                eventId,
                 List.of(EvaluationStatus.GRADED, EvaluationStatus.RE_EVALUATED),
-                List.of(ExpertRole.CORE_JUDGE, ExpertRole.GUEST_JUDGE));
-        //   Số bài đang cần expert xử lý.
-        long pendingReviews = evaluationRepository.countPendingReviews(expert.getExpertId(), eventId,
-                List.of(EvaluationStatus.NOT_GRADED),
-                List.of(ExpertRole.CORE_JUDGE, ExpertRole.GUEST_JUDGE));
-        //Số bài đang chờ chấm lại.
-        long reEvaluationReviews = evaluationRepository.reEvaluationReviews(expert.getExpertId(), eventId,
+                judgeRoles
+        );
+
+        long reEvaluationReviews = evaluationRepository.countReviewsByStatuses(
+                expert.getExpertId(),
+                eventId,
                 List.of(EvaluationStatus.RE_EVALUATION),
-                List.of(ExpertRole.CORE_JUDGE, ExpertRole.GUEST_JUDGE));
+                judgeRoles
+        );
+
+        // Bài chờ chấm = Tổng số bài - Bài đã chấm xong - Bài đang khiếu nại
+        long pendingReviews = totalAssigned - completedReviews - reEvaluationReviews;
+        if (pendingReviews < 0) pendingReviews = 0;
+
         return new ExpertOverviewResponse(
                 totalAssigned,
                 completedReviews,
