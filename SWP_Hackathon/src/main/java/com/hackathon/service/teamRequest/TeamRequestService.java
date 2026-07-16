@@ -7,29 +7,29 @@ import com.hackathon.dto.team.ProcessTeamRequest;
 import com.hackathon.dto.team.CreateDirectTeamRequest;
 import com.hackathon.dto.notification.NotiResponseRequest;
 import com.hackathon.security.CustomUserDetails;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-
 import java.util.List;
 
 public interface TeamRequestService {
     List<TeamRequestResponse> teamSendRequestToMentor(TeamAppealRequestDTO request, CustomUserDetails userDetails);
 
-    Page<TeamRequestResponse> getTeamRequestsForExpert(
-            CustomUserDetails userDetails, Pageable pageable);
+    List<TeamRequestResponse> getTeamRequestsForExpert(
+            CustomUserDetails userDetails);
 
     TeamRequestResponse acceptTeamRequest(String responseMessage, Integer requestId, CustomUserDetails userDetails);
 
     TeamRequestResponse rejectTeamRequest(String responseMessage, Integer requestId, CustomUserDetails userDetails);
 
-    Page<TeamRequestResponse> getAppealRequest(
-            CustomUserDetails userDetails, Integer roundId, Pageable pageable);
+    List<TeamRequestResponse> getAppealRequest(
+            CustomUserDetails userDetails, Integer roundId);
 
-    Page<TeamRequestResponse> getAppealRequestPublic(
-            CustomUserDetails userDetails, Integer roundId, Pageable pageable);
+    List<TeamRequestResponse> getAllRequestsForEvent(
+            CustomUserDetails userDetails, Integer eventId);
 
-    Page<TeamRequestResponse> getAppealRequestsForJudge(
-            CustomUserDetails userDetails, Integer roundId, Pageable pageable);
+    List<TeamRequestResponse> getAppealRequestPublic(
+            CustomUserDetails userDetails, Integer roundId);
+
+    List<TeamRequestResponse> getAppealRequestsForJudge(
+            CustomUserDetails userDetails, Integer roundId);
 
     // Đêr tạm ơr đây
 //    void reEvaluationSubmission(CustomUserDetails userDetails, ReDetailEvaluationRequest request );

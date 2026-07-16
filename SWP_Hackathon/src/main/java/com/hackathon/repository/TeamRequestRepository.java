@@ -4,8 +4,6 @@ import com.hackathon.entity.TeamRequest;
 import com.hackathon.entity.enums.RequestStatus;
 import com.hackathon.entity.enums.RequestType;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -40,10 +38,8 @@ public interface TeamRequestRepository extends JpaRepository<TeamRequest,Integer
                     "AND p.categoryRound.categoryRoundId IN " +
                     "(SELECT ea.categoryRound.categoryRoundId FROM ExpertAssign ea " +
                     "WHERE ea.expert.expertId = :expertId AND ea.role = 'MENTOR')")
-    Page<TeamRequest> findRequestForExpertRoleMentor(
-            @Param("expertId") Integer expertID,
-            Pageable pageable
-    );
+    List<TeamRequest> findRequestForExpertRoleMentor(
+            @Param("expertId") Integer expertID);
 
     boolean existsByTeam_TeamIdAndStatusAndRequestType(Integer teamId, RequestStatus status, RequestType type);
 
@@ -55,19 +51,15 @@ public interface TeamRequestRepository extends JpaRepository<TeamRequest,Integer
     );
 
     List<TeamRequest> findByRound_RoundIdAndRequestType(Integer roundId, RequestType requestType);
-    Page<TeamRequest> findByRound_RoundIdAndRequestType(
-            Integer roundId, RequestType requestType, Pageable pageable);
     List<TeamRequest> findByRound_RoundId(Integer roundId);
-    Page<TeamRequest> findByRound_RoundId(
-            Integer roundId, Pageable pageable);
     List<TeamRequest> findByRound_RoundIdAndRequestTypeAndStatus(Integer roundId, RequestType requestType, RequestStatus status);
-    Page<TeamRequest> findByRound_RoundIdAndRequestTypeAndStatus(
-            Integer roundId,
-            RequestType requestType,
-            RequestStatus status,
-            Pageable pageable
-    );
 
     List<TeamRequest> findByRound_RoundIdAndRequestTypeAndStatusIn(Integer roundId, RequestType type, List<RequestStatus> statuses);
+
+    List<TeamRequest>
+    findByRound_HackathonEvent_EventIdAndRound_HackathonEvent_EventCoordinator_Account_AccountIdOrderByCreateDateDesc(
+            Integer eventId,
+            Integer accountId
+    );
 
 }

@@ -10,10 +10,6 @@ import com.hackathon.service.teamRequest.TeamRequestService;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -64,16 +60,11 @@ public class TeamRequestController {
     //Expert nhận list các Request mà Team gửi đến
     @PreAuthorize("hasRole('EXPERT')")
     @GetMapping("/received")
-    public ResponseEntity<ApiResponse<Page<TeamRequestResponse>>> getTeamRequestsForExpert(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PageableDefault(
-                    size = 20,
-                    sort = "createDate",
-                    direction = Sort.Direction.DESC
-            ) Pageable pageable) {
-        Page<TeamRequestResponse> response =
+    public ResponseEntity<ApiResponse<List<TeamRequestResponse>>> getTeamRequestsForExpert(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        List<TeamRequestResponse> response =
                 teamRequestService.getTeamRequestsForExpert(
-                        userDetails, pageable);
+                        userDetails);
         return ResponseEntity.ok(ApiResponse.success(response, "Expert nhận danh sách các yêu cầu nhận sự hỗ trợ thành công."));
     }
 
@@ -102,32 +93,37 @@ public class TeamRequestController {
     //Ban tổ chức lấy toàn bộ danh sách đơn khiếu nại
     @GetMapping("/appeal/{roundId}")
     @PreAuthorize("hasRole('EVENTCOORDINATOR')")
-    public ResponseEntity<ApiResponse<Page<TeamRequestResponse>>> getAppealRequest(
+    public ResponseEntity<ApiResponse<List<TeamRequestResponse>>> getAppealRequest(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable Integer roundId,
-            @PageableDefault(
-                    size = 20,
-                    sort = "createDate",
-                    direction = Sort.Direction.DESC
-            ) Pageable pageable) {
-        Page<TeamRequestResponse> response =
+            @PathVariable Integer roundId) {
+        List<TeamRequestResponse> response =
                 teamRequestService.getAppealRequest(
-                        userDetails, roundId, pageable);
+                        userDetails, roundId);
         return ResponseEntity.ok(ApiResponse.success(response, "Ban tổ chức lấy toàn bộ danh sách đơn phúc khảo thành công."));
     }
 
-    @GetMapping("/applicaion/view-all/{roundId}")
-    public ResponseEntity<ApiResponse<Page<TeamRequestResponse>>> getAppealRequestPublic(
+    @GetMapping("/event/{eventId}")
+    @PreAuthorize("hasRole('EVENTCOORDINATOR')")
+    public ResponseEntity<ApiResponse<List<TeamRequestResponse>>> getAllRequestsForEvent(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable Integer roundId,
-            @PageableDefault(
-                    size = 20,
-                    sort = "createDate",
-                    direction = Sort.Direction.DESC
-            ) Pageable pageable) {
-        Page<TeamRequestResponse> response =
+            @PathVariable Integer eventId
+    ) {
+        List<TeamRequestResponse> response =
+                teamRequestService.getAllRequestsForEvent(
+                        userDetails, eventId);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                response,
+                "Lấy toàn bộ yêu cầu của sự kiện thành công"));
+    }
+
+    @GetMapping("/applicaion/view-all/{roundId}")
+    public ResponseEntity<ApiResponse<List<TeamRequestResponse>>> getAppealRequestPublic(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Integer roundId) {
+        List<TeamRequestResponse> response =
                 teamRequestService.getAppealRequestPublic(
-                        userDetails, roundId, pageable);
+                        userDetails, roundId);
         return ResponseEntity.ok(ApiResponse.success(response, "Ban tổ chức lấy toàn bộ danh sách đơn phúc khảo thành công."));
     }
 
@@ -135,17 +131,12 @@ public class TeamRequestController {
     // BAN GIÁM KHẢO NHẬN DS BÀI NỘP ĐỂ TIẾN HÀNH CHẤM LẠI
     @GetMapping("/appeal/{roundId}/review-submissions")
     @PreAuthorize("hasRole('EXPERT')")
-    public ResponseEntity<ApiResponse<Page<TeamRequestResponse>>> getAppealRequestsForJudge(
+    public ResponseEntity<ApiResponse<List<TeamRequestResponse>>> getAppealRequestsForJudge(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable Integer roundId,
-            @PageableDefault(
-                    size = 20,
-                    sort = "createDate",
-                    direction = Sort.Direction.DESC
-            ) Pageable pageable) {
-        Page<TeamRequestResponse> response =
+            @PathVariable Integer roundId) {
+        List<TeamRequestResponse> response =
                 teamRequestService.getAppealRequestsForJudge(
-                        userDetails, roundId, pageable);
+                        userDetails, roundId);
         return ResponseEntity.ok(ApiResponse.success(response, "Ban giám khảo nhận các bài nộp yêu cầu phúc khảo thành công."));
     }
 
