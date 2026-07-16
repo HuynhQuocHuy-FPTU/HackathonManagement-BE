@@ -111,7 +111,7 @@ public class RankingServiceImpl implements RankingService {
     // Khi chấm điểm xong thì sẽ public Draft
     @Override
     @Transactional
-    public void publishDraftRankingAndOpenAppeals(Integer roundId, CustomUserDetails userDetails, Integer hoursAmount) {
+    public void publishDraftRankingAndOpenAppeals(Integer roundId, CustomUserDetails userDetails, Integer hoursAmount, Integer reponseDeadline) {
         Account account = userDetails.getAccount();
         EventCoordinator eventCoordinator = eventCoordinatorRepository.findByAccount_AccountId(account.getAccountId())
                 .orElseThrow(() -> new BadRequestException("Bạn không phải là ban tổ chức vì vậy bạn không có quyền truy cập vào dữ liệu này."));
@@ -140,6 +140,7 @@ public class RankingServiceImpl implements RankingService {
         round.setAppealEndTime(LocalDateTime.now().plusHours(hoursAmount));
         roundRepository.save(round);
         log.info("Đã công bố bản nháp bảng xếp hạng vòng {}. Bắt đầu nhận phúc khảo.", roundId);
+        notificationService.notifyRoundRankingPublished(null, roundId, false, reponseDeadline);
 
         List<CategoryRankingResponse> auditRankingData = auditRankingData(categoryRounds);
         try {
@@ -172,8 +173,6 @@ public class RankingServiceImpl implements RankingService {
                     "Chưa tới thời gian công bố kết quả cuối"
             );
         }
-        log.info("Round status = {}", round.getStatus());
-
 
         List<CategoryRound> categoryRounds = round.getCategoryRounds();
         if (categoryRounds == null || categoryRounds.isEmpty()) {
@@ -181,14 +180,9 @@ public class RankingServiceImpl implements RankingService {
         }
 
         for (CategoryRound cr : categoryRounds) {
-            log.info("Step 1");
-            log.info("Before advance");
 
             roundAdvancementService.calculateScoresAndRanking(cr.getCategoryRoundId());
         }
-        log.info("Step 2");
-        log.info("After advance");
-
         roundAdvancementService.advanceAllCategoriesInRound(roundId);
 
         // 3. REFRESH DATA TRONG HIBERNATE SESSION ĐỂ TRÁNH LẤY ĐIỂM/RANK CŨ TRONG CACHE
@@ -206,7 +200,7 @@ public class RankingServiceImpl implements RankingService {
         round.setStatus(RoundStatus.FINAL_RESULT);
         roundRepository.save(round);
         log.info("Đã công bố bản xếp hạng chính thức vòng {}. ", roundId);
-        notificationService.notifyRoundRankingPublished(null, roundId, true);
+        notificationService.notifyRoundRankingPublished(null, roundId, true, null);
 
         List<CategoryRankingResponse> auditRankingData = auditRankingData(categoryRounds);
 
@@ -216,7 +210,7 @@ public class RankingServiceImpl implements RankingService {
         try {
 
             auditService.saveLog(
-                    systemAccount,
+                    null,
                     AuditAction.PUBLISH_FINAL,
                     AuditEntityType.ROUND,
                     roundId,
@@ -255,7 +249,8 @@ public class RankingServiceImpl implements RankingService {
     public CategoryRoundRankingResponse getTopNRanking(Integer roundId) {
         Round round = roundRepository.findById(roundId).orElseThrow(
                 () -> new BadRequestException("Không tìm thấy vòng thi"));
-        if (round.getStatus() != RoundStatus.COMPLETED) {
+        if (round.getStatus() != RoundStatus.COMPLETED
+        && round.getStatus()!=  RoundStatus.FINAL_RESULT) {
             throw new BadRequestException("Bạn không được phép xem bảng xếp hạng khi vòng thi chưa hoàn thành.");
         }
         List<CategoryRound> categoryRound = round.getCategoryRounds();

@@ -15,10 +15,10 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("api/historty")
 public class HistoryUserController {
     private final AccountServiceImpl accountService;
-    @GetMapping("student/{accountId}")
-    public ResponseEntity<ApiResponse<StudentHistoryResponse>> getHistoryStudent( @RequestParam(required = false) Integer accountId,
+    @GetMapping("student/{studentId}")
+    public ResponseEntity<ApiResponse<StudentHistoryResponse>> getHistoryStudent( @RequestParam(required = false) Integer studentId,
                                                                                  @AuthenticationPrincipal CustomUserDetails userDetails){
-        StudentHistoryResponse response = accountService.studentHistory(accountId, userDetails);
+        StudentHistoryResponse response = accountService.studentHistory(studentId, userDetails);
         return ResponseEntity.ok(ApiResponse.success(response, "Xem lịch sử của sinh viên thành công"));
     }
 
