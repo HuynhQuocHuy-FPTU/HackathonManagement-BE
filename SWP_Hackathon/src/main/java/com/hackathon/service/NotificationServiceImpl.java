@@ -21,13 +21,9 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
-
     private final AccountRepository accountRepository;
-    private final HackathonEventRepository eventRepository;
     private final RoundRepository roundRepository;
     private final EmailService emailService;
-    private final TeamRequestRepository teamRequestRepository;
-
     @Transactional
     @Override
     public NotificationEmailResponse getInfoNotificationInvite(CustomUserDetails userDetails, Long notificationId) {

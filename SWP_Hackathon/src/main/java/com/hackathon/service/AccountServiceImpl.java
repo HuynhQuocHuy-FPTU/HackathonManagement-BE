@@ -3,10 +3,12 @@ package com.hackathon.service;
 import com.hackathon.dto.event.EventDescription;
 import com.hackathon.dto.history.ExpertHistoryResponse;
 import com.hackathon.dto.history.StudentHistoryResponse;
+import com.hackathon.dto.round.RoundStatusDTO;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.AccountRole;
 import com.hackathon.entity.enums.ExpertRole;
 import com.hackathon.entity.enums.ExpertType;
+import com.hackathon.entity.enums.RoundStatus;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.*;
 import com.hackathon.security.CustomUserDetails;
@@ -20,45 +22,39 @@ import java.util.*;
 public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
-    //    private final StudentRepository studentRepository;
-//    private final TeamRepository teamRepository;
-//    private final HackathonEventRepository hackathonEventRepository;
+    private final StudentRepository studentRepository;
     private final TeamMemberRepository teamMemberRepository;
     private final RegistrationRepository registrationRepository;
-    private final ParticipantRepository participantRepository;
+
 
 
     @Override
-    public StudentHistoryResponse studentHistory(Integer accountId, CustomUserDetails userDetails) {
-
-        //1. Tìm thông tin Student qua Account
+    public StudentHistoryResponse studentHistory(Integer studentId, CustomUserDetails userDetails) {
         Account currentAccount = userDetails.getAccount();
-        if (currentAccount.getRole() != AccountRole.STUDENT
-                && currentAccount.getRole() != AccountRole.EVENTCOORDINATOR) {
 
-            throw new BadRequestException("Bạn không có quyền xem lịch sử này.");
-        }
         //  Nếu là Sinh viên, CHỈ được xem chính mình. Admin/Coordinator xem ai cũng được.
-        if (currentAccount.getRole() == AccountRole.EVENTCOORDINATOR&& accountId == null) {
-            throw new BadRequestException("Vui lòng nhập account Id để xem thông tin của student.");
+
+        if (currentAccount.getRole() == AccountRole.STUDENT) {
+            studentId = currentAccount.getAccountId();
+        } else if (currentAccount.getRole() == AccountRole.EVENTCOORDINATOR) {
+            if (studentId == null) {
+                throw new BadRequestException("Vui lòng nhập studentId để xem thông tin của sinh viên.");
+            }
+        } else {
+            throw new BadRequestException("Bạn không có quyền xem lịch sử này");
         }
-        if(currentAccount.getRole() == AccountRole.STUDENT){
-            accountId = currentAccount.getAccountId();
-        }
-        Account accStudent = accountRepository.findById(accountId)
-                .orElseThrow(() -> new BadRequestException("Không tìm thấy tài khoản này."));
-        Student student = accStudent.getStudent();
-        if (student == null) {
-            throw new BadRequestException("Tài khoản này không phải tài khoản của sinh viên.");
-        }
+
+        Student accStudent = studentRepository.findById(studentId)
+                .orElseThrow(() -> new BadRequestException("Tài khoản này không phải tài khoản của sinh viên."));
+
         //2. Lấy thông tin chung của student
 
         StudentHistoryResponse historyResponse = new StudentHistoryResponse();
-        historyResponse.setStudentName(student.getStudentName());
-        historyResponse.setUniversityName(student.getUniversityName());
-        historyResponse.setCreatAt(accStudent.getCreatedAt());
+        historyResponse.setStudentName(accStudent.getStudentName());
+        historyResponse.setUniversityName(accStudent.getUniversityName());
+        historyResponse.setCreatAt(currentAccount.getCreatedAt());
 
-        List<TeamMember> teamMember = teamMemberRepository.findByStudent(student);
+        List<TeamMember> teamMember = teamMemberRepository.findByStudent(accStudent);
         //3. Lấy ds teamMember
         List<StudentHistoryResponse.StudentHistory> historyList = new ArrayList<>();
         for (TeamMember tm : teamMember) {
@@ -71,8 +67,7 @@ public class AccountServiceImpl implements AccountService {
 
             for (Registration registration : regis) {
 
-                List<TeamParticipant> participantList =registration.getParticipants();
-                if (participantList == null || participantList.isEmpty()) {
+                if (registration != null && registration.getHackathonEvent() != null) {
                     StudentHistoryResponse.StudentHistory historyStudent = new StudentHistoryResponse.StudentHistory();
 
                     // Vẫn gán các thông tin cơ bản của Event để không bị trống data lịch sử
@@ -82,49 +77,50 @@ public class AccountServiceImpl implements AccountService {
                     historyStudent.setLeader(tm.getIsLeader());
                     historyStudent.setStatus(registration.getStatus());
                     historyStudent.setRegistrationDate(registration.getRegistrationDate());
-                    historyStudent.setCategoryName(null);
-                    historyStudent.setRoundName(null);
-                    historyStudent.setRanking(null);
-                    historyList.add(historyStudent);
-                    continue;
-                }
-                for(TeamParticipant participant :participantList){
-                    if (participant == null) continue;
-                    StudentHistoryResponse.StudentHistory historyStudent = new StudentHistoryResponse.StudentHistory();
-                    historyStudent.setEventName(registration.getHackathonEvent().getEventName());
-                    historyStudent.setEventId(registration.getHackathonEvent().getEventId());
-                    historyStudent.setTeamName(tm.getTeam().getTeamName());
-                    historyStudent.setLeader(tm.getIsLeader());
-                    historyStudent.setStatus(registration.getStatus());
-                    historyStudent.setRegistrationDate(registration.getRegistrationDate());
-                    if (participant.getCategoryRound()!= null) {
-                        if (participant.getCategoryRound().getCategory() != null) {
-                            historyStudent.setCategoryName(participant.getCategoryRound().getCategory().getCategoryName());
-                        }
-                        if (participant.getCategoryRound().getRound() != null) {
-                            historyStudent.setRoundName(participant.getCategoryRound().getRound().getRoundName());
-                        }
-                    }
-                    if (participant.getRank() != null) {
-                        historyStudent.setRanking(participant.getRank());
-                    } else {
-                        historyStudent.setRanking(null);
-                    }
+                    String award = null;
+                    Integer ranking = null;
 
-//                historyStudent.setReward("");
+                    List<RoundStatusDTO> listRounds = new ArrayList<>();
+                    List<TeamParticipant> participantList = registration.getParticipants();
+
+                    if (participantList != null && !participantList.isEmpty()) {
+                        for (TeamParticipant tp : participantList) {
+                            if (tp == null) continue;
+                            if (tp.getCategoryRound() != null && tp.getCategoryRound().getRound() != null) {
+                                Round round = tp.getCategoryRound().getRound();
+                                String categoryName = tp.getCategoryRound().getCategory() != null ?
+                                        tp.getCategoryRound().getCategory().getCategoryName() : "N/A";
+
+                                RoundStatusDTO roundStatusDTO = RoundStatusDTO.builder()
+                                        .roundId(round.getRoundId())
+                                        .categoryName(categoryName)
+                                        .roundName(round.getRoundName())
+                                        .status(tp.getStatus())
+                                        .build();
+                                listRounds.add(roundStatusDTO);
+                            }
+                            if (tp.getRank() != null) {
+                                ranking = tp.getRank();
+                            }
+                            if (tp.getAward() != null) {
+                                award = tp.getAward();
+                            }
+
+                        }
+
+                    }
+                    historyStudent.setListRounds(listRounds);
+                    historyStudent.setRanking(ranking);
+                    historyStudent.setReward(award);
                     historyList.add(historyStudent);
                 }
 
             }
-
         }
-        return new StudentHistoryResponse(
-                historyResponse.getStudentName(),
-                historyResponse.getUniversityName(),
-                historyResponse.getCreatAt(),
-                historyList
-        );
+        historyResponse.setList(historyList);
+        return historyResponse;
     }
+
 
     @Override
     public ExpertHistoryResponse expertHistory(Integer accountId, CustomUserDetails userDetails) {

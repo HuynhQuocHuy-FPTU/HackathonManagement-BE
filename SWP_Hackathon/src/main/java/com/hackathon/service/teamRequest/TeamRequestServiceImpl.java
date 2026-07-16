@@ -403,7 +403,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                     .round(rq.getRound().getRoundName())
                     .requestMessage(rq.getRequestMessage())
                     .responseMessage(rq.getResponseMessage())
-//                    .responseStatus(rq.getResponseStatus())
                     .responseAt(rq.getResponseAt())
                     .build();
             responseList.add(response);

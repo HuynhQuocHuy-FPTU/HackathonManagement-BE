@@ -255,7 +255,8 @@ public class RankingServiceImpl implements RankingService {
     public CategoryRoundRankingResponse getTopNRanking(Integer roundId) {
         Round round = roundRepository.findById(roundId).orElseThrow(
                 () -> new BadRequestException("Không tìm thấy vòng thi"));
-        if (round.getStatus() != RoundStatus.COMPLETED) {
+        if (round.getStatus() != RoundStatus.COMPLETED
+        && round.getStatus()!=  RoundStatus.FINAL_RESULT) {
             throw new BadRequestException("Bạn không được phép xem bảng xếp hạng khi vòng thi chưa hoàn thành.");
         }
         List<CategoryRound> categoryRound = round.getCategoryRounds();
