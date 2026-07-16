@@ -47,6 +47,7 @@ public class GradingServiceImpl implements GradingService {
     private final AuditService auditService;
     private final ObjectMapper objectMapper;
     private final CategoryRoundRepository categoryRoundRepository;
+    private final ParticipantRepository participantRepository;
 
 
     // =======================================================
@@ -390,8 +391,8 @@ public class GradingServiceImpl implements GradingService {
         //  Lấy tất cả đơn khiếu nại kết quả của vòng đấu này đang ở trạng thái INREVIEW
         TeamRequest appealRequest = teamRequestRepository.findById(request.getRequestId())
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy đơn khiếu nại phúc khảo nào."));
-        if (appealRequest.getStatus() != RequestStatus.IN_REVIEW) {
-            throw new BadRequestException("Đơn khiếu nại này không ở trạng thái INREVIEW");
+        if (appealRequest.getStatus() != RequestStatus.PROCESSING) {
+            throw new BadRequestException("Đơn khiếu nại này không ở trạng thái PROCESSING");
         }
 
 
@@ -472,18 +473,20 @@ public class GradingServiceImpl implements GradingService {
                 .noneMatch(eval -> eval.getStatus() == EvaluationStatus.RE_EVALUATION);
 
         if (isAllJudgesFinished) {
-            // Nếu tất cả bgk đã sửa điểm xong. Đóng đơn khiếu nại hoàn toàn
-            appealRequest.setStatus(RequestStatus.RE_EVALUATED);
+            // Tất cả judge đã chấm lại xong. Team quay về trạng thái hoạt động
+            // trong round; request chờ coordinator đưa ra kết luận cuối.
+            participant.setStatus(ParticipantStatus.ACTIVE);
+            participantRepository.save(participant);
+            appealRequest.setStatus(RequestStatus.IN_REVIEW);
             appealRequest.setResponseMessage("Toàn bộ hội đồng Giám khảo đã hoàn tất cập nhật lại điểm số phúc khảo.");
         } else {
             // Nếu vẫn còn giám khảo chưa chấm lại giữ nguyên IN_REVIEW
-            appealRequest.setStatus(RequestStatus.IN_REVIEW);
+            appealRequest.setStatus(RequestStatus.PROCESSING);
             appealRequest.setResponseMessage(String.format("Giám khảo %s đã sửa điểm. Đang đợi các giám khảo khác trong hội đồng hoàn tất.", expert.getExpertName()));
         }
 
         appealRequest.setResponseAt(LocalDateTime.now());
         teamRequestRepository.save(appealRequest);
-        roundRepository.save(round);
 
         // ghi log
         Map<String, Object> auditData = new LinkedHashMap<>();

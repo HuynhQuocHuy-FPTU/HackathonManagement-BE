@@ -166,7 +166,16 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void notifyAssignedCategory(Account actor, Account teamLeaderAccount, String teamName, String eventName, String category, Integer responseDeadline, String oldCategory) {
+    public void notifyAssignedCategory(
+            Account actor,
+            Account teamLeaderAccount,
+            Team team,
+            Round round,
+            String eventName,
+            String category,
+            Integer responseDeadline,
+            String oldCategory
+    ) {
         String title = "Hạng mục tham gia";
 
         String message = String.format(
@@ -175,21 +184,49 @@ public class NotificationServiceImpl implements NotificationService {
                         
                         Vui lòng kiểm tra lại thông tin. Nếu có sai sót, bạn có thể gửi phản hồi trong vòng "%s" tiếng kể từ thời điểm nhận thông báo.
                         """,
-                teamName,
+                team.getTeamName(),
                 category,
                 eventName,
                 responseDeadline
         );
 
-        createNotificationHaveResponse(
+        Notification notification = new Notification();
+        notification.setAccount(teamLeaderAccount);
+        notification.setActor(actor);
+        notification.setTeam(team);
+        notification.setRound(round);
+        notification.setType(NotificationType.ASSIGNED_CATEGORY);
+        notification.setChannel(NotificationChannel.WEB);
+        notification.setTitle(title);
+        notification.setMessage(message);
+        notification.setAllowResponse(true);
+        notification.setResponseDeadline(
+                LocalDateTime.now().plusHours(responseDeadline));
+        notification.setResponseStatus(NotiResponseStatus.NONE);
+        notification.setRead(false);
+        notification.setCreatedAt(LocalDateTime.now());
+        notificationRepository.save(notification);
+    }
+
+    @Override
+    public void notifyAssignedCategoryFinal(Account actor, Account teamLeaderAccount, String teamName,
+                                            String eventName, String category, String oldCategory) {
+        String title = "Kết quả xác thực hạng mục";
+        String message = String.format(
+                "Yêu cầu của team \"%s\" đã được xử lý. Hạng mục được cập nhật từ \"%s\" sang \"%s\" trong cuộc thi \"%s\".",
+                teamName,
+                oldCategory == null || oldCategory.isBlank() ? "Chưa có" : oldCategory,
+                category,
+                eventName
+        );
+
+        createNotificationNoResponse(
                 teamLeaderAccount,
                 actor,
                 NotificationType.ASSIGNED_CATEGORY,
                 NotificationChannel.WEB,
                 title,
-                message,
-                true,
-                responseDeadline
+                message
         );
     }
 
@@ -240,28 +277,24 @@ public class NotificationServiceImpl implements NotificationService {
         Integer accountId = userDetails.getAccount().getAccountId();
         return notificationRepository
                 .findByAccount_AccountIdOrderByCreatedAtDesc(accountId)
-                .stream()
-                .map(this::toResponse)
-                .toList();
+                .stream().map(this::toResponse).toList();
     }
 
 
     @Override
     public List<NotificationWebResponse> getUnreadNotifications(CustomUserDetails userDetails) {
         Integer accountId = userDetails.getAccount().getAccountId();
-        return notificationRepository.findByAccount_AccountIdAndIsReadFalseOrderByCreatedAtDesc(accountId)
-                .stream()
-                .map(this::toResponse)
-                .toList();
+        return notificationRepository
+                .findByAccount_AccountIdAndIsReadFalseOrderByCreatedAtDesc(accountId)
+                .stream().map(this::toResponse).toList();
     }
 
     @Override
     public List<NotificationWebResponse> getReadNotifications(CustomUserDetails userDetails) {
         Integer accountId = userDetails.getAccount().getAccountId();
-        return notificationRepository.findByAccount_AccountIdAndIsReadTrueOrderByCreatedAtDesc(accountId)
-                .stream()
-                .map(this::toResponse)
-                .toList();
+        return notificationRepository
+                .findByAccount_AccountIdAndIsReadTrueOrderByCreatedAtDesc(accountId)
+                .stream().map(this::toResponse).toList();
     }
 
     @Override
@@ -269,15 +302,16 @@ public class NotificationServiceImpl implements NotificationService {
         Integer accountId = userDetails.getAccount().getAccountId();
         return notificationRepository
                 .findByAccount_AccountIdAndTypeOrderByCreatedAtDesc(accountId, type)
-                .stream()
-                .map(this::toResponse)
-                .toList();
+                .stream().map(this::toResponse).toList();
     }
 
     @Override
     public List<ResponseEntry> getPendingResponses(CustomUserDetails userDetails) {
-        List<Notification> list = notificationRepository.findNotificationByAccount_AccountIdAndResponseStatus(userDetails.getAccount().getAccountId(), NotiResponseStatus.PENDING);
-        return list.stream().map(this::mapToNotiResponse).toList();
+        return notificationRepository
+                .findNotificationByAccount_AccountIdAndResponseStatus(
+                        userDetails.getAccount().getAccountId(),
+                        NotiResponseStatus.PENDING)
+                .stream().map(this::mapToNotiResponse).toList();
     }
 
     @Override

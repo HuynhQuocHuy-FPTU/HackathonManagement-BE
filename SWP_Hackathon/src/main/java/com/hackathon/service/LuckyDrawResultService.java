@@ -9,7 +9,10 @@ import java.util.List;
 public interface LuckyDrawResultService {
     List<TeamParticipant> importDrawResults(Integer eventId, List<DrawResultRequestDTO> drawResults, CustomUserDetails userDetails, Integer responseDeadline);
 
-    List<TeamParticipant> updateDrawResults(Integer eventId, List<DrawResultRequestDTO> drawResults, CustomUserDetails userDetails, Integer responseDeadline);
-
+    List<TeamParticipant> updateDrawResults(
+            Integer eventId,
+            List<DrawResultRequestDTO> drawResults,
+            CustomUserDetails userDetails
+    );
 
 }

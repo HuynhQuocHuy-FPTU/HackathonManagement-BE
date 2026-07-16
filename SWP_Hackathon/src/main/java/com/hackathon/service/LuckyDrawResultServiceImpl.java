@@ -100,7 +100,16 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
                         .findFirst()
                         .orElseThrow(() -> new BadRequestException("Không tìm thấy trưởng nhóm của team " + team.getTeamName()));
 
-                notificationService.notifyAssignedCategory(acc, accountLeader, team.getTeamName(), event.getEventName(), category.getCategoryName(), responseDeadline, "");
+                notificationService.notifyAssignedCategory(
+                        acc,
+                        accountLeader,
+                        team,
+                        firstRound,
+                        event.getEventName(),
+                        category.getCategoryName(),
+                        responseDeadline,
+                        ""
+                );
             }
         }
 
@@ -108,8 +117,11 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
     }
     @Transactional
     @Override
-    public List<TeamParticipant> updateDrawResults(Integer eventId, List<DrawResultRequestDTO> drawResults, CustomUserDetails userDetails, Integer responseDeadline) {
-        Account acc = userDetails.getAccount();
+    public List<TeamParticipant> updateDrawResults(
+            Integer eventId,
+            List<DrawResultRequestDTO> drawResults,
+            CustomUserDetails userDetails
+    ) {
         List<TeamParticipant> updatedParticipants = new ArrayList<>();
 
         // Tìm event
@@ -129,7 +141,7 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
             CategoryRound targetCategoryRound = categoryRoundRepository.findCategoryRoundByCategory_CategoryIdAndRound_RoundId(categoryId, firstRound.getRoundId()).orElseThrow(() -> new BadRequestException("Không tìm thấy CategoryRound cho category ID: " + categoryId));
 
             for (Integer regId : dto.getRegistrationId()) {
-                // 2. TẬP TRUNG VÀO REGISTRATION (Chìa khóa xác thực)
+                // 2. REGISTRATION
                 Registration registration = registrationRepository.findRegistrationByRegistrationIdAndHackathonEvent_EventId(regId, eventId)
                         .orElseThrow(() -> new BadRequestException("Registration " + regId + " không thuộc sự kiện này"));
 
@@ -156,14 +168,6 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
                     participant = participantRepository.save(participant);
                     updatedParticipants.add(participant);
 
-                    // 4. Thông báo cập nhật
-                    Account leader = registration.getTeam().getTeamMembers().stream()
-                            .filter(TeamMember::getIsLeader)
-                            .map(m -> m.getStudent().getAccount())
-                            .findFirst()
-                            .orElseThrow(() -> new BadRequestException("Không tìm thấy trưởng nhóm"));
-
-                    notificationService.notifyAssignedCategory(acc, leader, registration.getTeam().getTeamName(), event.getEventName(), newCategoryName, responseDeadline, oldCategoryName);
                 }
             }
         }
