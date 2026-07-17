@@ -19,7 +19,7 @@ public enum NotificationType {
 
     RANKING_DRAFT,
     RANKING_OFFICIAL,
-    RESULT_APPEAL
-
+    RESULT_APPEAL,
+    SUPPORT_TEAM
 
 }

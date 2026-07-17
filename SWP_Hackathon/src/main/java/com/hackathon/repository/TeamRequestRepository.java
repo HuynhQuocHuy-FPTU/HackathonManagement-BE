@@ -1,6 +1,7 @@
 package com.hackathon.repository;
 
 import com.hackathon.entity.TeamRequest;
+import com.hackathon.entity.enums.ExpertRole;
 import com.hackathon.entity.enums.RequestStatus;
 import com.hackathon.entity.enums.RequestType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -60,6 +61,12 @@ public interface TeamRequestRepository extends JpaRepository<TeamRequest,Integer
     findByRound_HackathonEvent_EventIdAndRound_HackathonEvent_EventCoordinator_Account_AccountIdOrderByCreateDateDesc(
             Integer eventId,
             Integer accountId
+    );
+    long countByRound_RoundIdAndRequestTypeAndStatusAndExpertAssign_Expert_ExpertId(
+            Integer roundId,
+            RequestType requestType,
+            RequestStatus status,
+            Integer expertId
     );
 
 }

@@ -544,6 +544,27 @@ public class NotificationServiceImpl implements NotificationService {
 
     }
 
+    @Override
+    public void notifyMentorSupportTeam(Account actor, List<ExpertAssign> mentors) {
+        String title ="THÔNG BÁO YÊU CẦU HỖ TRỢ TEAM";
+        String message = "Ban tổ chức xin thông báo đến các Mentor đang tham gia hỗ trợ cuộc thi. "
+                + "Hiện tại có yêu cầu hỗ trợ mới từ đội thi, vui lòng kiểm tra và phản hồi trong thời gian sớm nhất. "
+                + "Ban tổ chức xin trân trọng cảm ơn.!";
+        for (ExpertAssign assign : mentors) {
+
+            Account mentorAccount = assign.getExpert().getAccount();
+
+            createNotificationNoResponse(
+                    mentorAccount,
+                    actor,
+                    NotificationType.SUPPORT_TEAM,
+                    NotificationChannel.WEB,
+                    title,
+                    message
+            );
+        }
+    }
+
     private NotificationWebResponse toResponse(Notification n) {
         return NotificationWebResponse.builder()
                 .id(n.getId())

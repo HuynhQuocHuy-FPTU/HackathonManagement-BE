@@ -3,10 +3,7 @@ package com.hackathon.service;
 import com.hackathon.dto.notification.NotificationEmailResponse;
 import com.hackathon.dto.notification.NotificationWebResponse;
 import com.hackathon.dto.notification.ResponseEntry;
-import com.hackathon.entity.Account;
-import com.hackathon.entity.Round;
-import com.hackathon.entity.Team;
-import com.hackathon.entity.Notification;
+import com.hackathon.entity.*;
 import com.hackathon.entity.enums.NotificationChannel;
 import com.hackathon.entity.enums.NotificationType;
 import com.hackathon.entity.enums.RequestType;
@@ -78,4 +75,5 @@ public interface NotificationService {
 
     void notifyExpertReEvaluation(Account actor, Set<Account> expertsToNotify, String teamName);
     void notifyResponseAppeal(Account actor, Account account , String teamName, boolean isChanged );
+    void notifyMentorSupportTeam(Account teamLeader,  List<ExpertAssign> mentors);
 }

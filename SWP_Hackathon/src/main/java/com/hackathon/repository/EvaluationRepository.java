@@ -23,7 +23,9 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Integer>
 
     List<Evaluation> findBySubmission_TeamParticipant(TeamParticipant submissionTeamParticipant);
 
-    @Query("SELECT e FROM Evaluation e " + "WHERE e.expertAssign.assignId = :assignId " + "AND e.submission.submissionId = :submissionId")
+    @Query("SELECT e FROM Evaluation e "
+            + "WHERE e.expertAssign.assignId = :assignId "
+            + "AND e.submission.submissionId = :submissionId")
     Optional<Evaluation> findByExpertAssignIdAndSubmissionId(@Param("assignId") Integer assignId, @Param("submissionId") Integer submissionId);
 
     List<Evaluation> findBySubmission_SubmissionId(Integer submissionId);

@@ -38,6 +38,7 @@ public class RankingServiceImpl implements RankingService {
     private final ExcelExportService excelExportService;
     private final RoundAdvancementService roundAdvancementService;
     private final AccountRepository accountRepository;
+    private final ParticipantRepository participantRepository;
 
 
     //===============================================//
@@ -310,11 +311,15 @@ public class RankingServiceImpl implements RankingService {
         Round round = roundRepository.findById(roundId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thây vòng thi."));
 
-        //  Đang chấm hoặc chờ duyệt , event moiws dc voaf
-        if (round.getStatus() == RoundStatus.EVALUATING) {
-            if (!isEvenCoordinator) {
-                throw new BadRequestException("Bảng xếp hạng đang được chấm và kiểm duyệt. Bạn không được phép truy cập");
-            }
+        //  Nếu có bất kì đọi nào Đang chấm hoặc chờ duyệt thì ko dc xem , event moiws dc voaf
+        boolean hasReEvaluating =round.getCategoryRounds().stream()
+                .flatMap(cr -> cr.getTeamParticipants().stream())
+                .anyMatch(tp -> tp.getStatus() == ParticipantStatus.RE_EVALUATING);
+
+        if (!isEvenCoordinator &&
+                (round.getStatus() == RoundStatus.EVALUATING || hasReEvaluating)) {
+            throw new BadRequestException(
+                    "Bảng xếp hạng đang được chấm hoặc chấm lại. Bạn không được phép truy cập.");
         }
 
         List<CategoryRankingResponse> categoriesRanking = new ArrayList<>();
