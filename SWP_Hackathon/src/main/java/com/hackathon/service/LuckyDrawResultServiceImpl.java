@@ -128,8 +128,6 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
         HackathonEvent event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy event"));
 
-        validateDrawResultTime(event);
-
         // Tìm round đầu tiên
         Round firstRound = roundRepository.findFirstByHackathonEvent_EventIdOrderByOrderIndexAsc(eventId)
                 .orElseThrow(() -> new BadRequestException("Event " + eventId + " chưa có round nào"));
