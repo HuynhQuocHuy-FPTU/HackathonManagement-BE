@@ -32,6 +32,7 @@ public interface SubmissionRepository extends JpaRepository<Submission, Integer>
                 WHERE tp.categoryRound.categoryRoundId = :categoryRoundId
                   AND s.isFinal = true
                   AND s.team.teamId = :teamId
+                  AND tp.status IN ('PASSED', 'FAILED', 'ACTIVE')
             """)
     Submission findFinalSubmission(
             @Param("categoryRoundId") Integer categoryRoundId,

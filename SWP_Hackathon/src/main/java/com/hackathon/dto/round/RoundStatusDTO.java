@@ -2,6 +2,7 @@ package com.hackathon.dto.round;
 
 import com.hackathon.entity.EvaluationCriteria;
 import com.hackathon.entity.enums.ParticipantStatus;
+import com.hackathon.entity.enums.RoundStatus;
 import com.hackathon.entity.enums.SubmissionType;
 import lombok.Builder;
 
@@ -15,6 +16,7 @@ public record RoundStatusDTO(
         String roundName,
         SubmissionType submissionType,
         ParticipantStatus status,
+        RoundStatus roundStatus,
         LocalDateTime SubmissionDeadline,
         LocalDateTime StartTime,
         LocalDateTime EndTime,
