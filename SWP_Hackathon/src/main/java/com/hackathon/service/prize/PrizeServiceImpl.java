@@ -22,7 +22,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PrizeServiceImpl {
     private final EventCoordinatorRepository eventCoordinatorRepository;
-    private final HackathonEventRepository hackathonEventRepository;
     private final RoundRepository roundRepository;
     private final ParticipantRepository participantRepository;
 

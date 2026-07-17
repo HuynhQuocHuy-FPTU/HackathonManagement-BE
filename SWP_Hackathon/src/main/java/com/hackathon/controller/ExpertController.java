@@ -20,7 +20,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/expert")
+@RequestMapping("/api/expert")
 public class ExpertController {
     private final CategoryRoundService categoryRoundService;
     private final ExpertService expertService;
