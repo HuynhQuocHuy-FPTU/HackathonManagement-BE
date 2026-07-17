@@ -471,10 +471,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                 .orElseThrow(() -> new BadRequestException(
                         "Bạn không phải Event Coordinator"));
 
-        return teamRequestRepository
-                .findByRound_HackathonEvent_EventIdAndRound_HackathonEvent_EventCoordinator_Account_AccountIdOrderByCreateDateDesc(
-                        eventId,
-                        account.getAccountId()
+        return teamRequestRepository.findByRound_HackathonEvent_EventIdAndRequestTypeNotOrderByCreateDateDesc(eventId,RequestType.MENTOR_SUPPORT
                 )
                 .stream()
                 .map(request -> toResponse(request, null, null))

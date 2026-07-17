@@ -30,11 +30,8 @@ public class GithubOAuthController {
         return ResponseEntity.ok(authorizeUrl);
     }
 
-    /**
-     * GitHub redirect trở lại endpoint này sau khi người dùng cấp quyền.
-     * Endpoint này KHÔNG yêu cầu Authentication (browser tự redirect, không mang JWT) —
-     * accountId được xác minh qua chữ ký trong "state" (xem GithubOAuthStateUtil).
-     */
+    // GitHub redirect trở lại endpoint này sau khi người dùng cấp quyền.
+     //Endpoint này KHÔNG yêu cầu Authentication (browser tự redirect, không mang JWT)
     @GetMapping("/api/github/oauth/callback")
     public ResponseEntity<Void> callback(@RequestParam String code, @RequestParam String state) {
         String redirect;

@@ -56,10 +56,9 @@ public interface TeamRequestRepository extends JpaRepository<TeamRequest,Integer
 
     List<TeamRequest> findByRound_RoundIdAndRequestTypeAndStatusIn(Integer roundId, RequestType type, List<RequestStatus> statuses);
 
-    List<TeamRequest>
-    findByRound_HackathonEvent_EventIdAndRound_HackathonEvent_EventCoordinator_Account_AccountIdOrderByCreateDateDesc(
+    List<TeamRequest> findByRound_HackathonEvent_EventIdAndRequestTypeNotOrderByCreateDateDesc(
             Integer eventId,
-            Integer accountId
+            RequestType excludedRequestType
     );
 
 }
