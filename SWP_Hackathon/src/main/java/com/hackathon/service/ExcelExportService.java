@@ -1,8 +1,6 @@
 package com.hackathon.service;
 
-import com.hackathon.entity.CategoryRound;
-import com.hackathon.entity.Round;
-import com.hackathon.entity.TeamParticipant;
+import com.hackathon.entity.*;
 import com.hackathon.entity.enums.RoundStatus;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.RoundRepository;
@@ -21,9 +19,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -75,12 +76,20 @@ public class ExcelExportService {
                 String sheetName = WorkbookUtil.createSafeSheetName(name);
                 XSSFSheet sheet = (XSSFSheet) workbook.createSheet(sheetName);
 
+//                List<EvaluationCriteria> criteriaList = cr.getRound().getEvaluationCriterias();
+                // Tạo header động
+//                List<String> columns = new ArrayList<>(List.of("STT", "Tên Đội Thi"));
+//                for (EvaluationCriteria criteria : criteriaList) {
+//                    columns.add(criteria.getCriteriaName()); // Thêm tên tiêu chí vào header
+//                }
+//                columns.addAll(List.of("Tổng điểm", "Hạng", "Trạng thái"));
                 // Tạo row tiêu đề
+
+                String[] columns = {"STT", "Tên Đội Thi", "Tổng điểm", "Hạng", "Trạng thái"};
                 Row headerRow = sheet.createRow(0);
-                String[] colums = {"STT", "Tên Đội Thi", "Tổng điểm", "Hạng", "Trạng thái"};
-                for (int i = 0; i < colums.length; i++) {
+                for (int i = 0; i < columns.length; i++) {
                     Cell cell = headerRow.createCell(i);
-                    cell.setCellValue(colums[i]);
+                    cell.setCellValue(columns[i]);
                     cell.setCellStyle(headerStyle);
                 }
 
@@ -96,11 +105,11 @@ public class ExcelExportService {
                     createCellWithStyle(row, 1, tp.getRegistration().getTeam().getTeamName(), dataStyle);
                     createCellWithStyle(row, 2, tp.getTotalScore() != null ? tp.getTotalScore().doubleValue() : 0, dataStyle);
                     createCellWithStyle(row, 3, tp.getRank() != null ? tp.getRank() : "-", dataStyle);
-                    createCellWithStyle(row, 4, tp.getStatus().name(), dataStyle);
+                    createCellWithStyle(row, 4, tp.getStatus() != null ? tp.getStatus().name() : "N/A", dataStyle);
                 }
 
                 // Chỉnh độ rộng cọt theo đồ dài của chữ
-                for (int i = 0; i < colums.length; i++) {
+                for (int i = 0; i < columns.length; i++) {
                     sheet.autoSizeColumn(i);
                 }
                 sheet.protectSheet("BTC_Hackathon_Secret_Password_2026");

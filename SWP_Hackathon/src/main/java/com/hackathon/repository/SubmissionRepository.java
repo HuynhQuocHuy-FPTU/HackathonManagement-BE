@@ -43,46 +43,5 @@ public interface SubmissionRepository extends JpaRepository<Submission, Integer>
             "WHERE s.teamParticipant.categoryRound.categoryRoundId = :categoryRoundId " +
             "AND s.isFinal = true")
     List<Submission> findFinalSubmissionsByCategoryRoundId(@Param("categoryRoundId") Integer categoryRoundId);
-//
-//    @Query("""
-//                SELECT COUNT(s)
-//                FROM Submission s
-//                WHERE s.teamParticipant.registration.hackathonEvent.eventId = :eventId
-//                  AND EXISTS (
-//                      SELECT ea
-//                      FROM ExpertAssign ea
-//                      WHERE ea.expert.expertId = :expertId
-//                      AND ea.categoryRound = s.teamParticipant.categoryRound
-//                      AND ea.role IN :roles
-//                  )
-//            """)
-//    long countTotalAssigned(
-//            @Param("expertId") Integer expertId,
-//            @Param("eventId") Integer eventId,
-//            @Param("roles") List<ExpertRole> roles
-//    );
-//
-//    @Query("""
-//                SELECT COUNT(s)
-//                FROM Submission s
-//                WHERE s.teamParticipant.categoryRound.round.hackathonEvent.eventId = :eventId
-//                  AND EXISTS (
-//                      SELECT ea
-//                      FROM ExpertAssign ea
-//                      WHERE ea.expert.expertId = :expertId
-//                      AND ea.categoryRound = s.teamParticipant.categoryRound
-//                  )
-//                  AND NOT EXISTS (
-//                      SELECT e
-//                      FROM Evaluation e
-//                      WHERE e.submission = s
-//                      AND e.expertAssign.expert.expertId = :expertId
-//                  )
-//            """)
-//    long countPendingReviews(@Param("expertId") Integer expertId,
-//                             @Param("eventId") Integer eventId,
-//                             @Param("statuses") List<EvaluationStatus> statuses,
-//                             @Param("roles") List<ExpertRole> roles);
-
 
 }
