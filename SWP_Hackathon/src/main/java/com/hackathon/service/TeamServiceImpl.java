@@ -243,6 +243,8 @@ public class TeamServiceImpl implements TeamService {
         }
         List<TeamMember> leaderTeams = teamMemberRepository.findByStudent(leaderAcc.getStudent());
 
+
+        // check có đnag là leader của team chưa kt ko
         TeamMember currentLeaderRole = null;
         for (TeamMember tm : leaderTeams) {
             if (tm.getTeam().getStatus() != TeamStatus.FINISHED && Boolean.TRUE.equals(tm.getIsLeader())) {
@@ -257,10 +259,6 @@ public class TeamServiceImpl implements TeamService {
 
         //2.
         Team team = currentLeaderRole.getTeam();
-        if (team.getStatus() == TeamStatus.FINISHED) {
-            throw new BadRequestException("Đội hình này đã kết thúc vòng đời thi đấu, không thể mời thêm!");
-        }
-
         this.checkEventRegistrationWindow(team);
 
         // 3.  Check duplicate member and loc email

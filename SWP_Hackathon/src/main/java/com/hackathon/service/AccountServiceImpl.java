@@ -33,7 +33,6 @@ public class AccountServiceImpl implements AccountService {
         Account currentAccount = userDetails.getAccount();
 
         //  Nếu là Sinh viên, CHỈ được xem chính mình. Admin/Coordinator xem ai cũng được.
-
         if (currentAccount.getRole() == AccountRole.STUDENT) {
             studentId = currentAccount.getAccountId();
         } else if (currentAccount.getRole() == AccountRole.EVENTCOORDINATOR) {

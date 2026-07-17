@@ -119,14 +119,13 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
         // Check Coordinator mới là người được tạo
         Account account = userDetails.getAccount();
         EventCoordinator coordinator = eventCoordinatorRepository.findByAccount_AccountId(account.getAccountId())
-                .orElseThrow(() -> new BadRequestException("Bạn không có quyền truy cập vào bộ tiêu chí..."));
+                .orElseThrow(() -> new BadRequestException("Bạn không có quyền truy cập vào bộ tiêu chí"));
 
         // CriteriaSetName không được trùng
         String name = request.getCriteriaSetName().trim();
         if (criteriaSetRepository.existsByCriteriaSetName(name)) {
             throw new BadRequestException("Tên bộ tiêu chí không được phép trùng.");
         }
-
 
         // 1. Tao CriteriaSet
         CriteriaSet criteriaSet = new CriteriaSet();
@@ -199,9 +198,9 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
         if (criteriaSet == null) {
             throw new RuntimeException("CriteriaSet not found with id: " + request.getCriteriaSetId());
         }
-        if (request.getMaxScore() == null || request.getMaxScore() != 100) {
-            throw new BadRequestException("Điểm tối đa (Max Score) của bộ tiêu chí bắt buộc phải bằng 100!");
-        }
+//        if (request.getMaxScore() == null || request.getMaxScore() != 100) {
+//            throw new BadRequestException("Điểm tối đa (Max Score) của bộ tiêu chí bắt buộc phải bằng 100!");
+//        }
 
         //2.Update info of criteria set
         boolean isCriteriaSetChanged = false;
@@ -238,7 +237,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
                 throw new BadRequestException("Trọng số (Weight) của tiêu chí không được để trống!");
             }
             if (dto.getType() == null) {
-                throw new BadRequestException("Loại tiêu chí  không được để trống!");
+                throw new BadRequestException("Loại tiêu chí không được để trống!");
             }
             totalWeight = totalWeight.add(dto.getWeight());
         }

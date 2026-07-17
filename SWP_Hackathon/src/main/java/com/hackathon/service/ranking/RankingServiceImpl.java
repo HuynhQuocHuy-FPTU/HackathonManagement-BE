@@ -161,7 +161,7 @@ public class RankingServiceImpl implements RankingService {
     }
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional()
     public void publishFinalRanking(Integer roundId) {
         // Check Round
         Round round = roundRepository.findById(roundId)
@@ -181,7 +181,6 @@ public class RankingServiceImpl implements RankingService {
         }
 
         for (CategoryRound cr : categoryRounds) {
-
             roundAdvancementService.calculateScoresAndRanking(cr.getCategoryRoundId());
         }
         roundAdvancementService.advanceAllCategoriesInRound(roundId);

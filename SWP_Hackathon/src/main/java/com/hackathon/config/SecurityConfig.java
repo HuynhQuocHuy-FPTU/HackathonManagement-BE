@@ -76,7 +76,8 @@ public class SecurityConfig {
                         //các API công khai ai cũng vào được
                         .requestMatchers(
                                 "/api/account/**",
-                                "/api/account/login", "/api/account/resend-verification",
+                                "/api/account/login",
+                                "/api/account/resend-verification",
                                 "/api/notifications/**",
                                 "/error",
                                 "/verify-email",
