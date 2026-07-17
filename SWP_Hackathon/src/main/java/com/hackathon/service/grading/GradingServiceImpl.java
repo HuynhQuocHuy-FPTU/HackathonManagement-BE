@@ -125,6 +125,7 @@ public class GradingServiceImpl implements GradingService {
     // API: XEM LẠI ĐIỂM CŨ ĐỂ SỬA
     // =========================================================================
     @Override
+    @Transactional(readOnly = true)
     public JudgeEvaluationResponse viewMyEvaluation(Account account, Integer submissionId) {
 
         // 1. Phân tích ngữ cảnh bảo mật: Xác thực Chuyên gia và Bài nộp

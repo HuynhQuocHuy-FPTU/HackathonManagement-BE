@@ -277,6 +277,7 @@ public class ParticipantServiceImpl implements ParticipantService {
                 .roundName(round.getRoundName())
                 .categoryRound(participant.getCategoryRound().getCategoryRoundId())
                 .status(participant.getStatus())
+                .roundStatus(round.getStatus())
                 .evaluetionCriteria(round.getEvaluationCriterias())
                 .SubmissionDeadline(round.getSubmissionDeadline())
                 .StartTime(round.getStartTime())

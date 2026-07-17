@@ -6,7 +6,7 @@ import com.hackathon.security.CustomUserDetails;
 public interface RankingService {
     CategoryRoundRankingResponse getRankingByEventCoordinator(Integer roundId, CustomUserDetails userDetails);
 
-    void publishDraftRankingAndOpenAppeals(Integer roundId, CustomUserDetails userDetails, Integer hoursAmount, Integer responseDeadline);
+    void publishDraftRankingAndOpenAppeals(Integer roundId, CustomUserDetails userDetails, Integer hoursAmount);
 
     void publishFinalRanking(Integer roundId);
 

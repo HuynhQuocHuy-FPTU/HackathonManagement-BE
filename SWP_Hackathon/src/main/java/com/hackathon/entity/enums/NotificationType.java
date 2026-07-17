@@ -18,7 +18,8 @@ public enum NotificationType {
     SUBMISSION_REVIEW,
 
     RANKING_DRAFT,
-    RANKING_OFFICIAL
-
+    RANKING_OFFICIAL,
+    RESULT_APPEAL,
+    SUPPORT_TEAM
 
 }

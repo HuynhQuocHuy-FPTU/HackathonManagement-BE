@@ -59,12 +59,12 @@ public class TeamRequestController {
 
     //Expert nhận list các Request mà Team gửi đến
     @PreAuthorize("hasRole('EXPERT')")
-    @GetMapping("/received")
+    @GetMapping("/received/{roundId}")
     public ResponseEntity<ApiResponse<List<TeamRequestResponse>>> getTeamRequestsForExpert(
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Integer roundId) {
         List<TeamRequestResponse> response =
-                teamRequestService.getTeamRequestsForExpert(
-                        userDetails);
+                teamRequestService.getTeamRequestsForExpert(roundId, userDetails);
         return ResponseEntity.ok(ApiResponse.success(response, "Expert nhận danh sách các yêu cầu nhận sự hỗ trợ thành công."));
     }
 
