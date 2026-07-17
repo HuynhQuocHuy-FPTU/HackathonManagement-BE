@@ -574,6 +574,22 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         );
         try {
             TeamRequest updated = teamRequestRepository.save(appealRequest);
+
+            Account leaderAccount = updated.getTeam().getTeamMembers().stream()
+                    .filter(TeamMember::getIsLeader)
+                    .map(TeamMember::getStudent)
+                    .map(Student::getAccount)
+                    .findFirst()
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Không tìm thấy leader của team"));
+
+            notificationService.notifyTeamRequestResolved(
+                    account,
+                    leaderAccount,
+                    updated.getTeam().getTeamName(),
+                    updated.getRequestType()
+            );
+
             return toResponse(updated, null, null);
         } catch (ObjectOptimisticLockingFailureException e) {
             throw new BadRequestException("Đơn khiếu nại này vừa mới được một thành viên BTC khác xử lý mất rồi!");
@@ -851,8 +867,12 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Không tìm thấy leader của team"));
 
-            notificationService.notiResolvedRequest(
-                    account, leader.getAccount(), updated.getTeam().getTeamName());
+            notificationService.notifyTeamRequestResolved(
+                    account,
+                    leader.getAccount(),
+                    updated.getTeam().getTeamName(),
+                    updated.getRequestType()
+            );
         }
 
         return toResponse(updated, null, null);

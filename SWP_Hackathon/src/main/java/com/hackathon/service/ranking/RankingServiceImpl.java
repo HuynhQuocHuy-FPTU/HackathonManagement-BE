@@ -311,8 +311,7 @@ public class RankingServiceImpl implements RankingService {
                 .orElseThrow(() -> new BadRequestException("Không tìm thây vòng thi."));
 
         //  Đang chấm hoặc chờ duyệt , event moiws dc voaf
-        if (round.getStatus() == RoundStatus.EVALUATING
-                || round.getStatus() == RoundStatus.RE_EVALUATING) {
+        if (round.getStatus() == RoundStatus.EVALUATING) {
             if (!isEvenCoordinator) {
                 throw new BadRequestException("Bảng xếp hạng đang được chấm và kiểm duyệt. Bạn không được phép truy cập");
             }

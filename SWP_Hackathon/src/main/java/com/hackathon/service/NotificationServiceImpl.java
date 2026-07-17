@@ -101,10 +101,44 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepository.save(notification);
     }
 
-    public void notiResolvedRequest(Account actor, Account teamLeaderAccount, String teamName) {
-        String title = "Giải quyết yêu cầu";
-        String message = "Yêu cầu của đội\"" + teamName + "\" đã được xử lý bạn hãy kiểm tra lại thông tin. Nếu vẫn còn vấn đề, bạn có thể tạo yêu cầu mới.";
-        createNotificationNoResponse(teamLeaderAccount, actor, NotificationType.ASSIGNED_CATEGORY, NotificationChannel.WEB, title, message);
+    @Override
+    public void notifyTeamRequestResolved(
+            Account actor,
+            Account teamLeaderAccount,
+            String teamName,
+            RequestType requestType
+    ) {
+        NotificationType notificationType;
+        String title;
+        String message;
+
+        switch (requestType) {
+            case APPEAL -> {
+                notificationType = NotificationType.RANKING_DRAFT;
+                title = "Kết quả giải quyết khiếu nại điểm";
+                message = "Yêu cầu khiếu nại điểm của đội \""
+                        + teamName
+                        + "\" đã được giải quyết. Vui lòng kiểm tra lại kết quả.";
+            }
+            case DRAW_RESULT_VERIFICATION -> {
+                notificationType = NotificationType.ASSIGNED_CATEGORY;
+                title = "Kết quả giải quyết yêu cầu xác thực";
+                message = "Yêu cầu xác thực kết quả bốc thăm của đội \""
+                        + teamName
+                        + "\" đã được giải quyết. Vui lòng kiểm tra lại hạng mục.";
+            }
+            default -> throw new BadRequestException(
+                    "Loại yêu cầu này không hỗ trợ notification kết quả");
+        }
+
+        createNotificationNoResponse(
+                teamLeaderAccount,
+                actor,
+                notificationType,
+                NotificationChannel.WEB,
+                title,
+                message
+        );
     }
 
     @Override

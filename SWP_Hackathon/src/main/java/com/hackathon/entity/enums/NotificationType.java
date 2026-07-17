@@ -5,7 +5,6 @@ public enum NotificationType {
     TEAM_ACCEPTED,
     TEAM_REJECTED,
 
-    TEAM_REGISTRATION_SUBMITTED,   // team gửi đơn
     TEAM_REGISTRATION_APPROVED,
     TEAM_REGISTRATION_REJECTED,
 

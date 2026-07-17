@@ -9,6 +9,7 @@ import com.hackathon.entity.Team;
 import com.hackathon.entity.Notification;
 import com.hackathon.entity.enums.NotificationChannel;
 import com.hackathon.entity.enums.NotificationType;
+import com.hackathon.entity.enums.RequestType;
 import com.hackathon.security.CustomUserDetails;
 
 import java.util.List;
@@ -44,7 +45,12 @@ public interface NotificationService {
 
     void notifyCancelledEvent(Account actor, List<Account> teamLeaderAccounts, String eventName, String reason);
 
-    void notiResolvedRequest(Account actor, Account teamLeaderAccount,String teamName);
+    void notifyTeamRequestResolved(
+            Account actor,
+            Account teamLeaderAccount,
+            String teamName,
+            RequestType requestType
+    );
 
     void checkResponseNoti(Long notificationId);
 
