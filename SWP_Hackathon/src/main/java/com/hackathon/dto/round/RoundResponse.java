@@ -53,6 +53,10 @@ public class RoundResponse {
 
     private LocalDateTime submissionDeadline;
 
+    private LocalDateTime evaluationDeadline;
+
+    private LocalDateTime resolveAppealDeadline;
+
     private SubmissionType submissionType;
 
     private List<FileType> allowedFileTypes;
@@ -60,6 +64,8 @@ public class RoundResponse {
     private Integer maxFileCount;
 
     private Integer maxTotalSizeMb;
+
+    private String description;
 
     private List<EvaluationCriteriaResponseDTO> customCriteriaDetatils;
     private List<CategoryExpertAssignResponseDTO> categoryExperts;
@@ -82,5 +88,8 @@ public class RoundResponse {
         this.submissionDeadline = round.getSubmissionDeadline();
         this.customCriteriaDetatils = criteriaList;
         this.categoryExperts = experts;
+        this.evaluationDeadline = round.getEvaluationDeadline();
+        this.resolveAppealDeadline = round.getResolveAppealDeadline();
+        this.description = round.getDescription();
     }
 }

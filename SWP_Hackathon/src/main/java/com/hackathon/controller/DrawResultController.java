@@ -44,15 +44,13 @@ public class DrawResultController {
     public ResponseEntity<ApiResponse<Void>> updateDrawResults(
             @PathVariable Integer eventId,
             @RequestBody List<DrawResultRequestDTO> drawResults,
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam Integer responseDeadline
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
 
         luckyDrawResultService.updateDrawResults(
                 eventId,
                 drawResults,
-                userDetails,
-                responseDeadline
+                userDetails
         );
 
         return ResponseEntity.ok(

@@ -4,9 +4,12 @@ import com.hackathon.dto.notification.NotificationEmailResponse;
 import com.hackathon.dto.notification.NotificationWebResponse;
 import com.hackathon.dto.notification.ResponseEntry;
 import com.hackathon.entity.Account;
+import com.hackathon.entity.Round;
+import com.hackathon.entity.Team;
 import com.hackathon.entity.Notification;
 import com.hackathon.entity.enums.NotificationChannel;
 import com.hackathon.entity.enums.NotificationType;
+import com.hackathon.entity.enums.RequestType;
 import com.hackathon.security.CustomUserDetails;
 
 import java.math.BigDecimal;
@@ -27,11 +30,28 @@ public interface NotificationService {
 
     void notifyDisqualifyTeam(Account actor, Account teamLeaderAccount, String teamName, String eventName, String reason);
 
-    public void notifyAssignedCategory(Account actor, Account teamLeaderAccount, String teamName, String eventName, String category, Integer responseDeadline, String oldCategory);
+    void notifyAssignedCategory(
+            Account actor,
+            Account teamLeaderAccount,
+            Team team,
+            Round round,
+            String eventName,
+            String category,
+            Integer responseDeadline,
+            String oldCategory
+    );
+
+    void notifyAssignedCategoryFinal(Account actor, Account teamLeaderAccount, String teamName,
+                                     String eventName, String category, String oldCategory);
 
     void notifyCancelledEvent(Account actor, List<Account> teamLeaderAccounts, String eventName, String reason);
 
-    void notiResolvedRequest(Account actor, Account teamLeaderAccount,String teamName);
+    void notifyTeamRequestResolved(
+            Account actor,
+            Account teamLeaderAccount,
+            String teamName,
+            RequestType requestType
+    );
 
     void checkResponseNoti(Long notificationId);
 

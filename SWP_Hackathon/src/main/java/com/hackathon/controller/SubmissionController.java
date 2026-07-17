@@ -68,4 +68,18 @@ public class SubmissionController {
         return ResponseEntity.ok(ApiResponse.success(null, "Đã chọn bài nộp thành công"));
     }
 
+    @PatchMapping("/set-not-final/{submissionId}")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<Void>> setNotFinalSubmission(
+            @PathVariable Integer submissionId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        submissionService.setNotFinal(submissionId, userDetails);
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        null,
+                        "Đã bỏ chọn bài nộp chính thức thành công"
+                )
+        );
+    }
+
 }

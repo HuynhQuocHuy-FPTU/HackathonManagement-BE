@@ -120,12 +120,6 @@ public class SubmissionService {
     public SubmissionResponse mapToResponse(Submission submission){
 
         SubmissionResponse response = new SubmissionResponse();
-//        String latestCommitSha = null;
-//
-//        if (submission.getGithubUrl() != null && !submission.getGithubUrl().isBlank()) {
-//            latestCommitSha = gitHubService.getLatestCommitSha(submission.getGithubUrl());
-//        }
-//        String githubCommitUrl = submission.getGithubUrl() + "/commit/" + latestCommitSha;
         response.setSubmissionId(submission.getSubmissionId());
         response.setTeamName(submission.getTeamParticipant().getRegistration().getTeam().getTeamName());
         response.setGithubUrl(submission.getGithubUrl() + "/commit/" + submission.getLatestCommitSha());
@@ -179,15 +173,36 @@ public class SubmissionService {
     @Transactional
     public void setNotFinal(Integer submissionId, CustomUserDetails userDetails){
         Integer studentId = userDetails.getAccount().getStudent().getStudentId();
-        getTeamAsLeader(studentId);
-        Submission submission = submissionRepository.findById(submissionId).orElseThrow(() -> new BadRequestException("Không tìm thấy submisison") );
+        Team team = getTeamAsLeader(studentId);
+        Submission submission = submissionRepository.findById(submissionId)
+                .orElseThrow(() -> new BadRequestException(
+                        "Không tìm thấy submission"));
 
-            if(submission.isFinal()){
-                submission.setFinal(false);
-                submissionRepository.save(submission);
-            }else{
-                throw new BadRequestException("Submission này không phải là final");
-            }
+        if (submission.getTeam() == null
+                || submission.getTeam().getTeamId() != team.getTeamId()) {
+            throw new BadRequestException(
+                    "Bạn không có quyền thay đổi bài nộp này");
+        }
+
+        Round round = submission.getTeamParticipant()
+                .getCategoryRound()
+                .getRound();
+        if (!LocalDateTime.now().isBefore(round.getSubmissionDeadline())) {
+            throw new BadRequestException(
+                    "Đã hết thời gian thay đổi bài nộp chính thức");
+        }
+
+        if (!submission.isFinal()) {
+            throw new BadRequestException(
+                    "Submission này không phải là bài nộp chính thức");
+        }
+
+        submission.setFinal(false);
+        submissionRepository.save(submission);
+
+        TeamParticipant participant = submission.getTeamParticipant();
+        participant.setSubmissionStatus(SubmissionStatus.NOT_SUBMITTED);
+        participantRepository.save(participant);
     }
 
     @Transactional
@@ -197,6 +212,9 @@ public class SubmissionService {
 
         Submission submission = submissionRepository.findById(submissionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bài nộp"));
+        if(!LocalDateTime.now().isBefore(submission.getTeamParticipant().getCategoryRound().getRound().getSubmissionDeadline())){
+            throw new BadRequestException("Đã hết thời gian nộp bài");
+        }
         // Kiểm tra quyền sở hữu: submission phải thuộc đội của leader đang thao tác
         if (submission.getTeam() == null || submission.getTeam().getTeamId() != team.getTeamId()) {
             throw new BadRequestException("Bạn không có quyền chọn bài nộp này làm bài chính thức");

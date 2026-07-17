@@ -9,6 +9,7 @@ import com.hackathon.entity.enums.NotificationType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
     List<Notification> findByTeam(Team team);
@@ -22,6 +23,14 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     List<Notification> findByAccount_AccountIdAndIsReadTrueOrderByCreatedAtDesc(Integer accountId);
 
     List<Notification> findByAccount_AccountIdAndTypeOrderByCreatedAtDesc(Integer accountId, NotificationType type);
+
+    Optional<Notification>
+    findFirstByAccount_AccountIdAndTeam_TeamIdAndRound_RoundIdAndTypeOrderByCreatedAtAsc(
+            Integer accountId,
+            Integer teamId,
+            Integer roundId,
+            NotificationType type
+    );
 
     List<Notification> findNotificationByAccount_AccountIdAndResponseStatus(int accountAccountId, NotiResponseStatus responseStatus);
 
