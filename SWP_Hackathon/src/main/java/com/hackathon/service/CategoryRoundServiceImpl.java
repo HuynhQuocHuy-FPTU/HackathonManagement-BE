@@ -83,6 +83,35 @@ public class CategoryRoundServiceImpl implements CategoryRoundService {
         return dtoList;
     }
 
+    @Override
+    public List<CategoryRoundResponseDTO> getAllAssignedCategoryRounds(CustomUserDetails userDetails, Integer eventId) {
+        // 1. Tìm thông tin của Expert dựa vào tài khoản đang đăng nhập
+        Expert expert = expertRepository.findByAccount_AccountId(userDetails.getAccount().getAccountId())
+                .orElseThrow(() -> new BadRequestException("Bạn không phải là Expert"));
 
+        // 2. Lấy TẤT CẢ các phân công (assignments) của Expert này trong sự kiện (event)
+        // Điểm khác biệt mấu chốt là dùng findExpertAssignments để lấy hết mọi Role,
+        // chứ không dùng findExpertAssignmentsByRole(... , ExpertRole.MENTOR, ...) như hàm cũ!
+        List<ExpertAssign> allAssignments = expertAssignRepository.findExpertAssignments(expert.getExpertId(), eventId);
+
+        // 3. Mapping dữ liệu trả về cho Frontend
+        List<CategoryRoundResponseDTO> dtoList = new ArrayList<>();
+        for (ExpertAssign ex : allAssignments) {
+            CategoryRound cr = ex.getCategoryRound();
+            CategoryRoundResponseDTO dto = CategoryRoundResponseDTO.builder()
+                    .roundId(cr.getRound().getRoundId())
+                    .roundName(cr.getRound().getRoundName())
+                    .roundDate(cr.getRound().getStartTime())
+                    .roundEnd(cr.getRound().getEndTime())
+                    .categoryRoundId(cr.getCategoryRoundId())
+                    .categoryId(cr.getCategory().getCategoryId())
+                    .categoryName(cr.getCategory().getCategoryName())
+                    .role(ex.getRole()) // Trả về cả role hiện tại (MENTOR/CORE_JUDGE/GUEST_JUDGE) để FE phân loại
+                    .build();
+            dtoList.add(dto);
+        }
+
+        return dtoList;
+    }
 
 }
