@@ -1,5 +1,6 @@
 package com.hackathon.service;
 
+import com.hackathon.dto.DrawResponseDTO;
 import com.hackathon.dto.DrawResultRequestDTO;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.RegistrationStatus;
@@ -13,7 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -132,6 +136,8 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
         Round firstRound = roundRepository.findFirstByHackathonEvent_EventIdOrderByOrderIndexAsc(eventId)
                 .orElseThrow(() -> new BadRequestException("Event " + eventId + " chưa có round nào"));
 
+        validateDrawResultTime(event);
+
         for (DrawResultRequestDTO dto : drawResults) {
             Integer categoryId = dto.getCategoryId();
 
@@ -187,5 +193,31 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
         }
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public List<DrawResponseDTO> getDrawResults(
+            Integer eventId,
+            CustomUserDetails userDetails
+    ) {
+        eventRepository.findById(eventId)
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy event"));
 
+        List<TeamParticipant> participants = participantRepository
+                .findAllByRegistration_HackathonEvent_EventIdAndCategoryRoundIsNotNull(eventId);
+
+        Map<Category, List<Integer>> registrationIdsByCategory = participants.stream()
+                .collect(Collectors.groupingBy(
+                        participant -> participant.getCategoryRound().getCategory(),
+                        LinkedHashMap::new,
+                        Collectors.mapping(participant -> participant.getRegistration().getRegistrationId(), Collectors.toList())
+                ));
+
+        return registrationIdsByCategory.entrySet().stream()
+                .map(entry -> DrawResponseDTO.builder()
+                        .categoryId(entry.getKey().getCategoryId())
+                        .categoryName(entry.getKey().getCategoryName())
+                        .registrationId(entry.getValue())
+                        .build())
+                .toList();
+    }
 }

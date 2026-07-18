@@ -18,4 +18,6 @@ public interface CategoryRoundService {
     List<CategoryRoundResponseDTO> getAllCategory(Integer eventId);
 
     List<CategoryRoundResponseDTO> getAssignedCategoryRounds(CustomUserDetails userDetails, Integer eventId);
+
+    List<CategoryRoundResponseDTO> getAllAssignedCategoryRounds(CustomUserDetails userDetails, Integer eventId);
 }

@@ -1,5 +1,6 @@
 package com.hackathon.controller;
 
+import com.hackathon.dto.DrawResponseDTO;
 import com.hackathon.dto.DrawResultRequestDTO;
 import com.hackathon.entity.TeamParticipant;
 import com.hackathon.exception.ApiResponse;
@@ -8,7 +9,9 @@ import com.hackathon.service.LuckyDrawResultService;
 import com.hackathon.service.WorkshopService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -40,6 +43,7 @@ public class DrawResultController {
                 ApiResponse.success(null, "Import kết quả bốc thăm thành công")
         );
     }
+
     @PutMapping("/update")
     public ResponseEntity<ApiResponse<Void>> updateDrawResults(
             @PathVariable Integer eventId,
@@ -82,6 +86,19 @@ public class DrawResultController {
         return ResponseEntity.ok(
                 ApiResponse.success(null, "Workshop đã được hủy thành công")
         );
+    }
+    @GetMapping("/get-draw")
+    @PreAuthorize("hasRole('EVENTCOORDINATOR')")
+    public ResponseEntity<?> getDrawResults(
+            @PathVariable Integer eventId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+
+    ) {
+        List<DrawResponseDTO> results =
+                luckyDrawResultService.getDrawResults(eventId, userDetails);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(results, "Lấy kết quả bốc thăm thành công"));
     }
 
 }

@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
 import java.util.List;
@@ -36,4 +37,8 @@ public interface ParticipantRepository extends JpaRepository<TeamParticipant, In
             WHERE tp.categoryRound.round.roundId = :roundId
             """)
     List<TeamParticipant> findByRoundId(Integer roundId);
+
+    List<TeamParticipant> findAllByRegistration_HackathonEvent_EventIdAndCategoryRoundIsNotNull(
+            Integer eventId
+    );
 }
