@@ -38,6 +38,7 @@ public class SubmissionService {
     private final GithubOAuthService githubOAuthService;
     private final TeamRepository teamRepository;
     private final GitHubService gitHubService;
+    private final CategoryRoundRepository categoryRoundRepository;
 
     @Transactional
     public Submission createSubmission(Integer roundId, String gitHubUrl, CustomUserDetails userDetails, List<MultipartFile> files){
@@ -103,8 +104,8 @@ public class SubmissionService {
         if(team == null){
             throw new BadRequestException("Đội bạn chưa tham gia cuộc thi nào");
         }
-        Round round = roundRepository.findRoundByCategoryRound(categoryRound).orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy vòng thi cho bài nộp"));
-        if(LocalDateTime.now().isBefore(round.getAppealStartTime())){
+        CategoryRound cateRound = categoryRoundRepository.findById(categoryRound).orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hạng mục - vòng thi"));
+        if(LocalDateTime.now().isBefore(cateRound.getRound().getAppealStartTime())){
             return null;
         }
         Submission submission = submissionRepository.findFinalSubmission(categoryRound, team.getTeamId());

@@ -76,9 +76,9 @@ public class DataInitializer implements CommandLineRunner {
     @Transactional
     @Override
     public void run(String... args) throws Exception {
-//        if (!initData) {
-//            return;
-//        }
+        if (!initData) {
+            return;
+        }
 //        if (!accountRepository.existsByEmail("admin@hackathon.com")) {
 //            accountRepository.save(Account.builder()
 //                    .createdAt(LocalDateTime.now())

@@ -65,13 +65,4 @@ public interface RoundRepository extends JpaRepository<Round, Integer> {
     )
     Optional<Round> findFinalRoundByEventId(@Param("eventId") Integer eventId);
 
-    @Query("SELECT r FROM Round r " +
-            "JOIN r.categoryRounds cr " +
-            "JOIN cr.teamParticipants tp " +
-            "JOIN tp.submissions s " +
-            "WHERE s.submissionId = :submissionId " +
-            "AND s.isFinal = true")
-    Optional<Round> findRoundBySubmission(@Param("submissionId") Integer submissionId);
-
-    Optional<Round> findRoundByCategoryRound( Integer categoryRoundId);
 }

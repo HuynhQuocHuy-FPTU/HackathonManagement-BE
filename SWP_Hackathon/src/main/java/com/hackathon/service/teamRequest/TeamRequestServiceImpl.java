@@ -613,6 +613,8 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         TeamParticipant teamParticipant = participantRepository.findByTeamId(appealRequest.getTeam().getTeamId());
         //tính lại điểm và ranking cho category sao khi chấm điểm lại
         roundAdvancementService.calculateScoresAndRanking(teamParticipant.getCategoryRound().getCategoryRoundId());
+        teamParticipant.setStatus(ParticipantStatus.ACTIVE);
+        participantRepository.save(teamParticipant);
 
         try {
             TeamRequest updated = teamRequestRepository.save(appealRequest);
