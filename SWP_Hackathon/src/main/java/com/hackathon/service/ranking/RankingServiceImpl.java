@@ -38,6 +38,7 @@ public class RankingServiceImpl implements RankingService {
     private final ExcelExportService excelExportService;
     private final RoundAdvancementService roundAdvancementService;
     private final AccountRepository accountRepository;
+    private final ParticipantRepository participantRepository;
 
 
     //===============================================//
@@ -111,7 +112,7 @@ public class RankingServiceImpl implements RankingService {
     // Khi chấm điểm xong thì sẽ public Draft
     @Override
     @Transactional
-    public void publishDraftRankingAndOpenAppeals(Integer roundId, CustomUserDetails userDetails, Integer hoursAmount, Integer reponseDeadline) {
+    public void publishDraftRankingAndOpenAppeals(Integer roundId, CustomUserDetails userDetails, Integer hoursAmount) {
         Account account = userDetails.getAccount();
         EventCoordinator eventCoordinator = eventCoordinatorRepository.findByAccount_AccountId(account.getAccountId())
                 .orElseThrow(() -> new BadRequestException("Bạn không phải là ban tổ chức vì vậy bạn không có quyền truy cập vào dữ liệu này."));
@@ -140,7 +141,7 @@ public class RankingServiceImpl implements RankingService {
         round.setAppealEndTime(LocalDateTime.now().plusHours(hoursAmount));
         roundRepository.save(round);
         log.info("Đã công bố bản nháp bảng xếp hạng vòng {}. Bắt đầu nhận phúc khảo.", roundId);
-        notificationService.notifyRoundRankingPublished(null, roundId, false, reponseDeadline);
+        notificationService.notifyRoundRankingPublished(null, roundId, false, hoursAmount);
 
         List<CategoryRankingResponse> auditRankingData = auditRankingData(categoryRounds);
         try {
@@ -160,7 +161,7 @@ public class RankingServiceImpl implements RankingService {
     }
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional()
     public void publishFinalRanking(Integer roundId) {
         // Check Round
         Round round = roundRepository.findById(roundId)
@@ -180,7 +181,6 @@ public class RankingServiceImpl implements RankingService {
         }
 
         for (CategoryRound cr : categoryRounds) {
-
             roundAdvancementService.calculateScoresAndRanking(cr.getCategoryRoundId());
         }
         roundAdvancementService.advanceAllCategoriesInRound(roundId);
@@ -310,11 +310,15 @@ public class RankingServiceImpl implements RankingService {
         Round round = roundRepository.findById(roundId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thây vòng thi."));
 
-        //  Đang chấm hoặc chờ duyệt , event moiws dc voaf
-        if (round.getStatus() == RoundStatus.EVALUATING) {
-            if (!isEvenCoordinator) {
-                throw new BadRequestException("Bảng xếp hạng đang được chấm và kiểm duyệt. Bạn không được phép truy cập");
-            }
+        //  Nếu có bất kì đọi nào Đang chấm hoặc chờ duyệt thì ko dc xem , event moiws dc voaf
+        boolean hasReEvaluating =round.getCategoryRounds().stream()
+                .flatMap(cr -> cr.getTeamParticipants().stream())
+                .anyMatch(tp -> tp.getStatus() == ParticipantStatus.RE_EVALUATING);
+
+        if (!isEvenCoordinator &&
+                (round.getStatus() == RoundStatus.EVALUATING || hasReEvaluating)) {
+            throw new BadRequestException(
+                    "Bảng xếp hạng đang được chấm hoặc chấm lại. Bạn không được phép truy cập.");
         }
 
         List<CategoryRankingResponse> categoriesRanking = new ArrayList<>();

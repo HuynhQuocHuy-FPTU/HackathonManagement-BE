@@ -12,8 +12,7 @@ import java.util.List;
 public interface TeamRequestService {
     List<TeamRequestResponse> teamSendRequestToMentor(TeamAppealRequestDTO request, CustomUserDetails userDetails);
 
-    List<TeamRequestResponse> getTeamRequestsForExpert(
-            CustomUserDetails userDetails);
+    List<TeamRequestResponse> getTeamRequestsForExpert(Integer roundId, CustomUserDetails userDetails);
 
     TeamRequestResponse acceptTeamRequest(String responseMessage, Integer requestId, CustomUserDetails userDetails);
 
@@ -31,8 +30,6 @@ public interface TeamRequestService {
     List<TeamRequestResponse> getAppealRequestsForJudge(
             CustomUserDetails userDetails, Integer roundId);
 
-    // Đêr tạm ơr đây
-//    void reEvaluationSubmission(CustomUserDetails userDetails, ReDetailEvaluationRequest request );
 
     TeamRequestResponse respondNotification(
             CustomUserDetails userDetails,

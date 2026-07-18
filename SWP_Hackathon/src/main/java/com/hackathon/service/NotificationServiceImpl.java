@@ -12,6 +12,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -409,7 +410,8 @@ public class NotificationServiceImpl implements NotificationService {
                         Đã có kết quả xếp hạng cho vòng thi "%s" của cuộc thi "%s" 
                         Ban tổ chức đã cập nhật kết quả cuộc thi trên hệ thống WEB FPT HACKATHON.
                         %s
-                        Vui lòng kiểm tra chi tiết bảng xếp hạng tại mục kết quả của cuộc thi
+                        Vui lòng kiểm tra chi tiết bảng xếp hạng tại mục kết quả của cuộc thi.
+                        Ban tổ chức xin trân trọng và cảm ơn.!
                         
                         """,
                 round.getRoundName(),
@@ -452,7 +454,7 @@ public class NotificationServiceImpl implements NotificationService {
                 );
             }
             try {
-                emailService.sendRankingPublishEmail(acc.getEmail(), title, message);
+                emailService.sendGeneralEmail(acc.getEmail(), title, message);
                 createNotificationNoResponse(
                         acc,
                         actor,
@@ -471,7 +473,8 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void notifyExpertReEvaluation(Account actor, Set<Account> expertsToNotify, String teamName) {
         String title = "YÊU CẦU PHÚC KHẢO BÀI THI";
-        String message = "Ban tổ chức yêu cầu ban giám khảo xem lại và chấm lại điểm số cho bài dự thi của đội " + teamName;
+        String message = "Ban tổ chức yêu cầu ban giám khảo xem lại và chấm lại điểm số cho bài dự thi của đội " + teamName+
+                "Ban tổ chức xin trân trọng và cảm ơn.!";
         for (Account expertAccount : expertsToNotify) {
             createNotificationNoResponse(
                     expertAccount,
@@ -497,6 +500,71 @@ public class NotificationServiceImpl implements NotificationService {
             }
         }
 
+    }
+
+    @Override
+    public void notifyResponseAppeal(Account actor, Account account , String teamName, boolean isChanged) {
+        String statusContent = isChanged
+                ? "chấp nhận và đã cập nhật lại điểm số cho"
+                : "xem xét và quyết định giữ nguyên kết quả hiện tại của";
+        String title = " KẾT QUẢ YÊU CẦU PHÚC KHẢO BÀI THI";
+        String message = String.format(
+                """
+                THÔNG BÁO KẾT QUẢ PHÚC KHẢO:
+
+                Chào đội thi "%s",     
+                Ban tổ chức đã "%s" đơn phúc khảo của các bạn.
+                                     
+                Bạn vui lòng kiểm tra lại điểm số chi tiết tại Dashboard trên hệ thống WEB FPT HACKATHON.
+                Trân trọng,
+                Ban Tổ Chức.
+                """,
+                teamName,
+                statusContent
+        );
+        try {
+            emailService.sendGeneralEmail(account.getEmail(), title,message);
+            createNotificationNoResponse(
+                    account,
+                    actor,
+                    NotificationType.RESULT_APPEAL,
+                    NotificationChannel.EMAIL,
+                    title,
+                    message
+            );
+            createNotificationNoResponse(
+                    account,
+                    actor,
+                    NotificationType.RESULT_APPEAL,
+                    NotificationChannel.WEB,
+                    title,
+                    message
+            );
+        } catch (Exception e) {
+            System.out.println("Lỗi gửi email cho giám khảo để yêu cầu giám khảo chấm lại bài nộp của thí sinh");
+        }
+
+    }
+
+    @Override
+    public void notifyMentorSupportTeam(Account actor, List<ExpertAssign> mentors) {
+        String title ="THÔNG BÁO YÊU CẦU HỖ TRỢ TEAM";
+        String message = "Ban tổ chức xin thông báo đến các Mentor đang tham gia hỗ trợ cuộc thi. "
+                + "Hiện tại có yêu cầu hỗ trợ mới từ đội thi, vui lòng kiểm tra và phản hồi trong thời gian sớm nhất. "
+                + "Ban tổ chức xin trân trọng cảm ơn.!";
+        for (ExpertAssign assign : mentors) {
+
+            Account mentorAccount = assign.getExpert().getAccount();
+
+            createNotificationNoResponse(
+                    mentorAccount,
+                    actor,
+                    NotificationType.SUPPORT_TEAM,
+                    NotificationChannel.WEB,
+                    title,
+                    message
+            );
+        }
     }
 
     private NotificationWebResponse toResponse(Notification n) {

@@ -1,9 +1,7 @@
 package com.hackathon.service;
 
-import com.hackathon.dto.category.CategoryResponse;
 import com.hackathon.dto.categoryRound.CategoryRoundResponseDTO;
 import com.hackathon.entity.*;
-import com.hackathon.entity.enums.EventStatus;
 import com.hackathon.entity.enums.ExpertRole;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.CategoryRoundRepository;
@@ -11,12 +9,13 @@ import com.hackathon.repository.ExpertAssignRepository;
 import com.hackathon.repository.ExpertRepository;
 import com.hackathon.repository.HackathonEventRepository;
 import com.hackathon.security.CustomUserDetails;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-
+@Transactional
 @Service
 public class CategoryRoundServiceImpl implements CategoryRoundService {
     @Autowired
@@ -80,44 +79,11 @@ public class CategoryRoundServiceImpl implements CategoryRoundService {
     public List<CategoryRoundResponseDTO> getAssignedCategoryRounds(CustomUserDetails userDetails, Integer eventId) {
         Expert expert = expertRepository.findByAccount_AccountId(userDetails.getAccount().getAccountId())
                 .orElseThrow(() -> new BadRequestException("Bạn không phải là Expert"));
-//        List<ExpertAssign> mentorAssignments =
-//                expert.getExpertAssigns().stream()
-//                        .filter(a -> a.getRole() == ExpertRole.MENTOR)
-//                        .toList();
         List<ExpertAssign> mentorAssignments =
                 expertAssignRepository.findExpertAssignmentsByRole(
                         expert.getExpertId(),
-                        ExpertRole.MENTOR,
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                        eventId
+                        ExpertRole.MENTOR, eventId
                 );
-
 
         List<CategoryRoundResponseDTO> dtoList = new ArrayList<>();
         for (ExpertAssign ex : mentorAssignments) {

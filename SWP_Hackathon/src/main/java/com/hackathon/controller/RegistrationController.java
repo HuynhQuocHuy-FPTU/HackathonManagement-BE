@@ -41,20 +41,6 @@ public class RegistrationController {
         return ResponseEntity.ok(ApiResponse.success(null,"Đăng ký sự kiện thành công"));
     }
 
-    // Mời thêm thành viên vào Team đã có
-//    @PostMapping("/teams/invite")
-//    @PreAuthorize("hasRole('STUDENT')")
-//    public ResponseEntity<ApiResponse<TeamResponse>> sendInvitation(
-//            @Valid @RequestBody InviteTeamRequest request,
-//            @AuthenticationPrincipal CustomUserDetails userDetails) {
-////        if (request.getTeamId() == null) {
-////            return ResponseEntity.badRequest()
-////                    .body(ApiResponse.success(null, "MISSING_TEAM_ID"));
-////        }
-//        TeamResponse response = teamService.sendTeamInvitation(request, userDetails);
-//        return ResponseEntity.ok(ApiResponse.success(response, "Đã gửi lời mời thành công"));
-//    }
-
     // Lấy ra list team đã được approve
     @GetMapping("/{eventId}/approved-teams")
     @PreAuthorize("hasRole('EVENTCOORDINATOR')")
