@@ -1,8 +1,8 @@
 package com.hackathon.controller;
 
-import com.hackathon.dto.common.ApiResponse;
 import com.hackathon.dto.role.RolePermissionResponse;
 import com.hackathon.dto.role.UpdateRolePermissionRequest;
+import com.hackathon.exception.ApiResponse;
 import com.hackathon.service.role.RolePermissionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

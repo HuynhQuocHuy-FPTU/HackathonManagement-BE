@@ -198,10 +198,6 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
         if (criteriaSet == null) {
             throw new RuntimeException("CriteriaSet not found with id: " + request.getCriteriaSetId());
         }
-//        if (request.getMaxScore() == null || request.getMaxScore() != 100) {
-//            throw new BadRequestException("Điểm tối đa (Max Score) của bộ tiêu chí bắt buộc phải bằng 100!");
-//        }
-
         //2.Update info of criteria set
         boolean isCriteriaSetChanged = false;
         if ((criteriaSet.getCriteriaSetName() == null && request.getCriteriaSetName() != null) ||

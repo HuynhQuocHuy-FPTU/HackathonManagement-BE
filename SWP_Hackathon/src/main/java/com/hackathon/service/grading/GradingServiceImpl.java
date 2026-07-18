@@ -60,7 +60,7 @@ public class GradingServiceImpl implements GradingService {
 
         // 1. Lấy thông tin Vòng thi để tính toán Deadline
         CategoryRound categoryRound = categoryRoundRepository.findById(categoryRoundId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy CategoryRound"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hạng mục thuộc vòng đấu"));
         Round round = categoryRound.getRound();
 
         // Lấy thông tin thời gian từ Policy
@@ -171,7 +171,7 @@ public class GradingServiceImpl implements GradingService {
 
         // 3. Ràng buộc nghiệp vụ: Tuyệt đối không cho phép chấm điểm trên các bài nộp là Bản nháp (Draft)
         if (!submission.isFinal()) {
-            throw new BadRequestException("Hành động bị từ chối: Bài nộp hiện tại đang ở trạng thái bản nháp, chưa được xác nhận nộp chính thức.");
+            throw new BadRequestException("Bài nộp hiện tại đang ở trạng thái bản nháp, chưa được xác nhận nộp chính thức.");
         }
 
         // 4. Khai thác dữ liệu quan hệ bắc cầu: Submission -> TeamParticipant -> CategoryRound -> Round
@@ -184,7 +184,7 @@ public class GradingServiceImpl implements GradingService {
 
         // 6. Kiểm tra thời hạn: Từ chối xử lý nếu thời gian hiện tại vượt mốc cấu hình đóng cổng chấm điểm của Round
         if (!deadlinePolicy.isGradingOpen(round)) {
-            throw new BadRequestException("Hành động thất bại: Hệ thống đã khóa sổ dữ liệu chấm điểm do quá thời hạn quy định.");
+            throw new BadRequestException("Hệ thống đã khóa sổ dữ liệu chấm điểm do quá thời hạn quy định.");
         }
 
         // 7. Thực hiện thẩm định tính toàn vẹn (Chỉ thẩm định các tiêu chí thuộc phần targetType đang chấm)
@@ -214,7 +214,7 @@ public class GradingServiceImpl implements GradingService {
         } else {
             // Trường hợp 2: Đã tồn tại bản ghi (Update) -> Chặn nếu thực thể đang nằm trong trạng thái xử lý Phúc khảo
             if (evaluation.getStatus() != null && evaluation.getStatus().equals(EvaluationStatus.RE_EVALUATION)) {
-                throw new BadRequestException("Hành động bị chặn: Thực thể đánh giá đang nằm trong trạng thái Khiếu nại/Phúc khảo hệ thống.");
+                throw new BadRequestException("Thực thể đánh giá đang nằm trong trạng thái Khiếu nại/Phúc khảo hệ thống.");
             }
         }
 
@@ -248,7 +248,6 @@ public class GradingServiceImpl implements GradingService {
         BigDecimal calculatedTotalScore = scoreCalculator.calculateWeightedTotal(evaluation.getEvaluationDetails());
 
         evaluation.setScore(calculatedTotalScore);
-        // evaluation.setOriginalScore(calculatedTotalScore);
         evaluation.setComment(request.getComment());
         evaluation.setStatus(EvaluationStatus.GRADED); // Chuyển dịch trạng thái thực thể sang Đã chấm điểm
 
@@ -274,9 +273,9 @@ public class GradingServiceImpl implements GradingService {
         Submission submission = submissionRepository.findById(submissionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dữ liệu Bài nộp với mã định danh cung cấp: " + submissionId));
 
-        // 3. Ràng buộc nghiệp vụ: Tuyệt đối không cho phép chấm điểm trên các bài nộp là Bản nháp (Draft)
+        // 3.Tuyệt đối không cho phép chấm điểm trên các bài nộp là Bản nháp (Draft)
         if (!submission.isFinal()) {
-            throw new BadRequestException("Hành động bị từ chối: Bài nộp hiện tại đang ở trạng thái bản nháp, chưa được xác nhận nộp chính thức.");
+            throw new BadRequestException("Bài nộp hiện tại đang ở trạng thái bản nháp, chưa được xác nhận nộp chính thức.");
         }
 
         // 4. Khai thác dữ liệu quan hệ bắc cầu: Submission -> TeamParticipant -> CategoryRound -> Round
@@ -395,8 +394,6 @@ public class GradingServiceImpl implements GradingService {
         if (appealRequest.getStatus() != RequestStatus.PROCESSING) {
             throw new BadRequestException("Đơn khiếu nại này không ở trạng thái PROCESSING");
         }
-
-
         // Từ ds khiếu nại lấy ra bài nộp để tiến hành chấm điểm lại
         Round round = appealRequest.getRound();
 

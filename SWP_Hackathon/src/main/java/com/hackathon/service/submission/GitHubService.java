@@ -28,7 +28,6 @@ public class GitHubService {
 
     //Lấy lần commit cuối cùng
     public String getLatestCommitSha(String repoUrl) {
-        System.out.println("Start getLatestCommitSha");
         if (repoUrl == null || repoUrl.isBlank()) {
             return null;
         }

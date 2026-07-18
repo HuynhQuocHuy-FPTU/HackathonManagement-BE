@@ -38,9 +38,6 @@ public class RankingServiceImpl implements RankingService {
     private final ExcelExportService excelExportService;
     private final RoundAdvancementService roundAdvancementService;
     private final AccountRepository accountRepository;
-    private final ParticipantRepository participantRepository;
-
-
     //===============================================//
     //RANKING
     //===============================================//
@@ -161,8 +158,10 @@ public class RankingServiceImpl implements RankingService {
     }
 
     @Override
-    @Transactional()
-    public void publishFinalRanking(Integer roundId) {
+    @Transactional
+    public void publishFinalRanking(Integer roundId , CustomUserDetails userDetails) {
+        EventCoordinator coordinator = eventCoordinatorRepository.findByAccount_AccountId(userDetails.getAccount().getAccountId())
+                .orElseThrow(() -> new BadRequestException("Bạn không phải là ban tổ chức."));
         // Check Round
         Round round = roundRepository.findById(roundId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy vòng thi này."));
@@ -180,10 +179,10 @@ public class RankingServiceImpl implements RankingService {
             throw new BadRequestException("Không tìm thấy hạng mục nào trong vòng thi này.");
         }
 
-        for (CategoryRound cr : categoryRounds) {
-            roundAdvancementService.calculateScoresAndRanking(cr.getCategoryRoundId());
-        }
-        roundAdvancementService.advanceAllCategoriesInRound(roundId);
+//        for (CategoryRound cr : categoryRounds) {
+//            roundAdvancementService.calculateScoresAndRanking(cr.getCategoryRoundId());
+//        }
+//        roundAdvancementService.advanceAllCategoriesInRound(roundId, userDetails);
 
         // 3. REFRESH DATA TRONG HIBERNATE SESSION ĐỂ TRÁNH LẤY ĐIỂM/RANK CŨ TRONG CACHE
         roundRepository.flush();
@@ -210,7 +209,7 @@ public class RankingServiceImpl implements RankingService {
         try {
 
             auditService.saveLog(
-                    null,
+                    systemAccount,
                     AuditAction.PUBLISH_FINAL,
                     AuditEntityType.ROUND,
                     roundId,

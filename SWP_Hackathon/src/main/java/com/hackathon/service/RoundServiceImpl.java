@@ -121,7 +121,7 @@ public class RoundServiceImpl implements RoundService{
         }
 
         //1. Map danh sách tiêu chí chấm điểm từ entity sang Response
-        List<EvaluationCriteriaResponseDTO> criteriaResponses = evaluationCriteriaService.getEvaluationCirteriaResponse(round);
+        List<EvaluationCriteriaResponseDTO> criteriaResponses = evaluationCriteriaService.getEvaluationCriteriaResponse(round);
 
         //2. map danh sách expert sang response
         List<CategoryExpertAssignResponseDTO> expertResponse = expertAssignService.getExpertAssignmentsByRound(round);

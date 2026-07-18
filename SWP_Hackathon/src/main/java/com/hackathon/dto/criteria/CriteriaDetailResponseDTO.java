@@ -20,11 +20,11 @@ import java.util.List;
 public class CriteriaDetailResponseDTO {
     private Integer criteriaId;
 
-    @NotBlank(message = "Criteria Detail Name is required")
+    @NotBlank(message = "Tên tiêu chí chi tiết là bắt buộc")
     private String criteriaName;
 
-    @NotBlank(message = "Weight is required")
-    @Min(value = 0, message = "Weight must be greater than or equal to 0")
+    @NotBlank(message = "Trọng số (Weight) là bắt buộc")
+    @Min(value = 0, message = "Trọng số (Weight) bắt buộc lớn hơn hoặc bằng 0")
     private BigDecimal weight;
 
     private CriteriaType type;

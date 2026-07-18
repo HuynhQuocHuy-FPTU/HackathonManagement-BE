@@ -3,11 +3,8 @@ package com.hackathon.service;
 import com.hackathon.dto.evaluation.EvaluationDetailResponse;
 import com.hackathon.dto.evaluation.EvaluationResponse;
 import com.hackathon.entity.*;
-import com.hackathon.entity.enums.RequestStatus;
-import com.hackathon.entity.enums.RoundStatus;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.*;
-import com.hackathon.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,11 +15,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class EvaluationDetailServiceImpl implements EvaluationDetailService {
     private final SubmissionRepository submissionRepository;
-    private final RoundRepository roundRepository;
     private final EvaluationRepository evaluationRepository;
-
     private final EvaluationDetailRepository evaluationDetailRepository;
-    private final TeamRequestRepository teamRequestRepository;
 
     @Override
     public List<EvaluationResponse> getEvaluated(Integer submissionId) {

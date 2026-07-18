@@ -37,37 +37,45 @@ public class PrizeServiceImpl {
 
         // Lấy ds giải thưởng
         List<Prize> prizes = finalRound.getHackathonEvent().getDescription().prizes();
+
         List<TeamParticipant> rankings = participantRepository.findByRoundId(finalRound.getRoundId());
 
 
         //1.Dựa vào rank để xếp giải thưởng tự động
         if (!rankings.isEmpty() && prizes != null && !prizes.isEmpty()) {
+
             for (int i = 0; i < Math.min(finalRound.getTopN(), Math.min(rankings.size(), prizes.size())); i++) {
+
                 TeamParticipant team = rankings.get(i);
                 Prize prize = prizes.get(i);
-                team.setAward(prize.title());
-                participantRepository.save(team);
+                team.setAward(prize.reward());
+                team.setTitleAward(prize.title());
             }
+            participantRepository.saveAll(rankings);
         }
 
         //2.BTC gán giải thưởng ngoại lệ
 
         if (request != null && !request.isEmpty()) {
-            for (PrizeRequestDTO rq: request){
-                TeamParticipant teamParticipant = participantRepository.findById(rq.getTeamParticipantId())
+            for (PrizeRequestDTO rq : request) {
+                TeamParticipant tp = participantRepository.findById(rq.getTeamParticipantId())
                         .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin về đội thi này."));
-
+                System.out.println(
+                        tp.getId() +
+                                " rank=" + tp.getRank()
+                );
                 // Check có giải thưởng trước đó chưa
-                if (teamParticipant.getAward() != null && !teamParticipant.getAward().isEmpty()) {
-                    teamParticipant.setAward(teamParticipant.getAward() + ", " + rq.getPrizeTitle());
-                } else {
-                    // Nếu chưa có giải gì
-                    teamParticipant.setAward(rq.getPrizeTitle());
-                }
-                participantRepository.save(teamParticipant);
+                tp.setTitleAward(appendValue(tp.getTitleAward(), rq.getPrizeTitle()));
+                tp.setAward(appendValue(tp.getAward(), rq.getPrizeReward()));
+                participantRepository.save(tp);
             }
+
         }
 
+    }
 
+    private String appendValue(String current, String newValue) {
+        if (current == null || current.isEmpty()) return newValue;
+        return current + ", " + newValue;
     }
 }

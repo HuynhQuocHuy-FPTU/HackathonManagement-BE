@@ -62,7 +62,7 @@ public class EventController {
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<EventResponse>> createEvent(@Valid @RequestBody CreateEventRequest request) {
         EventResponse response = eventService.createEvent(request);
-        return ResponseEntity.ok(ApiResponse.success(response, "Đã tạo event thành công"));
+        return ResponseEntity.ok(ApiResponse.success(response, "Đã tạo cuộc thi thành công"));
     }
 
     @PutMapping("/publish/{eventId}")
@@ -71,7 +71,7 @@ public class EventController {
         eventService.publishEvent(eventId);
 
         return ResponseEntity.ok(
-                ApiResponse.success(null, "Sự kiện đã được công khai thành công")
+                ApiResponse.success(null, "Cuộc thi đã được công khai thành công")
         );
     }
     @PutMapping("/delete/{eventId}")
@@ -80,7 +80,7 @@ public class EventController {
         eventService.deleteEvent(eventId);
 
         return ResponseEntity.ok(
-                ApiResponse.success(null, "Sự kiện đã được xóa thành công và chuyển vào thùng rác")
+                ApiResponse.success(null, "Cuộc thi đã được xóa thành công và chuyển vào thùng rác")
         );
     }
     @PutMapping("/update/{eventId}")
@@ -91,7 +91,7 @@ public class EventController {
         EventResponse response = eventService.updateEvent(request, eventId);
 
         return ResponseEntity.ok(
-                ApiResponse.success(response, "Cập nhật sự kiện thành công")
+                ApiResponse.success(response, "Cập nhật cuộc thi thành công")
         );
     }
     @GetMapping("/trash")
@@ -100,7 +100,7 @@ public class EventController {
         List<EventResponse> responses = eventService.getDeletedEvents();
 
         return ResponseEntity.ok(
-                ApiResponse.success(responses, "Danh sách sự kiện đã xóa")
+                ApiResponse.success(responses, "Danh sách cuộc thi đã xóa")
         );
     }
 
@@ -110,7 +110,7 @@ public class EventController {
         eventService.restoreEvent(eventId);
 
         return ResponseEntity.ok(
-                ApiResponse.success(null, "Khôi phục event thành công")
+                ApiResponse.success(null, "Khôi phục cuộc thi thành công")
         );
     }
 
@@ -120,7 +120,7 @@ public class EventController {
         eventService.permanentlyDeleteEvent(eventId);
 
         return ResponseEntity.ok(
-                ApiResponse.success(null, "Đã xóa vĩnh viễn event")
+                ApiResponse.success(null, "Đã xóa vĩnh viễn cuộc thi")
         );
     }
     @GetMapping("/search-all")
@@ -137,7 +137,7 @@ public class EventController {
     public ResponseEntity<ApiResponse<EventResponse>> getEventDetail(@PathVariable Integer eventId) {
 
         return ResponseEntity.ok(
-                ApiResponse.success(eventService.getEventDetail(eventId), "Chi tiết event")
+                ApiResponse.success(eventService.getEventDetail(eventId), "Chi tiết cuộc thi")
         );
     }
 
@@ -145,7 +145,7 @@ public class EventController {
     public ResponseEntity<ApiResponse<List<EventResponse>>> getAllEvent() {
 
         return ResponseEntity.ok(
-                ApiResponse.success(eventService.getAllEvent(), "Danh sách event")
+                ApiResponse.success(eventService.getAllEvent(), "Danh sách cuộc thi")
         );
     }
 
@@ -153,13 +153,13 @@ public class EventController {
     public ResponseEntity<ApiResponse<List<ExpertInfoResponse>>> getAllExperts() {
 
         return ResponseEntity.ok(
-                ApiResponse.success(expertService.getAllExperts(), "Danh sách expert")
+                ApiResponse.success(expertService.getAllExperts(), "Danh sách chuyên gia")
         );
     }
     @GetMapping("/categories/{eventId}")
     public ResponseEntity<ApiResponse<List<CategoryResponse>>> getCategoriesOfEvent(@PathVariable Integer eventId){
         List<CategoryResponse> categoryResponses = categoryService.getAllCategories(eventId);
-        return ResponseEntity.ok(ApiResponse.success(categoryResponses, "Các categories thuộc về event"));
+        return ResponseEntity.ok(ApiResponse.success(categoryResponses, "Các hạng mục thuộc về cuộc thi"));
     }
 
     @PutMapping("/cancel/{eventId}")
@@ -170,7 +170,7 @@ public class EventController {
     ) {
         eventService.cancelEvent(eventId, reason, userDetails);
         return ResponseEntity.ok(
-                ApiResponse.success(null, "Đã hủy cuộc thi và gửi thông báo đến các team")
+                ApiResponse.success(null, "Đã hủy cuộc thi và gửi thông báo đến các đội thi")
         );
     }
 
@@ -186,7 +186,7 @@ public class EventController {
     ) {
         roundService.updateTimeRound(request,userDetails, roundId);
         return ResponseEntity.ok(
-                ApiResponse.success(null, "Đã chỉnh sửa thời gian của round thành công")
+                ApiResponse.success(null, "Đã chỉnh sửa thời gian của vòng thi thành công")
         );
     }
 

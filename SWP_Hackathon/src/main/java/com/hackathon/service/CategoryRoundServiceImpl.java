@@ -20,8 +20,7 @@ import java.util.List;
 public class CategoryRoundServiceImpl implements CategoryRoundService {
     @Autowired
     private CategoryRoundRepository categoryRoundRepository;
-    @Autowired
-    private HackathonEventRepository hackathonEventRepository;
+
     @Autowired
     private ExpertAssignRepository expertAssignRepository;
 
@@ -53,26 +52,6 @@ public class CategoryRoundServiceImpl implements CategoryRoundService {
         categoryRoundRepository.deleteByEventId(eventId);
     }
 
-    @Override
-    public List<CategoryRoundResponseDTO> getAllCategory(Integer eventId) {
-        HackathonEvent hackathonEvent = hackathonEventRepository.findById(eventId)
-                .orElseThrow(() -> new BadRequestException("Không tìm thấy event"));
-        List<CategoryRound> categoryRounds = categoryRoundRepository.findByRound_HackathonEvent_EventId(eventId);
-        if (categoryRounds.isEmpty()) {
-            throw new BadRequestException("Không có hạng mục nào trong cuộc thi này.");
-        }
-        List<CategoryRoundResponseDTO> dtoList = new ArrayList<>();
-        for (CategoryRound cr : categoryRounds) {
-            CategoryRoundResponseDTO dto = CategoryRoundResponseDTO.builder()
-                    .roundId(cr.getRound().getRoundId())
-                    .roundName(cr.getRound().getRoundName())
-                    .categoryRoundId(cr.getCategoryRoundId())
-                    .categoryId(cr.getCategory().getCategoryId())
-                    .categoryName(cr.getCategory().getCategoryName()).build();
-            dtoList.add(dto);
-        }
-        return dtoList;
-    }
 
     //Mentor xem tất cả các CategoryRound mình được phân công trong trạng thái EVENT ĐANG DIỄN RA
     @Override

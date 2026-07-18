@@ -13,16 +13,16 @@ import java.math.BigDecimal;
 public class CriteriaDetailRequestDTO {
     private Integer criteriaId;
 
-    @NotBlank(message = "Criteria Set Name is required")
+    @NotBlank(message = "Tên bộ tiêu chí là bắt buộc")
     private String criteriaName;
 
-    @NotBlank(message = "Weight is required")
-    @Min(value = 0, message = "Weight must be greater than or equal to 0")
+    @NotBlank(message = "Trọng số (Weight) là bắt buộc")
+    @Min(value = 0, message = "Trọng số (Weight) bắt buộc lớn hơn hoặc bằng 0")
     private BigDecimal weight;
 
-    @NotBlank(message = "Criteria type is required")
+    @NotBlank(message = "Loại tiêu chí (Criteria type) là bắt buộc")
     private CriteriaType type;
 
-    @NotBlank(message = "Description is required")
+    @NotBlank(message = "Mô tả là bắt buộc")
     private String description;
 }

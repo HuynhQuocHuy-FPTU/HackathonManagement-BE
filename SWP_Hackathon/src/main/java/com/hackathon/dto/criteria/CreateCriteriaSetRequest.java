@@ -15,11 +15,11 @@ import java.util.List;
 @Getter
 
 public class CreateCriteriaSetRequest {
-    @NotBlank(message = "Criteria Set Name is required")
+    @NotBlank(message = "Tên bộ tiêu chí yêu cầu là bắt buộc")
     private String criteriaSetName;
 
-    @NotNull(message = "MaxScore is required")
-    @Min(value = 0, message = "MaxScore must be greater than or equal to 0")
+    @NotNull(message = "Điểm tối đa (MaxScore) là bắt buộc")
+    @Min(value = 0, message = "Điểm tối đa (MaxScore) bắt buộc lớn hơn hoặc bằng 0")
     private Integer maxScore;
     private List<CriteriaDetailRequestDTO> criteriaDetails;
 }

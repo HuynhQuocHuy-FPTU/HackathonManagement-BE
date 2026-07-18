@@ -12,6 +12,5 @@ public interface CategoryService {
     public List<Category> createCategory(List<CreateCategoryRequest> request, int eventId);
     public CategoryResponse mapToResponse(Category category);
     public List<CategoryResponse> getAllCategories(Integer eventId);
-
     public List<Category> updateCategories(List<UpdateCategoryRequest> categories, HackathonEvent event);
 }

@@ -6,7 +6,6 @@ import lombok.Data;
 
 @Data
 public class UpdateAccountStatusRequest {
-
     @NotNull(message = "Trạng thái tài khoản không được để trống")
     private AccountStatus status;
 }

@@ -33,11 +33,11 @@ public class TeamRequestValidator {
         if (notification.getAccount() == null
                 || notification.getAccount().getAccountId() != account.getAccountId()) {
             throw new BadRequestException(
-                    "Bạn không có quyền phản hồi notification này");
+                    "Bạn không có quyền phản hồi thông báo này");
         }
         if (!notification.isAllowResponse()) {
             throw new BadRequestException(
-                    "Notification này không cho phép phản hồi");
+                    "Thông báo này không cho phép phản hồi");
         }
         if (notification.getResponseDeadline() == null
                 || LocalDateTime.now().isAfter(notification.getResponseDeadline())) {
@@ -46,7 +46,7 @@ public class TeamRequestValidator {
         if (notification.getResponseStatus() != null
                 && notification.getResponseStatus() != NotiResponseStatus.NONE) {
             throw new BadRequestException(
-                    "Notification này đã được phản hồi trước đó");
+                    "Thông báo này đã được phản hồi trước đó");
         }
     }
 
@@ -57,7 +57,7 @@ public class TeamRequestValidator {
     ) {
         if (round == null) {
             throw new BadRequestException(
-                    "Notification chưa liên kết với vòng thi");
+                    "Thông báo chưa liên kết với vòng thi");
         }
 
         boolean exists = teamRequestRepository

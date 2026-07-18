@@ -1242,7 +1242,7 @@ public class TeamServiceImpl implements TeamService {
                     .toList();
 
             if (categoryRoundId.isEmpty()) {
-                throw new BadRequestException("Tài khoản Expert của bạn chưa được phân công vai trò MENTOR cho hạng mục nào.");
+                throw new BadRequestException("Tài khoản Chuyên gia của bạn chưa được phân công vai trò MENTOR cho hạng mục nào.");
             }
              System.out.println("CategoryRoundIds = " + categoryRoundId);
              System.out.println("EventId = " + eventId);
@@ -1295,9 +1295,6 @@ public class TeamServiceImpl implements TeamService {
         }
         return list;
     }
-
-
-
 
 }
 

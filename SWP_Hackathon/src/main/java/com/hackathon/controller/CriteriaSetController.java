@@ -29,14 +29,14 @@ public class CriteriaSetController {
     @PreAuthorize("hasRole('EVENTCOORDINATOR')")
     public ResponseEntity<ApiResponse<List<CriteriaSetResponseDTO>>>getAllCriteriaSets() {
         List<CriteriaSetResponseDTO> list =  criteriaSetService.getAllCriteriaSets();
-        return ResponseEntity.ok(ApiResponse.success(list, "Get All criteria-set successfully"));
+        return ResponseEntity.ok(ApiResponse.success(list, "Nhận tất cả bộ tiêu chí thành công"));
     }
    //2. Lay all thong tin trong bo tiey chi chi tiet (criteria-detail)
     @GetMapping("criteria-detail")
     @PreAuthorize("hasRole('EVENTCOORDINATOR')")
     public ResponseEntity<ApiResponse<List<CriteriaDetailResponseDTO>>> getCriteriaSet() {
         List<CriteriaDetailResponseDTO> list = criteriaSetService.getAllCriteriaDetail();
-        return ResponseEntity.ok(ApiResponse.success(list,"Get criteria-detail successfully"));
+        return ResponseEntity.ok(ApiResponse.success(list,"Nhận bộ tiêu chí chi tiết thành công"));
     }
 
     //3.  Lay tat ca thong tin trong bo tieu chi goc(template) va tieu chi chi tiet trong template
@@ -44,7 +44,7 @@ public class CriteriaSetController {
     @PreAuthorize("hasRole('EVENTCOORDINATOR')")
     public ResponseEntity<ApiResponse<List<CriteriaSetResponseDTO> >>getAllCriteriaSetDetail(){
      List<CriteriaSetResponseDTO>   list = criteriaSetService.getAllCriteriaSetDetail();
-     return ResponseEntity.ok(ApiResponse.success(list,"Get All info about criteria-set and criteria-detail successfully"));
+     return ResponseEntity.ok(ApiResponse.success(list,"Nhận tất cả thông tin bộ tiêu chí và tiêu chí chi tiết thành công"));
 
     }
     //4. Lay thong tin Criteria_Detail bang ID cua bo tieu chi (Set).
@@ -77,7 +77,5 @@ public class CriteriaSetController {
           criteriaSetService.deleteCriteriaSet(criteriaSetId, user);
         return ResponseEntity.ok(ApiResponse.success(null,"Xóa bộ tiêu chí thành công"));
     }
-
-
 
 }

@@ -4,7 +4,6 @@ import com.hackathon.dto.notification.NotiResponseRequest;
 import com.hackathon.dto.notification.NotificationWebResponse;
 import com.hackathon.dto.notification.ResponseEntry;
 import com.hackathon.dto.team.TeamRequestResponse;
-import com.hackathon.entity.TeamRequest;
 import com.hackathon.entity.enums.NotificationType;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
@@ -90,7 +89,7 @@ public class NotificationController {
         notificationService.markAllAsRead(userDetails);
 
         return ResponseEntity.ok(
-                ApiResponse.success(null, "Đã đọc tất cả notification")
+                ApiResponse.success(null, "Đã đọc tất cả thông báo")
         );
     }
 
@@ -102,7 +101,7 @@ public class NotificationController {
         notificationService.deleteNotification(id, userDetails);
 
         return ResponseEntity.ok(
-                ApiResponse.success(null, "Đã xóa notification")
+                ApiResponse.success(null, "Đã xóa thông báo")
         );
     }
 
