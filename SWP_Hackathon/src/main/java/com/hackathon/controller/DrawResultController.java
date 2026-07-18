@@ -95,19 +95,5 @@ public class DrawResultController {
         return ResponseEntity.ok(
                 ApiResponse.success(results, "Lấy kết quả bốc thăm thành công"));
     }
-
-    @GetMapping
-    @PreAuthorize("hasRole('EVENTCOORDINATOR')")
-    public ResponseEntity<ApiResponse<List<DrawResultRequestDTO>>> getDrawResults(
-            @PathVariable Integer eventId,
-            @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
-        List<DrawResultRequestDTO> results =
-                luckyDrawResultService.getDrawResults(eventId, userDetails);
-
-        return ResponseEntity.ok(
-                ApiResponse.success(results, "Lấy kết quả bốc thăm đã import thành công")
-        );
-    }
 }
 

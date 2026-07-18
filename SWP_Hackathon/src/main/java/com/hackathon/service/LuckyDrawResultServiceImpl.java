@@ -177,40 +177,6 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
         }
         return updatedParticipants;
     }
-
-    @Transactional(readOnly = true)
-    @Override
-    public List<DrawResultRequestDTO> getDrawResults(
-            Integer eventId,
-            CustomUserDetails userDetails
-    ) {
-        eventRepository.findById(eventId)
-                .orElseThrow(() -> new BadRequestException("Không tìm thấy event"));
-
-        List<TeamParticipant> participants = participantRepository
-                .findAllByRegistration_HackathonEvent_EventIdAndCategoryRoundIsNotNull(eventId);
-
-        Map<Integer, List<Integer>> registrationIdsByCategory = participants.stream()
-                .collect(Collectors.groupingBy(
-                        participant -> participant.getCategoryRound()
-                                .getCategory()
-                                .getCategoryId(),
-                        LinkedHashMap::new,
-                        Collectors.mapping(
-                                participant -> participant.getRegistration()
-                                        .getRegistrationId(),
-                                Collectors.toList()
-                        )
-                ));
-
-        return registrationIdsByCategory.entrySet().stream()
-                .map(entry -> DrawResultRequestDTO.builder()
-                        .categoryId(entry.getKey())
-                        .registrationId(entry.getValue())
-                        .build())
-                .toList();
-    }
-
     private void validateDrawResultTime(HackathonEvent event) {
         if (event.getStartDate() == null) {
             throw new BadRequestException(
