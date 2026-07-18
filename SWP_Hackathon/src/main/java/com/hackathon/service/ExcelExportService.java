@@ -35,6 +35,7 @@ public class ExcelExportService {
 
         // Khởi tạo workBook excels  xử lý file .xlsx
         try (Workbook workbook = new XSSFWorkbook();
+             // ghi dữ liệu vào mảng byte trong bộ nhớ RAM
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
             // Tạo tiêu đề
@@ -71,8 +72,7 @@ public class ExcelExportService {
                 String sheetName = WorkbookUtil.createSafeSheetName(name);
                 XSSFSheet sheet = (XSSFSheet) workbook.createSheet(sheetName);
 
-
-                String[] columns = {"STT", "Tên Đội Thi", "Tổng điểm", "Hạng", "Trạng thái"};
+                String[] columns = {"STT", "Tên Đội Thi", "Tổng điểm", "Hạng", "Trạng thái", "Giải thưởng"};
                 Row headerRow = sheet.createRow(0);
                 for (int i = 0; i < columns.length; i++) {
                     Cell cell = headerRow.createCell(i);
@@ -93,9 +93,10 @@ public class ExcelExportService {
                     createCellWithStyle(row, 2, tp.getTotalScore() != null ? tp.getTotalScore().doubleValue() : 0, dataStyle);
                     createCellWithStyle(row, 3, tp.getRank() != null ? tp.getRank() : "-", dataStyle);
                     createCellWithStyle(row, 4, tp.getStatus() != null ? tp.getStatus().name() : "N/A", dataStyle);
+                    createCellWithStyle(row, 5, tp.getTitleAward() != null ? tp.getTitleAward() : "N/A", dataStyle);
                 }
 
-                // Chỉnh độ rộng cọt theo đồ dài của chữ
+                // Chỉnh độ rộng côt theo đồ dài của chữ
                 for (int i = 0; i < columns.length; i++) {
                     sheet.autoSizeColumn(i);
                 }
