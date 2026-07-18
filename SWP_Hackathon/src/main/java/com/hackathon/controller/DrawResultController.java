@@ -1,7 +1,6 @@
 package com.hackathon.controller;
 
 import com.hackathon.dto.DrawResultRequestDTO;
-import com.hackathon.entity.TeamParticipant;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.LuckyDrawResultService;
@@ -29,16 +28,14 @@ public class DrawResultController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam Integer responseDeadline
     ) {
-
         luckyDrawResultService.importDrawResults(
                 eventId,
                 drawResults,
                 userDetails,
                 responseDeadline
         );
-
         return ResponseEntity.ok(
-                ApiResponse.success(null, "Import kết quả bốc thăm thành công")
+                ApiResponse.success(null, "Thêm kết quả bốc thăm thành công")
         );
     }
     @PutMapping("/update")
@@ -55,7 +52,7 @@ public class DrawResultController {
         );
 
         return ResponseEntity.ok(
-                ApiResponse.success(null, "Update kết quả bốc thăm thành công")
+                ApiResponse.success(null, "Cập nhật kết quả bốc thăm thành công")
         );
     }
 
@@ -71,13 +68,11 @@ public class DrawResultController {
                 ApiResponse.success(null, "Workshop hoàn thành")
         );
     }
-
     @PatchMapping("/workshop/cancel")
     public ResponseEntity<ApiResponse<Void>> cancelWorkshop(
             @PathVariable Integer eventId,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-
         workshopService.cancelWorkshop(eventId, userDetails);
 
         return ResponseEntity.ok(
@@ -98,6 +93,5 @@ public class DrawResultController {
                 ApiResponse.success(results, "Lấy kết quả bốc thăm đã import thành công")
         );
     }
-
 }
 

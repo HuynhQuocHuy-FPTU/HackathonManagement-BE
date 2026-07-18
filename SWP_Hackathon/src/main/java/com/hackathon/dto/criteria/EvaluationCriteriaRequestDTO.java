@@ -11,19 +11,19 @@ import java.math.BigDecimal;
 @Getter
 @Builder
 public class EvaluationCriteriaRequestDTO {
-    @NotBlank(message = "Criteria name is required")
+    @NotBlank(message = "Tên tiêu chí là bắt buộc")
     private String criteriaName;
-    @NotNull(message = "Custom weight is required")
+    @NotNull(message = "Trọng số của tiêu chí là bắt buộc")
     // Trọng số không được nhỏ hơn 0.0 (0%)
-    @DecimalMin(value = "0.0", message = "Trọng số phải lớn hơn hoặc bằng 0")
+    @DecimalMin(value = "0.0", message = "Trọng số (Weight) phải lớn hơn hoặc bằng 0")
     // Trọng số không được phép vượt quá 1.0 (100%)
-    @DecimalMax(value = "100.0", message = "Trọng số không được vượt quá 100%")
+    @DecimalMax(value = "100.0", message = "Trọng số (Weight) không được vượt quá 100")
     private BigDecimal customWeight;
 
-    @NotBlank(message = "Criteria type is required")
+    @NotBlank(message = "Loại tiêu chí là bắt buộc")
     private CriteriaType type;
 
-    @NotBlank(message = "Description is required")
+    @NotBlank(message = "Mô tả là bắt buộc")
     private String description;
 
 }

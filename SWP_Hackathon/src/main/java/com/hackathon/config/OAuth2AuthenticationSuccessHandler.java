@@ -47,7 +47,6 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
             return;
         }
 
-
         // 1. Tạo JWT Token từ email dựa trên logic JwtService hiện tại của bạn
         AuthResponse authResponse = authService.loginWithGoogle(email);
         // 2. Chuyển hướng (Redirect) về giao diện Front-end kèm theo Token trên URL để Front-end lưu lại

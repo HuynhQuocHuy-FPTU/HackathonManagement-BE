@@ -158,7 +158,7 @@ public class TeamController {
         if (response.isEmpty()) {
             return ResponseEntity.ok(ApiResponse.success(response, "Bạn hiện chưa được phân công quản lý đội thi nào."));
         }
-        return ResponseEntity.ok(ApiResponse.success(response, "Expert xem danh sách đội của mình thành công"));
+        return ResponseEntity.ok(ApiResponse.success(response, "Chuyên gia xem danh sách đội của mình thành công"));
     }
 
 

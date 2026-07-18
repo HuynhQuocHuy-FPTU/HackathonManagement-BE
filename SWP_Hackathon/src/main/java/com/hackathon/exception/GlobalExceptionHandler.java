@@ -1,6 +1,5 @@
 package com.hackathon.exception;
 
-import com.hackathon.dto.common.ApiResponse;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -12,10 +12,10 @@ import java.util.List;
 @Getter
 @Builder
 public class DrawResultRequestDTO {
-    @NotNull(message = "Category id is required")
+    @NotNull(message = "Hạng mục là bắt buộc")
     private Integer categoryId;
 
-    @NotEmpty(message = "Registration list cannot be empty")
+    @NotEmpty(message = "Danh sách team không được để trống")
     private List<Integer> registrationId;
 }
 

@@ -16,6 +16,6 @@ public class InviteAccountRequest {
     @Email(message = "Email không hợp lệ")
     private String email;
 
-    @NotNull(message = "Vai trò (Role) không được để trống")
+    @NotNull(message = "Vai trò không được để trống")
     private AccountRole role;
 }

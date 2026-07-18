@@ -28,7 +28,7 @@ public class RankingController {
             @PathVariable("roundId") Integer roundId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         CategoryRoundRankingResponse response = rankingService.getRankingByEventCoordinator(roundId, userDetails);
-        return ResponseEntity.ok(ApiResponse.success(response, "Ban tổ chức xem dah sách ranking của vòng thi thành công"));
+        return ResponseEntity.ok(ApiResponse.success(response, "Ban tổ chức xem dah sách hạng mục của vòng thi thành công"));
     }
 
 
@@ -49,9 +49,10 @@ public class RankingController {
     @PostMapping("/{roundId}/publish-FINAL")
     @PreAuthorize("hasRole('EVENTCOORDINATOR')")
     public ResponseEntity<ApiResponse<Void>> publishFINALRanking(
-            @PathVariable Integer roundId) {
-        rankingService.publishFinalRanking(roundId);
-        return ResponseEntity.ok(ApiResponse.success(null, "Ban tổ chức công bố bảng xếp hạng tạm thời thành công"));
+            @PathVariable Integer roundId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        rankingService.publishFinalRanking(roundId, userDetails);
+        return ResponseEntity.ok(ApiResponse.success(null, "Ban tổ chức công bố bảng xếp hạng  chính thức thành công"));
     }
 
     @GetMapping("/{roundId}/topN")
@@ -67,7 +68,7 @@ public class RankingController {
             @PathVariable Integer roundId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         CategoryRoundRankingResponse rank = rankingService.getRankingByAll(roundId, userDetails);
-        return ResponseEntity.ok(ApiResponse.success(rank, "Xem ranking thành công."));
+        return ResponseEntity.ok(ApiResponse.success(rank, "Xem hạng mục thành công."));
     }
 
     // Hàm này dành cho event muốn xuất file lúc nào cx được
@@ -79,7 +80,7 @@ public class RankingController {
         String url = excelService.exportRankingToExcel(roundId, type);
 
         return ResponseEntity.ok(
-                ApiResponse.success(url, "Export Excel thành công")
+                ApiResponse.success(url, "Xuất file Excel thành công")
         );
     }
 

@@ -5,7 +5,6 @@ import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.prize.PrizeServiceImpl;
 import lombok.RequiredArgsConstructor;
-import org.apiguardian.api.API;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;

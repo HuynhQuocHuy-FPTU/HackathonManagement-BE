@@ -2,7 +2,7 @@ package com.hackathon.controller;
 
 import com.hackathon.dto.auth.AuthResponse;
 import com.hackathon.dto.user.UpdateProfileRequest;
-import com.hackathon.dto.common.ApiResponse;
+import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.user.UserService;
 import jakarta.validation.Valid;

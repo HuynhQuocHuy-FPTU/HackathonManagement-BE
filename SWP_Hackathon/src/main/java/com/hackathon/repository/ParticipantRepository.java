@@ -39,6 +39,7 @@ public interface ParticipantRepository extends JpaRepository<TeamParticipant, In
             SELECT tp
             FROM TeamParticipant tp
             WHERE tp.categoryRound.round.roundId = :roundId
+            ORDER BY tp.rank ASC
             """)
     List<TeamParticipant> findByRoundId(Integer roundId);
     @Query("SELECT tp FROM TeamParticipant tp " +

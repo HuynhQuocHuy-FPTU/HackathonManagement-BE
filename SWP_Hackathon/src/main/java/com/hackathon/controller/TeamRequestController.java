@@ -7,7 +7,6 @@ import com.hackathon.dto.team.CreateDirectTeamRequest;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.teamRequest.TeamRequestService;
-import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -65,7 +64,7 @@ public class TeamRequestController {
             @PathVariable Integer roundId) {
         List<TeamRequestResponse> response =
                 teamRequestService.getTeamRequestsForExpert(roundId, userDetails);
-        return ResponseEntity.ok(ApiResponse.success(response, "Expert nhận danh sách các yêu cầu nhận sự hỗ trợ thành công."));
+        return ResponseEntity.ok(ApiResponse.success(response, "Chuyên gia nhận danh sách các yêu cầu nhận sự hỗ trợ thành công."));
     }
 
     //  Chấp nhận

@@ -1,7 +1,7 @@
 package com.hackathon.controller;
 
 import com.hackathon.dto.auth.*;
-import com.hackathon.dto.common.ApiResponse;
+import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.StudentServiceImpl;
 import com.hackathon.service.auth.AuthService;

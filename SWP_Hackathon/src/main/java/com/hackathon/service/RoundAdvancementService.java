@@ -268,15 +268,15 @@ public class RoundAdvancementService {
     //thăng vòng
     @Transactional
     public List<CategoryAdvancementResultDTO> advanceAllCategoriesInRound(
-            Integer roundId) {
-//        EventCoordinator eventCoordinator =
-//                userDetails.getAccount().getEventCoordinator();
-//
-//        if (eventCoordinator == null) {
-//            throw new BadRequestException(
-//                    "Bạn không có quyền thực hiện. Bạn phải là event coordinator."
-//            );
-//        }
+            Integer roundId, CustomUserDetails userDetails) {
+        EventCoordinator eventCoordinator =
+                userDetails.getAccount().getEventCoordinator();
+
+        if (eventCoordinator == null) {
+            throw new BadRequestException(
+                    "Bạn không có quyền thực hiện. Bạn phải là event coordinator."
+            );
+        }
 
         return processRoundAdvancement(roundId);
     }

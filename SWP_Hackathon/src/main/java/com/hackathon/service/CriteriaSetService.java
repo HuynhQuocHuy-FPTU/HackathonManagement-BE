@@ -23,10 +23,10 @@ public interface CriteriaSetService {
     CriteriaSetResponseDTO getCriteriaDetailById(Integer criteriaSetId);
 
     // Tao bo tieu chi danh gia (Template)
-    CriteriaSetResponseDTO createCriteriaSet(CreateCriteriaSetRequest request, CustomUserDetails userDetailst);
+    CriteriaSetResponseDTO createCriteriaSet(CreateCriteriaSetRequest request, CustomUserDetails userDetailist);
 
     //Update bo tieu chi
-    CriteriaSetResponseDTO updateCriteriaSet(CriteriaSetRequestDTO request,CustomUserDetails userDetailst );
+    CriteriaSetResponseDTO updateCriteriaSet(CriteriaSetRequestDTO request,CustomUserDetails userDetailist );
 
     // Xoa bo tieu chi
     void deleteCriteriaSet(Integer criteriaSetId,CustomUserDetails userDetails);
