@@ -15,4 +15,9 @@ public interface LuckyDrawResultService {
             CustomUserDetails userDetails
     );
 
+    List<DrawResultRequestDTO> getDrawResults(
+            Integer eventId,
+            CustomUserDetails userDetails
+    );
+
 }

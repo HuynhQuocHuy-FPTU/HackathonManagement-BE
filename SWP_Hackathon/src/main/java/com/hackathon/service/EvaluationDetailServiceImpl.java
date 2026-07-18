@@ -7,16 +7,18 @@ import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class EvaluationDetailServiceImpl implements EvaluationDetailService {
+public class EvaluationDetailServiceImpl implements EvaluationDetailService{
     private final SubmissionRepository submissionRepository;
+
     private final EvaluationRepository evaluationRepository;
+
     private final EvaluationDetailRepository evaluationDetailRepository;
+
 
     @Override
     public List<EvaluationResponse> getEvaluated(Integer submissionId) {
@@ -25,11 +27,11 @@ public class EvaluationDetailServiceImpl implements EvaluationDetailService {
 
         List<Evaluation> evaluations = evaluationRepository.findBySubmission_SubmissionId(submissionId);
 
-        if (evaluations.isEmpty()) {
+        if(evaluations.isEmpty()){
             throw new BadRequestException("Bài nộp chưa được chấm.");
         }
 
-        for (Evaluation e : evaluations) {
+        for(Evaluation e: evaluations){
             List<EvaluationDetail> evaluationDetails = evaluationDetailRepository.findByEvaluation_EvaluationId(e.getEvaluationId());
 
             List<EvaluationDetailResponse> evaluationDetailResponses = evaluationDetails.stream().map(evaluationDetail -> this.mapToEvaluationDetailResponse(evaluationDetail)).toList();
@@ -43,15 +45,16 @@ public class EvaluationDetailServiceImpl implements EvaluationDetailService {
     }
 
 
-    private EvaluationDetailResponse mapToEvaluationDetailResponse(EvaluationDetail evaluationDetail) {
+    private EvaluationDetailResponse mapToEvaluationDetailResponse(EvaluationDetail evaluationDetail){
         return EvaluationDetailResponse.builder().evaluationDetailId(evaluationDetail.getId())
                 .criteriaName(evaluationDetail.getEvaluationCriteria().getCriteriaName())
+                .criteriaDescription(evaluationDetail.getEvaluationCriteria().getDescription())
                 .score(evaluationDetail.getScore())
                 .comment(evaluationDetail.getComment())
                 .build();
     }
 
-    private EvaluationResponse mapToEvaluationResponse(Evaluation evaluation, List<EvaluationDetailResponse> evaluationDetails) {
+    private EvaluationResponse mapToEvaluationResponse(Evaluation evaluation, List<EvaluationDetailResponse> evaluationDetails){
         return EvaluationResponse.builder().evaluationId(evaluation.getEvaluationId())
                 .listEvaluationDetail(evaluationDetails)
                 .totalScore(evaluation.getScore())

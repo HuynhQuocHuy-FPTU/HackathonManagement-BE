@@ -7,6 +7,7 @@ import com.hackathon.service.LuckyDrawResultService;
 import com.hackathon.service.WorkshopService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -64,7 +65,7 @@ public class DrawResultController {
         workshopService.completedWorkshop(eventId, userDetails);
 
         return ResponseEntity.ok(
-                ApiResponse.success(null, "Workshop đã được đánh dấu hoàn thành thành công")
+                ApiResponse.success(null, "Workshop hoàn thành")
         );
     }
     @PatchMapping("/workshop/cancel")
@@ -75,7 +76,22 @@ public class DrawResultController {
         workshopService.cancelWorkshop(eventId, userDetails);
 
         return ResponseEntity.ok(
-                ApiResponse.success(null, "Workshop đã được hủy thành công")
+                ApiResponse.success(null, "Workshop đã bị hủy")
+        );
+    }
+
+    @GetMapping
+    @PreAuthorize("hasRole('EVENTCOORDINATOR')")
+    public ResponseEntity<ApiResponse<List<DrawResultRequestDTO>>> getDrawResults(
+            @PathVariable Integer eventId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        List<DrawResultRequestDTO> results =
+                luckyDrawResultService.getDrawResults(eventId, userDetails);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(results, "Lấy kết quả bốc thăm đã import thành công")
         );
     }
 }
+

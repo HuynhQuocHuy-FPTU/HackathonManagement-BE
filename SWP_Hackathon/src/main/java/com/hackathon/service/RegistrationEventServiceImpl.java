@@ -2,7 +2,6 @@ package com.hackathon.service;
 
 import com.hackathon.dto.TeamSelectionDTO;
 import com.hackathon.dto.registration.RegistrationResponse;
-import com.hackathon.dto.team.TeamResponse;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.*;
 import com.hackathon.exception.BadRequestException;

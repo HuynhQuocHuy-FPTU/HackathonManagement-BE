@@ -473,7 +473,6 @@ public class GradingServiceImpl implements GradingService {
         if (isAllJudgesFinished) {
             // Tất cả judge đã chấm lại xong. Team quay về trạng thái hoạt động
             // trong round; request chờ coordinator đưa ra kết luận cuối.
-            participant.setStatus(ParticipantStatus.ACTIVE);
             participantRepository.save(participant);
             appealRequest.setStatus(RequestStatus.IN_REVIEW);
             appealRequest.setResponseMessage("Toàn bộ hội đồng Giám khảo đã hoàn tất cập nhật lại điểm số phúc khảo.");
