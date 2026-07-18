@@ -40,4 +40,5 @@ public interface CategoryRoundRepository extends JpaRepository<CategoryRound, In
 
     List<CategoryRound> findCategoryRoundByRound_RoundId(Integer roundRoundId);
 
+
 }

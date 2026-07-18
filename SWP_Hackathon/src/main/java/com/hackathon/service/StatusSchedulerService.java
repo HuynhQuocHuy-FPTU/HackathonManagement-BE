@@ -4,7 +4,6 @@ import com.hackathon.entity.*;
 import com.hackathon.entity.enums.*;
 import com.hackathon.repository.HackathonEventRepository;
 import com.hackathon.repository.RoundRepository;
-import com.hackathon.repository.TeamRequestRepository;
 import com.hackathon.service.ranking.RankingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,8 +30,7 @@ public class StatusSchedulerService {
     @Scheduled(fixedRate = 60000)
     public void autoCalculateScores() {
         LocalDateTime now = LocalDateTime.now();
-        List<Round> rounds = roundRepository
-                .findByEvaluationDeadlineLessThanEqualAndScoringProcessedAtIsNull(now);
+        List<Round> rounds = roundRepository.findByEvaluationDeadlineLessThanEqualAndScoringProcessedAtIsNull(now);
 
         for (Round round : rounds) {
             try {

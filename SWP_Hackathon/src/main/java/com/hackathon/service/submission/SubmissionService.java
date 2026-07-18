@@ -103,6 +103,10 @@ public class SubmissionService {
         if(team == null){
             throw new BadRequestException("Đội bạn chưa tham gia cuộc thi nào");
         }
+        Round round = roundRepository.findRoundByCategoryRound(categoryRound).orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy vòng thi cho bài nộp"));
+        if(LocalDateTime.now().isBefore(round.getAppealStartTime())){
+            return null;
+        }
         Submission submission = submissionRepository.findFinalSubmission(categoryRound, team.getTeamId());
         System.out.println("bài nộp nè" + submission);
         if(submission == null){

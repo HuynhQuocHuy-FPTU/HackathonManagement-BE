@@ -18,6 +18,7 @@ import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.AuditService;
 import com.hackathon.service.LuckyDrawResultService;
 import com.hackathon.service.NotificationService;
+import com.hackathon.service.RoundAdvancementService;
 import com.hackathon.validator.TeamRequestValidator;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -39,10 +40,8 @@ public class TeamRequestServiceImpl implements TeamRequestService {
     private final TeamRepository teamRepository;
     private final AccountRepository accountRepository;
     private final ExpertRepository expertRepository;
-
     private final ExpertAssignRepository expertAssignRepository;
     private final TeamRequestRepository teamRequestRepository;
-    private final StudentRepository studentRepository;
     private final RoundRepository roundRepository;
     private final EventCoordinatorRepository eventCoordinatorRepository;
     private final EvaluationRepository evaluationRepository;
@@ -52,6 +51,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
     private final LuckyDrawResultService luckyDrawResultService;
     private final ParticipantRepository participantRepository;
     private final TeamRequestValidator teamRequestValidator;
+    private final RoundAdvancementService roundAdvancementService;
 
     @Override
     @Transactional
@@ -558,6 +558,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         if (appealRequest.getStatus() != RequestStatus.IN_REVIEW) {
             throw new BadRequestException("Đơn khiếu nại này chưa hoàn thành quá trình  đánh giá lại từ giám khảo.");
         }
+
         appealRequest.setStatus(RequestStatus.RESOLVED);
         appealRequest.setResponseMessage(responseMessage != null ? responseMessage : "BTC đã chấp nhận đơn khiếu nại sau khi có sự thay đổi về điểm số.");
         appealRequest.setResponder(account);
@@ -567,8 +568,12 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                 AuditAction.ACCEPT_APPEAL_REQUEST,
                 AuditEntityType.TEAM_REQUEST,
                 appealRequest.getRequestId(),
-                "BTC đã chấp nhận yêu cầu khiếu nại của team"
+                "BTC đã xử lý yêu cầu khiếu nại của team"
         );
+        TeamParticipant teamParticipant = participantRepository.findByTeamId(appealRequest.getTeam().getTeamId());
+        //tính lại điểm và ranking cho category sao khi chấm điểm lại
+        roundAdvancementService.calculateScoresAndRanking(teamParticipant.getCategoryRound().getCategoryRoundId());
+
         try {
             TeamRequest updated = teamRequestRepository.save(appealRequest);
 
@@ -803,9 +808,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         };
     }
 
-    private TeamRequestResponse processDrawResultVerification(CustomUserDetails userDetails,
-                                                              TeamRequest teamRequest,
-                                                              ProcessTeamRequest command) {
+    private TeamRequestResponse processDrawResultVerification(CustomUserDetails userDetails, TeamRequest teamRequest,ProcessTeamRequest command) {
         Account account = userDetails.getAccount();
         eventCoordinatorRepository.findByAccount_AccountId(account.getAccountId())
                 .orElseThrow(() -> new BadRequestException(
@@ -1022,8 +1025,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                         List.of(
                                 RequestStatus.PENDING,
                                 RequestStatus.IN_REVIEW,
-                                RequestStatus.PROCESSING
-                        ),
+                                RequestStatus.PROCESSING),
                         requestType
                 );
         if (hasOpenRequest) {

@@ -5,14 +5,13 @@ import com.hackathon.dto.evaluation.EvaluationResponse;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.RequestStatus;
 import com.hackathon.exception.BadRequestException;
-import com.hackathon.repository.EvaluationDetailRepository;
-import com.hackathon.repository.EvaluationRepository;
-import com.hackathon.repository.SubmissionRepository;
-import com.hackathon.repository.TeamRequestRepository;
+import com.hackathon.exception.ResourceNotFoundException;
+import com.hackathon.repository.*;
 import com.hackathon.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +23,7 @@ public class EvaluationDetailServiceImpl implements EvaluationDetailService{
     private final EvaluationRepository evaluationRepository;
 
     private final EvaluationDetailRepository evaluationDetailRepository;
-    private final TeamRequestRepository teamRequestRepository;
+
 
     @Override
     public List<EvaluationResponse> getEvaluated(Integer submissionId) {
@@ -50,28 +49,11 @@ public class EvaluationDetailServiceImpl implements EvaluationDetailService{
         return listEvaluation;
     }
 
-    @Override
-    public List<EvaluationResponse> getEvaluationDraftRankingAndAppeal(CustomUserDetails userDetails, Integer requestId) {
-        Student student = userDetails.getAccount().getStudent();
-        if(student == null ){
-            throw new BadRequestException("Bạn không là Sinh viên.");
-        }
-        // Lấy điểm dc công bố ở draf final
-
-        // BTC lấy các bài đã khiếu nại và dc chấm lại hoàn thành gửi về cho thí sinh (team)
-//        TeamRequest teamRequest = teamRequestRepository.findById(requestId)
-//                .orElseThrow(() -> new BadRequestException(" Không tìm thấy đơn khiếu nại"));
-//        // Tìm các bài nộp đc chấm lại của tam yêu cầu khiếu nại
-//        Evaluation evaluation = teamRequest.
-//        // Thông qua ID request lấy các bài nộp đã được đánh giá lại
-//
-//
-        return List.of();
-    }
 
     private EvaluationDetailResponse mapToEvaluationDetailResponse(EvaluationDetail evaluationDetail){
         return EvaluationDetailResponse.builder().evaluationDetailId(evaluationDetail.getId())
                 .criteriaName(evaluationDetail.getEvaluationCriteria().getCriteriaName())
+                .criteriaDescription(evaluationDetail.getEvaluationCriteria().getDescription())
                 .score(evaluationDetail.getScore())
                 .comment(evaluationDetail.getComment())
                 .build();
