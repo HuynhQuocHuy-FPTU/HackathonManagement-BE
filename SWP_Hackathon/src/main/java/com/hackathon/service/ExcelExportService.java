@@ -1,7 +1,6 @@
 package com.hackathon.service;
 
 import com.hackathon.entity.*;
-import com.hackathon.entity.enums.RoundStatus;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.RoundRepository;
 import com.hackathon.service.submission.CloudinaryService;
@@ -19,12 +18,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -38,8 +33,9 @@ public class ExcelExportService {
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy vòng thi."));
         String eventName = round.getHackathonEvent().getEventName().replaceAll("\\s+", "_");
 
-        // Khởi tạo workBook excels
+        // Khởi tạo workBook excels  xử lý file .xlsx
         try (Workbook workbook = new XSSFWorkbook();
+             // ghi dữ liệu vào mảng byte trong bộ nhớ RAM
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
             // Tạo tiêu đề
@@ -76,16 +72,7 @@ public class ExcelExportService {
                 String sheetName = WorkbookUtil.createSafeSheetName(name);
                 XSSFSheet sheet = (XSSFSheet) workbook.createSheet(sheetName);
 
-//                List<EvaluationCriteria> criteriaList = cr.getRound().getEvaluationCriterias();
-                // Tạo header động
-//                List<String> columns = new ArrayList<>(List.of("STT", "Tên Đội Thi"));
-//                for (EvaluationCriteria criteria : criteriaList) {
-//                    columns.add(criteria.getCriteriaName()); // Thêm tên tiêu chí vào header
-//                }
-//                columns.addAll(List.of("Tổng điểm", "Hạng", "Trạng thái"));
-                // Tạo row tiêu đề
-
-                String[] columns = {"STT", "Tên Đội Thi", "Tổng điểm", "Hạng", "Trạng thái"};
+                String[] columns = {"STT", "Tên Đội Thi", "Tổng điểm", "Hạng", "Trạng thái", "Giải thưởng"};
                 Row headerRow = sheet.createRow(0);
                 for (int i = 0; i < columns.length; i++) {
                     Cell cell = headerRow.createCell(i);
@@ -106,9 +93,10 @@ public class ExcelExportService {
                     createCellWithStyle(row, 2, tp.getTotalScore() != null ? tp.getTotalScore().doubleValue() : 0, dataStyle);
                     createCellWithStyle(row, 3, tp.getRank() != null ? tp.getRank() : "-", dataStyle);
                     createCellWithStyle(row, 4, tp.getStatus() != null ? tp.getStatus().name() : "N/A", dataStyle);
+                    createCellWithStyle(row, 5, tp.getTitleAward() != null ? tp.getTitleAward() : "N/A", dataStyle);
                 }
 
-                // Chỉnh độ rộng cọt theo đồ dài của chữ
+                // Chỉnh độ rộng côt theo đồ dài của chữ
                 for (int i = 0; i < columns.length; i++) {
                     sheet.autoSizeColumn(i);
                 }
@@ -132,7 +120,7 @@ public class ExcelExportService {
         }
     }
 
-    // tạo ô
+    // tạo ô + dữ liệu +format
     private void createCellWithStyle(Row row, int columnCount, Object value, CellStyle style) {
         Cell cell = row.createCell(columnCount);
         if (value instanceof Integer) {
@@ -147,6 +135,7 @@ public class ExcelExportService {
         cell.setCellStyle(style);
     }
 
+    // đường viền
     private void setCellBorders(CellStyle style, BorderStyle borderStyle, short colorIndex) {
         style.setBorderTop(borderStyle);
         style.setTopBorderColor(colorIndex);

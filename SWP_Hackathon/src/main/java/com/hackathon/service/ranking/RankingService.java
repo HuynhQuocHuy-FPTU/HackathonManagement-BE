@@ -8,7 +8,7 @@ public interface RankingService {
 
     void publishDraftRankingAndOpenAppeals(Integer roundId, CustomUserDetails userDetails, Integer hoursAmount);
 
-    void publishFinalRanking(Integer roundId);
+    void publishFinalRanking(Integer roundId , CustomUserDetails userDetails);
 
     CategoryRoundRankingResponse getTopNRanking(Integer roundId);
 

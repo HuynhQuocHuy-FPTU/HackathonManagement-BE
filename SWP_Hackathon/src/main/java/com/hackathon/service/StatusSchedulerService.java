@@ -4,7 +4,6 @@ import com.hackathon.entity.*;
 import com.hackathon.entity.enums.*;
 import com.hackathon.repository.HackathonEventRepository;
 import com.hackathon.repository.RoundRepository;
-import com.hackathon.repository.TeamRequestRepository;
 import com.hackathon.service.ranking.RankingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,8 +30,7 @@ public class StatusSchedulerService {
     @Scheduled(fixedRate = 60000)
     public void autoCalculateScores() {
         LocalDateTime now = LocalDateTime.now();
-        List<Round> rounds = roundRepository
-                .findByEvaluationDeadlineLessThanEqualAndScoringProcessedAtIsNull(now);
+        List<Round> rounds = roundRepository.findByEvaluationDeadlineLessThanEqualAndScoringProcessedAtIsNull(now);
 
         for (Round round : rounds) {
             try {
@@ -208,51 +206,51 @@ public class StatusSchedulerService {
             return RoundStatus.PENDING;
         }
 
-        return RoundStatus.FINAL_RESULT;
+        return RoundStatus.PENDING;
     }
 
 
 
-    @Scheduled(fixedRate = 60000)
-//    @Transactional
-    public void autoManageRoundTimelines() {
-        LocalDateTime now = LocalDateTime.now();
-        List<RoundStatus> activeStatuses = List.of(
-                RoundStatus.ONGOING,
-                RoundStatus.UPCOMING,
-                RoundStatus.EVALUATING,
-                RoundStatus.PENDING,
-                RoundStatus.APPEALING
-        );
-
-        // Tim các vòng đang mở khiếu nại (APPEALING)
-        List<Round> activeAppealingRounds = roundRepository.findByStatusIn(activeStatuses);
-        log.info("Number of rounds found: {}", activeAppealingRounds.size());
-
-        for (Round round : activeAppealingRounds) {
-            try {
-                if (round.getResolveAppealDeadline() == null) {
-                    continue;
-                }
-                if (now.isAfter(round.getResolveAppealDeadline())) {
-                    log.info(
-                            "Round id={}, status={}, resolveDeadline={}",
-                            round.getRoundId(),
-                            round.getStatus(),
-                            round.getResolveAppealDeadline()
-                    );
-                    log.info(" Phát hiện vòng {} đã quá hạn giải quyết khiếu nại (Deadline: {}). Tiến hành chốt giải!",
-                            round.getRoundId(), round.getResolveAppealDeadline());
-
-                    rankingService.publishFinalRanking(round.getRoundId());
-                }
-            } catch (Exception e) {
-                log.error("Round {} failed: {}", round.getRoundId(), e.getMessage(), e);
-                log.error("Lỗi xảy ra khi tự động quét dòng thời gian của Vòng đấu {}: ", round.getRoundId(), e);
-            }
-        }
-
-    }
+//    @Scheduled(fixedRate = 60000)
+////    @Transactional
+//    public void autoManageRoundTimelines() {
+//        LocalDateTime now = LocalDateTime.now();
+//        List<RoundStatus> activeStatuses = List.of(
+//                RoundStatus.ONGOING,
+//                RoundStatus.UPCOMING,
+//                RoundStatus.EVALUATING,
+//                RoundStatus.PENDING,
+//                RoundStatus.APPEALING
+//        );
+//
+//        // Tim các vòng đang mở khiếu nại (APPEALING)
+//        List<Round> activeAppealingRounds = roundRepository.findByStatusIn(activeStatuses);
+//        log.info("Number of rounds found: {}", activeAppealingRounds.size());
+//
+//        for (Round round : activeAppealingRounds) {
+//            try {
+//                if (round.getResolveAppealDeadline() == null) {
+//                    continue;
+//                }
+//                if (now.isAfter(round.getResolveAppealDeadline())) {
+//                    log.info(
+//                            "Round id={}, status={}, resolveDeadline={}",
+//                            round.getRoundId(),
+//                            round.getStatus(),
+//                            round.getResolveAppealDeadline()
+//                    );
+//                    log.info(" Phát hiện vòng {} đã quá hạn giải quyết khiếu nại (Deadline: {}). Tiến hành chốt giải!",
+//                            round.getRoundId(), round.getResolveAppealDeadline());
+//
+//                    rankingService.publishFinalRanking(round.getRoundId());
+//                }
+//            } catch (Exception e) {
+//                log.error("Round {} failed: {}", round.getRoundId(), e.getMessage(), e);
+//                log.error("Lỗi xảy ra khi tự động quét dòng thời gian của Vòng đấu {}: ", round.getRoundId(), e);
+//            }
+//        }
+//
+//    }
 
 
     private WorkshopStatus calculateStatus(HackathonEvent event, LocalDateTime now) {

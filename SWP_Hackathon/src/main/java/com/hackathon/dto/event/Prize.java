@@ -4,7 +4,7 @@ import com.hackathon.entity.enums.PrizeType;
 
 public record Prize(
         String title,
-        String reward
+        String reward // GIÁ TRỊ PHẦN THƯỞNG
 ) {
 
 }

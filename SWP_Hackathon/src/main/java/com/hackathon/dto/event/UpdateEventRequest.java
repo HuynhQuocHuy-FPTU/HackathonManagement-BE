@@ -31,13 +31,13 @@ public class UpdateEventRequest {
 
     private EventDescription description;
 
-    @Min(value = 1, message = "Max team must be at least 1")
+    @Min(value = 1, message = "Số lượng đội phải lớn hơn hoặc bằng 1.")
     private Integer maxTeam;
 
-    @Min(value = 1, message = "Max team size must be at least 1")
+    @Min(value = 1, message = "Số lượng thành viên tối đa phải lớn hơn hoặc bằng 1.")
     private Integer maxTeamSize;
 
-    @Min(value = 1, message = "Min team size must be at least 1")
+    @Min(value = 1, message = "Số lượng đội tối thiểu phải lớn hơn hoặc bằng 1.")
     private Integer minTeamSize;
 
     private String bannerUrl;

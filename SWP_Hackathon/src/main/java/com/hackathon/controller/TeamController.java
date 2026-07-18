@@ -148,14 +148,6 @@ public class TeamController {
         return ResponseEntity.ok(ApiResponse.success(response, "Xem thành viên chi tiết trong đội do 1 expert quản lý thành công"));
     }
 
-//    // Vỉew Team of Admin
-//    @GetMapping("/admin/members/{teamId}")
-//    public ResponseEntity<ApiResponse<List<TeamDetailResponse>>> getTeamForAdmin(
-//            @AuthenticationPrincipal CustomUserDetails userDetails) {
-//        List<TeamDetailResponse> response = teamService.getTeamForAdmin(userDetails);
-//        return ResponseEntity.ok(ApiResponse.success(response, "Admin xem danh sách các team tham gia cuộc thi thành công"));
-//    }
-
     // API dành riêng cho EXPERT - Xem team mình quản lý
     @GetMapping("/expert/my-member/{eventId}")
     @PreAuthorize("hasRole('EXPERT')")
@@ -166,7 +158,7 @@ public class TeamController {
         if (response.isEmpty()) {
             return ResponseEntity.ok(ApiResponse.success(response, "Bạn hiện chưa được phân công quản lý đội thi nào."));
         }
-        return ResponseEntity.ok(ApiResponse.success(response, "Expert xem danh sách đội của mình thành công"));
+        return ResponseEntity.ok(ApiResponse.success(response, "Chuyên gia xem danh sách đội của mình thành công"));
     }
 
 

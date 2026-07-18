@@ -47,10 +47,9 @@ public class GithubOAuthService {
             "^https?://github\\.com/([A-Za-z0-9-]+)/([A-Za-z0-9._-]+?)(?:\\.git)?/?$"
     );
 
-    /**
-     * Bước 1: Tạo URL để frontend redirect người dùng sang trang GitHub xin quyền.
-     * accountId của người đang đăng nhập được ký vào "state" để xác minh ở bước callback.
-     */
+    // Bước 1: Tạo URL để frontend redirect người dùng sang trang GitHub xin quyền.
+     //accountId của người đang đăng nhập được ký vào "state" để xác minh ở bước callback.
+
     public String buildAuthorizeUrl(CustomUserDetails userDetails) {
         if(userDetails == null){
             throw new BadRequestException("Bạn cần đăng nhập trước khi liên kết tài khoản Github");

@@ -26,6 +26,6 @@ public class HistoryUserController {
     public ResponseEntity<ApiResponse<ExpertHistoryResponse>> getHistoryExpert( @RequestParam(required = false) Integer accountId,
                                                                                  @AuthenticationPrincipal CustomUserDetails userDetails){
         ExpertHistoryResponse response = accountService.expertHistory(accountId, userDetails);
-        return ResponseEntity.ok(ApiResponse.success(response, "Xem lịch sử của Expert thành công"));
+        return ResponseEntity.ok(ApiResponse.success(response, "Xem lịch sử của chuyên gia thành công"));
     }
 }

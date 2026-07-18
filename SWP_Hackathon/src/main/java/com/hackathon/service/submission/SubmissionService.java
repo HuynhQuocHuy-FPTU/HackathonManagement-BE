@@ -38,6 +38,7 @@ public class SubmissionService {
     private final GithubOAuthService githubOAuthService;
     private final TeamRepository teamRepository;
     private final GitHubService gitHubService;
+    private final CategoryRoundRepository categoryRoundRepository;
 
     @Transactional
     public Submission createSubmission(Integer roundId, String gitHubUrl, CustomUserDetails userDetails, List<MultipartFile> files){
@@ -102,6 +103,10 @@ public class SubmissionService {
         Team team = teamRepository.findCurrentTeamByStudent(student.getStudentId(), TeamStatus.BUSY);
         if(team == null){
             throw new BadRequestException("Đội bạn chưa tham gia cuộc thi nào");
+        }
+        CategoryRound cateRound = categoryRoundRepository.findById(categoryRound).orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hạng mục - vòng thi"));
+        if(LocalDateTime.now().isBefore(cateRound.getRound().getAppealStartTime())){
+            return null;
         }
         Submission submission = submissionRepository.findFinalSubmission(categoryRound, team.getTeamId());
         System.out.println("bài nộp nè" + submission);

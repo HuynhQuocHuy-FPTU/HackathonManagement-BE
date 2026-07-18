@@ -5,7 +5,7 @@ import com.hackathon.dto.AuditLogResponse;
 import com.hackathon.dto.UserAdminResponse;
 import com.hackathon.dto.admin.InviteAccountRequest;
 import com.hackathon.dto.admin.UpdateAccountStatusRequest;
-import com.hackathon.dto.common.ApiResponse;
+import com.hackathon.exception.ApiResponse;
 import com.hackathon.service.AuditService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,8 +37,6 @@ public class AdminController {
         Page<AuditLogResponse> list = auditService.getAllAuditLog(pageable);
         return ResponseEntity.ok(list);
     }
-
-
     /**
      * API: Lấy danh sách toàn bộ người dùng
      * GET /api/admin/users

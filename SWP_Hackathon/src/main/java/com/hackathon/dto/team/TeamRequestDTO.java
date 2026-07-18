@@ -11,6 +11,6 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TeamRequestDTO {
-    @NotBlank(message = "StudentCode is required")
+    @NotBlank(message = "Mã số sing viên (StudentCode) là bắt buộc")
     private String studentCode;
 }

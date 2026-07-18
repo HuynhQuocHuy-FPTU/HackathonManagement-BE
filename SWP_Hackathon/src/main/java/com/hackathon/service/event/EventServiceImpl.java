@@ -400,7 +400,7 @@ public class EventServiceImpl implements EventService {
                 AuditAction.UPDATE_EVENT,
                 AuditEntityType.EVENT,
                 event.getEventId(),
-                "Deleted event permanently" + event.getEventName()
+                "Xóa cuộc thi vĩnh viễn" + event.getEventName()
         );
     }
 

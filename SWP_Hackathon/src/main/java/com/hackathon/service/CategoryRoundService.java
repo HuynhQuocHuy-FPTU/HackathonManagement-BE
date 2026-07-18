@@ -11,11 +11,9 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 @Service
 public interface CategoryRoundService {
-    public List<CategoryRound> createCategoryRound(List<Category> categories, Round round);
+     List<CategoryRound> createCategoryRound(List<Category> categories, Round round);
 
     void deleteByEventId(Integer eventId);
-
-    List<CategoryRoundResponseDTO> getAllCategory(Integer eventId);
 
     List<CategoryRoundResponseDTO> getAssignedCategoryRounds(CustomUserDetails userDetails, Integer eventId);
 

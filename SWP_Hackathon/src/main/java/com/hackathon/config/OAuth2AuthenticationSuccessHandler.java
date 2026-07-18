@@ -28,7 +28,6 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
                                         Authentication authentication) throws IOException, ServletException {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         String email = oAuth2User.getAttribute("email");
-        String name = oAuth2User.getAttribute("name");
         String picture = oAuth2User.getAttribute("picture");
 
         boolean exists = accountRepository.existsByEmail(email.trim());
@@ -47,7 +46,6 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
 
             return;
         }
-
 
         // 1. Tạo JWT Token từ email dựa trên logic JwtService hiện tại của bạn
         AuthResponse authResponse = authService.loginWithGoogle(email);

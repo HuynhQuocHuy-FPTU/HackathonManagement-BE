@@ -21,7 +21,6 @@ public interface RoundRepository extends JpaRepository<Round, Integer> {
 
     List<Round> findAllByHackathonEvent_EventId(Integer hackathonEventEventId);
 
-    List<Round> findByStatus(RoundStatus status);
     List<Round> findByStatusIn(List<RoundStatus> statuses);
 
     List<Round> findByStatusNot(RoundStatus status);
@@ -65,4 +64,5 @@ public interface RoundRepository extends JpaRepository<Round, Integer> {
                     "ORDER BY r.orderIndex DESC LIMIT 1"
     )
     Optional<Round> findFinalRoundByEventId(@Param("eventId") Integer eventId);
+
 }

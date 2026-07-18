@@ -58,7 +58,7 @@ public class EvaluationCriteriaServiceImpl implements EvaluationCriteriaService 
     }
 
     @Override
-    public List<EvaluationCriteriaResponseDTO> getEvaluationCirteriaResponse(Round round) {
+    public List<EvaluationCriteriaResponseDTO> getEvaluationCriteriaResponse(Round round) {
 
         if(round == null){
             return new ArrayList<>();

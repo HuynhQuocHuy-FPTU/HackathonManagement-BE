@@ -18,6 +18,7 @@ import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.AuditService;
 import com.hackathon.service.LuckyDrawResultService;
 import com.hackathon.service.NotificationService;
+import com.hackathon.service.RoundAdvancementService;
 import com.hackathon.validator.TeamRequestValidator;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +50,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
     private final LuckyDrawResultService luckyDrawResultService;
     private final ParticipantRepository participantRepository;
     private final TeamRequestValidator teamRequestValidator;
+    private final RoundAdvancementService roundAdvancementService;
 
     @Override
     @Transactional
@@ -70,12 +72,12 @@ public class TeamRequestServiceImpl implements TeamRequestService {
 
         if (account.getStudent() == null) {
             throw new BadRequestException(
-                    "Chỉ tài khoản student mới có thể phản hồi notification");
+                    "Chỉ tài khoản sinh viên mới có thể phản hồi thông báo");
         }
 
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new BadRequestException(
-                        "Không tìm thấy notification"));
+                        "Không tìm thấy thông báo"));
 
         teamRequestValidator.validateNotificationResponse(
                 notification, account);
@@ -87,7 +89,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
             case RANKING_DRAFT ->
                     buildAppealRequest(notification, account, command);
             default -> throw new BadRequestException(
-                    "Notification này không hỗ trợ tạo TeamRequest");
+                    "Thông báo này không hỗ trợ tạo TeamRequest");
         };
 
         teamRequest.setSourceNotification(notification);
@@ -114,7 +116,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                         && item.getTeamId() == notification.getTeam().getTeamId())
                 .findFirst()
                 .orElseThrow(() -> new BadRequestException(
-                        "Bạn không phải leader của team nhận kết quả bốc thăm"));
+                        "Bạn không phải leader của đội nhận kết quả bốc thăm"));
 
         teamRequestValidator.validateNoOpenRequest(
                 team, notification.getRound(),
@@ -156,7 +158,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         if (notification.getRound() != null
                 && !notification.getRound().getRoundId().equals(round.getRoundId())) {
             throw new BadRequestException(
-                    "Notification điểm không thuộc vòng thi này");
+                    "Thông báo điểm không thuộc vòng thi này");
         }
 
         Team team = account.getStudent().getTeamMembers().stream()
@@ -173,7 +175,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                                 .getRoundId().equals(round.getRoundId())))
                 .findFirst()
                 .orElseThrow(() -> new BadRequestException(
-                        "Bạn không phải leader của team tham gia vòng thi này"));
+                        "Bạn không phải leader của đội tham gia vòng thi này"));
 
         teamRequestValidator.validateNoOpenRequest(
                 team, round, RequestType.APPEAL);
@@ -273,7 +275,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                         expert.getExpertId());
 
         long acceptedRequest = teamRequestRepository.countByRound_RoundIdAndRequestTypeAndStatusAndExpertAssign_Expert_ExpertId(roundId,
-                RequestType.MENTOR_SUPPORT, RequestStatus.IN_REVIEW, expert.getExpertId());
+                RequestType.MENTOR_SUPPORT, RequestStatus.RESOLVED, expert.getExpertId());
 
         long rejectedRequest=   teamRequestRepository.countByRound_RoundIdAndRequestTypeAndStatusAndExpertAssign_Expert_ExpertId(roundId,
                 RequestType.MENTOR_SUPPORT, RequestStatus.REJECTED, expert.getExpertId());
@@ -314,7 +316,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
     public TeamRequestResponse acceptTeamRequest(String responseMessage, Integer requestId, CustomUserDetails userDetails) {
         Account account = userDetails.getAccount();
         Expert expert = expertRepository.findByAccount_AccountId(account.getAccountId())
-                .orElseThrow(() -> new BadRequestException("Bạn không phải là Expert vì vậy không được phép truy cập vào trình duyệt này."));
+                .orElseThrow(() -> new BadRequestException("Bạn không phải là Chuyên gia vì vậy không được phép truy cập vào trình duyệt này."));
         // Check expert có quản lý Team được gửi yêu cầu không
         TeamRequest teamRequest = teamRequestRepository.findById(requestId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy yêu cầu này"));
@@ -338,7 +340,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                 .findMentorByExpertIdAndCategoryRoundId(categoryRound.getCategoryRoundId(), expert.getExpertId())
                 .orElseThrow(() -> new BadRequestException("Bạn không phải là Mentor phụ trách đội thi này ở vòng đấu hiện tại."));
 
-        teamRequest.setStatus(RequestStatus.IN_REVIEW);
+        teamRequest.setStatus(RequestStatus.RESOLVED);
         teamRequest.setResponseAt(LocalDateTime.now());
         teamRequest.setExpertAssign(mySpecificAssign);
         teamRequest.setResponder(account);
@@ -348,7 +350,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                 AuditAction.MENTOR_ACCEPT_REQUEST,
                 AuditEntityType.TEAM,
                 teamRequest.getTeam().getTeamId(),
-                "Chấp nhận yêu câud hỗ trợ từ team thành công"
+                "Chấp nhận yêu cầu hỗ trợ từ team thành công"
         );
 
         if (responseMessage != null) {
@@ -580,6 +582,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         if (appealRequest.getStatus() != RequestStatus.IN_REVIEW) {
             throw new BadRequestException("Đơn khiếu nại này chưa hoàn thành quá trình  đánh giá lại từ giám khảo.");
         }
+
         appealRequest.setStatus(RequestStatus.RESOLVED);
         appealRequest.setResponseMessage(responseMessage != null ? responseMessage : "BTC đã chấp nhận đơn khiếu nại sau khi có sự thay đổi về điểm số.");
         appealRequest.setResponder(account);
@@ -605,8 +608,14 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                 AuditAction.ACCEPT_APPEAL_REQUEST,
                 AuditEntityType.TEAM_REQUEST,
                 appealRequest.getRequestId(),
-                "BTC đã chấp nhận yêu cầu khiếu nại của team"
+                "BTC đã xử lý yêu cầu khiếu nại của team"
         );
+        TeamParticipant teamParticipant = participantRepository.findByTeamId(appealRequest.getTeam().getTeamId());
+        //tính lại điểm và ranking cho category sao khi chấm điểm lại
+        roundAdvancementService.calculateScoresAndRanking(teamParticipant.getCategoryRound().getCategoryRoundId());
+        teamParticipant.setStatus(ParticipantStatus.ACTIVE);
+        participantRepository.save(teamParticipant);
+
         try {
             TeamRequest updated = teamRequestRepository.save(appealRequest);
 
@@ -703,7 +712,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                 AuditAction.REQUEST_RE_EVALUATION,
                 AuditEntityType.TEAM_REQUEST,
                 appealRequest.getRequestId(),
-                "BTC phê duyệt đơn phúc khảo và đã chuyển trạng thái đơn sang IN_REVIEW và gửi yêu cầu chấm lại cho ban giám khảo."
+                "BTC phê duyệt đơn phúc khảo và đã chuyển trạng thái đơn sang xem xét và gửi yêu cầu chấm lại cho ban giám khảo."
         );
         return toResponse(updated, null, null);
     }
@@ -717,7 +726,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
     ) {
         Account account = userDetails.getAccount();
         Expert expert = expertRepository.findByAccount_AccountId(account.getAccountId())
-                .orElseThrow(() -> new BadRequestException("Tài khoản này không phải là tài khoản của Expert, vì vậy bạn không được phép truy cập vào trình duyệt này."));
+                .orElseThrow(() -> new BadRequestException("Tài khoản này không phải là tài khoản của Chuyên gia, vì vậy bạn không được phép truy cập vào trình duyệt này."));
         //  Lấy tất cả đơn khiếu nại kết quả của vòng đấu này đang ở trạng thái INREVIEW
         List<TeamRequest> requests = teamRequestRepository
                 .findByRound_RoundIdAndRequestTypeAndStatus(
@@ -841,9 +850,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         };
     }
 
-    private TeamRequestResponse processDrawResultVerification(CustomUserDetails userDetails,
-                                                              TeamRequest teamRequest,
-                                                              ProcessTeamRequest command) {
+    private TeamRequestResponse processDrawResultVerification(CustomUserDetails userDetails, TeamRequest teamRequest,ProcessTeamRequest command) {
         Account account = userDetails.getAccount();
         eventCoordinatorRepository.findByAccount_AccountId(account.getAccountId())
                 .orElseThrow(() -> new BadRequestException(
@@ -935,7 +942,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
             case DRAW_RESULT_VERIFICATION ->
                     createDirectDrawVerification(team, command);
             default -> throw new BadRequestException(
-                    "Chỉ hỗ trợ APPEAL và DRAW_RESULT_VERIFICATION");
+                    "Chỉ hỗ trợ khiếu nại (APPEAL) và  xác thực kết quả (DRAW_RESULT_VERIFICATION)");
         };
     }
 
@@ -1034,7 +1041,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                         notificationType
                 )
                 .orElseThrow(() -> new BadRequestException(
-                        "Không tìm thấy notification kết quả ban đầu"));
+                        "Không tìm thấy thông báo kết quả ban đầu"));
 
         if (notification.getResponseDeadline() == null
                 || LocalDateTime.now().isAfter(notification.getResponseDeadline())) {
@@ -1060,8 +1067,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                         List.of(
                                 RequestStatus.PENDING,
                                 RequestStatus.IN_REVIEW,
-                                RequestStatus.PROCESSING
-                        ),
+                                RequestStatus.PROCESSING),
                         requestType
                 );
         if (hasOpenRequest) {

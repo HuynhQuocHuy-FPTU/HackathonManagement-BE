@@ -62,21 +62,19 @@ public class SecurityConfig {
 
                 // 2. TÍCH HỢP ĐĂNG NHẬP GOOGLE OAUTH2
                 .oauth2Login(oauth2 -> oauth2
-
                         .authorizationEndpoint(authorization -> authorization
                                 // Thêm dòng này để Spring lưu các param custom vào Session ngầm
                                 .authorizationRequestResolver(requestResolver)
                         )
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
-
                         .successHandler(oAuth2AuthenticationSuccessHandler)
                 )
-
                 .authorizeHttpRequests(auth -> auth
                         //các API công khai ai cũng vào được
                         .requestMatchers(
                                 "/api/account/**",
-                                "/api/account/login", "/api/account/resend-verification",
+                                "/api/account/login",
+                                "/api/account/resend-verification",
                                 "/api/notifications/**",
                                 "/error",
                                 "/verify-email",
@@ -117,12 +115,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/team-request/received").hasRole("EXPERT")
                         .requestMatchers(HttpMethod.PATCH, "/api/team-request/*/reject").hasRole("EXPERT")
                         .requestMatchers(HttpMethod.PATCH, "/api/team-request/*/accept").hasRole("EXPERT")
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/team-request/appeal/*/review-submissions"
-                        ).hasRole("EXPERT")
+                        .requestMatchers(HttpMethod.GET, "/api/team-request/appeal/*/review-submissions").hasRole("EXPERT")
                         .requestMatchers("/api/expert/assigments/**").hasRole("EXPERT")
-
 
                         //Chỉ event coordinator
                         // 1. tất cả các API thay đổi dữ liệu sự kiện (POST, PUT, DELETE, PATCH)
@@ -134,19 +128,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/export/**", "/api/dashboard/**")
                         .hasAnyRole("EVENTCOORDINATOR", "ADMIN")
 
-
                         // 2. các API xem danh sách sự kiện (GET)
-                        .requestMatchers("/api/events/trash", "/api/events/experts",
-                                "/api/events/all", "/api/events/search-all")
+                        .requestMatchers("/api/events/trash", "/api/events/experts", "/api/events/all", "/api/events/search-all")
                         .hasRole("EVENTCOORDINATOR")
                         .requestMatchers("/api/criteriaSet/**")
                         .hasRole("EVENTCOORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/api/round/*/participant/detail").hasRole("EVENTCOORDINATOR")
-
                         .requestMatchers(HttpMethod.PUT, "/api/participants/teams/disqualify/**").hasRole("EVENTCOORDINATOR")
                         .requestMatchers(HttpMethod.PUT, "/api/events/*/draw-results/**").hasRole("EVENTCOORDINATOR")
-
-
 
                         // Dành cho COORDINATOR (Quản lý duyệt đơn)
                         .requestMatchers(HttpMethod.GET, "/api/registrations/*/approveTeam-detail").hasRole("EVENTCOORDINATOR")
@@ -165,7 +154,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/roles/permissions").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/roles/permissions").hasRole("ADMIN")
-
                         .requestMatchers("/api/users/**").authenticated()
                         .anyRequest().authenticated()
                 )

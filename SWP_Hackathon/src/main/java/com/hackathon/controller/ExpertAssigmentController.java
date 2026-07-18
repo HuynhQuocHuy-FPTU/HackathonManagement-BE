@@ -1,24 +1,19 @@
 package com.hackathon.controller;
 
-import com.hackathon.dto.category.CategoryExpertAssignResponseDTO;
 import com.hackathon.dto.category.CategoryRoundDTO;
 import com.hackathon.dto.categoryRound.CategoryRoundResponseDTO;
 import com.hackathon.dto.event.EventDTO;
 import com.hackathon.dto.round.RoundDTO;
 import com.hackathon.dto.submission.SubmissionResponse;
-import com.hackathon.entity.Round;
 import com.hackathon.exception.ApiResponse;
-import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.RoundRepository;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.CategoryRoundService;
 import com.hackathon.service.ExpertAssignService;
 import com.hackathon.service.submission.SubmissionService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.repository.query.Param;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,7 +35,7 @@ public class ExpertAssigmentController {
     public ResponseEntity<ApiResponse<List<EventDTO>>> getEvents(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         List<EventDTO> list = expertAssignService.getEventForJudge(userDetails);
-        return ResponseEntity.ok(ApiResponse.success(list, "Lấy danh sách event thành công"));
+        return ResponseEntity.ok(ApiResponse.success(list, "Lấy danh sách cuộc thi thành công"));
     }
     //2. Lấy danh sách round thuộc event được phân công
     @GetMapping("/events/{eventId}/rounds")
@@ -48,7 +43,7 @@ public class ExpertAssigmentController {
             @PathVariable Integer eventId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         List<RoundDTO> list = expertAssignService.getRoundForJudge(userDetails, eventId);
-        return ResponseEntity.ok(ApiResponse.success(list, "Lấy danh sách round thuộc event thành công"));
+        return ResponseEntity.ok(ApiResponse.success(list, "Lấy danh sách vòng thi thuộc cuộc thi thành công"));
     }
     //3. Lấy danh sách category thuộc event được phân công
     @GetMapping("/rounds/{roundId}/categories")
@@ -56,7 +51,7 @@ public class ExpertAssigmentController {
             @PathVariable Integer roundId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         List<CategoryRoundDTO> list = expertAssignService.getCategoryRoundForJudge(userDetails, roundId);
-        return ResponseEntity.ok(ApiResponse.success(list, "Lấy danh sách category thuộc round thành công"));
+        return ResponseEntity.ok(ApiResponse.success(list, "Lấy danh sách hạng mục thuộc vòng thi thành công"));
     }
 
     //4. Lấy danh sách submission thuộc categoryRound được phân công
@@ -65,7 +60,7 @@ public class ExpertAssigmentController {
             @PathVariable Integer categoryRoundId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         List<SubmissionResponse> list = submissionService.getSubmissionForJudge(userDetails, categoryRoundId);
-        return ResponseEntity.ok(ApiResponse.success(list, "Lấy danh sách submission thuộc categoryRound thành công"));
+        return ResponseEntity.ok(ApiResponse.success(list, "Lấy danh sách bài nộp thuộc hạng mục của vòng đấu thành công"));
     }
 
     @GetMapping("/assigments/all-roles/{eventId}")

@@ -410,7 +410,8 @@ public class NotificationServiceImpl implements NotificationService {
                         Đã có kết quả xếp hạng cho vòng thi "%s" của cuộc thi "%s" 
                         Ban tổ chức đã cập nhật kết quả cuộc thi trên hệ thống WEB FPT HACKATHON.
                         %s
-                        Vui lòng kiểm tra chi tiết bảng xếp hạng tại mục kết quả của cuộc thi
+                        Vui lòng kiểm tra chi tiết bảng xếp hạng tại mục kết quả của cuộc thi.
+                        Ban tổ chức xin trân trọng và cảm ơn.!
                         
                         """,
                 round.getRoundName(),
@@ -472,7 +473,8 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void notifyExpertReEvaluation(Account actor, Set<Account> expertsToNotify, String teamName) {
         String title = "YÊU CẦU PHÚC KHẢO BÀI THI";
-        String message = "Ban tổ chức yêu cầu ban giám khảo xem lại và chấm lại điểm số cho bài dự thi của đội " + teamName;
+        String message = "Ban tổ chức yêu cầu ban giám khảo xem lại và chấm lại điểm số cho bài dự thi của đội " + teamName+
+                "Ban tổ chức xin trân trọng và cảm ơn.!";
         for (Account expertAccount : expertsToNotify) {
             createNotificationNoResponse(
                     expertAccount,

@@ -7,6 +7,6 @@ import lombok.Setter;
 @Setter
 public class PrizeRequestDTO {
     private Integer teamParticipantId;
-//    private String prizeReward; phần thưởng gồm dì
-    private String prizeTitle;
+    private String prizeReward; // phần thưởng gồm dì
+    private String prizeTitle;// tên giải thưởng
 }

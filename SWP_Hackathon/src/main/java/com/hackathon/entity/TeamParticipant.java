@@ -36,8 +36,12 @@ public class TeamParticipant {
     @Column(name = "Rank", nullable = true)
     private Integer rank;
 
+    @Column(name ="Title_Award", columnDefinition = "NVARCHAR(MAX)")
+    private String titleAward;
+
     @Column(name ="Award", columnDefinition = "NVARCHAR(MAX)")
     private String award;
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "Registration_Id")

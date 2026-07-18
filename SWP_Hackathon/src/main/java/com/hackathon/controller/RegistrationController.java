@@ -24,8 +24,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/registrations")
 public class RegistrationController {
-//    @Autowired
-//    private TeamService teamService;
+
     @Autowired
     private NotificationService notificationService;
     @Autowired

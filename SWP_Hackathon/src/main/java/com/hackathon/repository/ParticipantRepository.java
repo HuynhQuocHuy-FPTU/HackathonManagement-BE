@@ -29,16 +29,29 @@ public interface ParticipantRepository extends JpaRepository<TeamParticipant, In
 
     List<TeamParticipant> findByCategoryRound_CategoryRoundId(int categoryRoundId);
 
+    List<TeamParticipant> findAllByRegistration_HackathonEvent_EventIdAndCategoryRoundIsNotNull(
+            Integer eventId
+    );
+
     boolean existsByRegistration_Team_TeamIdInAndCategoryRound_Round_RoundId(Collection<Integer> registrationTeamTeamIds, Integer categoryRoundRoundRoundId);
 
     @Query("""
             SELECT tp
             FROM TeamParticipant tp
             WHERE tp.categoryRound.round.roundId = :roundId
+            ORDER BY tp.rank ASC
             """)
     List<TeamParticipant> findByRoundId(Integer roundId);
 
     List<TeamParticipant> findAllByRegistration_HackathonEvent_EventIdAndCategoryRoundIsNotNull(
             Integer eventId
     );
+    @Query("SELECT tp FROM TeamParticipant tp " +
+            "JOIN tp.registration r " +
+            "JOIN r.team t " +
+            "WHERE t.teamId = :teamId " +
+            "AND r.status = RegistrationStatus.APPROVED " +
+            "AND tp.status = ParticipantStatus.RE_EVALUATING"
+            )
+    TeamParticipant findByTeamId(@Param("teamId") Integer teamId);
 }

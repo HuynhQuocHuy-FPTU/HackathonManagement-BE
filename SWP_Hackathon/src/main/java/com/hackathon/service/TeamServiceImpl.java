@@ -243,6 +243,8 @@ public class TeamServiceImpl implements TeamService {
         }
         List<TeamMember> leaderTeams = teamMemberRepository.findByStudent(leaderAcc.getStudent());
 
+
+        // check có đnag là leader của team chưa kt ko
         TeamMember currentLeaderRole = null;
         for (TeamMember tm : leaderTeams) {
             if (tm.getTeam().getStatus() != TeamStatus.FINISHED && Boolean.TRUE.equals(tm.getIsLeader())) {
@@ -257,10 +259,6 @@ public class TeamServiceImpl implements TeamService {
 
         //2.
         Team team = currentLeaderRole.getTeam();
-        if (team.getStatus() == TeamStatus.FINISHED) {
-            throw new BadRequestException("Đội hình này đã kết thúc vòng đời thi đấu, không thể mời thêm!");
-        }
-
         this.checkEventRegistrationWindow(team);
 
         // 3.  Check duplicate member and loc email
@@ -1244,7 +1242,7 @@ public class TeamServiceImpl implements TeamService {
                     .toList();
 
             if (categoryRoundId.isEmpty()) {
-                throw new BadRequestException("Tài khoản Expert của bạn chưa được phân công vai trò MENTOR cho hạng mục nào.");
+                throw new BadRequestException("Tài khoản Chuyên gia của bạn chưa được phân công vai trò MENTOR cho hạng mục nào.");
             }
              System.out.println("CategoryRoundIds = " + categoryRoundId);
              System.out.println("EventId = " + eventId);
@@ -1297,9 +1295,6 @@ public class TeamServiceImpl implements TeamService {
         }
         return list;
     }
-
-
-
 
 }
 

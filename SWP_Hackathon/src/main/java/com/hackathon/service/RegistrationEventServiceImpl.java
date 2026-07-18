@@ -2,7 +2,6 @@ package com.hackathon.service;
 
 import com.hackathon.dto.TeamSelectionDTO;
 import com.hackathon.dto.registration.RegistrationResponse;
-import com.hackathon.dto.team.TeamResponse;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.*;
 import com.hackathon.exception.BadRequestException;
@@ -38,7 +37,7 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin về sự kiện này."));
 
         if(event.getStatus() == EventStatus.DRAFT){
-            throw new BadRequestException("Không tìm thấy thông tin về sự kiện này.");
+            throw new BadRequestException("Sự kiện chưa được công bố không thể đăng ký cuộc thi.");
         }
         if (LocalDateTime.now().isAfter(event.getRegistrationDeadline())) {
             throw new BadRequestException("Đã quá hạn đăng ký tham gia cuộc thi này!");
@@ -75,7 +74,6 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
                 reg.setRegistrationDate(LocalDateTime.now());
 
                 registrationRepository.save(reg);
-
                 team.setStatus(TeamStatus.PENDING);
                 teamRepository.save(team);
 
