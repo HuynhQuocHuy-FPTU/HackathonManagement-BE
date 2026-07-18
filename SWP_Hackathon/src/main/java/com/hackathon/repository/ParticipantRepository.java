@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
 import java.util.List;
@@ -28,6 +29,10 @@ public interface ParticipantRepository extends JpaRepository<TeamParticipant, In
 
     List<TeamParticipant> findByCategoryRound_CategoryRoundId(int categoryRoundId);
 
+    List<TeamParticipant> findAllByRegistration_HackathonEvent_EventIdAndCategoryRoundIsNotNull(
+            Integer eventId
+    );
+
     boolean existsByRegistration_Team_TeamIdInAndCategoryRound_Round_RoundId(Collection<Integer> registrationTeamTeamIds, Integer categoryRoundRoundRoundId);
 
     @Query("""
@@ -36,4 +41,12 @@ public interface ParticipantRepository extends JpaRepository<TeamParticipant, In
             WHERE tp.categoryRound.round.roundId = :roundId
             """)
     List<TeamParticipant> findByRoundId(Integer roundId);
+    @Query("SELECT tp FROM TeamParticipant tp " +
+            "JOIN tp.registration r " +
+            "JOIN r.team t " +
+            "WHERE t.teamId = :teamId " +
+            "AND r.status = RegistrationStatus.APPROVED " +
+            "AND tp.status = ParticipantStatus.RE_EVALUATING"
+            )
+    TeamParticipant findByTeamId(@Param("teamId") Integer teamId);
 }

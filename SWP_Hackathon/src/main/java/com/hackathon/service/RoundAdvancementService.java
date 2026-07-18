@@ -57,7 +57,7 @@ public class RoundAdvancementService {
                 .toList();
     }
 
-    // Scheduler gọi sau khi hết thời gian nộp bài.
+    // Scheduler gọi sau khi hết thời gian đánh gia.
     @Transactional
     public void calculateRoundScoresAutomatically(Integer roundId) {
         Round round = roundRepository.findByIdForAdvancement(roundId)
@@ -81,8 +81,7 @@ public class RoundAdvancementService {
             }
         }
 
-        boolean hasTeamWithoutScore = getParticipantsInRound(round).stream()
-                .anyMatch(participant -> participant.getTotalScore() == null);
+        boolean hasTeamWithoutScore = getParticipantsInRound(round).stream().flatMap(teamParticipant -> evaluationRepository.findBySubmission_TeamParticipant(teamParticipant).stream()).anyMatch(evaluation -> evaluation.getStatus() != EvaluationStatus.GRADED && evaluation.getStatus() != EvaluationStatus.RE_EVALUATED);
 
         if (hasTeamWithoutScore) {
             throw new BadRequestException(
@@ -112,8 +111,7 @@ public class RoundAdvancementService {
         List<Evaluation> gradedEvaluations = evaluationRepository
                 .findBySubmission_TeamParticipant(participant)
                 .stream()
-                .filter(evaluation -> evaluation.getStatus() == EvaluationStatus.GRADED
-                        || evaluation.getStatus() == EvaluationStatus.RE_EVALUATED
+                .filter(evaluation -> evaluation.getStatus() == EvaluationStatus.GRADED || evaluation.getStatus() == EvaluationStatus.RE_EVALUATED
                 )
                 .toList();
 
@@ -146,7 +144,7 @@ public class RoundAdvancementService {
         );
     }
 
-    private List<TeamParticipant> calculateRanking(
+    public List<TeamParticipant> calculateRanking(
             List<TeamParticipant> participants
     ) {
         participants.sort(
