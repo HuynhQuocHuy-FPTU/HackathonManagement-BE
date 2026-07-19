@@ -85,7 +85,8 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/api/events/public/**",
                                 "/api/github/**",
-                                "/api/ranking/rounds/*/topN"
+                                "/api/ranking/rounds/*/topN",
+                                "/api/analytics/**"
                         ).permitAll()
 
                         // all
