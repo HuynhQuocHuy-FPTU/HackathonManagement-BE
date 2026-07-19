@@ -249,7 +249,21 @@ public class GradingServiceImpl implements GradingService {
 
         evaluation.setScore(calculatedTotalScore);
         evaluation.setComment(request.getComment());
-        evaluation.setStatus(EvaluationStatus.GRADED); // Chuyển dịch trạng thái thực thể sang Đã chấm điểm
+
+        // THUẬT TOÁN KIỂM TRA ĐỘ HOÀN THIỆN ĐỂ CHUYỂN TRẠNG THÁI
+        // Đếm tổng số tiêu chí cấu hình cho Vòng thi này
+        int totalCriteriaInRound = roundCriteria.size();
+
+        // Đếm số tiêu chí thực tế mà giám khảo đã nhập điểm và lưu vào DB
+        int gradedCriteriaCount = evaluation.getEvaluationDetails().size();
+
+        if (gradedCriteriaCount == totalCriteriaInRound) {
+            // Đã chấm đủ 100% tiêu chí của tất cả các phần -> Chuyển thành ĐÃ CHẤM XONG
+            evaluation.setStatus(EvaluationStatus.GRADED);
+        } else {
+            // Mới chấm 1 phần (số lượng tiêu chí đã chấm < tổng số tiêu chí) -> ĐANG CHẤM
+            evaluation.setStatus(EvaluationStatus.PARTIALLY_GRADED);
+        }
 
         // 11. ĐẨY DỮ LIỆU XUỐNG DB & KÍCH HOẠT LƯU VẾT HỆ THỐNG (Audit Service Log)
         evaluation = evaluationRepository.save(evaluation);
