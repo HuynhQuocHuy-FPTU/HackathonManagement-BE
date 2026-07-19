@@ -786,7 +786,11 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                         for (EvaluationDetail detail : evaluation.getEvaluationDetails()) {
                             EvaluationDetailResponse detailResponse = EvaluationDetailResponse.builder()
                                     .evaluationDetailId(detail.getId())
+                                    .criteriaName(detail.getEvaluationCriteria().getCriteriaName())
                                     .score(detail.getScore())
+                                    .criteriaType(detail.getEvaluationCriteria().getType())
+                                    .weight(detail.getEvaluationCriteria().getWeight())
+                                    .criteriaDescription(detail.getEvaluationCriteria().getDescription())
                                     .comment(detail.getComment()).build();
                             detailResponseList.add(detailResponse);
                         }

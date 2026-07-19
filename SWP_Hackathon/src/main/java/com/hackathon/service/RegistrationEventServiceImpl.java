@@ -152,6 +152,13 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
         return pendingList;
     }
 
+    @Override
+    public List<TeamSelectionDTO> getAllTeamRegistrations(Integer evenId) {
+        List<Registration> registrations =  registrationRepository.findAll();
+        return registrations.stream().map(reg -> new TeamSelectionDTO(reg.getRegistrationId(), reg.getTeam().getTeamName())).toList();
+    }
+
+
     //Coordinator duyệt Registration — chuyển trạng thái sang APPROVED.
     @Override
     @Transactional

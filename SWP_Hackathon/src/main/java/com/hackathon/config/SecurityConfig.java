@@ -114,6 +114,7 @@ public class SecurityConfig {
 
                         // TeamRequest - EXPERT
                         .requestMatchers(HttpMethod.GET, "/api/team-request/received").hasRole("EXPERT")
+                        .requestMatchers(HttpMethod.GET, "/api/events/all").hasAnyRole("EXPERT", "EVENTCOORDINATOR")
                         .requestMatchers(HttpMethod.PATCH, "/api/team-request/*/reject").hasRole("EXPERT")
                         .requestMatchers(HttpMethod.PATCH, "/api/team-request/*/accept").hasRole("EXPERT")
                         .requestMatchers(HttpMethod.GET, "/api/team-request/appeal/*/review-submissions").hasRole("EXPERT")
