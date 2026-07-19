@@ -2,20 +2,17 @@ package com.hackathon.service.prize;
 
 import com.hackathon.dto.event.Prize;
 import com.hackathon.dto.event.PrizeRequestDTO;
-import com.hackathon.entity.EventCoordinator;
-import com.hackathon.entity.HackathonEvent;
-import com.hackathon.entity.Round;
-import com.hackathon.entity.TeamParticipant;
+import com.hackathon.dto.event.PrizeResponseDTO;
+import com.hackathon.entity.*;
 import com.hackathon.exception.BadRequestException;
-import com.hackathon.repository.EventCoordinatorRepository;
-import com.hackathon.repository.HackathonEventRepository;
-import com.hackathon.repository.ParticipantRepository;
-import com.hackathon.repository.RoundRepository;
+import com.hackathon.repository.*;
 import com.hackathon.security.CustomUserDetails;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.formula.functions.T;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -24,6 +21,9 @@ public class PrizeServiceImpl {
     private final EventCoordinatorRepository eventCoordinatorRepository;
     private final RoundRepository roundRepository;
     private final ParticipantRepository participantRepository;
+    private final HackathonEventRepository hackathonEventRepository;
+    private final StudentRepository studentRepository;
+
 
     @Transactional
     public void assignPrize(CustomUserDetails userDetails, Integer eventId, List<PrizeRequestDTO> request) {
@@ -72,6 +72,75 @@ public class PrizeServiceImpl {
 
         }
 
+    }
+
+    public PrizeResponseDTO getPrize(CustomUserDetails userDetails, Integer eventId) {
+        Account account = userDetails.getAccount();
+        Student student = studentRepository.findByAccount_AccountId(userDetails.getAccount().getAccountId())
+                .orElseThrow(() -> new BadRequestException("Bạn không phải là sinh viên."));
+        // Tìm round chung kết để lấy giải thưởng
+        Round finalRound = roundRepository.findFinalRoundByEventId(eventId)
+                .orElseThrow(() -> new BadRequestException("Không tìm vòng thi."));
+        HackathonEvent event = hackathonEventRepository.findById(eventId)
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy sự kiện"));
+        List<Prize> prizeList = finalRound.getHackathonEvent().getDescription().prizes();
+        TeamParticipant participant = participantRepository
+                .findByRoundId(finalRound.getRoundId()).stream()
+                .filter(tp -> tp.getRegistration().getTeam().getTeamMembers().stream()
+                        .anyMatch(member -> member.getStudent().getStudentId()
+                                == student.getStudentId()))
+                .findFirst()
+                .orElseThrow(() -> new BadRequestException("Bạn không thuộc đội tham gia sự kiện này."));
+        // Lấy giải thưởng từ round cuối ra
+        PrizeResponseDTO prizeResponseDTO = new PrizeResponseDTO();
+        prizeResponseDTO.setEventId(eventId);
+        prizeResponseDTO.setEventName(event.getEventName());
+        prizeResponseDTO.setRoundId(finalRound.getRoundId());
+        prizeResponseDTO.setRoundName(finalRound.getRoundName());
+
+        String name = participant.getRegistration().getTeam().getTeamName();
+        prizeResponseDTO.setPrizeReward(participant.getAward());
+        prizeResponseDTO.setPrizeTitle(participant.getTitleAward());
+        prizeResponseDTO.setRanking(participant.getRank());
+        prizeResponseDTO.setTeamParticipantId(participant.getId());
+        prizeResponseDTO.setTeamName(name);
+        return prizeResponseDTO;
+
+    }
+
+    public List<PrizeResponseDTO> getPrizeForCoordinator(CustomUserDetails userDetails, Integer eventId) {
+        EventCoordinator eventCoordinator = eventCoordinatorRepository.findByAccount_AccountId(userDetails.getAccount().getAccountId())
+                .orElseThrow(() -> new BadRequestException("Bạn không phải là ban tổ chức."));
+        // Tìm round chung kết để lấy giải thưởng
+        Round finalRound = roundRepository.findFinalRoundByEventId(eventId)
+                .orElseThrow(() -> new BadRequestException("Không tìm vòng thi."));
+        HackathonEvent event = hackathonEventRepository.findById(eventId)
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy sự kiện"));
+        List<TeamParticipant> participants = participantRepository.findByRoundId(finalRound.getRoundId());
+
+        List<PrizeResponseDTO> result = new ArrayList<>();
+        for (TeamParticipant participant : participants) {
+
+            if (participant.getAward() == null && participant.getTitleAward() == null) {
+                continue;
+            }
+            // Lấy giải thưởng từ round cuối ra
+            PrizeResponseDTO prizeResponseDTO = new PrizeResponseDTO();
+            prizeResponseDTO.setEventId(eventId);
+            prizeResponseDTO.setEventName(event.getEventName());
+            prizeResponseDTO.setRoundId(finalRound.getRoundId());
+            prizeResponseDTO.setRoundName(finalRound.getRoundName());
+
+            String name = participant.getRegistration().getTeam().getTeamName();
+            prizeResponseDTO.setPrizeReward(participant.getAward());
+            prizeResponseDTO.setPrizeTitle(participant.getTitleAward());
+            prizeResponseDTO.setRanking(participant.getRank());
+            prizeResponseDTO.setTeamParticipantId(participant.getId());
+            prizeResponseDTO.setTeamName(name);
+            result.add(prizeResponseDTO);
+
+        }
+        return result;
     }
 
     private String appendValue(String current, String newValue) {
