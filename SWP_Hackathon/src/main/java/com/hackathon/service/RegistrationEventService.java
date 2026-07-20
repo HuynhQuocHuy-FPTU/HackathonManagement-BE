@@ -1,6 +1,7 @@
 package com.hackathon.service;
 
 import com.hackathon.dto.TeamSelectionDTO;
+import com.hackathon.dto.registration.CountRegistrationDTO;
 import com.hackathon.dto.registration.RegistrationResponse;
 import com.hackathon.dto.team.TeamResponse;
 import com.hackathon.entity.Registration;
@@ -15,6 +16,8 @@ public interface RegistrationEventService {
     Registration rejectRegistration(Integer registrationId,String reason);
 
     List<TeamSelectionDTO> getApprovedRegistrations(Integer eventId);
+
+    public CountRegistrationDTO getCountRegistrations(Integer eventId);
 
     List<Registration> getRegistrationsToCancelled(Integer eventId);
     public void transferStatusToRejectd(List<Registration> registrations);

@@ -1,6 +1,7 @@
 package com.hackathon.service;
 
 import com.hackathon.dto.TeamSelectionDTO;
+import com.hackathon.dto.registration.CountRegistrationDTO;
 import com.hackathon.dto.registration.RegistrationResponse;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.*;
@@ -329,6 +330,18 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
         //2. Map sang DTO
         return registrations.stream().map(reg -> new TeamSelectionDTO(reg.getRegistrationId(), reg.getTeam().getTeamName())).toList();
     }
+
+    @Override
+    public CountRegistrationDTO getCountRegistrations(Integer eventId) {
+        Integer countApproved = registrationRepository.countRegistration(RegistrationStatus.APPROVED);
+
+        Integer countRejected = registrationRepository.countRegistration(RegistrationStatus.REJECTED);
+
+        Integer countPending = registrationRepository.countRegistration(RegistrationStatus.PENDING);
+
+        return CountRegistrationDTO.builder().countApproved(countApproved).countReject(countRejected).countPending(countPending).build();
+    }
+
 
     @Override
     public List<Registration> getRegistrationsToCancelled(Integer eventId) {

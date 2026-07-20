@@ -57,38 +57,7 @@ public class SubmissionValidator {
         if (round.getMaxFileCount() != null && files.size() > round.getMaxFileCount()) {
             throw new BadRequestException("Mỗi lần nộp không được vượt quá " + round.getMaxFileCount() + " file.");
         }
-
-        // 2. Kiểm tra từng file
-        long totalSize = 0;
-        for (MultipartFile file : files) {
-            validateFile(file, round.getAllowedFileType(), round.getMaxTotalSizeMb());
-            totalSize += file.getSize();
-        }
-
-        // 3. Kiểm tra tổng dung lượng
-        if (round.getMaxTotalSizeMb() != null && (totalSize / (1024 * 1024)) > round.getMaxTotalSizeMb()) {
-            throw new ApiException(HttpStatus.PAYLOAD_TOO_LARGE,
-                    "Tổng dung lượng các file vượt quá giới hạn " + round.getMaxTotalSizeMb() + "MB");
-        }
     }
 
 
-    private void validateFile(MultipartFile file, List<FileType> allowedTypes, Integer maxSizeMb) {
-        // Kiểm tra loại file
-        String fileName = file.getOriginalFilename(); // Phải dùng getOriginalFilename() thay vì getName()
-        String extension = (fileName != null && fileName.contains("."))
-                ? fileName.substring(fileName.lastIndexOf(".") + 1).toUpperCase() : "";
-
-        boolean isAllowed = allowedTypes.stream().anyMatch(type -> type.name().equalsIgnoreCase(extension));
-        if (!isAllowed) {
-            throw new BadRequestException("Loại file không được hỗ trợ: " + extension +
-                    ". Các loại file được phép là: " + allowedTypes);
-        }
-
-        // Kiểm tra dung lượng file lẻ
-        long fileSizeInMB = file.getSize() / (1024 * 1024);
-        if (fileSizeInMB > maxSizeMb) {
-            throw new ApiException(HttpStatus.PAYLOAD_TOO_LARGE, "File " + fileName + " vượt quá giới hạn " + maxSizeMb + "MB");
-        }
-    }
 }

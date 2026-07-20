@@ -1,6 +1,7 @@
 package com.hackathon.controller;
 
 import com.hackathon.dto.TeamSelectionDTO;
+import com.hackathon.dto.registration.CountRegistrationDTO;
 import com.hackathon.dto.registration.RegistrationResponse;
 import com.hackathon.dto.team.CreateTeamRequest;
 import com.hackathon.dto.team.InviteTeamRequest;
@@ -124,6 +125,11 @@ public class RegistrationController {
                         "Chi tiết đăng ký"
                 )
         );
+    }
+
+    @GetMapping("{eventId}/count-registration")
+    public ResponseEntity<ApiResponse<CountRegistrationDTO>> getCountRegistration(@PathVariable Integer eventId){
+        return ResponseEntity.ok(ApiResponse.success(registrationEventService.getCountRegistrations(eventId), ""));
     }
 
 

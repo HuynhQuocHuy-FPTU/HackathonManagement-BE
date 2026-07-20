@@ -70,9 +70,6 @@ public class Round {
     @Column(name = "Max_File_Count", nullable = true)
     private Integer maxFileCount;
 
-    @Column(name = "Max_Total_Size_Mb", nullable = true)
-    private Integer maxTotalSizeMb;
-
     @Column(nullable = true)
     @Enumerated(EnumType.STRING)
     private RoundStatus status;
