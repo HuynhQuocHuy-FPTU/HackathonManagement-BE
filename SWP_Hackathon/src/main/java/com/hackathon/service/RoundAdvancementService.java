@@ -73,20 +73,29 @@ public class RoundAdvancementService {
             throw new BadRequestException("Round chưa có category nào.");
         }
 
+        boolean hasTeamWithoutScore = getParticipantsInRound(round).stream()
+                .anyMatch(teamParticipant -> evaluationRepository
+                        .findBySubmission_TeamParticipant(teamParticipant)
+                        .stream()
+                        .noneMatch(evaluation ->
+                                (evaluation.getStatus() == EvaluationStatus.GRADED
+                                        || evaluation.getStatus()
+                                        == EvaluationStatus.RE_EVALUATED)
+                                        && evaluation.getScore() != null
+                        ));
+
+        if (hasTeamWithoutScore) {
+            throw new BadRequestException(
+                    "Vẫn còn đội chưa có evaluation hợp lệ, hệ thống sẽ thử tính lại sau."
+            );
+        }
+
         if (isRoundFinal(round)) {
             calculateScoresAndRanking(categoryRounds.get(0).getCategoryRoundId());
         } else {
             for (CategoryRound categoryRound : categoryRounds) {
                 calculateScoresAndRanking(categoryRound.getCategoryRoundId());
             }
-        }
-
-        boolean hasTeamWithoutScore = getParticipantsInRound(round).stream().flatMap(teamParticipant -> evaluationRepository.findBySubmission_TeamParticipant(teamParticipant).stream()).anyMatch(evaluation -> evaluation.getStatus() != EvaluationStatus.GRADED && evaluation.getStatus() != EvaluationStatus.RE_EVALUATED);
-
-        if (hasTeamWithoutScore) {
-            throw new BadRequestException(
-                    "Vẫn còn đội chưa có điểm, hệ thống sẽ thử tính lại sau."
-            );
         }
 
         round.setScoringProcessedAt(LocalDateTime.now());

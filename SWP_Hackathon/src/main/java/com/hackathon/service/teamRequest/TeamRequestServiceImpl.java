@@ -51,6 +51,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
     private final ParticipantRepository participantRepository;
     private final TeamRequestValidator teamRequestValidator;
     private final RoundAdvancementService roundAdvancementService;
+    private final EvaluationDetailRepository evaluationDetailRepository;
 
     @Override
     @Transactional
@@ -694,7 +695,14 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         for (Evaluation evaluation : evaluationsToUpdate) {
             evaluation.setStatus(EvaluationStatus.RE_EVALUATION);
             expertsToNotify.add(evaluation.getExpertAssign().getExpert().getAccount());
+//            List<EvaluationDetail> evaluationDetails = evaluationDetailRepository.findByEvaluation_EvaluationId(evaluation.getEvaluationId());
+//            for(EvaluationDetail evaluationDetail : evaluationDetails){
+//                evaluationDetail.setOriginalScore(evaluationDetail.getScore());
+////                evaluationDetail.setScore(null);
+//            }
+//            evaluationDetailRepository.saveAll(evaluationDetails);
         }
+
 
         evaluationRepository.saveAll(evaluationsToUpdate);
 
@@ -877,13 +885,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                     throw new BadRequestException(
                             "Chỉ có thể cập nhật kết quả khi yêu cầu đang chờ hoặc đang xem xét");
                 }
-                teamRequestValidator.validateDrawResultUpdate(
-                        teamRequest, command);
-                luckyDrawResultService.updateDrawResults(
-                        command.getEventId(),
-                        command.getDrawResults(),
-                        userDetails
-                );
                 teamRequest.setStatus(RequestStatus.IN_REVIEW);
             }
             case RESOLVE -> {
@@ -942,16 +943,20 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                         "Bạn không phải leader của team đang tham gia"));
 
         return switch (command.getRequestType()) {
-            case APPEAL -> createDirectAppeal(team, command);
+            case APPEAL -> createDirectAppeal(
+                    team, account.getAccountId(), command);
             case DRAW_RESULT_VERIFICATION ->
-                    createDirectDrawVerification(team, command);
+                    createDirectDrawVerification(
+                            team, account.getAccountId(), command);
             default -> throw new BadRequestException(
                     "Chỉ hỗ trợ khiếu nại (APPEAL) và  xác thực kết quả (DRAW_RESULT_VERIFICATION)");
         };
     }
 
     private TeamRequestResponse createDirectAppeal(
-            Team team, CreateDirectTeamRequest command) {
+            Team team,
+            Integer leaderAccountId,
+            CreateDirectTeamRequest command) {
         if (command.getRoundId() == null) {
             throw new BadRequestException(
                     "Round id không được để trống khi khiếu nại điểm");
@@ -975,7 +980,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         }
 
         Notification sourceNotification = findInitialResultNotification(
-                team, round, RequestType.APPEAL);
+                leaderAccountId, round, RequestType.APPEAL);
 
         return saveDirectRequest(
                 team,
@@ -987,7 +992,9 @@ public class TeamRequestServiceImpl implements TeamRequestService {
     }
 
     private TeamRequestResponse createDirectDrawVerification(
-            Team team, CreateDirectTeamRequest command) {
+            Team team,
+            Integer leaderAccountId,
+            CreateDirectTeamRequest command) {
         if (command.getEventId() == null) {
             throw new BadRequestException(
                     "Event id không được để trống khi xác thực kết quả bốc thăm");
@@ -1008,7 +1015,8 @@ public class TeamRequestServiceImpl implements TeamRequestService {
 
         Round round = participant.getCategoryRound().getRound();
         Notification sourceNotification = findInitialResultNotification(
-                team, round, RequestType.DRAW_RESULT_VERIFICATION);
+                leaderAccountId, round,
+                RequestType.DRAW_RESULT_VERIFICATION);
 
         return saveDirectRequest(
                 team,
@@ -1020,7 +1028,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
     }
 
     private Notification findInitialResultNotification(
-            Team team,
+            Integer leaderAccountId,
             Round round,
             RequestType requestType
     ) {
@@ -1029,18 +1037,8 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                         ? NotificationType.RANKING_DRAFT
                         : NotificationType.ASSIGNED_CATEGORY;
 
-        Account leaderAccount = team.getTeamMembers().stream()
-                .filter(TeamMember::getIsLeader)
-                .map(TeamMember::getStudent)
-                .map(Student::getAccount)
-                .findFirst()
-                .orElseThrow(() -> new BadRequestException(
-                        "Không tìm thấy leader của team"));
-
-        Notification notification = notificationRepository
-                .findFirstByAccount_AccountIdAndTeam_TeamIdAndRound_RoundIdAndTypeOrderByCreatedAtAsc(
-                        leaderAccount.getAccountId(),
-                        team.getTeamId(),
+        Notification notification = notificationRepository.findFirstByAccount_AccountIdAndRound_RoundIdAndTypeOrderByCreatedAtAsc(
+                        leaderAccountId,
                         round.getRoundId(),
                         notificationType
                 )

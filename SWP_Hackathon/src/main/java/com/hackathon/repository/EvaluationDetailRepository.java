@@ -96,4 +96,6 @@ public interface EvaluationDetailRepository  extends JpaRepository<EvaluationDet
         AND e.status IN ('GRADED', 'RE_EVALUATED')
     """)
     List<RawScoreDTO> fetchRawScoresBySubmissionId(@Param("submissionId") Integer submissionId);
+
+
 }

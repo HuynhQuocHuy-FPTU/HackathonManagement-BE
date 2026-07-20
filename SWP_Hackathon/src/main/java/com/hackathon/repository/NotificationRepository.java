@@ -25,9 +25,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     List<Notification> findByAccount_AccountIdAndTypeOrderByCreatedAtDesc(Integer accountId, NotificationType type);
 
     Optional<Notification>
-    findFirstByAccount_AccountIdAndTeam_TeamIdAndRound_RoundIdAndTypeOrderByCreatedAtAsc(
+    findFirstByAccount_AccountIdAndRound_RoundIdAndTypeOrderByCreatedAtAsc(
             Integer accountId,
-            Integer teamId,
             Integer roundId,
             NotificationType type
     );

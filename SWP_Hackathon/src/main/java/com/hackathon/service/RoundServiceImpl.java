@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -282,11 +283,24 @@ public class RoundServiceImpl implements RoundService{
 
         roundValidator.validateTimeRound(round, updateTimeRoundRequest);
 
+        LocalDateTime oldEvaluationDeadline = round.getEvaluationDeadline();
+        LocalDateTime newEvaluationDeadline =
+                updateTimeRoundRequest.getEvaluationDeadline();
+        boolean isEvaluationDeadlineChanged =
+                oldEvaluationDeadline != null
+                        && newEvaluationDeadline != null
+                        && !newEvaluationDeadline.equals(oldEvaluationDeadline);
+
         round.setStartTime(updateTimeRoundRequest.getStartDate());
         round.setEndTime(updateTimeRoundRequest.getEndDate());
         round.setSubmissionDeadline(updateTimeRoundRequest.getSubmissionDeadline());
-        round.setEvaluationDeadline(updateTimeRoundRequest.getEvaluationDeadline());
+        round.setEvaluationDeadline(newEvaluationDeadline);
         round.setResolveAppealDeadline(updateTimeRoundRequest.getResolveAppealDeadline());
+
+        if (isEvaluationDeadlineChanged) {
+            round.setScoringProcessedAt(null);
+        }
+
         roundRepository.save(round);
     }
 

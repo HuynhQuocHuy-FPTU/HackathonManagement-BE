@@ -181,6 +181,8 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
                 .orElseThrow(() -> new BadRequestException(
                         "Không tìm thấy event của Registration"));
 
+        validateWorkshopHasNotStarted(event);
+
         Integer maxTeam = event.getMaxTeam();
         if (maxTeam == null || maxTeam < 1) {
             throw new BadRequestException(
@@ -215,6 +217,7 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
 
         //cập nhật trạng thái của team
         team.setStatus(TeamStatus.BUSY);
+        teamRepository.save(team);
 
         //tạo participant lưu các team đã được approve trước
         participantService.saveParticipant(registration);
@@ -233,6 +236,21 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
         Account leaderAccount = leader.getStudent().getAccount();
         notificationService.notifyRegistrationApproved(account, leaderAccount, registration.getTeam().getTeamName(), registration.getHackathonEvent().getEventName());
         return registration;
+    }
+
+    private void validateWorkshopHasNotStarted(HackathonEvent event) {
+        if (event.getWorkshopTime() == null) {
+            throw new BadRequestException(
+                    "Event chưa cấu hình thời gian workshop"
+            );
+        }
+
+        if (event.getWorkshopStatus() != WorkshopStatus.UPCOMING
+                || !LocalDateTime.now().isBefore(event.getWorkshopTime())) {
+            throw new BadRequestException(
+                    "Chỉ có thể duyệt registration trước khi workshop bắt đầu"
+            );
+        }
     }
 
     private void validateNoOverlappingApprovedEvent(

@@ -16,7 +16,7 @@ import java.util.Set;
 public interface NotificationService {
     NotificationEmailResponse getInfoNotificationInvite(CustomUserDetails userDetails, Long notificationId);
 
-    void createNotificationHaveResponse(Account account, Account actor, NotificationType type, NotificationChannel channel, String title, String message, boolean allowResponse, Integer responseDeadline
+    void createNotificationHaveResponse(Account account, Account actor, Round round, NotificationType type, NotificationChannel channel, String title, String message, boolean allowResponse, Integer responseDeadline
     );
 
     void createNotificationNoResponse(Account acc, Account actor, NotificationType type, NotificationChannel channel, String title, String message);

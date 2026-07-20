@@ -19,10 +19,10 @@ public class EventValidator {
     @Autowired
     private RoundValidator roundValidator;
 
-    // Khoảng cách tối thiểu (đơn vị: ngày)
-    private static final int MIN_GAP_REG_TO_START = 3;
-    private static final int MIN_GAP_WORKSHOP_TO_START = 1;
-    private static final int MIN_GAP_DEADLINE_TO_WORKSHOP = 1;
+//    // Khoảng cách tối thiểu (đơn vị: ngày)
+//    private static final int MIN_GAP_REG_TO_START = 3;
+//    private static final int MIN_GAP_WORKSHOP_TO_START = 1;
+//    private static final int MIN_GAP_DEADLINE_TO_WORKSHOP = 1;
 
     // 1. Validator cho việc Tạo mới
     public void validatorCreate(CreateEventRequest request) throws BadRequestException {
@@ -71,19 +71,32 @@ public class EventValidator {
 
         if (deadline != null) {
             if (deadline.isBefore(now)) throw new BadRequestException("Hạn chót đăng ký không được nằm trong quá khứ!");
-            if (start != null && deadline.isAfter(start.minusDays(MIN_GAP_REG_TO_START))) {
-                throw new BadRequestException("Hạn chót đăng ký phải trước ngày bắt đầu ít nhất " + MIN_GAP_REG_TO_START + " ngày!");
+//            if (start != null && deadline.isAfter(start.minusDays(MIN_GAP_REG_TO_START))) {
+//                throw new BadRequestException("Hạn chót đăng ký phải trước ngày bắt đầu ít nhất " + MIN_GAP_REG_TO_START + " ngày!");
+//            }
+
+            if(deadline.isAfter(start)){
+                throw new BadRequestException("Hạn chót đăng ký phải trước ngày bắt đầu diễn ra buổi workshop");
             }
         }
 
         if (workshop != null) {
             if (workshop.isBefore(now)) throw new BadRequestException("Workshop không được nằm trong quá khứ!");
-            if (deadline != null && workshop.isBefore(deadline.plusDays(MIN_GAP_DEADLINE_TO_WORKSHOP))) {
-                throw new BadRequestException("Workshop phải sau hạn chót đăng ký ít nhất " + MIN_GAP_DEADLINE_TO_WORKSHOP + " ngày!");
+//            if (deadline != null && workshop.isBefore(deadline.plusDays(MIN_GAP_DEADLINE_TO_WORKSHOP))) {
+//                throw new BadRequestException("Workshop phải sau hạn chót đăng ký ít nhất " + MIN_GAP_DEADLINE_TO_WORKSHOP + " ngày!");
+//            }
+//            if (start != null && workshop.isAfter(start.minusDays(MIN_GAP_WORKSHOP_TO_START))) {
+//                throw new BadRequestException("Workshop phải trước ngày bắt đầu ít nhất " + MIN_GAP_WORKSHOP_TO_START + " ngày!");
+//            }
+
+            if(deadline != null && workshop.isBefore(deadline)){
+                throw new BadRequestException("Ngày diễn ra workshop không được bắt đầu trước ngày kết thúc đăng kí tham gia");
             }
-            if (start != null && workshop.isAfter(start.minusDays(MIN_GAP_WORKSHOP_TO_START))) {
-                throw new BadRequestException("Workshop phải trước ngày bắt đầu ít nhất " + MIN_GAP_WORKSHOP_TO_START + " ngày!");
+
+            if (start != null && workshop.isAfter(start)) {
+                throw new BadRequestException("Workshop phải trước ngày bắt đầu sự kiện");
             }
+
         }
     }
 
