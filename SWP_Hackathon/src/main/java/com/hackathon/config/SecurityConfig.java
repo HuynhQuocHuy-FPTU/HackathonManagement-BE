@@ -83,7 +83,8 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/api/events/public/**",
                                 "/api/github/**",
-                                "/api/ranking/rounds/*/topN"
+                                "/api/ranking/rounds/*/topN",
+                                "/api/analytics/**"
                         ).permitAll()
 
                         // all
@@ -113,6 +114,7 @@ public class SecurityConfig {
 
                         // TeamRequest - EXPERT
                         .requestMatchers(HttpMethod.GET, "/api/team-request/received").hasRole("EXPERT")
+                        .requestMatchers(HttpMethod.GET, "/api/events/all").hasAnyRole("EXPERT", "EVENTCOORDINATOR")
                         .requestMatchers(HttpMethod.PATCH, "/api/team-request/*/reject").hasRole("EXPERT")
                         .requestMatchers(HttpMethod.PATCH, "/api/team-request/*/accept").hasRole("EXPERT")
                         .requestMatchers(HttpMethod.GET, "/api/team-request/appeal/*/review-submissions").hasRole("EXPERT")

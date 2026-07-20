@@ -124,6 +124,15 @@ public class RankingServiceImpl implements RankingService {
             throw new BadRequestException("Vui lòng nhập số giờ mở cổng khiếu nại hợp lệ (lớn hơn 0).");
         }
 
+        if(!round.getResolveAppealDeadline().isAfter(LocalDateTime.now())){
+            throw new BadRequestException(
+                    "Thời gian giải quyết khiếu nại phải sau thời điểm hiện tại."
+            );
+        }
+
+        if(LocalDateTime.now().plusHours(hoursAmount).isAfter(round.getResolveAppealDeadline())){
+            throw new BadRequestException("Thời gian kết thúc nhận đơn khiếu nại không được phép sau thời gian giải quyết khiếu nại");
+        }
         List<CategoryRound> categoryRounds = round.getCategoryRounds();
         if (categoryRounds == null || categoryRounds.isEmpty()) {
             throw new BadRequestException("Không tìm thấy hạng mục nào trong vòng thi này.");
@@ -178,11 +187,6 @@ public class RankingServiceImpl implements RankingService {
         if (categoryRounds == null || categoryRounds.isEmpty()) {
             throw new BadRequestException("Không tìm thấy hạng mục nào trong vòng thi này.");
         }
-
-//        for (CategoryRound cr : categoryRounds) {
-//            roundAdvancementService.calculateScoresAndRanking(cr.getCategoryRoundId());
-//        }
-//        roundAdvancementService.advanceAllCategoriesInRound(roundId, userDetails);
 
         // 3. REFRESH DATA TRONG HIBERNATE SESSION ĐỂ TRÁNH LẤY ĐIỂM/RANK CŨ TRONG CACHE
         roundRepository.flush();

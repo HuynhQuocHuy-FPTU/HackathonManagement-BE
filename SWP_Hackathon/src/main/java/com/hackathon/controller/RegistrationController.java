@@ -99,6 +99,18 @@ public class RegistrationController {
                 )
         );
     }
+    // Lấy ra ds Team chờ duyệt
+    @GetMapping("/{eventId}/registration-all")
+    public ResponseEntity<ApiResponse<List<TeamSelectionDTO>>> getALLRegistrations(
+            @PathVariable Integer eventId
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        registrationEventService.getAllTeamRegistrations(eventId),
+                        "Danh sách đơn đăng kí thành công"
+                )
+        );
+    }
 
     @GetMapping("/{registrationId}/pendingTeam-detail")
     public ResponseEntity<ApiResponse<RegistrationResponse>> getTeamsDetailForApproval(

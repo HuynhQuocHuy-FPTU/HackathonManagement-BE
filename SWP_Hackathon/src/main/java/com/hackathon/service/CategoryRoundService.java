@@ -16,4 +16,6 @@ public interface CategoryRoundService {
     void deleteByEventId(Integer eventId);
 
     List<CategoryRoundResponseDTO> getAssignedCategoryRounds(CustomUserDetails userDetails, Integer eventId);
+
+    List<CategoryRoundResponseDTO> getAllAssignedCategoryRounds(CustomUserDetails userDetails, Integer eventId);
 }

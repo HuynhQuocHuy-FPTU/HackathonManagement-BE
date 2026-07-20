@@ -420,7 +420,7 @@ public class EventServiceImpl implements EventService {
     @Override
     public List<EventResponse> getAllEvent() {
         return eventRepository.findAll().stream()
-                .map(event -> mapToResponse(event, new ArrayList<>(), new ArrayList<>()))
+                .map(event -> mapToResponse(event, event.getRounds(), new ArrayList<>()))
                 .toList();
     }
 

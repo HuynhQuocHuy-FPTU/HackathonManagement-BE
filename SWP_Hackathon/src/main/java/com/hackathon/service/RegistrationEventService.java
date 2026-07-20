@@ -21,4 +21,5 @@ public interface RegistrationEventService {
 
     RegistrationResponse getTeamsDetailForApproval(Integer registrationId, CustomUserDetails userDetails);
     List<RegistrationResponse> getTeamsForApproval(Integer evenId, CustomUserDetails userDetails);
+    List<TeamSelectionDTO> getAllTeamRegistrations(Integer evenId);
 }
