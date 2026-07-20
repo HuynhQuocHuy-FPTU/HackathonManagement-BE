@@ -146,6 +146,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/registrations/*/reject").hasRole("EVENTCOORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/api/registrations/*/pendingTeam").hasRole("EVENTCOORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/api/registrations/*/pendingTeam-detail").hasRole("EVENTCOORDINATOR")
+                        .requestMatchers(HttpMethod.GET, "/api/registrations/*/count-registration").hasRole("EVENTCOORDINATOR")
 
                         // TeamRequest - EVENT COORDINATOR
                         .requestMatchers(HttpMethod.PATCH, "/api/team-request/*/process").hasRole("EVENTCOORDINATOR")

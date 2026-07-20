@@ -3,6 +3,7 @@ package com.hackathon.repository;
 import com.hackathon.dto.TeamSelectionDTO;
 import com.hackathon.entity.Registration;
 import com.hackathon.entity.Team;
+import com.hackathon.entity.enums.EventStatus;
 import com.hackathon.entity.enums.RegistrationStatus;
 import com.hackathon.entity.enums.TeamStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -25,6 +26,17 @@ public interface RegistrationRepository extends JpaRepository<Registration, Inte
 
     long countByHackathonEvent_EventIdAndStatus(Integer eventId, RegistrationStatus status);
 
+    @Query("""
+            SELECT DISTINCT r.team
+            FROM Registration r
+            WHERE r.status = :registrationStatus
+              AND r.hackathonEvent.status NOT IN :excludedEventStatuses
+            """)
+    List<Team> findDistinctTeamsByRegistrationStatusAndEventStatusNotIn(
+            @Param("registrationStatus") RegistrationStatus registrationStatus,
+            @Param("excludedEventStatuses") List<EventStatus> excludedEventStatuses
+    );
+
     List<Registration> findRegistrationByHackathonEvent_EventIdAndStatusIn(int hackathonEventEventId, List<RegistrationStatus> status);
 
     Optional<Registration> findRegistrationByRegistrationIdAndHackathonEvent_EventId(int registrationId, int hackathonEventEventId);
@@ -36,6 +48,11 @@ public interface RegistrationRepository extends JpaRepository<Registration, Inte
     Optional<Registration> findByEventIdAndTeamId(@Param("eventId") Integer eventId, @Param("teamId") Integer teamId);
 
     List<Registration> findByTeam_TeamIdAndStatus(int teamTeamId, RegistrationStatus status);
+
+    @Query("SELECT COUNT (r) " +
+            "FROM Registration r " +
+            "WHERE r.status =: regisStatus")
+    Integer countRegistration(@Param("regsisStatus") RegistrationStatus registrationStatus);
 
 
 

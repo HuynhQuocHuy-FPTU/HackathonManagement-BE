@@ -63,8 +63,6 @@ public class RoundResponse {
 
     private Integer maxFileCount;
 
-    private Integer maxTotalSizeMb;
-
     private String description;
 
     private List<EvaluationCriteriaResponseDTO> customCriteriaDetatils;
@@ -83,7 +81,6 @@ public class RoundResponse {
         this.submissionType = round.getSubmissionType();
         this.allowedFileTypes = round.getAllowedFileType();
         this.maxFileCount = round.getMaxFileCount();
-        this.maxTotalSizeMb = round.getMaxTotalSizeMb();
         this.advancementRule = round.getAdvancementRule();
         this.submissionDeadline = round.getSubmissionDeadline();
         this.customCriteriaDetatils = criteriaList;

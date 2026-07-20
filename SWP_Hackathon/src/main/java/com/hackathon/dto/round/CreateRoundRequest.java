@@ -38,9 +38,6 @@ public class CreateRoundRequest {
 
     @Min(value = 0, message = "Giá trị của số lượng file phải lớn hơn 0")
     private Integer maxFileCount;
-    @Min(value = 0, message = "Giá trị tổng size của file phải lớn hơn 0 MB")
-    @Max(value = 1024, message = "Giá trị tổng size của file phải nhỏ hơn 1024 MB")
-    private Integer maxTotalSizeMb;
 
     private LocalDateTime submissionDeadline;
 

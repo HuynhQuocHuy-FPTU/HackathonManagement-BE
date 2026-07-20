@@ -11,8 +11,8 @@ import java.io.IOException;
 @Order(1) // Đảm bảo Filter này chạy trước các Filter xử lý Multipart khác
 public class FileSizeFilter implements Filter {
 
-    // Đặt ngưỡng giới hạn ở đây (Ví dụ: 80MB)
-    private static final long MAX_FILE_SIZE = 60 * 1024 * 1024;
+    // Content-Length là kích thước toàn bộ request, không phải từng file.
+    private static final long MAX_REQUEST_SIZE = 100L * 1024 * 1024;
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -22,9 +22,14 @@ public class FileSizeFilter implements Filter {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
         // Chỉ kiểm tra trên endpoint upload file
-        if (httpRequest.getRequestURI().contains("/api/submissions/") && httpRequest.getContentLength() > MAX_FILE_SIZE) {
+        if (httpRequest.getRequestURI().contains("/api/submissions/")
+                && httpRequest.getContentLengthLong() > MAX_REQUEST_SIZE) {
             httpResponse.setStatus(HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE);
-            httpResponse.getWriter().write("{\"success\": false, \"message\": \"File quá lớn! Giới hạn là 80MB.\"}");
+            httpResponse.setContentType("application/json");
+            httpResponse.setCharacterEncoding("UTF-8");
+            httpResponse.getWriter().write(
+                    "{\"success\":false,\"message\":\"Tổng dung lượng request vượt quá giới hạn 100MB.\"}"
+            );
             return; // Chặn request tại đây, không cho vào Controller
         }
 

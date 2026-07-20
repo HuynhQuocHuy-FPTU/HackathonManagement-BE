@@ -101,6 +101,7 @@ public class AuthController {
     @PostMapping("/complete-register")
     public ResponseEntity<ApiResponse<Void>>completeRegister(
             @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid
             @RequestBody StudentUpdateRequest request) {
         studentService.completeRegister(userDetails, request);
         return ResponseEntity.ok(ApiResponse.ok("Hoàn tất đăng ký"));

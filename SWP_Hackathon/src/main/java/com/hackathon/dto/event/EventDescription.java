@@ -11,8 +11,7 @@ public record EventDescription(
 
         List<String> disqualificationRules,
 
-        List<String> competitionRules,
+        List<String> competitionRules
 
-        List<String> faq
 ) {
 }
