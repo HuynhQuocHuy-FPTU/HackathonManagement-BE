@@ -1,6 +1,7 @@
 package com.hackathon.repository;
 
 import com.hackathon.entity.CategoryRound;
+import com.hackathon.entity.Team;
 import com.hackathon.entity.TeamParticipant;
 import com.hackathon.entity.Registration;
 import com.hackathon.entity.enums.ParticipantStatus;
@@ -51,4 +52,14 @@ public interface ParticipantRepository extends JpaRepository<TeamParticipant, In
             "AND tp.status = ParticipantStatus.RE_EVALUATING"
             )
     TeamParticipant findByTeamId(@Param("teamId") Integer teamId);
+
+
+    @Query("""
+    SELECT t
+    FROM TeamParticipant tp
+    JOIN tp.registration r
+    JOIN r.team t
+    WHERE tp.status = :status
+    """)
+    List<Team> getTeamsByParticipantStatus(@Param("status") ParticipantStatus status);
 }
