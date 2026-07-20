@@ -1,12 +1,14 @@
 package com.hackathon.controller;
 
 import com.hackathon.dto.category.CategoryRoundDTO;
+import com.hackathon.dto.categoryRound.CategoryRoundResponseDTO;
 import com.hackathon.dto.event.EventDTO;
 import com.hackathon.dto.round.RoundDTO;
 import com.hackathon.dto.submission.SubmissionResponse;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.repository.RoundRepository;
 import com.hackathon.security.CustomUserDetails;
+import com.hackathon.service.CategoryRoundService;
 import com.hackathon.service.ExpertAssignService;
 import com.hackathon.service.submission.SubmissionService;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ public class ExpertAssigmentController {
     private final ExpertAssignService expertAssignService;
     private final SubmissionService submissionService;
     private final RoundRepository roundRepository;
+    private final CategoryRoundService categoryRoundService;
 
     //1. Lấy danh sách event được phân công
     @GetMapping("/events")
@@ -60,5 +63,12 @@ public class ExpertAssigmentController {
         return ResponseEntity.ok(ApiResponse.success(list, "Lấy danh sách bài nộp thuộc hạng mục của vòng đấu thành công"));
     }
 
+    @GetMapping("/assigments/all-roles/{eventId}")
+    public ResponseEntity<ApiResponse<List<CategoryRoundResponseDTO>>>getAllAssignedRoles(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Integer eventId){
+        List<CategoryRoundResponseDTO> list = categoryRoundService.getAllAssignedCategoryRounds(userDetails, eventId);
+        return ResponseEntity.ok(ApiResponse.success(list, "Xem tất cả quyền của expert thành công"));
+    }
 
 }

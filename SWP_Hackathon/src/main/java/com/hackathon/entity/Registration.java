@@ -28,6 +28,10 @@ public class Registration {
     @Enumerated(EnumType.STRING)
     private RegistrationStatus status;
 
+    @Version
+    @Column(name = "Version", nullable = false)
+    private Long version;
+
     //N Registration - 1 Team
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnore

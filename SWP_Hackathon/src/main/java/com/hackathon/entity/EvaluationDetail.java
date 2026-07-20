@@ -18,7 +18,7 @@ public class EvaluationDetail {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "Evaluation_Detail_ID")
     private int id;
-    @Column(name = "Score", precision = 10, scale = 2, nullable = false)
+    @Column(name = "Score", precision = 10, scale = 2)
     private BigDecimal score;
     @Column(name = "Comment", columnDefinition = "NVARCHAR(500)")
     private String comment;

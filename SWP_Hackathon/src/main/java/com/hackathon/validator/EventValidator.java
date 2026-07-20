@@ -16,11 +16,13 @@ import java.time.LocalDateTime;
 public class EventValidator {
     @Autowired
     private HackathonEventRepository eventRepository;
+    @Autowired
+    private RoundValidator roundValidator;
 
-    // Khoảng cách tối thiểu (đơn vị: ngày)
-    private static final int MIN_GAP_REG_TO_START = 3;
-    private static final int MIN_GAP_WORKSHOP_TO_START = 1;
-    private static final int MIN_GAP_DEADLINE_TO_WORKSHOP = 1;
+//    // Khoảng cách tối thiểu (đơn vị: ngày)
+//    private static final int MIN_GAP_REG_TO_START = 3;
+//    private static final int MIN_GAP_WORKSHOP_TO_START = 1;
+//    private static final int MIN_GAP_DEADLINE_TO_WORKSHOP = 1;
 
     // 1. Validator cho việc Tạo mới
     public void validatorCreate(CreateEventRequest request) throws BadRequestException {
@@ -35,15 +37,17 @@ public class EventValidator {
             throw new BadRequestException("Sự kiện này đã được công bố, không thể sửa đổi!");
         }
 
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime start = (request.getStartDate() != null) ? request.getStartDate() : event.getStartDate();
-        LocalDateTime end = (request.getEndDate() != null) ? request.getEndDate() : event.getEndDate();
-        LocalDateTime deadline = (request.getRegistrationDeadline() != null) ? request.getRegistrationDeadline() : event.getRegistrationDeadline();
-        LocalDateTime workshop = (request.getWorkshopTime() != null) ? request.getWorkshopTime() : event.getWorkshopTime();
-
-        validateTimeLogic(start, end, deadline, workshop, now);
-        validateTeamSize(request.getMinTeamSize() != null ? request.getMinTeamSize() : event.getMinTeamSize(),
-                request.getMaxTeamSize() != null ? request.getMaxTeamSize() : event.getMaxTeamSize());
+        validateTimeLogic(
+                request.getStartDate(),
+                request.getEndDate(),
+                request.getRegistrationDeadline(),
+                request.getWorkshopTime(),
+                LocalDateTime.now()
+        );
+        validateTeamSize(
+                request.getMinTeamSize(),
+                request.getMaxTeamSize()
+        );
     }
 
     // 3. Validator cho việc Công bố (Publish)
@@ -67,19 +71,32 @@ public class EventValidator {
 
         if (deadline != null) {
             if (deadline.isBefore(now)) throw new BadRequestException("Hạn chót đăng ký không được nằm trong quá khứ!");
-            if (start != null && deadline.isAfter(start.minusDays(MIN_GAP_REG_TO_START))) {
-                throw new BadRequestException("Hạn chót đăng ký phải trước ngày bắt đầu ít nhất " + MIN_GAP_REG_TO_START + " ngày!");
+//            if (start != null && deadline.isAfter(start.minusDays(MIN_GAP_REG_TO_START))) {
+//                throw new BadRequestException("Hạn chót đăng ký phải trước ngày bắt đầu ít nhất " + MIN_GAP_REG_TO_START + " ngày!");
+//            }
+
+            if(deadline.isAfter(start)){
+                throw new BadRequestException("Hạn chót đăng ký phải trước ngày bắt đầu diễn ra buổi workshop");
             }
         }
 
         if (workshop != null) {
             if (workshop.isBefore(now)) throw new BadRequestException("Workshop không được nằm trong quá khứ!");
-            if (deadline != null && workshop.isBefore(deadline.plusDays(MIN_GAP_DEADLINE_TO_WORKSHOP))) {
-                throw new BadRequestException("Workshop phải sau hạn chót đăng ký ít nhất " + MIN_GAP_DEADLINE_TO_WORKSHOP + " ngày!");
+//            if (deadline != null && workshop.isBefore(deadline.plusDays(MIN_GAP_DEADLINE_TO_WORKSHOP))) {
+//                throw new BadRequestException("Workshop phải sau hạn chót đăng ký ít nhất " + MIN_GAP_DEADLINE_TO_WORKSHOP + " ngày!");
+//            }
+//            if (start != null && workshop.isAfter(start.minusDays(MIN_GAP_WORKSHOP_TO_START))) {
+//                throw new BadRequestException("Workshop phải trước ngày bắt đầu ít nhất " + MIN_GAP_WORKSHOP_TO_START + " ngày!");
+//            }
+
+            if(deadline != null && workshop.isBefore(deadline)){
+                throw new BadRequestException("Ngày diễn ra workshop không được bắt đầu trước ngày kết thúc đăng kí tham gia");
             }
-            if (start != null && workshop.isAfter(start.minusDays(MIN_GAP_WORKSHOP_TO_START))) {
-                throw new BadRequestException("Workshop phải trước ngày bắt đầu ít nhất " + MIN_GAP_WORKSHOP_TO_START + " ngày!");
+
+            if (start != null && workshop.isAfter(start)) {
+                throw new BadRequestException("Workshop phải trước ngày bắt đầu sự kiện");
             }
+
         }
     }
 
@@ -89,6 +106,10 @@ public class EventValidator {
         if (isNullOrBlank(event.getAddress())) throw new BadRequestException("Địa chỉ trống!");
         if (event.getDescription() == null) throw new BadRequestException("Mô tả trống!");
         if (event.getMaxTeam() == null || event.getMaxTeam() < 1) throw new BadRequestException("Số lượng đội thi không hợp lệ!");
+        if (event.getStartDate() == null) throw new BadRequestException("Ngày bắt đầu sự kiện trống!");
+        if (event.getEndDate() == null) throw new BadRequestException("Ngày kết thúc sự kiện trống!");
+        if (event.getRegistrationDeadline() == null) throw new BadRequestException("Hạn chót đăng ký trống!");
+        if (event.getWorkshopTime() == null) throw new BadRequestException("Thời gian workshop trống!");
     }
 
     private void validateStructure(HackathonEvent event) {
@@ -99,6 +120,7 @@ public class EventValidator {
             if (isNullOrBlank(round.getRoundName())) throw new BadRequestException("Tên vòng thi trống!");
             if (round.getStartTime() == null || round.getEndTime() == null) throw new BadRequestException("Thời gian vòng thi trống!");
             if (round.getCriteriaSet() == null) throw new BadRequestException("Vòng thi '" + round.getRoundName() + "' chưa chọn bộ tiêu chí!");
+            roundValidator.validateRoundForPublish(round, event);
 
             boolean hasExpert = round.getCategoryRounds().stream()
                     .anyMatch(cr -> cr.getExpertAssigns() != null && !cr.getExpertAssigns().isEmpty());

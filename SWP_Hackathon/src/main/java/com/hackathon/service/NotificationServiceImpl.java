@@ -70,10 +70,11 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void createNotificationHaveResponse(Account acc, Account actor, NotificationType type, NotificationChannel channel, String title, String message, boolean allowResponse, Integer responseDeadline) {
+    public void createNotificationHaveResponse(Account acc, Account actor, Round round, NotificationType type, NotificationChannel channel, String title, String message, boolean allowResponse, Integer responseDeadline) {
         Notification notification = new Notification();
 
         notification.setAccount(acc);
+        notification.setRound(round);
         notification.setType(type);
         notification.setChannel(channel);
         notification.setTitle(title);
@@ -83,9 +84,12 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setResponseDeadline(LocalDateTime.now().plusHours(responseDeadline));
         notification.setResponseStatus(NotiResponseStatus.NONE);
         notification.setRead(false);
+        notification.setRound(round);
         notification.setCreatedAt(LocalDateTime.now());
         notificationRepository.save(notification);
     }
+
+
 
     @Override
     public void createNotificationNoResponse(Account acc, Account actor, NotificationType type, NotificationChannel channel, String title, String message) {
@@ -99,6 +103,21 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setMessage(message);
         notification.setRead(false);
         notification.setCreatedAt(LocalDateTime.now());
+        notificationRepository.save(notification);
+    }
+
+    public void createNotificationNoResponse(Account acc, Account actor, NotificationType type, NotificationChannel channel, String title, String message, Round round) {
+        Notification notification = new Notification();
+
+        notification.setAccount(acc);
+        notification.setType(type);
+        notification.setChannel(channel);
+        notification.setTitle(title);
+        notification.setActor(actor);
+        notification.setMessage(message);
+        notification.setRead(false);
+        notification.setCreatedAt(LocalDateTime.now());
+        notification.setRound(round);
         notificationRepository.save(notification);
     }
 
@@ -242,8 +261,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void notifyAssignedCategoryFinal(Account actor, Account teamLeaderAccount, String teamName,
-                                            String eventName, String category, String oldCategory) {
+    public void notifyAssignedCategoryFinal(Account actor, Account teamLeaderAccount, String teamName, String eventName, String category, String oldCategory) {
         String title = "Kết quả xác thực hạng mục";
         String message = String.format(
                 "Yêu cầu của team \"%s\" đã được xử lý. Hạng mục được cập nhật từ \"%s\" sang \"%s\" trong cuộc thi \"%s\".",
@@ -439,12 +457,14 @@ public class NotificationServiceImpl implements NotificationService {
                         NotificationType.RANKING_OFFICIAL,
                         NotificationChannel.WEB,
                         title,
-                        message
+                        message,
+                        round
                 );
             } else {
                 createNotificationHaveResponse(
                         acc,
                         actor,
+                        round,
                         NotificationType.RANKING_DRAFT,
                         NotificationChannel.WEB,
                         title,
@@ -461,7 +481,8 @@ public class NotificationServiceImpl implements NotificationService {
                         isFinal ? NotificationType.RANKING_OFFICIAL : NotificationType.RANKING_DRAFT,
                         NotificationChannel.EMAIL,
                         title,
-                        message
+                        message,
+                        round
                 );
             } catch (Exception e) {
                 System.out.println("Lỗi gửi email cho thí sinh xem hạng");
