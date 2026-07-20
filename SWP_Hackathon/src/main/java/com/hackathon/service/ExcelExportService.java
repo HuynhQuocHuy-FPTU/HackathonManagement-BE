@@ -43,7 +43,6 @@ public class ExcelExportService {
             Font headerFont = workbook.createFont();
             headerFont.setBold(true);
             headerFont.setColor(IndexedColors.WHITE.getIndex());
-            headerFont.setBold(true);
 
             // xanh đậm
             byte[] headerBlue = new byte[]{(byte) 79, (byte) 129, (byte) 189}; // #4F81BD
@@ -88,6 +87,10 @@ public class ExcelExportService {
                 int stt = 1;
                 for (TeamParticipant tp : participants) {
                     Row row = sheet.createRow(rowIndex++);
+                    // chọn màu xen kẽ
+//                    XSSFCellStyle currentStyle =
+//                            rowIndex % 2 == 0 ? headerStyle : dataStyle;
+
                     createCellWithStyle(row, 0, stt++, dataStyle);
                     createCellWithStyle(row, 1, tp.getRegistration().getTeam().getTeamName(), dataStyle);
                     createCellWithStyle(row, 2, tp.getTotalScore() != null ? tp.getTotalScore().doubleValue() : 0, dataStyle);

@@ -495,7 +495,7 @@ public class NotificationServiceImpl implements NotificationService {
     public void notifyExpertReEvaluation(Account actor, Set<Account> expertsToNotify, String teamName) {
         String title = "YÊU CẦU PHÚC KHẢO BÀI THI";
         String message = "Ban tổ chức yêu cầu ban giám khảo xem lại và chấm lại điểm số cho bài dự thi của đội " + teamName+
-                "Ban tổ chức xin trân trọng và cảm ơn.!";
+                " Ban tổ chức xin trân trọng và cảm ơn.!";
         for (Account expertAccount : expertsToNotify) {
             createNotificationNoResponse(
                     expertAccount,
@@ -507,7 +507,7 @@ public class NotificationServiceImpl implements NotificationService {
             );
 
             try {
-                emailService.sendNotifyToExpertReEvaluation(expertAccount.getEmail(), message);
+                emailService.sendNotifyToExpertReEvaluation(expertAccount.getEmail(), teamName);
                 createNotificationNoResponse(
                         expertAccount,
                         actor,

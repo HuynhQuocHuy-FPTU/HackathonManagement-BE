@@ -6,12 +6,14 @@ import com.hackathon.entity.Student;
 import com.hackathon.entity.enums.AccountRole;
 import com.hackathon.entity.enums.AccountStatus;
 import com.hackathon.entity.enums.StudentStatus;
+import com.hackathon.exception.ApiException;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.AccountRepository;
 import com.hackathon.repository.StudentRepository;
 import com.hackathon.security.CustomUserDetails;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -25,6 +27,12 @@ public class StudentServiceImpl {
     public void completeRegister(CustomUserDetails userDetails, StudentUpdateRequest request) {
         Account account = accountRepository.findByEmail(userDetails.getAccount().getEmail())
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy tài khoản"));
+        if (accountRepository.existsByPhone(request.getPhone())) {
+            throw new ApiException(HttpStatus.CONFLICT, "Số điện thoại đã được sử dụng");
+        }
+        if (studentRepository.existsByStudentCode(request.getStudentCode())) {
+            throw new ApiException(HttpStatus.CONFLICT, "Mã sinh viên đã tồn tại");
+        }
 
         account.setPhone(request.getPhone());
         account.setAvatarUrl(request.getAvatar());
