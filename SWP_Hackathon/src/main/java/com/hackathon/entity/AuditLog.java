@@ -2,7 +2,6 @@ package com.hackathon.entity;
 
 import com.hackathon.entity.enums.AuditAction;
 import com.hackathon.entity.enums.AuditEntityType;
-import com.hackathon.entity.enums.AuditResult;
 import jakarta.persistence.*;
 import lombok.Data;
 

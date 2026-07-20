@@ -28,6 +28,7 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Integer>
             + "AND e.submission.submissionId = :submissionId")
     Optional<Evaluation> findByExpertAssignIdAndSubmissionId(@Param("assignId") Integer assignId, @Param("submissionId") Integer submissionId);
 
+
     List<Evaluation> findBySubmission_SubmissionId(Integer submissionId);
 
     /**

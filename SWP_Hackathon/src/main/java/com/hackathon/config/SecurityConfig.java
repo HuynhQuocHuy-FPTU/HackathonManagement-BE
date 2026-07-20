@@ -63,7 +63,7 @@ public class SecurityConfig {
                 // 2. TÍCH HỢP ĐĂNG NHẬP GOOGLE OAUTH2
                 .oauth2Login(oauth2 -> oauth2
                         .authorizationEndpoint(authorization -> authorization
-                                // Thêm dòng này để Spring lưu các param custom vào Session ngầm
+                                // Spring lưu các param custom vào Session ngầm
                                 .authorizationRequestResolver(requestResolver)
                         )
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))

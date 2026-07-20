@@ -13,15 +13,12 @@ import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.*;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.AuditService;
-
 import com.hackathon.service.ExcelExportService;
 import com.hackathon.service.NotificationService;
-import com.hackathon.service.RoundAdvancementService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.annotation.Propagation;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -36,7 +33,6 @@ public class RankingServiceImpl implements RankingService {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final NotificationService notificationService;
     private final ExcelExportService excelExportService;
-    private final RoundAdvancementService roundAdvancementService;
     private final AccountRepository accountRepository;
     //===============================================//
     //RANKING
@@ -133,11 +129,11 @@ public class RankingServiceImpl implements RankingService {
         if(LocalDateTime.now().plusHours(hoursAmount).isAfter(round.getResolveAppealDeadline())){
             throw new BadRequestException("Thời gian kết thúc nhận đơn khiếu nại không được phép sau thời gian giải quyết khiếu nại");
         }
+
         List<CategoryRound> categoryRounds = round.getCategoryRounds();
         if (categoryRounds == null || categoryRounds.isEmpty()) {
             throw new BadRequestException("Không tìm thấy hạng mục nào trong vòng thi này.");
         }
-        // check total score vs ranking mới dc publish
 
         // Công bố ranking nháp  và lưu log
         String uploadUrl = excelExportService.exportRankingToExcel(roundId, "DRAFT");
@@ -147,7 +143,7 @@ public class RankingServiceImpl implements RankingService {
         round.setAppealEndTime(LocalDateTime.now().plusHours(hoursAmount));
         roundRepository.save(round);
         log.info("Đã công bố bản nháp bảng xếp hạng vòng {}. Bắt đầu nhận phúc khảo.", roundId);
-        notificationService.notifyRoundRankingPublished(null, roundId, false, hoursAmount);
+        notificationService.notifyRoundRankingPublished(eventCoordinator.getAccount(), roundId, false, hoursAmount);
 
         List<CategoryRankingResponse> auditRankingData = auditRankingData(categoryRounds);
         try {
@@ -207,13 +203,11 @@ public class RankingServiceImpl implements RankingService {
 
         List<CategoryRankingResponse> auditRankingData = auditRankingData(categoryRounds);
 
-        Account systemAccount = accountRepository
-                .findByEmail("system@hackathon.com")
-                .orElseThrow();
+
         try {
 
             auditService.saveLog(
-                    systemAccount,
+                    coordinator.getAccount(),
                     AuditAction.PUBLISH_FINAL,
                     AuditEntityType.ROUND,
                     roundId,

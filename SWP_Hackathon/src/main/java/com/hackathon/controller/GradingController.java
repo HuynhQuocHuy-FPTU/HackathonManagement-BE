@@ -1,4 +1,5 @@
 package com.hackathon.controller;
+
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.dto.evaluation.*;
 import com.hackathon.entity.enums.CriteriaType;
@@ -102,12 +103,13 @@ public class GradingController {
 
         return ResponseEntity.ok(ApiResponse.ok("Tải dữ liệu điểm cũ thành công!", responseData));
     }
-//     Update điểm khi ban tổ chức từ chối xét duyệt
+
+    //     Update điểm khi ban tổ chức từ chối xét duyệt
     @PostMapping("/submissions/{submissionId}/update/presentation")
-    public ResponseEntity<ApiResponse<JudgeEvaluationResponse>>updateEvaluationPresentation(
+    public ResponseEntity<ApiResponse<JudgeEvaluationResponse>> updateEvaluationPresentation(
             @PathVariable Integer submissionId,
             @Valid @RequestBody SubmitEvaluationRequest request, // Khởi chạy cơ chế Validation Bean đập lỗi ngay tại cửa ngõ
-            @AuthenticationPrincipal CustomUserDetails userDetails){
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         JudgeEvaluationResponse executionResult = gradingService.updateEvaluation(
                 userDetails.getAccount(),
                 submissionId,
@@ -119,10 +121,10 @@ public class GradingController {
     }
 
     @PostMapping("/submissions/{submissionId}/update/code")
-    public ResponseEntity<ApiResponse<JudgeEvaluationResponse>>updateEvaluationCode(
+    public ResponseEntity<ApiResponse<JudgeEvaluationResponse>> updateEvaluationCode(
             @PathVariable Integer submissionId,
             @Valid @RequestBody SubmitEvaluationRequest request, // Khởi chạy cơ chế Validation Bean đập lỗi ngay tại cửa ngõ
-            @AuthenticationPrincipal CustomUserDetails userDetails){
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         JudgeEvaluationResponse executionResult = gradingService.updateEvaluation(
                 userDetails.getAccount(),
                 submissionId,
@@ -135,19 +137,21 @@ public class GradingController {
 
     // Chấm điểm lại khi có yêu cầu phúc khảo
     @PostMapping("/submissions/re-evaluation/code")
-    public ResponseEntity<ApiResponse<JudgeEvaluationResponse>>reEvaluationSubmissionCode(
+    public ResponseEntity<ApiResponse<JudgeEvaluationResponse>> reEvaluationSubmissionCode(
             @Valid @RequestBody ReEvaluationRequest request,
-            @AuthenticationPrincipal CustomUserDetails userDetails){
-        JudgeEvaluationResponse executionResult = gradingService.reEvaluationSubmission(userDetails, request,CriteriaType.SUBMISSION);
-        return ResponseEntity.ok(ApiResponse.ok("Ban giám khảo chấm lại điểm số phúc khảo thành công!", executionResult));
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        JudgeEvaluationResponse executionResult = gradingService.reEvaluationSubmission(userDetails, request, CriteriaType.SUBMISSION);
+        return ResponseEntity.ok(ApiResponse.success(executionResult, "Ban giám khảo chấm lại điểm số phúc khảo thành công!"));
 
     }
+
     @PostMapping("/submissions/re-evaluation/presentation")
-    public ResponseEntity<ApiResponse<JudgeEvaluationResponse>>reEvaluationSubmissionPresentation(
+    public ResponseEntity<ApiResponse<JudgeEvaluationResponse>> reEvaluationSubmissionPresentation(
             @Valid @RequestBody ReEvaluationRequest request,
-            @AuthenticationPrincipal CustomUserDetails userDetails){
-        JudgeEvaluationResponse executionResult = gradingService.reEvaluationSubmission(userDetails, request,CriteriaType.PRESENTATION);
-        return ResponseEntity.ok(ApiResponse.ok("Ban giám khảo chấm lại điểm số phúc khảo phần thuyết trình thành công!", executionResult));
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        JudgeEvaluationResponse executionResult = gradingService.reEvaluationSubmission(userDetails, request, CriteriaType.PRESENTATION);
+        return ResponseEntity.ok(ApiResponse.success(executionResult, "Ban giám khảo chấm lại điểm số phúc khảo thành công!"));
+
 
     }
 }
