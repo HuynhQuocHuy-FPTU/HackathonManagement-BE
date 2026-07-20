@@ -23,6 +23,8 @@ public interface RegistrationRepository extends JpaRepository<Registration, Inte
 
     List<Registration> findByHackathonEvent_EventIdAndStatus(Integer eventId, RegistrationStatus status);
 
+    long countByHackathonEvent_EventIdAndStatus(Integer eventId, RegistrationStatus status);
+
     List<Registration> findRegistrationByHackathonEvent_EventIdAndStatusIn(int hackathonEventEventId, List<RegistrationStatus> status);
 
     Optional<Registration> findRegistrationByRegistrationIdAndHackathonEvent_EventId(int registrationId, int hackathonEventEventId);

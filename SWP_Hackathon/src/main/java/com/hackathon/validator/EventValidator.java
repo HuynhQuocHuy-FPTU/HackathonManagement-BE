@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
 public class EventValidator {
     @Autowired
     private HackathonEventRepository eventRepository;
+    @Autowired
+    private RoundValidator roundValidator;
 
     // Khoảng cách tối thiểu (đơn vị: ngày)
     private static final int MIN_GAP_REG_TO_START = 3;
@@ -35,15 +37,17 @@ public class EventValidator {
             throw new BadRequestException("Sự kiện này đã được công bố, không thể sửa đổi!");
         }
 
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime start = (request.getStartDate() != null) ? request.getStartDate() : event.getStartDate();
-        LocalDateTime end = (request.getEndDate() != null) ? request.getEndDate() : event.getEndDate();
-        LocalDateTime deadline = (request.getRegistrationDeadline() != null) ? request.getRegistrationDeadline() : event.getRegistrationDeadline();
-        LocalDateTime workshop = (request.getWorkshopTime() != null) ? request.getWorkshopTime() : event.getWorkshopTime();
-
-        validateTimeLogic(start, end, deadline, workshop, now);
-        validateTeamSize(request.getMinTeamSize() != null ? request.getMinTeamSize() : event.getMinTeamSize(),
-                request.getMaxTeamSize() != null ? request.getMaxTeamSize() : event.getMaxTeamSize());
+        validateTimeLogic(
+                request.getStartDate(),
+                request.getEndDate(),
+                request.getRegistrationDeadline(),
+                request.getWorkshopTime(),
+                LocalDateTime.now()
+        );
+        validateTeamSize(
+                request.getMinTeamSize(),
+                request.getMaxTeamSize()
+        );
     }
 
     // 3. Validator cho việc Công bố (Publish)
@@ -89,6 +93,10 @@ public class EventValidator {
         if (isNullOrBlank(event.getAddress())) throw new BadRequestException("Địa chỉ trống!");
         if (event.getDescription() == null) throw new BadRequestException("Mô tả trống!");
         if (event.getMaxTeam() == null || event.getMaxTeam() < 1) throw new BadRequestException("Số lượng đội thi không hợp lệ!");
+        if (event.getStartDate() == null) throw new BadRequestException("Ngày bắt đầu sự kiện trống!");
+        if (event.getEndDate() == null) throw new BadRequestException("Ngày kết thúc sự kiện trống!");
+        if (event.getRegistrationDeadline() == null) throw new BadRequestException("Hạn chót đăng ký trống!");
+        if (event.getWorkshopTime() == null) throw new BadRequestException("Thời gian workshop trống!");
     }
 
     private void validateStructure(HackathonEvent event) {
@@ -99,6 +107,7 @@ public class EventValidator {
             if (isNullOrBlank(round.getRoundName())) throw new BadRequestException("Tên vòng thi trống!");
             if (round.getStartTime() == null || round.getEndTime() == null) throw new BadRequestException("Thời gian vòng thi trống!");
             if (round.getCriteriaSet() == null) throw new BadRequestException("Vòng thi '" + round.getRoundName() + "' chưa chọn bộ tiêu chí!");
+            roundValidator.validateRoundForPublish(round, event);
 
             boolean hasExpert = round.getCategoryRounds().stream()
                     .anyMatch(cr -> cr.getExpertAssigns() != null && !cr.getExpertAssigns().isEmpty());
