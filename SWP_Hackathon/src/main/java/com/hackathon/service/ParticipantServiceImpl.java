@@ -76,8 +76,7 @@ public class ParticipantServiceImpl implements ParticipantService {
         // 2. Validate: team phải thuộc event này VÀ đăng ký phải đã được APPROVED
         teamParticipants = disqualifyValidator.validateTeamBelongsToEventAndApproved(teamParticipants, teamId, eventId);
 
-        // Lưu lại teamParticipant PASSED ở round gần nhất mà team đã pass — LẤY TRƯỚC KHI
-        // vòng lặp bên dưới ghi đè status
+        // Lưu lại teamParticipant PASSED ở round gần nhất mà team đã pass
         TeamParticipant mostRecentlyPassed = teamParticipants.stream()
                 .filter(p -> p.getStatus() == ParticipantStatus.PASSED)
                 .max(Comparator.comparing(p -> p.getCategoryRound().getRound().getOrderIndex()))

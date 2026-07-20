@@ -20,7 +20,7 @@ import java.util.List;
 public class RoundValidator {
 
     public void validatorCreate(CreateRoundRequest request, HackathonEvent event) throws BadRequestException {
-        validateDeadlineOrder(
+        validatePartialDeadlineOrder(
                 request.getStartDate(),
                 request.getSubmissionDeadline(),
                 request.getEvaluationDeadline(),
@@ -29,13 +29,18 @@ public class RoundValidator {
         );
 
         // Kiểm tra ngày bắt đầu và kết thúc của round có sau ngày bắt đầu của event và trước ngày kết thúc của event
-        if(request.getStartDate().isBefore(event.getStartDate()) || request.getEndDate().isAfter(event.getEndDate())){
+        if ((request.getStartDate() != null
+                && event.getStartDate() != null
+                && request.getStartDate().isBefore(event.getStartDate()))
+                || (request.getEndDate() != null
+                && event.getEndDate() != null
+                && request.getEndDate().isAfter(event.getEndDate()))) {
             throw new BadRequestException("Thời gian bắt đầu và kết thúc của round phải nằm trong thời gian của event");
         }
     }
 
     public void validatorUpdate(UpdateRoundRequest request) throws BadRequestException {
-        validateDeadlineOrder(
+        validatePartialDeadlineOrder(
                 request.getStartDate(),
                 request.getSubmissionDeadline(),
                 request.getEvaluationDeadline(),
@@ -45,17 +50,23 @@ public class RoundValidator {
     }
 
     public void validateTimelineByOrderIndex(CreateRoundRequest request, List<Round> currentRounds) throws BadRequestException {
-        if (currentRounds == null || currentRounds.isEmpty()) {
+        if (currentRounds == null || currentRounds.isEmpty()
+                || request.getOrderIndex() == null) {
             return;
         }
 
         for (Round existingRound : currentRounds) {
+            if (existingRound.getOrderIndex() == null) {
+                continue;
+            }
             if (request.getOrderIndex().equals(existingRound.getOrderIndex())) {
                 throw new BadRequestException("Thứ tự vòng thi (orderIndex = " + request.getOrderIndex() + ") đã tồn tại trong sự kiện này!");
             }
 
             if (request.getOrderIndex() > existingRound.getOrderIndex()) {
-                if (request.getStartDate().isBefore(existingRound.getEndTime())) {
+                if (request.getStartDate() != null
+                        && existingRound.getEndTime() != null
+                        && request.getStartDate().isBefore(existingRound.getEndTime())) {
                     throw new BadRequestException(String.format(
                             "Vòng thi '%s' (thứ tự %d) phải bắt đầu sau khi vòng '%s' (thứ tự %d) kết thúc (sau ngày %s)!",
                             request.getRoundName(),
@@ -65,7 +76,9 @@ public class RoundValidator {
             }
 
             if (request.getOrderIndex() < existingRound.getOrderIndex()) {
-                if (request.getEndDate().isAfter(existingRound.getStartTime())) {
+                if (request.getEndDate() != null
+                        && existingRound.getStartTime() != null
+                        && request.getEndDate().isAfter(existingRound.getStartTime())) {
                     throw new BadRequestException(String.format(
                             "Vòng thi mới (thứ tự %d) phải kết thúc trước khi vòng '%s' (thứ tự %d) bắt đầu (trước ngày %s)!",
                             request.getOrderIndex(), existingRound.getRoundName(), existingRound.getOrderIndex(), existingRound.getStartTime()
@@ -76,7 +89,8 @@ public class RoundValidator {
     }
 
     public void validateTimelineByOrderIndexUpdate(UpdateRoundRequest request, List<Round> currentRounds) throws BadRequestException {
-        if (currentRounds == null || currentRounds.isEmpty()) {
+        if (currentRounds == null || currentRounds.isEmpty()
+                || request.getOrderIndex() == null) {
             return;
         }
 
@@ -85,12 +99,17 @@ public class RoundValidator {
                 continue;
             }
 
+            if (existingRound.getOrderIndex() == null) {
+                continue;
+            }
             if (request.getOrderIndex().equals(existingRound.getOrderIndex())) {
                 throw new BadRequestException("Thứ tự vòng thi (orderIndex = " + request.getOrderIndex() + ") đã tồn tại trong sự kiện này!");
             }
 
             if (request.getOrderIndex() > existingRound.getOrderIndex()) {
-                if (request.getStartDate().isBefore(existingRound.getEndTime())) {
+                if (request.getStartDate() != null
+                        && existingRound.getEndTime() != null
+                        && request.getStartDate().isBefore(existingRound.getEndTime())) {
                     throw new BadRequestException(String.format(
                             "Vòng thi chỉnh sửa (thứ tự %d) phải bắt đầu sau khi vòng '%s' (thứ tự %d) kết thúc (sau ngày %s)!",
                             request.getOrderIndex(), existingRound.getRoundName(), existingRound.getOrderIndex(), existingRound.getEndTime()
@@ -99,7 +118,9 @@ public class RoundValidator {
             }
 
             if (request.getOrderIndex() < existingRound.getOrderIndex()) {
-                if (request.getEndDate().isAfter(existingRound.getStartTime())) {
+                if (request.getEndDate() != null
+                        && existingRound.getStartTime() != null
+                        && request.getEndDate().isAfter(existingRound.getStartTime())) {
                     throw new BadRequestException(String.format(
                             "Vòng thi chỉnh sửa (thứ tự %d) phải kết thúc trước khi vòng '%s' (thứ tự %d) bắt đầu (trước ngày %s)!",
                             request.getOrderIndex(), existingRound.getRoundName(), existingRound.getOrderIndex(), existingRound.getStartTime()
@@ -118,6 +139,7 @@ public class RoundValidator {
 
         // 1. Sắp xếp danh sách request theo thứ tự orderIndex tăng dần
         List<UpdateRoundRequest> sortedRequests = roundRequests.stream()
+                .filter(request -> request.getOrderIndex() != null)
                 .sorted(Comparator.comparing(UpdateRoundRequest::getOrderIndex))
                 .toList();
 
@@ -132,7 +154,9 @@ public class RoundValidator {
             }
 
             // Vòng đứng sau (next) phải bắt đầu sau khi vòng đứng trước (current) kết thúc hoàn toàn
-            if (next.getStartDate().isBefore(current.getEndDate())) {
+            if (next.getStartDate() != null
+                    && current.getEndDate() != null
+                    && next.getStartDate().isBefore(current.getEndDate())) {
                 throw new BadRequestException(String.format(
                         "Lỗi logic dòng thời gian: Vòng '%s' (thứ tự %d) phải bắt đầu sau khi vòng '%s' (thứ tự %d) kết thúc (sau ngày %s)!",
                         next.getRoundName(), next.getOrderIndex(), current.getRoundName(), current.getOrderIndex(), current.getEndDate()
@@ -160,7 +184,7 @@ public class RoundValidator {
                 request.getResolveAppealDeadline();
         LocalDateTime endTime = request.getEndDate();
 
-        validateDeadlineOrder(
+        validateCompleteDeadlineOrder(
                 startTime,
                 submissionDeadline,
                 evaluationDeadline,
@@ -216,7 +240,27 @@ public class RoundValidator {
 
     }
 
-    private void validateDeadlineOrder(
+    public void validateRoundForPublish(
+            Round round,
+            HackathonEvent event
+    ) {
+        validateCompleteDeadlineOrder(
+                round.getStartTime(),
+                round.getSubmissionDeadline(),
+                round.getEvaluationDeadline(),
+                round.getResolveAppealDeadline(),
+                round.getEndTime()
+        );
+
+        if (round.getStartTime().isBefore(event.getStartDate())
+                || round.getEndTime().isAfter(event.getEndDate())) {
+            throw new BadRequestException(
+                    "Thời gian vòng thi phải nằm trong thời gian của sự kiện"
+            );
+        }
+    }
+
+    private void validateCompleteDeadlineOrder(
             LocalDateTime startTime,
             LocalDateTime submissionDeadline,
             LocalDateTime evaluationDeadline,
@@ -243,6 +287,42 @@ public class RoundValidator {
 
         if (resolveAppealDeadline.isAfter(endTime)) {
             throw new BadRequestException("Thời gian xử lý khiếu nại không được sau thời gian kết thúc vòng");
+        }
+    }
+
+    private void validatePartialDeadlineOrder(
+            LocalDateTime startTime,
+            LocalDateTime submissionDeadline,
+            LocalDateTime evaluationDeadline,
+            LocalDateTime resolveAppealDeadline,
+            LocalDateTime endTime
+    ) {
+        if (startTime != null && submissionDeadline != null
+                && !startTime.isBefore(submissionDeadline)) {
+            throw new BadRequestException(
+                    "Hạn nộp bài phải sau thời gian bắt đầu vòng"
+            );
+        }
+
+        if (submissionDeadline != null && evaluationDeadline != null
+                && !submissionDeadline.isBefore(evaluationDeadline)) {
+            throw new BadRequestException(
+                    "Thời gian kết thúc đánh giá phải sau hạn nộp bài"
+            );
+        }
+
+        if (evaluationDeadline != null && resolveAppealDeadline != null
+                && !evaluationDeadline.isBefore(resolveAppealDeadline)) {
+            throw new BadRequestException(
+                    "Thời gian xử lý khiếu nại phải sau thời gian kết thúc đánh giá"
+            );
+        }
+
+        if (resolveAppealDeadline != null && endTime != null
+                && resolveAppealDeadline.isAfter(endTime)) {
+            throw new BadRequestException(
+                    "Thời gian xử lý khiếu nại không được sau thời gian kết thúc vòng"
+            );
         }
     }
 

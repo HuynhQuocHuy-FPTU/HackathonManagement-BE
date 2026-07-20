@@ -48,6 +48,7 @@ public class GradingServiceImpl implements GradingService {
     private final ObjectMapper objectMapper;
     private final CategoryRoundRepository categoryRoundRepository;
     private final ParticipantRepository participantRepository;
+    private final EvaluationDetailRepository evaluationDetailRepository;
 
 
     // =======================================================
@@ -461,19 +462,31 @@ public class GradingServiceImpl implements GradingService {
                 throw new BadRequestException(
                         "Điểm của tiêu chí " + "phải nằm trong khoảng từ 0 đến " + maxScore + ".");
             }
-            //  lưu điểm cũ của tiêu chí này nếu là lần đầu chấm lại
+//              lưu điểm cũ của tiêu chí này nếu là lần đầu chấm lại
             if (detail.getOriginalScore() == null) {
                 detail.setOriginalScore(detail.getScore());
             }
-
             detail.setScore(requestEval.getScore());
+
 
         }
         BigDecimal finalNewTotalScore = scoreCalculator.calculateWeightedTotal(evaluation.getEvaluationDetails());
+        List<EvaluationDetail> evaluationDetails = evaluationDetailRepository.findByEvaluation_EvaluationId(evaluation.getEvaluationId());
+//        boolean isCompeleted = false;
+//        for(EvaluationDetail evaluationDetail : evaluationDetails){
+//            if(evaluationDetail.getScore() == null){
+//                isCompeleted = true;
+//                break;
+//            }
+//        }
+//        evaluation.setComment(request.getComment());
+//        evaluation.setScore(finalNewTotalScore);
+//        if(isCompeleted){
+//            evaluation.setStatus(EvaluationStatus.RE_EVALUATION);
+//        }else{
+//            evaluation.setStatus(EvaluationStatus.GRADED);
+//        }
 
-        evaluation.setComment(request.getComment());
-        evaluation.setScore(finalNewTotalScore);
-        evaluation.setStatus(EvaluationStatus.GRADED);
         evaluation.setIsReEvaluation(true);
 
         evaluationRepository.save(evaluation);
@@ -483,6 +496,8 @@ public class GradingServiceImpl implements GradingService {
         // 2. Kiểm tra xem có ông giám khảo nào còn đang bị kẹt ở trạng thái "RE_EVALUATION" hay không
         boolean isAllJudgesFinished = allEvaluationsForSub.stream()
                 .noneMatch(eval -> eval.getStatus() == EvaluationStatus.RE_EVALUATION);
+
+
 
         if (isAllJudgesFinished) {
             // Tất cả judge đã chấm lại xong. Team quay về trạng thái hoạt động

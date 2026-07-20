@@ -17,5 +17,4 @@ public class ProcessTeamRequest {
     private String responseMessage;
 
     private Integer eventId;
-    private List<DrawResultRequestDTO> drawResults;
 }

@@ -77,42 +77,42 @@ public class TeamRequestValidator {
         }
     }
 
-    public void validateDrawResultUpdate(
-            TeamRequest teamRequest,
-            ProcessTeamRequest command
-    ) {
-        if (command.getEventId() == null) {
-            throw new BadRequestException(
-                    "Event id không được để trống");
-        }
-        if (command.getDrawResults() == null
-                || command.getDrawResults().isEmpty()) {
-            throw new BadRequestException(
-                    "Kết quả bốc thăm cập nhật không được để trống");
-        }
-
-        Set<Integer> registrationIds = teamRequest.getTeam().getRegistrations()
-                .stream()
-                .filter(registration -> registration.getHackathonEvent() != null
-                        && registration.getHackathonEvent().getEventId()
-                        == command.getEventId())
-                .map(Registration::getRegistrationId)
-                .collect(Collectors.toSet());
-
-        if (registrationIds.isEmpty()) {
-            throw new BadRequestException(
-                    "Team không đăng ký tham gia event này");
-        }
-
-        boolean invalid = command.getDrawResults().stream()
-                .anyMatch(result -> result.getRegistrationId() == null
-                        || result.getRegistrationId().isEmpty()
-                        || result.getRegistrationId().stream()
-                        .anyMatch(id -> !registrationIds.contains(id)));
-
-        if (invalid) {
-            throw new BadRequestException(
-                    "Chỉ được cập nhật kết quả bốc thăm của team đã gửi yêu cầu");
-        }
-    }
+//    public void validateDrawResultUpdate(
+//            TeamRequest teamRequest,
+//            ProcessTeamRequest command
+//    ) {
+//        if (command.getEventId() == null) {
+//            throw new BadRequestException(
+//                    "Event id không được để trống");
+//        }
+//        if (command.getDrawResults() == null
+//                || command.getDrawResults().isEmpty()) {
+//            throw new BadRequestException(
+//                    "Kết quả bốc thăm cập nhật không được để trống");
+//        }
+//
+//        Set<Integer> registrationIds = teamRequest.getTeam().getRegistrations()
+//                .stream()
+//                .filter(registration -> registration.getHackathonEvent() != null
+//                        && registration.getHackathonEvent().getEventId()
+//                        == command.getEventId())
+//                .map(Registration::getRegistrationId)
+//                .collect(Collectors.toSet());
+//
+//        if (registrationIds.isEmpty()) {
+//            throw new BadRequestException(
+//                    "Team không đăng ký tham gia event này");
+//        }
+//
+//        boolean invalid = command.getDrawResults().stream()
+//                .anyMatch(result -> result.getRegistrationId() == null
+//                        || result.getRegistrationId().isEmpty()
+//                        || result.getRegistrationId().stream()
+//                        .anyMatch(id -> !registrationIds.contains(id)));
+//
+//        if (invalid) {
+//            throw new BadRequestException(
+//                    "Chỉ được cập nhật kết quả bốc thăm của team đã gửi yêu cầu");
+//        }
+//    }
 }

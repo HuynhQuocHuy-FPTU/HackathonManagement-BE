@@ -14,9 +14,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -35,7 +38,7 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
         Account acc = userDetails.getAccount();
 
         // Tìm event
-        HackathonEvent event = eventRepository.findById(eventId)
+        HackathonEvent event = eventRepository.findByIdForRegistrationApproval(eventId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy event"));
 
         validateDrawResultTime(event);
@@ -49,6 +52,8 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
         }
 
         // Tìm round đầu tiên
+        validateImportDistribution(eventId, drawResults);
+
         Round firstRound = roundRepository.findFirstByHackathonEvent_EventIdOrderByOrderIndexAsc(eventId)
                 .orElseThrow(() -> new BadRequestException("Event " + event.getEventName() + " chưa có round nào"));
 
@@ -119,6 +124,111 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
 
         return updateTeamParticipants;
     }
+
+    private void validateImportDistribution(
+            Integer eventId,
+            List<DrawResultRequestDTO> drawResults
+    ) {
+        validateUniqueCategoryAssignments(drawResults);
+
+        List<Registration> approvedRegistrations = registrationRepository
+                .findByHackathonEvent_EventIdAndStatus(
+                        eventId,
+                        RegistrationStatus.APPROVED
+                );
+        List<Category> categories =
+                categoryRepository.findAllByHackathonEvent_EventId(eventId);
+
+        boolean hasImportedDrawResults = !participantRepository
+                .findAllByRegistration_HackathonEvent_EventIdAndCategoryRoundIsNotNull(eventId)
+                .isEmpty();
+        if (hasImportedDrawResults) {
+            throw new BadRequestException(
+                    "Kết quả bốc thăm đã được import; hãy sử dụng chức năng cập nhật"
+            );
+        }
+
+        if (categories.isEmpty()) {
+            throw new BadRequestException(
+                    "Event chưa có category để nhập kết quả bốc thăm"
+            );
+        }
+
+        Set<Integer> eventCategoryIds = categories.stream()
+                .map(Category::getCategoryId)
+                .collect(Collectors.toSet());
+        Map<Integer, Integer> importedCountByCategory = new LinkedHashMap<>();
+        List<Integer> importedRegistrationIds = new ArrayList<>();
+
+        for (DrawResultRequestDTO drawResult : drawResults) {
+            Integer categoryId = drawResult.getCategoryId();
+            if (!eventCategoryIds.contains(categoryId)) {
+                throw new BadRequestException(
+                        "Category " + categoryId + " không thuộc event " + eventId
+                );
+            }
+
+            importedCountByCategory.put(
+                    categoryId,
+                    drawResult.getRegistrationId().size()
+            );
+            importedRegistrationIds.addAll(drawResult.getRegistrationId());
+        }
+
+        if (importedRegistrationIds.size() != approvedRegistrations.size()) {
+            throw new BadRequestException(
+                    "Tổng số registration import phải bằng số registration đã APPROVED: "
+                            + approvedRegistrations.size()
+            );
+        }
+
+        Set<Integer> uniqueImportedRegistrationIds =
+                new HashSet<>(importedRegistrationIds);
+        if (uniqueImportedRegistrationIds.size()
+                != importedRegistrationIds.size()) {
+            throw new BadRequestException(
+                    "Một registration không được xuất hiện nhiều lần trong kết quả bốc thăm"
+            );
+        }
+
+        Set<Integer> approvedRegistrationIds = approvedRegistrations.stream()
+                .map(Registration::getRegistrationId)
+                .collect(Collectors.toSet());
+        if (!uniqueImportedRegistrationIds.equals(approvedRegistrationIds)) {
+            throw new BadRequestException(
+                    "Danh sách import phải bao gồm chính xác tất cả registration đã APPROVED"
+            );
+        }
+
+        int minimumPerCategory =
+                approvedRegistrations.size() / categories.size();
+        List<String> insufficientCategories = new ArrayList<>();
+        for (Category category : categories) {
+            int importedCount = importedCountByCategory.getOrDefault(
+                    category.getCategoryId(),
+                    0
+            );
+            if (importedCount < minimumPerCategory) {
+                insufficientCategories.add(
+                        category.getCategoryName() + ": "
+                                + importedCount + "/" + minimumPerCategory
+                );
+            }
+        }
+
+        if (!insufficientCategories.isEmpty()) {
+            throw new BadRequestException(
+                    "Kết quả bốc thăm chưa được phân bổ đủ cho tất cả category. "
+                            + "Có " + approvedRegistrations.size()
+                            + " registration APPROVED và " + categories.size()
+                            + " category, nên mỗi category phải có ít nhất "
+                            + minimumPerCategory + " registration. "
+                            + "Các category chưa đủ: "
+                            + String.join(", ", insufficientCategories)
+            );
+        }
+    }
+
     @Transactional
     @Override
     public List<TeamParticipant> updateDrawResults(
@@ -129,8 +239,10 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
         List<TeamParticipant> updatedParticipants = new ArrayList<>();
 
         // Tìm event
-        HackathonEvent event = eventRepository.findById(eventId)
+        HackathonEvent event = eventRepository.findByIdForRegistrationApproval(eventId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy event"));
+
+        validateUniqueCategoryAssignments(drawResults);
 
         // Tìm round đầu tiên
         Round firstRound = roundRepository.findFirstByHackathonEvent_EventIdOrderByOrderIndexAsc(eventId)
@@ -159,8 +271,11 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
 
                 // 3. SO SÁNH ĐỂ TỐI ƯU (Tránh thông báo thừa)
                 // Chỉ cập nhật nếu Category hiện tại khác với Target
-                boolean isCategoryDifferent = participant.getCategoryRound() == null ||
-                        participant.getCategoryRound().getCategoryRoundId() != targetCategoryRound.getCategoryRoundId();
+                boolean isCategoryDifferent = participant.getCategoryRound() == null
+                        || !Objects.equals(
+                                participant.getCategoryRound().getCategoryRoundId(),
+                                targetCategoryRound.getCategoryRoundId()
+                        );
 
                 if (isCategoryDifferent) {
                     String oldCategoryName = (participant.getCategoryRound() != null)
@@ -177,6 +292,50 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
         }
         return updatedParticipants;
     }
+
+    private void validateUniqueCategoryAssignments(
+            List<DrawResultRequestDTO> drawResults
+    ) {
+        if (drawResults == null || drawResults.isEmpty()) {
+            throw new BadRequestException(
+                    "Danh sách kết quả bốc thăm không được rỗng"
+            );
+        }
+
+        Set<Integer> categoryIds = new HashSet<>();
+        Set<Integer> registrationIds = new HashSet<>();
+
+        for (DrawResultRequestDTO drawResult : drawResults) {
+            if (drawResult == null
+                    || drawResult.getCategoryId() == null
+                    || drawResult.getRegistrationId() == null
+                    || drawResult.getRegistrationId().isEmpty()) {
+                throw new BadRequestException(
+                        "Mỗi category phải có danh sách registration hợp lệ"
+                );
+            }
+
+            if (!categoryIds.add(drawResult.getCategoryId())) {
+                throw new BadRequestException(
+                        "Mỗi category chỉ được xuất hiện một lần"
+                );
+            }
+
+            for (Integer registrationId : drawResult.getRegistrationId()) {
+                if (registrationId == null) {
+                    throw new BadRequestException(
+                            "Registration ID không được để trống"
+                    );
+                }
+                if (!registrationIds.add(registrationId)) {
+                    throw new BadRequestException(
+                            "Mỗi registration chỉ được thuộc một category"
+                    );
+                }
+            }
+        }
+    }
+
     private void validateDrawResultTime(HackathonEvent event) {
         if (event.getStartDate() == null) {
             throw new BadRequestException(

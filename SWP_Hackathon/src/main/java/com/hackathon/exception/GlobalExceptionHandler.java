@@ -1,6 +1,7 @@
 package com.hackathon.exception;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -72,6 +73,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ApiResponse.fail(
                         "Bạn không có quyền thực hiện chức năng này"));
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ApiResponse<Void>> handleOptimisticLock(
+            ObjectOptimisticLockingFailureException ex
+    ) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.fail(
+                        "Registration đã được người khác xử lý. Vui lòng tải lại dữ liệu."));
     }
 
     @ExceptionHandler(Exception.class)

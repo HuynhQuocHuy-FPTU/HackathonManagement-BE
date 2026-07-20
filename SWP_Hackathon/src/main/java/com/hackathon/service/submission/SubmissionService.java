@@ -109,7 +109,6 @@ public class SubmissionService {
             return null;
         }
         Submission submission = submissionRepository.findFinalSubmission(categoryRound, team.getTeamId());
-        System.out.println("bài nộp nè" + submission);
         if(submission == null){
             throw new BadRequestException("Bạn chưa có bài nộp cuối cùng hoặc chưa có điểm");
         }
