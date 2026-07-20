@@ -47,27 +47,27 @@ public class StatusSchedulerService {
         }
     }
 
-    @Scheduled(fixedRate = 60000)
-    public void autoAdvanceRounds() {
-        LocalDateTime deadline = LocalDateTime.now().minusHours(1);
-        List<Round> rounds = roundRepository
-                .findByAppealEndTimeLessThanEqualAndAdvancementProcessedAtIsNull(deadline);
-
-        for (Round round : rounds) {
-            try {
-                roundAdvancementService.advanceRoundAutomatically(round.getRoundId());
-                log.info("Đã tự động thăng vòng cho round {}.", round.getRoundId());
-            } catch (Exception exception) {
-                // Giữ chưa xử lý để scheduler thử lại ở lần chạy sau.
-                log.error(
-                        "Không thể tự động thăng vòng cho round {}: {}",
-                        round.getRoundId(),
-                        exception.getMessage(),
-                        exception
-                );
-            }
-        }
-    }
+//    @Scheduled(fixedRate = 60000)
+//    public void autoAdvanceRounds() {
+//        LocalDateTime deadline = LocalDateTime.now().minusHours(1);
+//        List<Round> rounds = roundRepository
+//                .findByAppealEndTimeLessThanEqualAndAdvancementProcessedAtIsNull(deadline);
+//
+//        for (Round round : rounds) {
+//            try {
+//                roundAdvancementService.advanceRoundAutomatically(round.getRoundId());
+//                log.info("Đã tự động thăng vòng cho round {}.", round.getRoundId());
+//            } catch (Exception exception) {
+//                // Giữ chưa xử lý để scheduler thử lại ở lần chạy sau.
+//                log.error(
+//                        "Không thể tự động thăng vòng cho round {}: {}",
+//                        round.getRoundId(),
+//                        exception.getMessage(),
+//                        exception
+//                );
+//            }
+//        }
+//    }
 
     @Scheduled(fixedRate = 60000)
     @Transactional

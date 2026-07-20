@@ -30,7 +30,6 @@ public class PrizeServiceImpl {
         EventCoordinator eventCoordinator = eventCoordinatorRepository.findByAccount_AccountId(userDetails.getAccount().getAccountId())
                 .orElseThrow(() -> new BadRequestException("Bạn không phải là EventCoordinator."));
 
-
         // Lấy round chung kết để gán giải thưởng
         Round finalRound = roundRepository.findFinalRoundByEventId(eventId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy vòng chung kết."));
@@ -38,8 +37,8 @@ public class PrizeServiceImpl {
         // Lấy ds giải thưởng
         List<Prize> prizes = finalRound.getHackathonEvent().getDescription().prizes();
 
+        // Tìm những team tham gia vòng cuối cùng
         List<TeamParticipant> rankings = participantRepository.findByRoundId(finalRound.getRoundId());
-
 
         //1.Dựa vào rank để xếp giải thưởng tự động
         if (!rankings.isEmpty() && prizes != null && !prizes.isEmpty()) {

@@ -56,13 +56,8 @@ public interface RoundRepository extends JpaRepository<Round, Integer> {
             "SELECT MAX(r.orderIndex) FROM Round r " +
             "WHERE r.hackathonEvent.eventId = :eventId"
     )
-    Integer findRoundBigIndex(@Param("eventId") Integer eventId);
-
-    @Query(
-            "SELECT r FROM Round r " +
-                    "WHERE r.hackathonEvent.eventId = :eventId " +
-                    "ORDER BY r.orderIndex DESC LIMIT 1"
-    )
     Optional<Round> findFinalRoundByEventId(@Param("eventId") Integer eventId);
+
+
 
 }

@@ -68,7 +68,8 @@ public class RankingController {
             @PathVariable Integer roundId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         CategoryRoundRankingResponse rank = rankingService.getRankingByAll(roundId, userDetails);
-        return ResponseEntity.ok(ApiResponse.success(rank, "Xem hạng mục thành công."));
+        return ResponseEntity.ok(ApiResponse.success(rank, "Xem hạng" +
+                "f thành công."));
     }
 
     // Hàm này dành cho event muốn xuất file lúc nào cx được
