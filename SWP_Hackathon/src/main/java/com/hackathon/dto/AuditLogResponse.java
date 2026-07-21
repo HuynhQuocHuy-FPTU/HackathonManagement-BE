@@ -1,5 +1,6 @@
 package com.hackathon.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.hackathon.entity.enums.AccountRole;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

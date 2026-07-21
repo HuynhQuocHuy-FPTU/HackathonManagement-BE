@@ -1,10 +1,4 @@
 package com.hackathon.service.auth;
-
-import com.hackathon.entity.Account;
-import com.hackathon.exception.ApiException;
-import com.hackathon.repository.AccountRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -14,9 +8,6 @@ import java.util.Map;
 
 @Service
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
-
-    @Autowired
-    private AccountRepository accountRepository; // Inject Repository của bạn vào đây
 
     public OAuth2User loadUser(OAuth2UserRequest userRequest)  {
 

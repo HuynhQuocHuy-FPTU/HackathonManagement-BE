@@ -79,32 +79,18 @@ public class DataInitializer implements CommandLineRunner {
         if (!initData) {
             return;
         }
-//        if (!accountRepository.existsByEmail("admin@hackathon.com")) {
-//            accountRepository.save(Account.builder()
-//                    .createdAt(LocalDateTime.now())
-//                    .email("admin@hackathon.com")
-//                    .phone("0123456789")
-//                    .status(AccountStatus.ACTIVE)
-//                    .password(passwordEncoder.encode("Admin@123"))
-//                    .role(AccountRole.ADMIN)
-//                    .isPasswordChanged(true) // Admin tối cao thì gán luôn true để không bị ép đổi pass
-//                    .build());
-//            System.out.println("Đã khởi tạo tài khoản Admin: admin@hackathon.com / Mật khẩu: Admin@123");
-//        }
-//        if (!accountRepository.existsByEmail("system@hackathon.com")) {
-//            accountRepository.save(Account.builder()
-//                    .createdAt(LocalDateTime.now())
-//                    .email("system@hackathon.com")
-//                    .phone("0123456789")
-//                    .status(AccountStatus.ACTIVE)
-//                    .password(passwordEncoder.encode("System@123"))
-//                    .role(AccountRole.ADMIN)
-//                    .isPasswordChanged(true) // Admin tối cao thì gán luôn true để không bị ép đổi pass
-//                    .build());
-//            System.out.println("Đã khởi tạo tài khoản Admin: admin@hackathon.com / Mật khẩu: System@123");
-//        }
-//
-//
+        if (!accountRepository.existsByEmail("admin@hackathon.com")) {
+            accountRepository.save(Account.builder()
+                    .createdAt(LocalDateTime.now())
+                    .email("admin@hackathon.com")
+                    .phone("0123456789")
+                    .status(AccountStatus.ACTIVE)
+                    .password(passwordEncoder.encode("Admin@123"))
+                    .role(AccountRole.ADMIN)
+                    .isPasswordChanged(true) // Admin tối cao thì gán luôn true để không bị ép đổi pass
+                    .build());
+            System.out.println("Đã khởi tạo tài khoản Admin: admin@hackathon.com / Mật khẩu: Admin@123");
+        }
 //
 //        Account acc1 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("nguyenvan30498@gmail.com").phone("0976352891").status(AccountStatus.ACTIVE).password(passwordEncoder.encode("123456")).isPasswordChanged(true).role(AccountRole.EVENTCOORDINATOR).build());
 //
@@ -221,6 +207,7 @@ public class DataInitializer implements CommandLineRunner {
 //                teamMemberRepository.save(member);
 //            }
 //        }
+
 
         HackathonEvent event = eventRepository.findById(1)
                 .orElseThrow(() -> new RuntimeException("Event not found"));

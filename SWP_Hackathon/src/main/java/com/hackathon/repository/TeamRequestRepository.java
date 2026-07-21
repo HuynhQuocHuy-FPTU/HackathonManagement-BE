@@ -67,5 +67,12 @@ public interface TeamRequestRepository extends JpaRepository<TeamRequest,Integer
             RequestStatus status,
             Integer expertId
     );
-
+    @Query("SELECT tq FROM TeamRequest tq " +
+            "JOIN tq.round r " +
+            "JOIN r.hackathonEvent he " +
+            "WHERE he.eventId = :eventId AND tq.requestType = :requestType")
+    List<TeamRequest> findByHackathonEvent_EventIdAndRequestType(
+            @Param("eventId") Integer eventId,
+            @Param("requestType") RequestType requestType
+    );
 }

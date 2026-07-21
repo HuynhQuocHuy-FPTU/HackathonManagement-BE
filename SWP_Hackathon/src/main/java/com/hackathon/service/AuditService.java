@@ -29,31 +29,28 @@ public class AuditService {
     private final AccountRepository accountRepository;
 
     public void saveLog(Account acc, AuditAction action, AuditEntityType entityType, Integer entityId, String description, String data) {
-        String actorName = "N/A";
-        if (acc == null) {
-            actorName = "SYSTEM";
-        } else if (acc.getRole() != null) {
+        String actorName = "SYSTEM";
+        if (acc!=null && acc.getRole() != null) {
 
             int accountId = acc.getAccountId();
-            switch (acc.getRole().name()) {
-                case "EVENTCOORDINATOR":
+            switch (acc.getRole()) {
+                case EVENTCOORDINATOR:
                     actorName = eventCoordinatorRepository.findByAccount_AccountId(accountId)
                             .map(EventCoordinator::getCoordinatorName)
                             .orElse("N/A");
                     break;
-                case "STUDENT":
+                case STUDENT:
                     actorName = studentRepository.findByAccount_AccountId(accountId)
                             .map(Student::getStudentName)
                             .orElse("N/A");
                     break;
-                case "EXPERT":
+                case EXPERT:
                     actorName = expertRepository.findByAccount_AccountId(accountId)
                             .map(Expert::getExpertName)
                             .orElse("N/A");
                     break;
                 default:
                     actorName = "SYSTEM";
-                    break;
             }
         }
 

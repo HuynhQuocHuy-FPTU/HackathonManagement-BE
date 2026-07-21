@@ -44,4 +44,10 @@ public interface TeamRequestService {
             CustomUserDetails userDetails,
             CreateDirectTeamRequest request
     );
+
+    // Student xem ds gửi yêu cầu mentor hỗ trợ
+    List<TeamRequestResponse> getMyMentorSupportRequests(CustomUserDetails userDetails, Integer eventId);
+    // Student xem ds gửi đơn khiếu nại
+    List<TeamRequestResponse> getMyAppealRequests(CustomUserDetails userDetails, Integer eventId);
+
 }

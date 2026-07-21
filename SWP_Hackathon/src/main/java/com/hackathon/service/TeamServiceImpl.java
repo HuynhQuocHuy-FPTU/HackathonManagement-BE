@@ -1058,7 +1058,6 @@ public class TeamServiceImpl implements TeamService {
 
         List<TeamCompetitionResponse.RoundInfo> roundInfoList = new ArrayList<>();
 
-//        List<TeamCompetitionResponse.Category> categoryList = new ArrayList<>();
 
         for (CategoryRound category : categoryRound) {
             String roundName = category.getRound().getRoundName();

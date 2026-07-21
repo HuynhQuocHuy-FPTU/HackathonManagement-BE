@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+
 import jakarta.persistence.LockModeType;
 
 @Component
@@ -52,17 +53,17 @@ public interface RoundRepository extends JpaRepository<Round, Integer> {
     Optional<Round> findRoundByHackathonEvent_EventIdAndOrderIndex(Integer hackathonEventEventId, Integer orderIndex);
 
     // Tìm round có index lớn nhất
-    @Query(
-            "SELECT MAX(r.orderIndex) FROM Round r " +
-            "WHERE r.hackathonEvent.eventId = :eventId"
-    )
-    Integer findRoundBigIndex(@Param("eventId") Integer eventId);
-
-    @Query(
-            "SELECT r FROM Round r " +
-                    "WHERE r.hackathonEvent.eventId = :eventId " +
-                    "ORDER BY r.orderIndex DESC LIMIT 1"
-    )
+    @Query("""
+                SELECT r
+                FROM Round r
+                WHERE r.hackathonEvent.eventId = :eventId
+                  AND r.orderIndex = (
+                      SELECT MAX(r2.orderIndex)
+                      FROM Round r2
+                      WHERE r2.hackathonEvent.eventId = :eventId
+                  )
+            """)
     Optional<Round> findFinalRoundByEventId(@Param("eventId") Integer eventId);
+
 
 }

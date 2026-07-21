@@ -4,6 +4,7 @@ import com.hackathon.dto.event.Prize;
 import com.hackathon.dto.event.PrizeRequestDTO;
 import com.hackathon.dto.event.PrizeResponseDTO;
 import com.hackathon.entity.*;
+import com.hackathon.entity.enums.ParticipantStatus;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.*;
 import com.hackathon.security.CustomUserDetails;
@@ -30,17 +31,17 @@ public class PrizeServiceImpl {
         EventCoordinator eventCoordinator = eventCoordinatorRepository.findByAccount_AccountId(userDetails.getAccount().getAccountId())
                 .orElseThrow(() -> new BadRequestException("Bạn không phải là EventCoordinator."));
 
-
         // Lấy round chung kết để gán giải thưởng
         Round finalRound = roundRepository.findFinalRoundByEventId(eventId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy vòng chung kết."));
 
         // Lấy ds giải thưởng
         List<Prize> prizes = finalRound.getHackathonEvent().getDescription().prizes();
-
-        List<TeamParticipant> rankings = participantRepository.findByRoundId(finalRound.getRoundId());
-
-
+        
+        // Tìm những team tham gia vòng cuối cùng
+        List<TeamParticipant> rankings = participantRepository.findByRoundId(finalRound.getRoundId())
+                .stream()
+                .filter(rank -> rank.getStatus() == ParticipantStatus.PASSED).toList();
         //1.Dựa vào rank để xếp giải thưởng tự động
         if (!rankings.isEmpty() && prizes != null && !prizes.isEmpty()) {
 
