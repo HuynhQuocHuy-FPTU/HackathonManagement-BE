@@ -19,6 +19,8 @@ public enum NotificationType {
 
     RANKING_DRAFT,
     RANKING_OFFICIAL,
+    SCORING_COMPLETED,
+    SCORING_FAILED,
     RESULT_APPEAL,
     SUPPORT_TEAM
 

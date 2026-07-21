@@ -73,6 +73,10 @@ public interface NotificationService {
     //
     void notifyRoundRankingPublished(Account actor, Integer roundId, boolean isFinal, Integer responseDeadline);
 
+    void notifyScoringFailureToAllCoordinators(Round round, String reason);
+
+    void notifyScoringCompletedToAllCoordinators(Round round);
+
     void notifyExpertReEvaluation(Account actor, Set<Account> expertsToNotify, String teamName);
     void notifyResponseAppeal(Account actor, Account account , String teamName, boolean isChanged );
     void notifyMentorSupportTeam(Account teamLeader,  List<ExpertAssign> mentors);
