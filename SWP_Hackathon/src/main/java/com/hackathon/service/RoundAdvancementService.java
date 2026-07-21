@@ -86,7 +86,7 @@ public class RoundAdvancementService {
 
         if (hasTeamWithoutScore) {
             throw new BadRequestException(
-                    "Vẫn còn đội chưa có evaluation hợp lệ, hệ thống sẽ thử tính lại sau."
+                    "Vẫn còn đội chưa được chấm điểm."
             );
         }
 
@@ -99,6 +99,7 @@ public class RoundAdvancementService {
         }
 
         round.setScoringProcessedAt(LocalDateTime.now());
+        round.setScoringFailureNotifiedAt(null);
         roundRepository.save(round);
     }
 

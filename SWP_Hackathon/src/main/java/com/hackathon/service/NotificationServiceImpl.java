@@ -24,6 +24,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final AccountRepository accountRepository;
     private final RoundRepository roundRepository;
+    private final EventCoordinatorRepository eventCoordinatorRepository;
     private final EmailService emailService;
 
     @Transactional
@@ -488,6 +489,56 @@ public class NotificationServiceImpl implements NotificationService {
                 System.out.println("Lỗi gửi email cho thí sinh xem hạng");
             }
 
+        }
+    }
+
+    @Override
+    @Transactional
+    public void notifyScoringFailureToAllCoordinators(Round round, String reason) {
+        List<EventCoordinator> coordinators = eventCoordinatorRepository.findAllWithAccount();
+        if (coordinators.isEmpty()) {
+            throw new BadRequestException("Hệ thống chưa có tài khoản Điều phối viên sự kiện.");
+        }
+
+        String title = "Không thể tự động tính điểm";
+        String message = "Hệ thống không thể tự động tính điểm cho vòng "
+                + round.getRoundName() + " (ID: " + round.getRoundId() + "). Lý do: " + reason;
+
+        for (EventCoordinator coordinator : coordinators) {
+            createNotificationNoResponse(
+                    coordinator.getAccount(),
+                    null,
+                    NotificationType.SCORING_FAILED,
+                    NotificationChannel.WEB,
+                    title,
+                    message,
+                    round
+            );
+        }
+    }
+
+    @Override
+    @Transactional
+    public void notifyScoringCompletedToAllCoordinators(Round round) {
+        List<EventCoordinator> coordinators = eventCoordinatorRepository.findAllWithAccount();
+        if (coordinators.isEmpty()) {
+            throw new BadRequestException("Hệ thống chưa có tài khoản Điều phối viên sự kiện.");
+        }
+
+        String title = "Tự động tính điểm thành công";
+        String message = "Hệ thống đã tự động tính điểm và xếp hạng thành công cho vòng "
+                + round.getRoundName() + " (ID: " + round.getRoundId() + ").";
+
+        for (EventCoordinator coordinator : coordinators) {
+            createNotificationNoResponse(
+                    coordinator.getAccount(),
+                    null,
+                    NotificationType.SCORING_COMPLETED,
+                    NotificationChannel.WEB,
+                    title,
+                    message,
+                    round
+            );
         }
     }
 

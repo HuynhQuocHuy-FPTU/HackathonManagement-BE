@@ -26,6 +26,8 @@ public class StatusSchedulerService {
     private final RoundRepository roundRepository;
     private final RankingService rankingService;
     private final RoundAdvancementService roundAdvancementService;
+    private final NotificationService notificationService;
+
 
     @Scheduled(fixedRate = 60000)
     public void autoCalculateScores() {
@@ -36,6 +38,7 @@ public class StatusSchedulerService {
             try {
                 roundAdvancementService.calculateRoundScoresAutomatically(round.getRoundId());
                 log.info("Đã tự động tính điểm cho round {}.", round.getRoundId());
+                notifyCoordinatorsAboutScoringCompleted(round);
             } catch (Exception exception) {
                 log.warn(
                         "Chưa thể tự động tính điểm cho round {}: {}",
@@ -43,7 +46,45 @@ public class StatusSchedulerService {
                         exception.getMessage(),
                         exception
                 );
+                notifyCoordinatorAboutScoringFailure(round, exception);
             }
+        }
+    }
+
+    private void notifyCoordinatorsAboutScoringCompleted(Round round) {
+        try {
+            notificationService.notifyScoringCompletedToAllCoordinators(round);
+        } catch (Exception notificationException) {
+            log.error(
+                    "Đã tính điểm thành công nhưng không thể gửi thông báo cho tất cả Điều phối viên của vòng {}: {}",
+                    round.getRoundId(),
+                    notificationException.getMessage(),
+                    notificationException
+            );
+        }
+    }
+
+    private void notifyCoordinatorAboutScoringFailure(Round round, Exception exception) {
+        if (round.getScoringFailureNotifiedAt() != null) {
+            return;
+        }
+
+        String reason = exception.getMessage() == null
+                ? "Không xác định được nguyên nhân"
+                : exception.getMessage();
+
+        try {
+            notificationService.notifyScoringFailureToAllCoordinators(round, reason);
+
+            round.setScoringFailureNotifiedAt(LocalDateTime.now());
+            roundRepository.save(round);
+        } catch (Exception notificationException) {
+            log.error(
+                    "Không thể gửi thông báo lỗi tính điểm cho tất cả Điều phối viên của vòng {}: {}",
+                    round.getRoundId(),
+                    notificationException.getMessage(),
+                    notificationException
+            );
         }
     }
 

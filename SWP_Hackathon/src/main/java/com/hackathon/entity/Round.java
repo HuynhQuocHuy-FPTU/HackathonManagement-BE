@@ -47,6 +47,10 @@ public class Round {
 
     @Column(name = "Scoring_Processed_At")
     private LocalDateTime scoringProcessedAt;
+
+    @Column(name = "Scoring_Failure_Notified_At")
+    private LocalDateTime scoringFailureNotifiedAt;
+
     @Column(name ="Url_Excels", columnDefinition = "NVARCHAR(MAX)")
     private String excelsUrl ;
 

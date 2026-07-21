@@ -696,7 +696,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
 //            List<EvaluationDetail> evaluationDetails = evaluationDetailRepository.findByEvaluation_EvaluationId(evaluation.getEvaluationId());
 //            for(EvaluationDetail evaluationDetail : evaluationDetails){
 //                evaluationDetail.setOriginalScore(evaluationDetail.getScore());
-////                evaluationDetail.setScore(null);
+//                evaluationDetail.setScore(null);
 //            }
 //            evaluationDetailRepository.saveAll(evaluationDetails);
         }
