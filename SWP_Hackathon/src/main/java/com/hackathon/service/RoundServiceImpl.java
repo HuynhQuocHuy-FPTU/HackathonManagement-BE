@@ -79,7 +79,6 @@ public class RoundServiceImpl implements RoundService{
         round.setSubmissionType(request.getSubmissionType());
         round.setAllowedFileType(request.getAllowedFileTypes());
         round.setMaxFileCount(request.getMaxFileCount());
-        round.setMaxTotalSizeMb(request.getMaxTotalSizeMb());
         round.setStatus(RoundStatus.UPCOMING);
         round.setOrderIndex(request.getOrderIndex());
         if(request.getCriteriaSetId() != null){
@@ -163,7 +162,6 @@ public class RoundServiceImpl implements RoundService{
             saveRound.setSubmissionType(roundRequest.getSubmissionType());
             saveRound.setAllowedFileType(roundRequest.getAllowedFileTypes());
             saveRound.setMaxFileCount(roundRequest.getMaxFileCount());
-            saveRound.setMaxTotalSizeMb(roundRequest.getMaxTotalSizeMb());
             // 5. Lấy CriteriaSet tương ứng
             if(roundRequest.getCriteriaSetId() != null){
                 CriteriaSet criteriaSet = criteriaSetRepository.findById(roundRequest.getCriteriaSetId())
