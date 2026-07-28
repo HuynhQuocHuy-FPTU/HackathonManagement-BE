@@ -4,6 +4,7 @@ import com.hackathon.dto.category.CategoryResponse;
 import com.hackathon.dto.event.CreateEventRequest;
 import com.hackathon.dto.event.EventResponse;
 import com.hackathon.dto.event.UpdateEventRequest;
+import com.hackathon.dto.event.UpdateTimeEventDTO;
 import com.hackathon.dto.expert.ExpertInfoResponse;
 import com.hackathon.dto.round.UpdateTimeRoundRequest;
 import com.hackathon.dto.team.TeamResponse;
@@ -187,6 +188,22 @@ public class EventController {
         roundService.updateTimeRound(request,userDetails, roundId);
         return ResponseEntity.ok(
                 ApiResponse.success(null, "Đã chỉnh sửa thời gian của vòng thi thành công")
+        );
+    }
+
+    // =========================================================
+    // UPDATE EVENT TIME
+    // =========================================================
+
+    @PutMapping("/update-time-event/{eventId}")
+    public ResponseEntity<ApiResponse<Void>> updateTimeEvent(
+            @PathVariable Integer eventId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody UpdateTimeEventDTO updateTimeEventDTO
+            ) {
+        eventService.updateTimeEvent(userDetails,eventId,updateTimeEventDTO);
+        return ResponseEntity.ok(
+                ApiResponse.success(null, "Đã chỉnh sửa thời gian của event thành công")
         );
     }
 

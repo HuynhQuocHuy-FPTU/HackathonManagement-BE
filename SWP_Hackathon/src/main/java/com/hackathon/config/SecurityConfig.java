@@ -122,6 +122,10 @@ public class SecurityConfig {
 
                         //Chỉ event coordinator
                         // 1. tất cả các API thay đổi dữ liệu sự kiện (POST, PUT, DELETE, PATCH)
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/events/update-time-event/*"
+                        ).hasRole("EVENTCOORDINATOR")
                         .requestMatchers("/api/events/create", "/api/events/publish/**",
                                 "/api/events/delete/**", "/api/events/update/**",
                                 "/api/events/restore/**", "/api/events/cancel/**", "/api/events/permanently/**")

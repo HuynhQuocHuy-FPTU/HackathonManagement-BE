@@ -4,6 +4,7 @@ import com.hackathon.dto.event.CreateEventRequest;
 
 import com.hackathon.dto.event.EventResponse;
 import com.hackathon.dto.event.UpdateEventRequest;
+import com.hackathon.dto.event.UpdateTimeEventDTO;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.security.CustomUserDetails;
 
@@ -29,4 +30,6 @@ public interface EventService {
     public List<EventResponse> getPublicEvents();
 
     public List<EventResponse> searchPublicEvents(String eventName);
+
+    public void updateTimeEvent(CustomUserDetails userDetails, Integer eventId, UpdateTimeEventDTO updateTimeEventDTO);
 }
