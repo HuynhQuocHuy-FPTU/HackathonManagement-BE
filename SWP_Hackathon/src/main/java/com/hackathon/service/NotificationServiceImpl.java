@@ -82,7 +82,7 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setActor(actor);
         notification.setMessage(message);
         notification.setAllowResponse(allowResponse);
-        notification.setResponseDeadline(LocalDateTime.now().plusHours(responseDeadline));
+        notification.setResponseDeadline(LocalDateTime.now().plusMinutes(responseDeadline));
         notification.setResponseStatus(NotiResponseStatus.NONE);
         notification.setRead(false);
         notification.setRound(round);

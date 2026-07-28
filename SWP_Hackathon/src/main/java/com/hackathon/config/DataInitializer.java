@@ -3,6 +3,7 @@ package com.hackathon.config;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.*;
 import com.hackathon.repository.*;
+import com.hackathon.service.grading.support.ScoreCalculator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -12,22 +13,29 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
 
-    @Value("${app.init-data:false}") // Mặc định là false (không chạy)
+    /*
+     * Thay bằng ID event và round thật.
+     * Round phải thuộc event.
+     */
+    private static final Integer TARGET_EVENT_ID = 1;
+    private static final Integer TARGET_ROUND_ID = 1;
+
+    private static final int ADMIN_COUNT = 2;
+    private static final int COORDINATOR_COUNT = 3;
+    private static final int EXPERT_COUNT = 6;
+    private static final int STUDENT_COUNT = 30;
+    private static final int TEAM_COUNT = 10;
+    private static final int MEMBER_PER_TEAM = 3;
+
+    @Value("${app.init-data:false}")
     private boolean initData;
-
-    @Autowired
-    private CriteriaSetRepository criteriaSetRepository;
-
-    @Autowired
-    private CriteriaDetailRepository criteriaDetailRepository;
-
-    @Autowired
-    private ExpertRepository expertRepository;
 
     @Autowired
     private AccountRepository accountRepository;
@@ -36,17 +44,10 @@ public class DataInitializer implements CommandLineRunner {
     private EventCoordinatorRepository eventCoordinatorRepository;
 
     @Autowired
+    private ExpertRepository expertRepository;
+
+    @Autowired
     private StudentRepository studentRepository;
-
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private HackathonEventRepository eventRepository;
-
-    @Autowired
-    private RegistrationRepository registrationRepository;
 
     @Autowired
     private TeamRepository teamRepository;
@@ -55,16 +56,25 @@ public class DataInitializer implements CommandLineRunner {
     private TeamMemberRepository teamMemberRepository;
 
     @Autowired
-    private SubmissionRepository submissionRepository;
+    private HackathonEventRepository eventRepository;
+
+    @Autowired
+    private RoundRepository roundRepository;
+
+    @Autowired
+    private CategoryRoundRepository categoryRoundRepository;
+
+    @Autowired
+    private RegistrationRepository registrationRepository;
 
     @Autowired
     private ParticipantRepository participantRepository;
 
     @Autowired
-    private ExpertAssignRepository expertAssignRepository;
+    private SubmissionRepository submissionRepository;
 
     @Autowired
-    private EvaluationDetailRepository evaluationDetailRepository;
+    private ExpertAssignRepository expertAssignRepository;
 
     @Autowired
     private EvaluationCriteriaRepository evaluationCriteriaRepository;
@@ -72,214 +82,923 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired
     private EvaluationRepository evaluationRepository;
 
+    @Autowired
+    private CriteriaSetRepository criteriaSetRepository;
 
-    @Transactional
+    @Autowired
+    private CriteriaDetailRepository criteriaDetailRepository;
+
+    @Autowired
+    private ScoreCalculator scoreCalculator;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @Override
-    public void run(String... args) throws Exception {
+    @Transactional
+    public void run(String... args) {
         if (!initData) {
             return;
         }
-        if (!accountRepository.existsByEmail("admin@hackathon.com")) {
-            accountRepository.save(Account.builder()
-                    .createdAt(LocalDateTime.now())
-                    .email("admin@hackathon.com")
-                    .phone("0123456789")
-                    .status(AccountStatus.ACTIVE)
-                    .password(passwordEncoder.encode("Admin@123"))
-                    .role(AccountRole.ADMIN)
-                    .isPasswordChanged(true) // Admin tối cao thì gán luôn true để không bị ép đổi pass
-                    .build());
-            System.out.println("Đã khởi tạo tài khoản Admin: admin@hackathon.com / Mật khẩu: Admin@123");
+
+        String password =
+                passwordEncoder.encode("123456");
+
+//        createAdmins(password);
+//        createEventCoordinators(password);
+//        createExperts(password);
+//        createCriteriaSets();
+//
+//        Student[] students = createStudents(password);
+//        Team[] teams = createTeams(students);
+
+//        registerTeamsForEvent(
+//                TARGET_EVENT_ID
+//        );
+
+//        submitForParticipantsWithoutSubmission(
+//                TARGET_ROUND_ID
+//        );
+
+        /*
+         * Chấm các final submission theo ExpertAssign
+         * của từng CategoryRound.
+         */
+        gradeSubmissionsByAssignments(
+                TARGET_ROUND_ID
+        );
+    }
+
+    // =====================================================
+    // ACCOUNT
+    // =====================================================
+
+    private Account createAccountIfAbsent(
+            String email,
+            String phone,
+            String password,
+            AccountRole role
+    ) {
+        return accountRepository.findByEmail(email)
+                .orElseGet(() -> accountRepository.save(
+                        Account.builder()
+                                .email(email)
+                                .phone(phone)
+                                .password(password)
+                                .status(AccountStatus.ACTIVE)
+                                .role(role)
+                                .isPasswordChanged(true)
+                                .createdAt(LocalDateTime.now())
+                                .build()
+                ));
+    }
+
+    private void createAdmins(String password) {
+        for (int index = 1;
+             index <= ADMIN_COUNT;
+             index++) {
+
+            createAccountIfAbsent(
+                    "admin" + index + "@hackathon.com",
+                    String.format("090000000%d", index),
+                    password,
+                    AccountRole.ADMIN
+            );
+        }
+    }
+
+    private void createEventCoordinators(
+            String password
+    ) {
+        for (int index = 1;
+             index <= COORDINATOR_COUNT;
+             index++) {
+
+            int number = index;
+
+            Account account = createAccountIfAbsent(
+                    "coordinator"
+                            + number
+                            + "@hackathon.com",
+                    String.format("090000001%d", number),
+                    password,
+                    AccountRole.EVENTCOORDINATOR
+            );
+
+            boolean profileExists =
+                    eventCoordinatorRepository
+                            .findByAccount_AccountId(
+                                    account.getAccountId()
+                            )
+                            .isPresent();
+
+            if (!profileExists) {
+                eventCoordinatorRepository.save(
+                        EventCoordinator.builder()
+                                .coordinatorName(
+                                        "Event Coordinator "
+                                                + number
+                                )
+                                .department(
+                                        "Phòng tổ chức sự kiện"
+                                )
+                                .organization(
+                                        "FPT University"
+                                )
+                                .account(account)
+                                .build()
+                );
+            }
+        }
+    }
+
+    private void createExperts(String password) {
+        for (int index = 1;
+             index <= EXPERT_COUNT;
+             index++) {
+
+            int number = index;
+
+            Account account = createAccountIfAbsent(
+                    "expert"
+                            + number
+                            + "@hackathon.com",
+                    String.format("090000002%d", number),
+                    password,
+                    AccountRole.EXPERT
+            );
+
+            boolean profileExists = expertRepository
+                    .findByAccount_AccountId(
+                            account.getAccountId()
+                    )
+                    .isPresent();
+
+            if (!profileExists) {
+                expertRepository.save(
+                        Expert.builder()
+                                .expertName(
+                                        "Expert " + number
+                                )
+                                .department(
+                                        "Khoa Công nghệ thông tin"
+                                )
+                                .organization(
+                                        "FPT University"
+                                )
+                                .account(account)
+                                .build()
+                );
+            }
+        }
+    }
+
+    // =====================================================
+    // CRITERIA SET
+    // =====================================================
+
+    /**
+     * Tạo bốn bộ tiêu chí mẫu cho Event Coordinator đầu tiên.
+     * Nếu bộ tiêu chí đã tồn tại thì bỏ qua để không tạo dữ liệu trùng
+     * mỗi khi ứng dụng khởi động lại.
+     */
+    private void createCriteriaSets() {
+        EventCoordinator coordinator =
+                eventCoordinatorRepository.findAll()
+                        .stream()
+                        .findFirst()
+                        .orElseThrow(() -> new RuntimeException(
+                                "Không có Event Coordinator để tạo bộ tiêu chí"
+                        ));
+
+        createCriteriaSetIfAbsent(
+                coordinator,
+                "Bộ tiêu chí Ý tưởng và Sáng tạo",
+                List.of(
+                        criteriaDetail(
+                                "Tính sáng tạo",
+                                "Đánh giá mức độ mới mẻ và khác biệt của ý tưởng",
+                                "40",
+                                CriteriaType.SUBMISSION
+                        ),
+                        criteriaDetail(
+                                "Tính phù hợp",
+                                "Đánh giá mức độ phù hợp với chủ đề hackathon",
+                                "35",
+                                CriteriaType.SUBMISSION
+                        ),
+                        criteriaDetail(
+                                "Khả năng phát triển",
+                                "Đánh giá tiềm năng mở rộng của sản phẩm",
+                                "25",
+                                CriteriaType.PRESENTATION
+                        )
+                )
+        );
+
+        createCriteriaSetIfAbsent(
+                coordinator,
+                "Bộ tiêu chí Kỹ thuật và Chất lượng",
+                List.of(
+                        criteriaDetail(
+                                "Chất lượng kỹ thuật",
+                                "Đánh giá kiến trúc, mã nguồn và công nghệ sử dụng",
+                                "40",
+                                CriteriaType.SUBMISSION
+                        ),
+                        criteriaDetail(
+                                "Mức độ hoàn thiện",
+                                "Đánh giá tính ổn định và đầy đủ của chức năng",
+                                "35",
+                                CriteriaType.SUBMISSION
+                        ),
+                        criteriaDetail(
+                                "Khả năng demo",
+                                "Đánh giá khả năng vận hành trong buổi trình bày",
+                                "25",
+                                CriteriaType.PRESENTATION
+                        )
+                )
+        );
+
+        createCriteriaSetIfAbsent(
+                coordinator,
+                "Bộ tiêu chí Giá trị và Tác động",
+                List.of(
+                        criteriaDetail(
+                                "Giá trị thực tiễn",
+                                "Đánh giá khả năng giải quyết vấn đề thực tế",
+                                "40",
+                                CriteriaType.SUBMISSION
+                        ),
+                        criteriaDetail(
+                                "Tác động người dùng",
+                                "Đánh giá lợi ích sản phẩm mang lại cho người dùng",
+                                "30",
+                                CriteriaType.SUBMISSION
+                        ),
+                        criteriaDetail(
+                                "Khả năng thương mại",
+                                "Đánh giá tiềm năng áp dụng và thương mại hóa",
+                                "30",
+                                CriteriaType.PRESENTATION
+                        )
+                )
+        );
+
+        createCriteriaSetIfAbsent(
+                coordinator,
+                "Bộ tiêu chí Trình bày và Demo",
+                List.of(
+                        criteriaDetail(
+                                "Kỹ năng trình bày",
+                                "Đánh giá cách truyền đạt rõ ràng và thuyết phục",
+                                "40",
+                                CriteriaType.PRESENTATION
+                        ),
+                        criteriaDetail(
+                                "Chất lượng demo",
+                                "Đánh giá tính trực quan và ổn định của phần demo",
+                                "30",
+                                CriteriaType.PRESENTATION
+                        ),
+                        criteriaDetail(
+                                "Khả năng phản biện",
+                                "Đánh giá cách trả lời câu hỏi của ban giám khảo",
+                                "30",
+                                CriteriaType.PRESENTATION
+                        )
+                )
+        );
+    }
+
+    /**
+     * Lưu CriteriaSet trước để có ID, sau đó gắn và lưu các CriteriaDetail.
+     * Tổng trọng số của mỗi bộ dữ liệu mẫu là 100.
+     */
+    private void createCriteriaSetIfAbsent(
+            EventCoordinator coordinator,
+            String criteriaSetName,
+            List<CriteriaDetail> details
+    ) {
+        if (criteriaSetRepository.existsByCriteriaSetName(
+                criteriaSetName
+        )) {
+            return;
         }
 
-        Account acc1 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("nguyenvan30498@gmail.com").phone("0976352891").status(AccountStatus.ACTIVE).password(passwordEncoder.encode("123456")).isPasswordChanged(true).role(AccountRole.EVENTCOORDINATOR).build());
+        CriteriaSet criteriaSet = criteriaSetRepository.save(
+                CriteriaSet.builder()
+                        .criteriaSetName(criteriaSetName)
+                        .maxScore(100)
+                        .eventCoordinator(coordinator)
+                        .build()
+        );
 
-        Account acc2 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("tranhoa456@gmail.com").password(passwordEncoder.encode("123456")).phone("0983452324").isPasswordChanged(true).status(AccountStatus.ACTIVE).role(AccountRole.EXPERT).build());
+        details.forEach(detail ->
+                detail.setCriteriaSet(criteriaSet)
+        );
+        criteriaDetailRepository.saveAll(details);
+    }
 
-        Account acc3 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("lehuyen4238@gmail.com").password(passwordEncoder.encode("123456")).phone("097635235").isPasswordChanged(true).status(AccountStatus.ACTIVE).role(AccountRole.EXPERT).build());
+    /**
+     * Tạo CriteriaDetail chưa gắn CriteriaSet.
+     * Quan hệ sẽ được thiết lập sau khi CriteriaSet được lưu thành công.
+     */
+    private CriteriaDetail criteriaDetail(
+            String name,
+            String description,
+            String weight,
+            CriteriaType type
+    ) {
+        return CriteriaDetail.builder()
+                .criteriaName(name)
+                .description(description)
+                .weight(new BigDecimal(weight))
+                .criteriaType(type)
+                .build();
+    }
 
-        Account acc4 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("lehoa345@gmail.com").password(passwordEncoder.encode("123456")).phone("0126789354").isPasswordChanged(true).status(AccountStatus.ACTIVE).role(AccountRole.STUDENT).build());
+    // =====================================================
+    // STUDENT
+    // =====================================================
 
-        Account acc5 = accountRepository.save(Account.builder().createdAt(LocalDateTime.now()).email("nguyenha@gmail.com").password(passwordEncoder.encode("123456")).phone("0976336472").isPasswordChanged(true).status(AccountStatus.ACTIVE).role(AccountRole.STUDENT).build());
+    private Student[] createStudents(String password) {
+        Student[] students =
+                new Student[STUDENT_COUNT];
 
+        for (int index = 0;
+             index < STUDENT_COUNT;
+             index++) {
 
-        //Create eventcoordiantor
-        EventCoordinator eventCoordinator1 = eventCoordinatorRepository.save(EventCoordinator.builder().coordinatorName("Nguyễn Văn Văn").department("Phòng công tác sinh viên ").account(acc1).build());
+            int number = index + 1;
 
-        //create expert
-        expertRepository.save(Expert.builder().expertName("Trần Thị Hoa").department("Khoa kĩ thuật").account(acc2).build());
+            Account account = createAccountIfAbsent(
+                    "student"
+                            + number
+                            + "@hackathon.com",
+                    String.format("091%07d", number),
+                    password,
+                    AccountRole.STUDENT
+            );
 
-        expertRepository.save(Expert.builder().expertName("Lê Huyền").department("Khoa kĩ thuật").account(acc3).build());
+            String studentCode =
+                    "SE"
+                            + String.format(
+                            "%06d",
+                            200001 + index
+                    );
 
-        //create student
-        studentRepository.save(Student.builder().studentCode("SE192345").studentName("Lê Hòa").major("Software engineer").account(acc4).build());
+            students[index] = studentRepository
+                    .findByAccount_AccountId(
+                            account.getAccountId()
+                    )
+                    .orElseGet(() -> studentRepository.save(
+                            Student.builder()
+                                    .studentCode(studentCode)
+                                    .studentName(
+                                            "Student " + number
+                                    )
+                                    .major(
+                                            "Software Engineering"
+                                    )
+                                    .account(account)
+                                    .build()
+                    ));
+        }
 
-        studentRepository.save(Student.builder().studentCode("SE190934").studentName("Nguyễn Hà").major("Software engineer").account(acc5).build());
+        return students;
+    }
 
-        // tạo criteria set dưới database
-        CriteriaSet criteriaSet1 = criteriaSetRepository.save(CriteriaSet.builder().criteriaSetName("Đánh giá ý tưởng và thiết kế/ nguyên mẫu").maxScore(100).eventCoordinator(eventCoordinator1).build());
+    // =====================================================
+    // TEAM
+    // =====================================================
 
-        CriteriaSet criteriaSet2 = criteriaSetRepository.save(CriteriaSet.builder().criteriaSetName("Đánh giá nguyên mẫu và demo").maxScore(100).eventCoordinator(eventCoordinator1).build());
-
-        CriteriaSet criteriaSet3 = criteriaSetRepository.save(CriteriaSet.builder().criteriaSetName("Bộ tiêu chí đánh giá dự án").eventCoordinator(eventCoordinator1).maxScore(100).build());
-
-        CriteriaSet criteriaSet4 = criteriaSetRepository.save(CriteriaSet.builder().criteriaSetName("Bộ tiêu chí đánh giá sản phẩm").eventCoordinator(eventCoordinator1).maxScore(100).build());
-
-        //tạo criteria detail dưới database
-        criteriaDetailRepository.save(CriteriaDetail.builder().criteriaSet(criteriaSet1).criteriaName("Bám sát chủ đề, mức độ phù hợp của ý tưởng").weight(new BigDecimal(30)).criteriaType(CriteriaType.SUBMISSION).build());
-
-        criteriaDetailRepository.save(CriteriaDetail.builder().criteriaSet(criteriaSet1).criteriaName("Khả thi logic, có khả năng triển khai trong 48h hay không").weight(new BigDecimal(25)).criteriaType(CriteriaType.SUBMISSION).build());
-
-        criteriaDetailRepository.save(CriteriaDetail.builder().criteriaSet(criteriaSet1).criteriaName("Sự sáng tạo và đổi mới").weight(new BigDecimal(30)).criteriaType(CriteriaType.SUBMISSION).build());
-
-        criteriaDetailRepository.save(CriteriaDetail.builder().criteriaSet(criteriaSet1).criteriaName("Trực quan, rõ ràng và hướng đên người dùng").weight(new BigDecimal(15)).criteriaType(CriteriaType.PRESENTATION).build());
-
-        //===============================
-
-        criteriaDetailRepository.save(CriteriaDetail.builder().criteriaSet(criteriaSet2).criteriaName("Ứng dụng AI và hiệu quả sáng tạo").weight(new BigDecimal(20)).criteriaType(CriteriaType.SUBMISSION).build());
-
-        criteriaDetailRepository.save(CriteriaDetail.builder().criteriaSet(criteriaSet2).criteriaName("Chất lượng kĩ thuật").description("Chất lượng mã nguồn, độ ổn định và chức năng của sản phẩm").weight(new BigDecimal(25)).criteriaType(CriteriaType.SUBMISSION).build());
-
-        criteriaDetailRepository.save(CriteriaDetail.builder().criteriaSet(criteriaSet2).criteriaName("Giao diện người dùng đẹp mắt").description("Đẹp mắt, dễ sử dụng, thân thiện").criteriaType(CriteriaType.SUBMISSION).weight(new BigDecimal(15)).build());
-
-        criteriaDetailRepository.save(CriteriaDetail.builder().criteriaSet(criteriaSet2).criteriaName("Trải nghiệm người dùng").description("Mượt mà, ít lỗi, dễ tiếp cận").criteriaType(CriteriaType.PRESENTATION).weight(new BigDecimal(15)).build());
-
-        criteriaDetailRepository.save(CriteriaDetail.builder().criteriaSet(criteriaSet2).criteriaName("Trình bày và demo").description("Logic, rõ ràng, trả lời tất cả câu hỏi của ban giám khảo").criteriaType(CriteriaType.PRESENTATION).weight(new BigDecimal(25)).build());
-//
-        Account[] studentAccounts = new Account[75];
-        Student[] students = new Student[75];
-        Team[] teams = new Team[25];
-
+    private Team[] createTeams(Student[] students) {
+        Team[] teams = new Team[TEAM_COUNT];
         int studentIndex = 0;
-//
-//// =======================
-//// 1. CREATE 60 STUDENTS
-//// =======================
-        for (int i = 0; i < 75; i++) {
 
-            studentAccounts[i] = accountRepository.save(
-                    Account.builder()
-                            .createdAt(LocalDateTime.now())
-                            .email("student" + (i + 1) + "@gmail.com")
-                            .phone("09000000" + i)
-                            .password(passwordEncoder.encode("123456")).isPasswordChanged(true)
-                            .status(AccountStatus.ACTIVE)
-                            .role(AccountRole.STUDENT)
-                            .build()
-            );
+        for (int teamIndex = 0;
+             teamIndex < TEAM_COUNT;
+             teamIndex++) {
 
-            students[i] = studentRepository.save(
-                    Student.builder()
-                            .studentCode("SE" + (200000 + i))
-                            .studentName("Student " + (i + 1))
-                            .major("Software Engineering")
-                            .account(studentAccounts[i])
-                            .build()
-            );
-        }
+            String teamName =
+                    "Team " + (teamIndex + 1);
 
-//// =======================
-//// 2. CREATE 20 TEAMS + TEAM MEMBERS
-//// =======================
-        for (int i = 0; i < 25; i++) {
+            Team team = teamRepository.findAll()
+                    .stream()
+                    .filter(item ->
+                            teamName.equalsIgnoreCase(
+                                    item.getTeamName()
+                            )
+                    )
+                    .findFirst()
+                    .orElseGet(() -> teamRepository.save(
+                            Team.builder()
+                                    .teamName(teamName)
+                                    .teamSize(
+                                            MEMBER_PER_TEAM
+                                    )
+                                    .status(TeamStatus.DRAFT)
+                                    .build()
+                    ));
 
-            Team team = teamRepository.save(
-                    Team.builder()
-                            .teamName("Team " + (i + 1))
-                            .teamSize(3)
-                            .status(TeamStatus.DRAFT)
-                            .build()
-            );
+            teams[teamIndex] = team;
 
-            teams[i] = team;
+            boolean alreadyHasMembers =
+                    team.getTeamMembers() != null
+                            && !team.getTeamMembers()
+                            .isEmpty();
 
-            // mỗi team 3 student
-            for (int j = 0; j < 3; j++) {
+            if (alreadyHasMembers) {
+                studentIndex += MEMBER_PER_TEAM;
+                continue;
+            }
 
-                Student student = students[studentIndex++];
+            for (int memberIndex = 0;
+                 memberIndex < MEMBER_PER_TEAM;
+                 memberIndex++) {
 
-                TeamMember member = TeamMember.builder()
-                        .team(team)
-                        .student(student)
-                        .isLeader(j == 0)
-                        .build();
+                Student student =
+                        students[studentIndex++];
 
-                teamMemberRepository.save(member);
+                teamMemberRepository.save(
+                        TeamMember.builder()
+                                .team(team)
+                                .student(student)
+                                .isLeader(
+                                        memberIndex == 0
+                                )
+                                .build()
+                );
             }
         }
 
+        return teams;
+    }
 
-//        HackathonEvent event = eventRepository.findById(1)
-//                .orElseThrow(() -> new RuntimeException("Event not found"));
-//
-//        List<Team> teamList = teamRepository.findAll();
-//        List<ExpertAssign> expertList = expertAssignRepository.findAll();
-//
-//        if (expertList.isEmpty()) {
-//            throw new RuntimeException("Chưa có ExpertAssign nào được cấu hình");
-//        }
-//
-//        int expertIndex = 0; // Biến để xoay vòng người chấm
-//
-//        for (Team team : teamList) {
-//            // 1. Tạo Registration
-//            Registration registration = Registration.builder()
-//                    .team(team)
-//                    .hackathonEvent(event)
-//                    .status(RegistrationStatus.APPROVED)
-//                    .registrationDate(LocalDateTime.now())
-//                    .build();
-//            registrationRepository.save(registration);
-//
-//            // 2. Tạo TeamParticipant
-//            TeamParticipant participant = TeamParticipant.builder()
-//                    .registration(registration)
-//                    .status(ParticipantStatus.ACTIVE)
-//                    .submissionStatus(SubmissionStatus.SUBMITTED)
-//                    .build();
-//            participantRepository.save(participant);
-//
-//            // 3. Duyệt qua từng vòng thi
-//            for (Round round : event.getRounds()) {
-//                // Tạo Submission
-//                Submission submission = Submission.builder()
-//                        .createAt(LocalDateTime.now())
-//                        .description("Dự án cho vòng: " + round.getRoundName())
-//                        .githubUrl("https://github.com/HoThuyDiep/Smart-Medical-Management")
-//                        .latestCommitSha("7d1b31e741256b7ea6727284b39b06886e8e8156")
-//                        .isFinal(true)
-//                        .team(team)
-//                        .teamParticipant(participant)
-//                        .build();
-//                submissionRepository.save(submission);
-//
-//                // Phân bổ người chấm (xoay vòng qua danh sách expertList)
-//                ExpertAssign currentExpert = expertList.get(expertIndex % expertList.size());
-//                expertIndex++;
-//
-//                // Tạo Evaluation
-//                Evaluation evaluation = Evaluation.builder()
-//                        .score(new BigDecimal("9.50"))
-//                        .status(EvaluationStatus.GRADED)
-//                        .submission(submission)
-//                        .expertAssign(currentExpert)
-//                        .build();
-//                evaluationRepository.save(evaluation);
-//
-//                // Tạo EvaluationDetails cho tiêu chí của vòng thi hiện tại
-//                List<EvaluationCriteria> criteriaList = evaluationCriteriaRepository.findByRound_RoundId(round.getRoundId());
-//                for (EvaluationCriteria criteria : criteriaList) {
-//                    EvaluationDetail detail = EvaluationDetail.builder()
-//                            .evaluation(evaluation)
-//                            .evaluationCriteria(criteria)
-//                            .score(new BigDecimal("9.00"))
-//                            .comment("Đạt yêu cầu tiêu chí " + criteria.getCriteriaName())
-//                            .build();
-//                    evaluationDetailRepository.save(detail);
-//                }
-//            }
-//        }
-//        System.out.println("Đã khởi tạo xong toàn bộ dữ liệu mẫu!");
+    // =====================================================
+    // REGISTRATION
+    // =====================================================
+
+    /**
+     * Đăng ký các team hiện có trong database vào event.
+     * Có thể chạy riêng mà không cần gọi createTeams() trước đó.
+     */
+    private void registerTeamsForEvent(
+            Integer eventId
+    ) {
+        HackathonEvent event = eventRepository
+                .findById(eventId)
+                .orElseThrow(() -> new RuntimeException(
+                        "Không tìm thấy event ID: "
+                                + eventId
+                ));
+
+        /*
+         * Lấy team trực tiếp từ database để hàm đăng ký có thể chạy
+         * độc lập, không phụ thuộc vào mảng trả về từ createTeams().
+         */
+        List<Team> teams = teamRepository.findAll()
+                .stream()
+                .sorted(Comparator.comparingInt(
+                        Team::getTeamId
+                ))
+                .toList();
+
+        if (teams.isEmpty()) {
+            System.out.println(
+                    "Không có team trong database để đăng ký"
+            );
+            return;
+        }
+
+        int createdCount = 0;
+        int skippedCount = 0;
+
+        for (Team team : teams) {
+            boolean alreadyRegistered =
+                    registrationRepository
+                            .findByTeamAndHackathonEvent_EventId(
+                                    team,
+                                    eventId
+                            )
+                            .isPresent();
+
+            if (alreadyRegistered) {
+                skippedCount++;
+                continue;
+            }
+
+            registrationRepository.save(
+                    Registration.builder()
+                            .team(team)
+                            .hackathonEvent(event)
+                            .registrationDate(
+                                    LocalDateTime.now()
+                            )
+                            .status(
+                                    RegistrationStatus.PENDING
+                            )
+                            .build()
+            );
+
+            team.setStatus(TeamStatus.PENDING);
+            teamRepository.save(team);
+
+            createdCount++;
+        }
+
+        System.out.println(
+                "Registration vừa tạo: " + createdCount
+        );
+        System.out.println(
+                "Registration được bỏ qua: "
+                        + skippedCount
+        );
+    }
+
+    // =====================================================
+    // SUBMISSION
+    // =====================================================
+
+    /**
+     * Lấy TeamParticipant từ database theo event của round và chỉ tạo bài
+     * cho participant đã được duyệt, thuộc đúng round, chưa có bài cuối.
+     * Vì vậy hàm có thể chạy riêng, không cần danh sách team trên RAM.
+     */
+    private void submitForParticipantsWithoutSubmission(
+            Integer roundId
+    ) {
+        Round round = roundRepository
+                .findById(roundId)
+                .orElseThrow(() -> new RuntimeException(
+                        "Không tìm thấy round ID: "
+                                + roundId
+                ));
+
+        Integer eventId =
+                round.getHackathonEvent().getEventId();
+
+        List<TeamParticipant> participants =
+                participantRepository
+                        .findAllByRegistration_HackathonEvent_EventIdAndCategoryRoundIsNotNull(
+                                eventId
+                        );
+
+        int createdCount = 0;
+        int skippedCount = 0;
+
+        for (TeamParticipant participant : participants) {
+            CategoryRound categoryRound =
+                    participant.getCategoryRound();
+
+            if (categoryRound.getRound() == null
+                    || !roundId.equals(
+                    categoryRound.getRound()
+                            .getRoundId()
+            )) {
+                continue;
+            }
+
+            Registration registration =
+                    participant.getRegistration();
+
+            if (registration == null
+                    || registration.getStatus()
+                    != RegistrationStatus.APPROVED) {
+                skippedCount++;
+                continue;
+            }
+
+            Team team = registration.getTeam();
+
+            Submission existingSubmission =
+                    submissionRepository.findFinalSubmission(
+                            categoryRound.getCategoryRoundId(),
+                            team.getTeamId()
+                    );
+
+            if (existingSubmission != null) {
+                skippedCount++;
+
+                if (participant.getSubmissionStatus()
+                        != SubmissionStatus.SUBMITTED) {
+                    participant.setSubmissionStatus(
+                            SubmissionStatus.SUBMITTED
+                    );
+                    participantRepository.save(
+                            participant
+                    );
+                }
+
+                continue;
+            }
+
+            submissionRepository.save(
+                    Submission.builder()
+                            .createAt(LocalDateTime.now())
+                            .description(
+                                    "Bài nộp demo của "
+                                            + team.getTeamName()
+                            )
+                            .githubUrl(
+                                    "https://github.com/"
+                                            + "hackathon-demo/team-"
+                                            + team.getTeamId()
+                                            + "/round-"
+                                            + roundId
+                            )
+                            .latestCommitSha(
+                                    "demo-commit-team-"
+                                            + team.getTeamId()
+                                            + "-round-"
+                                            + roundId
+                            )
+                            .isFinal(true)
+                            .team(team)
+                            .teamParticipant(participant)
+                            .build()
+            );
+
+            participant.setSubmissionStatus(
+                    SubmissionStatus.SUBMITTED
+            );
+            participantRepository.save(participant);
+
+            createdCount++;
+        }
+
+        System.out.println(
+                "Submission vừa tạo: " + createdCount
+        );
+        System.out.println(
+                "Participant được bỏ qua: "
+                        + skippedCount
+        );
+    }
+
+    // =====================================================
+    // GRADING
+    // =====================================================
+
+    /**
+     * Lấy tiêu chí, final submission và ExpertAssign trực tiếp từ database
+     * theo roundId; không phụ thuộc vào bước tạo team hoặc đăng ký event.
+     */
+    private void gradeSubmissionsByAssignments(
+            Integer roundId
+    ) {
+        Round round = roundRepository
+                .findById(roundId)
+                .orElseThrow(() -> new RuntimeException(
+                        "Không tìm thấy round ID: "
+                                + roundId
+                ));
+
+        List<EvaluationCriteria> criteria =
+                evaluationCriteriaRepository
+                        .findByRound_RoundId(roundId);
+
+        if (criteria == null || criteria.isEmpty()) {
+            throw new RuntimeException(
+                    "Round chưa có EvaluationCriteria"
+            );
+        }
+
+        List<CategoryRound> categoryRounds =
+                categoryRoundRepository
+                        .findCategoryRoundByRound_RoundId(
+                                roundId
+                        );
+
+        /*
+         * Gộp tất cả final submission của round,
+         * sau đó sắp xếp theo team ID.
+         *
+         * teamOrder được dùng để tạo khoảng cách điểm
+         * cố định giữa các team.
+         */
+        List<Submission> submissions =
+                new ArrayList<>();
+
+        for (CategoryRound categoryRound
+                : categoryRounds) {
+            submissions.addAll(
+                    submissionRepository
+                            .findFinalSubmissionsByCategoryRoundId(
+                                    categoryRound
+                                            .getCategoryRoundId()
+                            )
+            );
+        }
+
+        submissions.sort(
+                Comparator.comparingInt(
+                        submission ->
+                                submission.getTeam()
+                                        .getTeamId()
+                )
+        );
+
+        int createdCount = 0;
+        int skippedCount = 0;
+
+        for (int teamOrder = 0;
+             teamOrder < submissions.size();
+             teamOrder++) {
+
+            Submission submission =
+                    submissions.get(teamOrder);
+
+            CategoryRound categoryRound =
+                    submission.getTeamParticipant()
+                            .getCategoryRound();
+
+            List<ExpertAssign> assignments =
+                    expertAssignRepository
+                            .findByCategoryRoundId(
+                                    categoryRound
+                                            .getCategoryRoundId()
+                            )
+                            .stream()
+                            .filter(assign ->
+                                    assign.getRole()
+                                            == ExpertRole.CORE_JUDGE
+                                            || assign.getRole()
+                                            == ExpertRole.GUEST_JUDGE
+                            )
+                            .toList();
+
+            for (int judgeOrder = 0;
+                 judgeOrder < assignments.size();
+                 judgeOrder++) {
+
+                ExpertAssign assignment =
+                        assignments.get(judgeOrder);
+
+                boolean alreadyGraded =
+                        evaluationRepository
+                                .findByExpertAssignIdAndSubmissionId(
+                                        assignment.getAssignId(),
+                                        submission.getSubmissionId()
+                                )
+                                .isPresent();
+
+                if (alreadyGraded) {
+                    skippedCount++;
+                    continue;
+                }
+
+                createGradedEvaluation(
+                        submission,
+                        assignment,
+                        criteria,
+                        teamOrder,
+                        judgeOrder
+                );
+
+                createdCount++;
+            }
+        }
+
+        System.out.println(
+                "Evaluation vừa tạo: " + createdCount
+        );
+        System.out.println(
+                "Evaluation được bỏ qua: "
+                        + skippedCount
+        );
+    }
+
+    private void createGradedEvaluation(
+            Submission submission,
+            ExpertAssign assignment,
+            List<EvaluationCriteria> criteria,
+            int teamOrder,
+            int judgeOrder
+    ) {
+        Evaluation evaluation = new Evaluation();
+
+        evaluation.setSubmission(submission);
+        evaluation.setExpertAssign(assignment);
+        evaluation.setStatus(
+                EvaluationStatus.GRADED
+        );
+        evaluation.setIsReEvaluation(false);
+        evaluation.setComment(
+                "Điểm chấm demo của "
+                        + assignment.getExpert()
+                        .getExpertName()
+        );
+
+        List<EvaluationDetail> details =
+                new ArrayList<>();
+
+        for (int criteriaIndex = 0;
+             criteriaIndex < criteria.size();
+             criteriaIndex++) {
+
+            EvaluationCriteria criterion =
+                    criteria.get(criteriaIndex);
+
+            BigDecimal score = generateUniqueScore(
+                    criterion,
+                    teamOrder,
+                    judgeOrder,
+                    criteriaIndex
+            );
+
+            EvaluationDetail detail =
+                    new EvaluationDetail();
+
+            detail.setEvaluation(evaluation);
+            detail.setEvaluationCriteria(criterion);
+            detail.setScore(score);
+            detail.setComment(
+                    "Nhận xét demo cho "
+                            + criterion.getCriteriaName()
+            );
+            detail.setIsReEvaluation(false);
+
+            details.add(detail);
+        }
+
+        evaluation.setEvaluationDetails(details);
+
+        BigDecimal totalScore =
+                scoreCalculator.calculateWeightedTotal(
+                        details
+                );
+
+        evaluation.setScore(totalScore);
+
+        /*
+         * Evaluation cascade ALL xuống EvaluationDetail.
+         */
+        evaluationRepository.save(evaluation);
+
+        System.out.println(
+                submission.getTeam().getTeamName()
+                        + " - "
+                        + assignment.getExpert()
+                        .getExpertName()
+                        + " = "
+                        + totalScore
+        );
+    }
+
+    /**
+     * Tạo điểm không bằng nhau giữa các team.
+     *
+     * Mỗi team kế tiếp tăng ít nhất 0.30 điểm.
+     * Mỗi tiêu chí và giám khảo chỉ cộng thêm lượng nhỏ,
+     * không làm mất khoảng cách chính giữa các team.
+     */
+    private BigDecimal generateUniqueScore(
+            EvaluationCriteria criterion,
+            int teamOrder,
+            int judgeOrder,
+            int criteriaIndex
+    ) {
+        BigDecimal teamOffset =
+                new BigDecimal("0.30")
+                        .multiply(
+                                BigDecimal.valueOf(teamOrder)
+                        );
+
+        BigDecimal judgeOffset =
+                new BigDecimal("0.05")
+                        .multiply(
+                                BigDecimal.valueOf(judgeOrder)
+                        );
+
+        BigDecimal criteriaOffset =
+                new BigDecimal("0.02")
+                        .multiply(
+                                BigDecimal.valueOf(
+                                        criteriaIndex
+                                )
+                        );
+
+        BigDecimal score =
+                new BigDecimal("5.00")
+                        .add(teamOffset)
+                        .add(judgeOffset)
+                        .add(criteriaOffset);
+
+        /*
+         * Không vượt quá maxScore của tiêu chí.
+         * Nếu maxScore chưa cấu hình thì mặc định tối đa 10.
+         */
+        BigDecimal maximumScore =
+                criterion.getMaxScore() > 0
+                        ? BigDecimal.valueOf(
+                        criterion.getMaxScore()
+                )
+                        : BigDecimal.TEN;
+
+        return score.min(maximumScore);
     }
 
 }
