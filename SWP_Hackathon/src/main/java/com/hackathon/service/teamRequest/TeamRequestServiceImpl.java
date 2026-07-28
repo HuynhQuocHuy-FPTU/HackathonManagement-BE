@@ -1082,8 +1082,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                         "Bạn không phải ban tổ chức nên không có quyền xử lý yêu cầu này"));
 
         if (teamRequest.getStatus() == RequestStatus.RESOLVED
-                || teamRequest.getStatus() == RequestStatus.REJECTED
-                || teamRequest.getStatus() == RequestStatus.CANCELLED) {
+                || teamRequest.getStatus() == RequestStatus.REJECTED) {
             throw new BadRequestException("Yêu cầu xác thực này đã được đóng");
         }
         if (command.getResponseMessage() == null

@@ -5,6 +5,5 @@ public enum RequestStatus {
     IN_REVIEW,
     PROCESSING,
     RESOLVED,
-    REJECTED,
-    CANCELLED
+    REJECTED
 }
