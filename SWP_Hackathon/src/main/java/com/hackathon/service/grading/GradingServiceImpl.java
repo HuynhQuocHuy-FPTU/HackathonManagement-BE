@@ -8,12 +8,10 @@ import com.hackathon.exception.BadRequestException;
 import com.hackathon.exception.ResourceNotFoundException;
 import com.hackathon.repository.*;
 import com.hackathon.security.CustomUserDetails;
-import com.hackathon.service.AuditService;
 import com.hackathon.service.grading.support.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -44,8 +42,6 @@ public class GradingServiceImpl implements GradingService {
     private final ScoreCalculator scoreCalculator;
     private final EvaluationMapper evaluationMapper;
     private final EvaluationAuditLogger auditLogger;
-    private final AuditService auditService;
-    private final ObjectMapper objectMapper;
     private final CategoryRoundRepository categoryRoundRepository;
     private final ParticipantRepository participantRepository;
 
@@ -196,10 +192,13 @@ public class GradingServiceImpl implements GradingService {
         // Gọi hàm validatePartial mà chúng ta đã định nghĩa ở Validator
         criteriaValidator.validatePartial(request, roundCriteria, targetType);
 
-        // 8. ÁP DỤNG MÔ HÌNH UPSERT (Update hoặc Insert độc lập)
+        // 8. ÁP DỤNG MÔ HÌNH UPSERT VÀ CHỤP NHANH DỮ LIỆU CŨ (SNAPSHOT)
         boolean isFirstTimeGrading = false;
         Evaluation evaluation = evaluationRepository.findByExpertAssignIdAndSubmissionId(expertAssign.getAssignId(), submissionId)
                 .orElse(null);
+
+        BigDecimal oldTotalScore = null;
+        String oldTotalComment = null;
 
         if (evaluation == null) {
             // Trường hợp 1: Chưa từng tồn tại bản ghi đánh giá -> Khởi tạo thực thể mới (Insert)
@@ -214,6 +213,9 @@ public class GradingServiceImpl implements GradingService {
             if (evaluation.getStatus() != null && evaluation.getStatus().equals(EvaluationStatus.RE_EVALUATION)) {
                 throw new BadRequestException("Thực thể đánh giá đang nằm trong trạng thái Khiếu nại/Phúc khảo hệ thống.");
             }
+            // Chụp điểm và comment cũ trước khi sửa
+            oldTotalScore = evaluation.getScore();
+            oldTotalComment = evaluation.getComment();
         }
 
         // 9. ĐỒNG BỘ HÓA DỮ LIỆU ĐIỂM CHI TIẾT (PARTIAL MAPPING & MERGE)
@@ -226,12 +228,20 @@ public class GradingServiceImpl implements GradingService {
                 .filter(c -> c.getType() == targetType)
                 .collect(Collectors.toMap(EvaluationCriteria::getEvaluationCriteriaId, c -> c));
 
+        List<Map<String, Object>> detailChanges = new ArrayList<>();
+
         for (CriteriaScoreRequest scoreReq : request.getCriteriaScores()) {
             EvaluationCriteria criteria = targetCriteriaMap.get(scoreReq.getEvaluationCriteriaId());
             if (criteria == null) continue;
 
             // Tái sử dụng bản ghi chi tiết cũ để cập nhật đè (Update), hoặc tạo mới (Add) nếu chưa có
             EvaluationDetail detail = existingDetailsMap.getOrDefault(criteria.getEvaluationCriteriaId(), new EvaluationDetail());
+
+            BigDecimal oldDetailScore = (detail.getId() == 0) ? null : detail.getScore();
+            String oldDetailComment = (detail.getId() == 0) ? null : detail.getComment();
+            BigDecimal newDetailScore = scoreReq.getScore();
+            String newDetailComment = scoreReq.getComment();
+
             detail.setEvaluationCriteria(criteria);
             detail.setScore(scoreReq.getScore());
             detail.setComment(scoreReq.getComment());
@@ -240,10 +250,26 @@ public class GradingServiceImpl implements GradingService {
             if (detail.getId() == 0) {
                 evaluation.getEvaluationDetails().add(detail);
             }
+
+            boolean isScoreChanged = (oldDetailScore == null) || (oldDetailScore.compareTo(newDetailScore) != 0);
+            boolean isCommentChanged = (oldDetailComment == null && newDetailComment != null && !newDetailComment.isBlank())
+                    || (oldDetailComment != null && !oldDetailComment.equals(newDetailComment));
+
+            if (isScoreChanged || isCommentChanged) {
+                Map<String, Object> change = new LinkedHashMap<>();
+                change.put("newScore", newDetailScore);
+                change.put("oldScore", oldDetailScore);
+                change.put("newComment", newDetailComment);
+                change.put("oldComment", oldDetailComment);
+                change.put("criteriaName", criteria.getCriteriaName());
+                change.put("criteriaId", criteria.getEvaluationCriteriaId());
+                detailChanges.add(change);
+            }
         }
 
         // 10. TÍNH TOÁN LẠI TỔNG ĐIỂM (Ủy thác quyền cho ScoreCalculator tính toán dựa trên list đã Merge)
         BigDecimal calculatedTotalScore = scoreCalculator.calculateWeightedTotal(evaluation.getEvaluationDetails());
+        String newTotalComment = request.getComment();
 
         evaluation.setScore(calculatedTotalScore);
         evaluation.setComment(request.getComment());
@@ -251,7 +277,18 @@ public class GradingServiceImpl implements GradingService {
 
         // 11. ĐẨY DỮ LIỆU XUỐNG DB & KÍCH HOẠT LƯU VẾT HỆ THỐNG (Audit Service Log)
         evaluation = evaluationRepository.save(evaluation);
-        auditLogger.logGraded(account, evaluation, submission, expert.getExpertId(), isFirstTimeGrading, calculatedTotalScore);
+
+        boolean isTotalCommentChanged = (oldTotalComment == null && newTotalComment != null && !newTotalComment.isBlank())
+                || (oldTotalComment != null && !oldTotalComment.equals(newTotalComment));
+
+        if (isFirstTimeGrading || !detailChanges.isEmpty() || isTotalCommentChanged) {
+            auditLogger.logGraded(
+                    account, evaluation, submission, expert.getExpertId(), isFirstTimeGrading,
+                    oldTotalScore, calculatedTotalScore,
+                    oldTotalComment, newTotalComment,
+                    detailChanges
+            );
+        }
 
         LocalDateTime deadline = deadlinePolicy.getGradingDeadline(round);
 
@@ -291,6 +328,10 @@ public class GradingServiceImpl implements GradingService {
         if (evaluation.getStatus() != EvaluationStatus.RE_EVALUATION) {
             throw new BadRequestException("Hành động thất bại: Chỉ có thể cập nhật điểm số khi BTC yêu cầu chấm lại");
         }
+
+        BigDecimal oldTotalScore = evaluation.getScore();
+        String oldTotalComment = evaluation.getComment();
+
         // 7. Thực hiện thẩm định tính toàn vẹn của danh sách tiêu chí gửi lên
         List<EvaluationCriteria> roundCriteria = round.getEvaluationCriterias();
 
@@ -301,11 +342,12 @@ public class GradingServiceImpl implements GradingService {
         evaluation.setSubmission(submission);
 
         // 9. ĐỒNG BỘ HÓA DỮ LIỆU ĐIỂM CHI TIẾT (EvaluationDetail Mapping)
-
         Map<Integer, EvaluationDetail> existingDetailsMap = evaluation.getEvaluationDetails().stream()
                 .collect(Collectors.toMap(d -> d.getEvaluationCriteria().getEvaluationCriteriaId(), d -> d));
         Map<Integer, EvaluationCriteria> criteriaByIdMap = roundCriteria.stream()
                 .collect(Collectors.toMap(EvaluationCriteria::getEvaluationCriteriaId, c -> c));
+
+        List<Map<String, Object>> detailChanges = new ArrayList<>();
 
         for (CriteriaScoreRequest scoreReq : request.getCriteriaScores()) {
             EvaluationCriteria criteria = criteriaByIdMap.get(scoreReq.getEvaluationCriteriaId());
@@ -320,6 +362,10 @@ public class GradingServiceImpl implements GradingService {
                 isNewDetail = true;
             }
 
+            BigDecimal oldDetailScore = isNewDetail ? null : detail.getScore();
+            String oldDetailComment = isNewDetail ? null : detail.getComment();
+            BigDecimal newDetailScore = scoreReq.getScore();
+            String newDetailComment = scoreReq.getComment();
 
             // kiểm tra ID để tránh bỏ sót phần tử mới
             if (isNewDetail || detail.getId() == 0) {
@@ -330,10 +376,26 @@ public class GradingServiceImpl implements GradingService {
             detail.setScore(scoreReq.getScore());
             detail.setComment(scoreReq.getComment());
             detail.setEvaluation(evaluation);
+
+            boolean isScoreChanged = (oldDetailScore == null) || (oldDetailScore.compareTo(newDetailScore) != 0);
+            boolean isCommentChanged = (oldDetailComment == null && newDetailComment != null && !newDetailComment.isBlank())
+                    || (oldDetailComment != null && !oldDetailComment.equals(newDetailComment));
+
+            if (isScoreChanged || isCommentChanged) {
+                Map<String, Object> change = new LinkedHashMap<>();
+                change.put("newScore", newDetailScore);
+                change.put("oldScore", oldDetailScore);
+                change.put("newComment", newDetailComment);
+                change.put("oldComment", oldDetailComment);
+                change.put("criteriaName", criteria.getCriteriaName());
+                change.put("criteriaId", criteria.getEvaluationCriteriaId());
+                detailChanges.add(change);
+            }
         }
 
         // 10. TÍNH TOÁN LẠI TỔNG ĐIỂM (Ủy thác quyền cho ScoreCalculator hạ tầng xử lý)
         BigDecimal calculatedTotalScore = scoreCalculator.calculateWeightedTotal(evaluation.getEvaluationDetails());
+        String newTotalComment = request.getComment();
 
         evaluation.setScore(calculatedTotalScore);
         evaluation.setComment(request.getComment());
@@ -341,36 +403,21 @@ public class GradingServiceImpl implements GradingService {
 
         // 11. ĐẨY DỮ LIỆU XUỐNG DB & KÍCH HOẠT LƯU VẾT HỆ THỐNG (Audit Service Log)
         evaluation = evaluationRepository.save(evaluation);
-        String description = String.format("Giám khảo (ExpertID: %d) đã cập nhật điểm cho Bài nộp (SubmissionID: %d). Tổng điểm ghi nhận: %s",
-                expertAssign.getAssignId(), submission.getSubmissionId(), calculatedTotalScore);
 
-        Map<String, Object> auditData = new LinkedHashMap<>();
+        boolean isTotalCommentChanged = (oldTotalComment == null && newTotalComment != null && !newTotalComment.isBlank())
+                || (oldTotalComment != null && !oldTotalComment.equals(newTotalComment));
 
-        auditData.put("oldTotalScore", evaluation.getOriginalScore());
-        auditData.put("newTotalScore", calculatedTotalScore);
-        auditData.put("details",
-                evaluation.getEvaluationDetails().stream()
-                        .map(detail -> Map.of(
-                                "criteriaId", detail.getEvaluationCriteria().getEvaluationCriteriaId(),
-                                "criteriaName", detail.getEvaluationCriteria().getCriteriaName(),
-                                "oldScore", detail.getOriginalScore() != null ? detail.getOriginalScore() : detail.getScore(),
-                                "newScore", detail.getScore()
-                        ))
-                        .toList());
-
-        String data = objectMapper.writeValueAsString(auditData);
-        auditService.saveLog(
-                account,
-                AuditAction.UPDATE_EVALUATION,
-                AuditEntityType.EVALUATION,
-                evaluation.getEvaluationId(),
-                data,
-                description
-        );
+        if (!detailChanges.isEmpty() || isTotalCommentChanged) {
+            auditLogger.logGraded(
+                    account, evaluation, submission, expert.getExpertId(), false,
+                    oldTotalScore, calculatedTotalScore,
+                    oldTotalComment, newTotalComment,
+                    detailChanges
+            );
+        }
 
         // 12. CHUYỂN ĐỔI DỮ LIỆU ĐẦU RA VÀ PHẢN HỒI PRESENTATION TẦNG
         return evaluationMapper.toResponse(evaluation, false, null);
-
     }
 
     // Thực hiện chấm điểm lại khi nhận được yêu cầu của Expert
@@ -431,6 +478,9 @@ public class GradingServiceImpl implements GradingService {
                 .filter(d -> d.getEvaluationCriteria() != null)
                 .collect(Collectors.toMap(d -> d.getEvaluationCriteria().getEvaluationCriteriaId(), d -> d));
 
+        BigDecimal oldEvaluationTotalScore = evaluation.getScore();
+        String oldEvaluationComment = evaluation.getComment();
+        List<Map<String, Object>> detailChanges = new ArrayList<>();
 
         for (CriteriaScoreRequest requestEval : request.getCriteriaScores()) {
             EvaluationDetail detail = detailsMap.get(requestEval.getEvaluationCriteriaId());
@@ -440,29 +490,53 @@ public class GradingServiceImpl implements GradingService {
 
             if (detail.getEvaluation().getEvaluationId() != evaluation.getEvaluationId()) {
                 throw new BadRequestException("Tiêu chí này không thuộc bài chấm đang được phúc khảo.");
-
             }
 
             if (requestEval.getScore().compareTo(BigDecimal.ZERO) < 0 || requestEval.getScore().compareTo(maxScore) > 0) {
                 throw new BadRequestException(
                         "Điểm của tiêu chí " + "phải nằm trong khoảng từ 0 đến " + maxScore + ".");
             }
+
+            BigDecimal oldDetailScore = detail.getScore();
+            String oldDetailComment = detail.getComment();
+
             //  lưu điểm cũ của tiêu chí này nếu là lần đầu chấm lại
             if (detail.getOriginalScore() == null) {
                 detail.setOriginalScore(detail.getScore());
             }
-            detail.setScore(requestEval.getScore());
+
+            BigDecimal newDetailScore = requestEval.getScore();
+            String newDetailComment = requestEval.getComment();
+
+            detail.setScore(newDetailScore);
+            detail.setComment(newDetailComment);
             detail.setIsReEvaluation(true);
+
+            boolean isScoreChanged = (oldDetailScore == null) || (oldDetailScore.compareTo(newDetailScore) != 0);
+            boolean isCommentChanged = (oldDetailComment == null && newDetailComment != null && !newDetailComment.isBlank())
+                    || (oldDetailComment != null && !oldDetailComment.equals(newDetailComment));
+
+            if (isScoreChanged || isCommentChanged) {
+                Map<String, Object> change = new LinkedHashMap<>();
+                change.put("newScore", newDetailScore);
+                change.put("oldScore", oldDetailScore);
+                change.put("newComment", newDetailComment);
+                change.put("oldComment", oldDetailComment);
+                change.put("criteriaName", detail.getEvaluationCriteria().getCriteriaName());
+                change.put("criteriaId", detail.getEvaluationCriteria().getEvaluationCriteriaId());
+                detailChanges.add(change);
+            }
         }
 
         BigDecimal finalNewTotalScore = scoreCalculator.calculateWeightedTotal(evaluation.getEvaluationDetails());
+        String newTotalComment = request.getComment();
 
         evaluation.setComment(request.getComment());
         evaluation.setScore(finalNewTotalScore);
         evaluation.setStatus(EvaluationStatus.GRADED);
         evaluation.setIsReEvaluation(true);
-        // 1. Lấy tất cả các bảng điểm (Evaluation) của bài nộp này từ các giám khảo khác nhau
 
+        // 1. Lấy tất cả các bảng điểm (Evaluation) của bài nộp này từ các giám khảo khác nhau
         List<Evaluation> allEvaluationsForSub =
                 evaluationRepository.findBySubmission_SubmissionId(finalSubmission.getSubmissionId());
 
@@ -482,6 +556,7 @@ public class GradingServiceImpl implements GradingService {
         } else {
             evaluation.setStatus(EvaluationStatus.RE_EVALUATION);
         }
+
         // 2. Kiểm tra xem có ông giám khảo nào còn đang bị kẹt ở trạng thái "RE_EVALUATION" hay không
         boolean isAllJudgesFinished = allEvaluationsForSub.stream()
                 .noneMatch(eval -> eval.getStatus() == EvaluationStatus.RE_EVALUATION);
@@ -502,31 +577,17 @@ public class GradingServiceImpl implements GradingService {
         teamRequestRepository.save(appealRequest);
         evaluationRepository.save(evaluation);
 
-        // ghi log
-        Map<String, Object> auditData = new LinkedHashMap<>();
+        boolean isTotalCommentChanged = (oldEvaluationComment == null && newTotalComment != null && !newTotalComment.isBlank())
+                || (oldEvaluationComment != null && !oldEvaluationComment.equals(newTotalComment));
 
-        auditData.put("oldTotalScore", evaluation.getOriginalScore());
-        auditData.put("newTotalScore", finalNewTotalScore);
-        auditData.put("details",
-                evaluation.getEvaluationDetails().stream()
-                        .map(detail -> Map.of(
-                                "criteriaId", detail.getEvaluationCriteria().getEvaluationCriteriaId(),
-                                "criteriaName", detail.getEvaluationCriteria().getCriteriaName(),
-                                "oldScore", detail.getOriginalScore() != null ? detail.getOriginalScore() : detail.getScore(),
-                                "newScore", detail.getScore()
-                        ))
-                        .toList());
-        String data = objectMapper.writeValueAsString(auditData);
-        auditService.saveLog(
-                account,
-                AuditAction.RE_SUBMIT_EVALUATION,
-                AuditEntityType.EVALUATION,
-                evaluation.getEvaluationId(),
-                "Ban giám khảo chấm lại điểm khi có yêu cầu phúc khảo thành công",
-                data);
+        if (!detailChanges.isEmpty() || isTotalCommentChanged) {
+            auditLogger.logReEvaluation(
+                    account, evaluation, finalSubmission, expert.getExpertId(),
+                    oldEvaluationTotalScore, finalNewTotalScore,
+                    oldEvaluationComment, newTotalComment, detailChanges
+            );
+        }
 
         return evaluationMapper.toResponse(evaluation, false, null);
-
     }
-
 }
