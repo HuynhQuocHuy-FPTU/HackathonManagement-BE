@@ -2,7 +2,6 @@ package com.hackathon.validator;
 
 import com.hackathon.dto.event.CreateEventRequest;
 import com.hackathon.dto.event.UpdateEventRequest;
-import com.hackathon.dto.round.UpdateRoundRequest;
 import com.hackathon.entity.HackathonEvent;
 import com.hackathon.entity.enums.EventStatus;
 import com.hackathon.entity.enums.SystemConfigKey;
@@ -26,7 +25,14 @@ public class EventValidator {
     // 1. Validator cho việc Tạo mới
     public void validatorCreate(CreateEventRequest request) throws BadRequestException {
         checkEventNameExists(request.getEventName());
-        validateTimeLogic(request.getStartDate(), request.getEndDate(), request.getRegistrationDeadline(), request.getWorkshopTime(), LocalDateTime.now());
+        validateTimeLogic(
+                request.getStartDate(),
+                request.getEndDate(),
+                request.getRegistrationDeadline(),
+                request.getWorkshopTime(),
+                LocalDateTime.now(),
+                false
+        );
         validateTeamSize(request.getMinTeamSize(), request.getMaxTeamSize());
     }
 
@@ -41,7 +47,8 @@ public class EventValidator {
                 request.getEndDate(),
                 request.getRegistrationDeadline(),
                 request.getWorkshopTime(),
-                LocalDateTime.now()
+                LocalDateTime.now(),
+                true
         );
         validateTeamSize(
                 request.getMinTeamSize(),
@@ -56,20 +63,29 @@ public class EventValidator {
         }
 
         validateRequiredFields(event);
-        validateTimeLogic(event.getStartDate(), event.getEndDate(), event.getRegistrationDeadline(), event.getWorkshopTime(), LocalDateTime.now());
+        validateTimeLogic(
+                event.getStartDate(),
+                event.getEndDate(),
+                event.getRegistrationDeadline(),
+                event.getWorkshopTime(),
+                LocalDateTime.now(),
+                true
+        );
         validateStructure(event);
     }
 
-    // --- CÁC HÀM BỔ TRỢ (PRIVATE HELPERS) ---
 
-    private void validateTimeLogic(LocalDateTime start, LocalDateTime end, LocalDateTime deadline, LocalDateTime workshop, LocalDateTime now) {
+
+    public void validateTimeLogic(LocalDateTime start, LocalDateTime end, LocalDateTime deadline, LocalDateTime workshop, LocalDateTime now, boolean validatePast
+    ) {
         if (start != null && end != null && start.isAfter(end))
             throw new BadRequestException("Ngày bắt đầu phải trước ngày kết thúc!");
-        if (start != null && start.isBefore(now))
+        if (validatePast && start != null && start.isBefore(now))
             throw new BadRequestException("Ngày bắt đầu không được nằm trong quá khứ!");
 
         if (deadline != null) {
-            if (deadline.isBefore(now)) throw new BadRequestException("Hạn chót đăng ký không được nằm trong quá khứ!");
+            if (validatePast && deadline.isBefore(now))
+                throw new BadRequestException("Hạn chót đăng ký không được nằm trong quá khứ!");
 
             if(deadline.isAfter(start)){
                 throw new BadRequestException("Hạn chót đăng ký phải trước ngày bắt đầu diễn ra buổi workshop");
@@ -77,7 +93,8 @@ public class EventValidator {
         }
 
         if (workshop != null) {
-            if (workshop.isBefore(now)) throw new BadRequestException("Workshop không được nằm trong quá khứ!");
+            if (validatePast && workshop.isBefore(now))
+                throw new BadRequestException("Workshop không được nằm trong quá khứ!");
 
             if(deadline != null && workshop.isBefore(deadline)){
                 throw new BadRequestException("Ngày diễn ra workshop không được bắt đầu trước ngày kết thúc đăng kí tham gia");
@@ -89,6 +106,52 @@ public class EventValidator {
 
         }
     }
+
+    public void validateEventEndAfterRounds(
+            LocalDateTime eventEndTime,
+            HackathonEvent event
+    ) {
+        if (eventEndTime == null) {
+            return;
+        }
+
+        if (event.getRounds() == null) {
+            return;
+        }
+
+        for (var round : event.getRounds()) {
+            if (round.getEndTime() != null
+                    && eventEndTime.isBefore(round.getEndTime())) {
+                throwEventEndsBeforeRound(
+                        eventEndTime,
+                        round.getRoundName(),
+                        round.getEndTime()
+                );
+            }
+        }
+    }
+
+    private void throwEventEndsBeforeRound(
+            LocalDateTime eventEndTime,
+            String roundName,
+            LocalDateTime roundEndTime
+    ) {
+        throw new BadRequestException(
+                "Không thể kết thúc sự kiện lúc " + eventEndTime
+                        + " vì vòng '" + roundName
+                        + "' vẫn còn diễn ra đến " + roundEndTime
+        );
+    }
+    // --- CÁC HÀM BỔ TRỢ (PRIVATE HELPERS) ---
+
+    /**
+     * Thời gian kết thúc mới của event không được sớm hơn thời gian kết thúc
+     * của bất kỳ round nào thuộc event.
+     *
+     * Validation này chỉ được gọi trong API cập nhật riêng thời gian event,
+     * không chạy trong API update thông tin event thông thường.
+     */
+
 
     private void validateRequiredFields(HackathonEvent event) {
         if (isNullOrBlank(event.getEventName())) throw new BadRequestException("Tên sự kiện trống!");

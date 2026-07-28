@@ -4,6 +4,7 @@ import com.hackathon.dto.category.CategoryResponse;
 import com.hackathon.dto.event.CreateEventRequest;
 import com.hackathon.dto.event.EventResponse;
 import com.hackathon.dto.event.UpdateEventRequest;
+import com.hackathon.dto.event.UpdateTimeEventDTO;
 import com.hackathon.dto.round.RoundResponse;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.AuditAction;
@@ -81,7 +82,10 @@ public class EventServiceImpl implements EventService {
         if (request.getMaxTeamSize() != null) event.setMaxTeamSize(request.getMaxTeamSize());
         if (request.getMinTeamSize() != null) event.setMinTeamSize(request.getMinTeamSize());
         if (request.getRegistrationDeadline() != null) event.setRegistrationDeadline(request.getRegistrationDeadline());
-        if(request.getWorkshopTime() != null) event.setWorkshopTime(request.getWorkshopTime());
+        if (request.getWorkshopTime() != null) {
+            event.setWorkshopTime(request.getWorkshopTime());
+            event.setWorkshopStatus(WorkshopStatus.UPCOMING);
+        }
         if (request.getBannerUrl() != null) event.setBannerUrl(request.getBannerUrl());
 
         event.setEventCoordinator(coordinator);
@@ -433,6 +437,37 @@ public class EventServiceImpl implements EventService {
     @Override
     public List<EventResponse> searchPublicEvents(String eventName) {
         return eventRepository.findHackathonEventByEventNameContainingIgnoreCaseAndStatus(eventName, EventStatus.ACTIVE).stream().map(event -> mapToResponse(event, event.getRounds(), event.getCategories())).toList();
+    }
+
+    @Override
+    public void updateTimeEvent(CustomUserDetails userDetails, Integer eventId, UpdateTimeEventDTO updateTimeEventDTO) {
+        EventCoordinator eventCoordinator = userDetails.getAccount().getEventCoordinator();
+
+        if(eventCoordinator == null){
+            throw new BadRequestException("Bạn không có quyền truy cập. Bạn phải là event coordinator");
+        }
+
+        HackathonEvent event = eventRepository.findById(eventId).orElseThrow(() -> new BadRequestException("Không tìm thấy cuộc thi"));
+
+        eventValidator.validateTimeLogic(
+                updateTimeEventDTO.startTime(),
+                updateTimeEventDTO.endTime(),
+                updateTimeEventDTO.registrationDeadline(),
+                updateTimeEventDTO.workshopTime(),
+                LocalDateTime.now(),
+                false
+        );
+        eventValidator.validateEventEndAfterRounds(
+                updateTimeEventDTO.endTime(),
+                event
+        );
+
+        event.setStartDate(updateTimeEventDTO.startTime());
+        event.setEndDate(updateTimeEventDTO.endTime());
+        event.setWorkshopTime(updateTimeEventDTO.workshopTime());
+        event.setRegistrationDeadline(updateTimeEventDTO.registrationDeadline());
+
+        eventRepository.save(event);
     }
 
     @Override

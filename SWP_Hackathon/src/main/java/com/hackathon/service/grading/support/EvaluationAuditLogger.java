@@ -8,33 +8,81 @@ import com.hackathon.entity.enums.AuditEntityType;
 import com.hackathon.service.AuditService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.ObjectMapper;
+
 
 import java.math.BigDecimal;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Trách nhiệm: Ghi nhận nhật ký hệ thống (Audit Log) cho các tác vụ thay đổi điểm số.
- * Thiết kế theo dạng Wrapper để bọc AuditService cốt lõi, giúp việc gọi log ở Service chính trở nên gọn gàng và tường minh.
  */
 @Component
 @RequiredArgsConstructor
 public class EvaluationAuditLogger {
 
     private final AuditService auditService;
+    private final ObjectMapper objectMapper;
 
     /**
-     * Thực thi việc lưu vết (Tracking) quá trình thao tác điểm của Giám khảo.
+     * GHI LOG LUỒNG CHẤM ĐIỂM THÔNG THƯỜNG
      */
-    public void logGraded(Account actor, Evaluation eval, Submission sub, Integer expertId, boolean isFirstTime, BigDecimal totalScore) {
-        // 1. Phân loại hành động: Chấm mới (Insert) hay Cập nhật (Update)
+    public void logGraded(Account actor, Evaluation eval, Submission sub, Integer expertId,
+                          boolean isFirstTime, BigDecimal oldTotalScore, BigDecimal newTotalScore,
+                          String oldComment, String newComment, List<Map<String, Object>> detailChanges) {
+
         AuditAction action = isFirstTime ? AuditAction.SUBMIT_EVALUATION : AuditAction.UPDATE_EVALUATION;
         String actionText = isFirstTime ? "chấm điểm lần đầu" : "cập nhật điểm";
 
-        // 2. Xây dựng nội dung mô tả chi tiết
-        String description = String.format("Giám khảo (ExpertID: %d) đã %s cho Bài nộp (SubmissionID: %d). Tổng điểm ghi nhận: %s",
-                expertId, actionText, sub.getSubmissionId(), totalScore.toString());
+        String oldScoreStr = oldTotalScore != null ? oldTotalScore.toString() : "0";
+        String description = String.format("Giám khảo (ExpertID: %d) đã %s cho Bài nộp (SubmissionID: %d). Tổng điểm: %s -> %s",
+                expertId, actionText, sub.getSubmissionId(), oldScoreStr, newTotalScore.toString());
 
-        // 3. Đẩy dữ liệu xuống dịch vụ Audit cốt lõi
-        // Tham số bao gồm: Người thao tác, Hành động, Loại thực thể tác động, ID thực thể, và Mô tả chi tiết
-        auditService.saveLog(actor, action, AuditEntityType.EVALUATION, eval.getEvaluationId(), description);
+        // Sử dụng LinkedHashMap để bảo toàn thứ tự Key khi xuất JSON
+        Map<String, Object> auditData = new LinkedHashMap<>();
+        auditData.put("oldTotalScore", oldTotalScore);
+        auditData.put("newTotalScore", newTotalScore);
+        auditData.put("oldTotalComment", oldComment);
+        auditData.put("newTotalComment", newComment);
+        auditData.put("details", detailChanges);
+
+        String jsonData = null;
+        try {
+            jsonData = objectMapper.writeValueAsString(auditData);
+        } catch (Exception e) {
+            System.err.println("Lỗi parse JSON Audit Log: " + e.getMessage());
+        }
+
+        auditService.saveLog(actor, action, AuditEntityType.EVALUATION, eval.getEvaluationId(), description, jsonData);
+    }
+
+    /**
+     * GHI LOG LUỒNG CHẤM LẠI (PHÚC KHẢO)
+     */
+    public void logReEvaluation(Account actor, Evaluation eval, Submission sub, Integer expertId,
+                                BigDecimal oldTotalScore, BigDecimal newTotalScore,
+                                String oldComment, String newComment, List<Map<String, Object>> detailChanges) {
+
+        String oldScoreStr = oldTotalScore != null ? oldTotalScore.toString() : "0";
+        String description = String.format("Giám khảo (ExpertID: %d) đã CHẤM PHÚC KHẢO cho Bài nộp (SubmissionID: %d). Tổng điểm: %s -> %s",
+                expertId, sub.getSubmissionId(), oldScoreStr, newTotalScore.toString());
+
+        Map<String, Object> auditData = new LinkedHashMap<>();
+        auditData.put("oldTotalScore", oldTotalScore);
+        auditData.put("newTotalScore", newTotalScore);
+        auditData.put("oldTotalComment", oldComment);
+        auditData.put("newTotalComment", newComment);
+        auditData.put("details", detailChanges);
+
+        String jsonData = null;
+        try {
+            jsonData = objectMapper.writeValueAsString(auditData);
+        } catch (Exception e) {
+            System.err.println("Lỗi parse JSON Audit Log Phúc khảo: " + e.getMessage());
+        }
+
+        auditService.saveLog(actor, AuditAction.RE_SUBMIT_EVALUATION, AuditEntityType.EVALUATION, eval.getEvaluationId(), description, jsonData);
     }
 }
