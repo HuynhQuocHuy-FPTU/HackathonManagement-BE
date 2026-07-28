@@ -102,103 +102,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         return toResponse(savedRequest, null, null);
     }
 
-    private TeamRequest buildDrawVerificationRequest(
-            Notification notification,
-            Account account,
-            String requestMessage
-    ) {
-        Team team = account.getStudent().getTeamMembers().stream()
-                .filter(TeamMember::getIsLeader)
-                .map(TeamMember::getTeam)
-                .filter(item -> notification.getTeam() != null
-                        && item.getTeamId() == notification.getTeam().getTeamId())
-                .findFirst()
-                .orElseThrow(() -> new BadRequestException(
-                        "Bạn không phải leader của đội nhận kết quả bốc thăm"));
-
-        teamRequestValidator.validateNoOpenRequest(
-                team, notification.getRound(),
-                RequestType.DRAW_RESULT_VERIFICATION);
-
-        boolean hasAssignedCategory = team.getRegistrations().stream()
-                .filter(registration ->
-                        registration.getStatus() == RegistrationStatus.APPROVED)
-                .map(Registration::getParticipants)
-                .flatMap(List::stream)
-                .anyMatch(participant -> participant.getCategoryRound() != null);
-        if (!hasAssignedCategory) {
-            throw new BadRequestException(
-                    "Team chưa có kết quả bốc thăm để xác thực");
-        }
-
-        return newPendingRequest(
-                team,
-                notification.getRound(),
-                RequestType.DRAW_RESULT_VERIFICATION,
-                requestMessage
-        );
-    }
-
-    private TeamRequest buildAppealRequest(
-            Notification notification,
-            Account account,
-            NotiResponseRequest command
-    ) {
-        if (command.getRoundId() == null) {
-            throw new BadRequestException(
-                    "Round id không được để trống khi khiếu nại điểm");
-        }
-
-        Round round = roundRepository.findById(command.getRoundId())
-                .orElseThrow(() -> new BadRequestException(
-                        "Không tìm thấy vòng thi"));
-
-        if (notification.getRound() != null
-                && !notification.getRound().getRoundId().equals(round.getRoundId())) {
-            throw new BadRequestException(
-                    "Thông báo điểm không thuộc vòng thi này");
-        }
-
-        Team team = account.getStudent().getTeamMembers().stream()
-                .filter(TeamMember::getIsLeader)
-                .map(TeamMember::getTeam)
-                .filter(item -> item.getRegistrations().stream()
-                        .filter(registration ->
-                                registration.getStatus() == RegistrationStatus.APPROVED)
-                        .map(Registration::getParticipants)
-                        .flatMap(List::stream)
-                        .anyMatch(participant ->
-                                participant.getCategoryRound() != null
-                                        && participant.getCategoryRound().getRound()
-                                        .getRoundId().equals(round.getRoundId())))
-                .findFirst()
-                .orElseThrow(() -> new BadRequestException(
-                        "Bạn không phải leader của đội tham gia vòng thi này"));
-
-        teamRequestValidator.validateNoOpenRequest(
-                team, round, RequestType.APPEAL);
-
-        return newPendingRequest(
-                team, round, RequestType.APPEAL, command.getMessage());
-    }
-
-    private TeamRequest newPendingRequest(
-            Team team,
-            Round round,
-            RequestType requestType,
-            String requestMessage
-    ) {
-        TeamRequest request = new TeamRequest();
-        request.setTeam(team);
-        request.setRound(round);
-        request.setRequestType(requestType);
-        request.setRequestMessage(requestMessage);
-        request.setCreateDate(LocalDateTime.now());
-        request.setStatus(RequestStatus.PENDING);
-        return request;
-    }
-
-
     //---------------------------------------------//
     // TEAM YÊU CẦU SỰ HỔ TRỢ TỪ MENTOR
     //---------------------------------------------//
@@ -517,206 +420,9 @@ public class TeamRequestServiceImpl implements TeamRequestService {
     }
 
 
-    private TeamRequestResponse rejectAppealRequest(CustomUserDetails userDetails, Integer requestId, String responseMessage) {
-        Account account = userDetails.getAccount();
-        EventCoordinator eventCoordinator = eventCoordinatorRepository.findByAccount_AccountId(account.getAccountId())
-                .orElseThrow(() -> new BadRequestException("Bạn không phải là ban tổ chức, vì vậy bạn không được phép truy cập vào trình duyệt này."));
-        TeamRequest appealRequest = teamRequestRepository.findById(requestId)
-                .orElseThrow(() -> new BadRequestException("Không tìm thấy đơn khiếu nại với id: " + requestId));
-        if (appealRequest.getRequestType() != RequestType.APPEAL) {
-            throw new BadRequestException("Đây không phải là đơn khiếu nại kết quả.");
-        }
-        if (appealRequest.getStatus() != RequestStatus.IN_REVIEW
-                && appealRequest.getStatus() != RequestStatus.PENDING) {
-            throw new BadRequestException("Đơn khiếu nại này chưa được ban giám khảo hoàn thành.");
-        }
-        System.out.println("Status = " + appealRequest.getStatus());
-
-        appealRequest.setStatus(RequestStatus.REJECTED);
-        appealRequest.setResponseMessage(responseMessage != null ? responseMessage : "BTC từ chối đơn khiếu nại do điểm số không thay đổi.");
-        appealRequest.setResponder(account);
-        appealRequest.setResponseAt(LocalDateTime.now());
-
-        // 4. Gửi thông báo
-        Student teamLeader = appealRequest.getTeam().getTeamMembers().stream()
-                .filter(TeamMember::getIsLeader)
-                .map(TeamMember::getStudent)
-                .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Leader"));
-        notificationService.notifyResponseAppeal(account, teamLeader.getAccount(), appealRequest.getTeam().getTeamName(), true);
-        auditService.saveLog(
-                account,
-                AuditAction.REJECT_APPEAL_REQUEST,
-                AuditEntityType.TEAM_REQUEST,
-                appealRequest.getRequestId(),
-                "BTC đã từ chối yêu cầu khiếu nại của team"
-        );
-
-        auditService.saveLog(
-                account,
-                AuditAction.REJECT_APPEAL_REQUEST,
-                AuditEntityType.TEAM_REQUEST,
-                appealRequest.getRequestId(),
-                "BTC đã từ chối yêu cầu khiếu nại của team"
-        );
-        try {
-            TeamRequest updated = teamRequestRepository.save(appealRequest);
-            return toResponse(updated, null, null);
-        } catch (ObjectOptimisticLockingFailureException e) {
-            throw new BadRequestException("Đơn khiếu nại này vừa mới được một thành viên BTC khác xử lý mất rồi!");
-        }
-    }
-
-
     // Chấp nhận là khi có sự thay đổi về điểm số
-    private TeamRequestResponse acceptAppealRequest(CustomUserDetails userDetails, Integer requestId, String responseMessage) {
-        Account account = userDetails.getAccount();
-        EventCoordinator eventCoordinator = eventCoordinatorRepository.findByAccount_AccountId(account.getAccountId())
-                .orElseThrow(() -> new BadRequestException("Bạn không phải là ban tổ chức, vì vậy bạn không được phép truy cập vào trình duyệt này."));
-        TeamRequest appealRequest = teamRequestRepository.findById(requestId)
-                .orElseThrow(() -> new BadRequestException("Không tìm thấy đơn khiếu nại với id: " + requestId));
-        if (appealRequest.getRequestType() != RequestType.APPEAL) {
-            throw new BadRequestException("Đây không phải là đơn khiếu nại kết quả.");
-        }
-
-        if (appealRequest.getStatus() != RequestStatus.IN_REVIEW) {
-            throw new BadRequestException("Đơn khiếu nại này chưa hoàn thành quá trình  đánh giá lại từ giám khảo.");
-        }
-
-        appealRequest.setStatus(RequestStatus.RESOLVED);
-        appealRequest.setResponseMessage(responseMessage != null ? responseMessage : "BTC đã chấp nhận đơn khiếu nại sau khi có sự thay đổi về điểm số.");
-        appealRequest.setResponder(account);
-        appealRequest.setResponseAt(LocalDateTime.now());
-
-        Student teamLeader = appealRequest.getTeam().getTeamMembers().stream()
-                .filter(TeamMember::getIsLeader)
-                .map(TeamMember::getStudent)
-                .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Leader"));
-        notificationService.notifyResponseAppeal(account, teamLeader.getAccount(), appealRequest.getTeam().getTeamName(), true);
-
-        auditService.saveLog(
-                account,
-                AuditAction.ACCEPT_APPEAL_REQUEST,
-                AuditEntityType.TEAM_REQUEST,
-                appealRequest.getRequestId(),
-                "BTC đã chấp nhận yêu cầu khiếu nại của team"
-        );
-
-        auditService.saveLog(
-                account,
-                AuditAction.ACCEPT_APPEAL_REQUEST,
-                AuditEntityType.TEAM_REQUEST,
-                appealRequest.getRequestId(),
-                "BTC đã xử lý yêu cầu khiếu nại của team"
-        );
-        TeamParticipant teamParticipant = participantRepository.findByTeamId(appealRequest.getTeam().getTeamId());
-        //tính lại điểm và ranking cho category sao khi chấm điểm lại
-        roundAdvancementService.calculateScoresAndRanking(teamParticipant.getCategoryRound().getCategoryRoundId());
-        teamParticipant.setStatus(ParticipantStatus.ACTIVE);
-        participantRepository.save(teamParticipant);
-
-        try {
-            TeamRequest updated = teamRequestRepository.save(appealRequest);
-
-            Account leaderAccount = updated.getTeam().getTeamMembers().stream()
-                    .filter(TeamMember::getIsLeader)
-                    .map(TeamMember::getStudent)
-                    .map(Student::getAccount)
-                    .findFirst()
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Không tìm thấy leader của team"));
-
-            notificationService.notifyTeamRequestResolved(
-                    account,
-                    leaderAccount,
-                    updated.getTeam().getTeamName(),
-                    updated.getRequestType()
-            );
-
-            return toResponse(updated, null, null);
-        } catch (ObjectOptimisticLockingFailureException e) {
-            throw new BadRequestException("Đơn khiếu nại này vừa mới được một thành viên BTC khác xử lý mất rồi!");
-        }
-    }
-
     // KHI Event gửi yêu cầu đến Judge chấm lại
     // Thì trạng thái EVALUATION của nó đang ở GRADED Chuyển sang RE_EVALUATION
-
-    private TeamRequestResponse requestExpertToReEvaluation(CustomUserDetails userDetails, Integer requestId) {
-        Account account = userDetails.getAccount();
-        EventCoordinator eventCoordinator = eventCoordinatorRepository.findByAccount_AccountId(account.getAccountId())
-                .orElseThrow(() -> new BadRequestException("Bạn không phải là ban tổ chức, vì vậy bạn không được phép truy cập vào trình duyệt này."));
-        TeamRequest appealRequest = teamRequestRepository.findById(requestId)
-                .orElseThrow(() -> new BadRequestException("Không tìm thấy đơn khiếu nại với id: " + requestId));
-        if (appealRequest.getRequestType() != RequestType.APPEAL) {
-            throw new BadRequestException("Đây không phải là đơn khiếu nại kết quả.");
-        }
-
-        if (appealRequest.getStatus() != RequestStatus.PENDING) {
-            throw new BadRequestException("Đơn khiếu nại này đã được ban tổ chức xử lý trước đó.");
-        }
-
-        TeamParticipant participant = appealRequest.getTeam().getRegistrations().stream()
-                .filter(registration -> registration.getStatus() == RegistrationStatus.APPROVED)
-                .map(Registration::getParticipants)
-                .flatMap(List::stream)
-                .filter(teamParticipants -> teamParticipants != null
-                        && teamParticipants.getCategoryRound() != null
-                        && teamParticipants.getCategoryRound().getRound()
-                        .getRoundId().equals(appealRequest.getRound().getRoundId()))
-                .findFirst()
-                .orElseThrow(() -> new BadRequestException(
-                        "Không tìm thấy CategoryRound mà team tham gia trong vòng thi này."));
-
-        CategoryRound categoryRound = participant.getCategoryRound();
-        Submission finalSubmission = participant.getSubmissions().stream()
-                .filter(Submission::isFinal)
-                .findFirst()
-                .orElseThrow(() -> new BadRequestException(
-                        "Đội thi chưa có bài nộp chính thức trong vòng này."));
-
-        List<Evaluation> evaluationsToUpdate = finalSubmission.getEvaluations().stream()
-                .filter(evaluation -> evaluation.getExpertAssign() != null)
-                .filter(evaluation -> evaluation.getExpertAssign().getCategoryRound() != null)
-                .filter(evaluation -> evaluation.getExpertAssign().getCategoryRound()
-                        .getCategoryRoundId() == categoryRound.getCategoryRoundId())
-                .filter(evaluation -> evaluation.getExpertAssign().getRole() == ExpertRole.CORE_JUDGE
-                        || evaluation.getExpertAssign().getRole() == ExpertRole.GUEST_JUDGE)
-                .toList();
-
-        if (evaluationsToUpdate.isEmpty()) {
-            throw new BadRequestException(
-                    "Không tìm thấy bảng chấm của judge được phân công cho CategoryRound này.");
-        }
-
-        Set<Account> expertsToNotify = new HashSet<>();
-        for (Evaluation evaluation : evaluationsToUpdate) {
-            evaluation.setStatus(EvaluationStatus.RE_EVALUATION);
-            expertsToNotify.add(evaluation.getExpertAssign().getExpert().getAccount());
-        }
-
-
-        evaluationRepository.saveAll(evaluationsToUpdate);
-
-        participant.setStatus(ParticipantStatus.RE_EVALUATING);
-        participantRepository.save(participant);
-
-        appealRequest.setStatus(RequestStatus.PROCESSING);
-        appealRequest.setResponder(account);
-        appealRequest.setResponseAt(LocalDateTime.now());
-        TeamRequest updated = teamRequestRepository.save(appealRequest);
-
-        notificationService.notifyExpertReEvaluation(account, expertsToNotify, appealRequest.getTeam().getTeamName());
-        auditService.saveLog(
-                account,
-                AuditAction.REQUEST_RE_EVALUATION,
-                AuditEntityType.TEAM_REQUEST,
-                appealRequest.getRequestId(),
-                "BTC phê duyệt đơn phúc khảo và đã chuyển trạng thái đơn sang xem xét và gửi yêu cầu chấm lại cho ban giám khảo."
-        );
-        return toResponse(updated, null, null);
-    }
 
     // Khi có yêu cầu phúc khảo từ các bài đánh giá của mình. Ban giám khảo nhận danh sách bài nộp của đội mình đã chấm .
     // Tiến hành xem xét lại và chấm điểm lại.
@@ -842,81 +548,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         };
     }
 
-    private TeamRequestResponse processAppealRequest(CustomUserDetails userDetails, Integer requestId, ProcessTeamRequest command) {
-        return switch (command.getAction()) {
-            case REQUEST_RE_EVALUATION -> requestExpertToReEvaluation(userDetails, requestId);
-            case RESOLVE -> acceptAppealRequest(
-                    userDetails, requestId, command.getResponseMessage());
-            case REJECT -> rejectAppealRequest(
-                    userDetails, requestId, command.getResponseMessage());
-            case UPDATE_DRAW_RESULT -> throw new BadRequestException(
-                    "Khiếu nại điểm không hỗ trợ cập nhật kết quả bốc thăm");
-        };
-    }
-
-    private TeamRequestResponse processDrawResultVerification(CustomUserDetails userDetails, TeamRequest teamRequest, ProcessTeamRequest command) {
-        Account account = userDetails.getAccount();
-        eventCoordinatorRepository.findByAccount_AccountId(account.getAccountId())
-                .orElseThrow(() -> new BadRequestException(
-                        "Bạn không phải ban tổ chức nên không có quyền xử lý yêu cầu này"));
-
-        if (teamRequest.getStatus() == RequestStatus.RESOLVED
-                || teamRequest.getStatus() == RequestStatus.REJECTED
-                || teamRequest.getStatus() == RequestStatus.CANCELLED) {
-            throw new BadRequestException("Yêu cầu xác thực này đã được đóng");
-        }
-        if (command.getResponseMessage() == null
-                || command.getResponseMessage().isBlank()) {
-            throw new BadRequestException("Nội dung phản hồi không được để trống");
-        }
-
-        switch (command.getAction()) {
-            case UPDATE_DRAW_RESULT -> {
-                if (teamRequest.getStatus() != RequestStatus.PENDING
-                        && teamRequest.getStatus() != RequestStatus.IN_REVIEW) {
-                    throw new BadRequestException(
-                            "Chỉ có thể cập nhật kết quả khi yêu cầu đang chờ hoặc đang xem xét");
-                }
-                teamRequest.setStatus(RequestStatus.IN_REVIEW);
-            }
-            case RESOLVE -> {
-                if (teamRequest.getStatus() != RequestStatus.PENDING
-                        && teamRequest.getStatus() != RequestStatus.IN_REVIEW) {
-                    throw new BadRequestException(
-                            "Chỉ có thể hoàn tất yêu cầu đang chờ hoặc đã được cập nhật");
-                }
-                teamRequest.setStatus(RequestStatus.RESOLVED);
-            }
-            case REJECT -> teamRequest.setStatus(RequestStatus.REJECTED);
-            case REQUEST_RE_EVALUATION -> throw new BadRequestException(
-                    "Yêu cầu xác thực kết quả bốc thăm không thể chuyển cho giám khảo");
-        }
-        teamRequest.setResponder(account);
-        teamRequest.setResponseMessage(command.getResponseMessage());
-        teamRequest.setResponseAt(LocalDateTime.now());
-
-        TeamRequest updated = teamRequestRepository.save(teamRequest);
-
-        if (updated.getStatus() == RequestStatus.RESOLVED
-                || updated.getStatus() == RequestStatus.REJECTED) {
-            Student leader = updated.getTeam().getTeamMembers().stream()
-                    .filter(TeamMember::getIsLeader)
-                    .map(TeamMember::getStudent)
-                    .findFirst()
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Không tìm thấy leader của team"));
-
-            notificationService.notifyTeamRequestResolved(
-                    account,
-                    leader.getAccount(),
-                    updated.getTeam().getTeamName(),
-                    updated.getRequestType()
-            );
-        }
-
-        return toResponse(updated, null, null);
-    }
-
     @Override
     @Transactional
     public TeamRequestResponse createDirectRequest(
@@ -1003,6 +634,377 @@ public class TeamRequestServiceImpl implements TeamRequestService {
             responses.add(teamRequestResponse);
         }
         return responses;
+    }
+
+    //---------------------------------------------//
+    // PRIVATE HELPERS
+    //---------------------------------------------//
+
+    private TeamRequest buildDrawVerificationRequest(
+            Notification notification,
+            Account account,
+            String requestMessage
+    ) {
+        Team team = account.getStudent().getTeamMembers().stream()
+                .filter(TeamMember::getIsLeader)
+                .map(TeamMember::getTeam)
+                .filter(item -> notification.getTeam() != null
+                        && item.getTeamId() == notification.getTeam().getTeamId())
+                .findFirst()
+                .orElseThrow(() -> new BadRequestException(
+                        "Bạn không phải leader của đội nhận kết quả bốc thăm"));
+
+        teamRequestValidator.validateNoOpenRequest(
+                team, notification.getRound(),
+                RequestType.DRAW_RESULT_VERIFICATION);
+
+        boolean hasAssignedCategory = team.getRegistrations().stream()
+                .filter(registration ->
+                        registration.getStatus() == RegistrationStatus.APPROVED)
+                .map(Registration::getParticipants)
+                .flatMap(List::stream)
+                .anyMatch(participant -> participant.getCategoryRound() != null);
+        if (!hasAssignedCategory) {
+            throw new BadRequestException(
+                    "Team chưa có kết quả bốc thăm để xác thực");
+        }
+
+        return newPendingRequest(
+                team,
+                notification.getRound(),
+                RequestType.DRAW_RESULT_VERIFICATION,
+                requestMessage
+        );
+    }
+
+    private TeamRequest buildAppealRequest(
+            Notification notification,
+            Account account,
+            NotiResponseRequest command
+    ) {
+        if (command.getRoundId() == null) {
+            throw new BadRequestException(
+                    "Round id không được để trống khi khiếu nại điểm");
+        }
+
+        Round round = roundRepository.findById(command.getRoundId())
+                .orElseThrow(() -> new BadRequestException(
+                        "Không tìm thấy vòng thi"));
+
+        if (notification.getRound() != null
+                && !notification.getRound().getRoundId().equals(round.getRoundId())) {
+            throw new BadRequestException(
+                    "Thông báo điểm không thuộc vòng thi này");
+        }
+
+        Team team = account.getStudent().getTeamMembers().stream()
+                .filter(TeamMember::getIsLeader)
+                .map(TeamMember::getTeam)
+                .filter(item -> item.getRegistrations().stream()
+                        .filter(registration ->
+                                registration.getStatus() == RegistrationStatus.APPROVED)
+                        .map(Registration::getParticipants)
+                        .flatMap(List::stream)
+                        .anyMatch(participant ->
+                                participant.getCategoryRound() != null
+                                        && participant.getCategoryRound().getRound()
+                                        .getRoundId().equals(round.getRoundId())))
+                .findFirst()
+                .orElseThrow(() -> new BadRequestException(
+                        "Bạn không phải leader của đội tham gia vòng thi này"));
+
+        teamRequestValidator.validateNoOpenRequest(
+                team, round, RequestType.APPEAL);
+
+        return newPendingRequest(
+                team, round, RequestType.APPEAL, command.getMessage());
+    }
+
+    private TeamRequest newPendingRequest(
+            Team team,
+            Round round,
+            RequestType requestType,
+            String requestMessage
+    ) {
+        TeamRequest request = new TeamRequest();
+        request.setTeam(team);
+        request.setRound(round);
+        request.setRequestType(requestType);
+        request.setRequestMessage(requestMessage);
+        request.setCreateDate(LocalDateTime.now());
+        request.setStatus(RequestStatus.PENDING);
+        return request;
+    }
+
+    private TeamRequestResponse rejectAppealRequest(CustomUserDetails userDetails, Integer requestId, String responseMessage) {
+        Account account = userDetails.getAccount();
+        EventCoordinator eventCoordinator = eventCoordinatorRepository.findByAccount_AccountId(account.getAccountId())
+                .orElseThrow(() -> new BadRequestException("Bạn không phải là ban tổ chức, vì vậy bạn không được phép truy cập vào trình duyệt này."));
+        TeamRequest appealRequest = teamRequestRepository.findById(requestId)
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy đơn khiếu nại với id: " + requestId));
+        if (appealRequest.getRequestType() != RequestType.APPEAL) {
+            throw new BadRequestException("Đây không phải là đơn khiếu nại kết quả.");
+        }
+        if (appealRequest.getStatus() != RequestStatus.IN_REVIEW
+                && appealRequest.getStatus() != RequestStatus.PENDING) {
+            throw new BadRequestException("Đơn khiếu nại này chưa được ban giám khảo hoàn thành.");
+        }
+        System.out.println("Status = " + appealRequest.getStatus());
+
+        appealRequest.setStatus(RequestStatus.REJECTED);
+        appealRequest.setResponseMessage(responseMessage != null ? responseMessage : "BTC từ chối đơn khiếu nại do điểm số không thay đổi.");
+        appealRequest.setResponder(account);
+        appealRequest.setResponseAt(LocalDateTime.now());
+
+        // 4. Gửi thông báo
+        Student teamLeader = appealRequest.getTeam().getTeamMembers().stream()
+                .filter(TeamMember::getIsLeader)
+                .map(TeamMember::getStudent)
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Leader"));
+        notificationService.notifyResponseAppeal(account, teamLeader.getAccount(), appealRequest.getTeam().getTeamName(), true);
+        auditService.saveLog(
+                account,
+                AuditAction.REJECT_APPEAL_REQUEST,
+                AuditEntityType.TEAM_REQUEST,
+                appealRequest.getRequestId(),
+                "BTC đã từ chối yêu cầu khiếu nại của team"
+        );
+
+        auditService.saveLog(
+                account,
+                AuditAction.REJECT_APPEAL_REQUEST,
+                AuditEntityType.TEAM_REQUEST,
+                appealRequest.getRequestId(),
+                "BTC đã từ chối yêu cầu khiếu nại của team"
+        );
+        try {
+            TeamRequest updated = teamRequestRepository.save(appealRequest);
+            return toResponse(updated, null, null);
+        } catch (ObjectOptimisticLockingFailureException e) {
+            throw new BadRequestException("Đơn khiếu nại này vừa mới được một thành viên BTC khác xử lý mất rồi!");
+        }
+    }
+
+    private TeamRequestResponse acceptAppealRequest(CustomUserDetails userDetails, Integer requestId, String responseMessage) {
+        Account account = userDetails.getAccount();
+        EventCoordinator eventCoordinator = eventCoordinatorRepository.findByAccount_AccountId(account.getAccountId())
+                .orElseThrow(() -> new BadRequestException("Bạn không phải là ban tổ chức, vì vậy bạn không được phép truy cập vào trình duyệt này."));
+        TeamRequest appealRequest = teamRequestRepository.findById(requestId)
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy đơn khiếu nại với id: " + requestId));
+        if (appealRequest.getRequestType() != RequestType.APPEAL) {
+            throw new BadRequestException("Đây không phải là đơn khiếu nại kết quả.");
+        }
+
+        if (appealRequest.getStatus() != RequestStatus.IN_REVIEW) {
+            throw new BadRequestException("Đơn khiếu nại này chưa hoàn thành quá trình  đánh giá lại từ giám khảo.");
+        }
+
+        appealRequest.setStatus(RequestStatus.RESOLVED);
+        appealRequest.setResponseMessage(responseMessage != null ? responseMessage : "BTC đã chấp nhận đơn khiếu nại sau khi có sự thay đổi về điểm số.");
+        appealRequest.setResponder(account);
+        appealRequest.setResponseAt(LocalDateTime.now());
+
+        Student teamLeader = appealRequest.getTeam().getTeamMembers().stream()
+                .filter(TeamMember::getIsLeader)
+                .map(TeamMember::getStudent)
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Leader"));
+        notificationService.notifyResponseAppeal(account, teamLeader.getAccount(), appealRequest.getTeam().getTeamName(), true);
+
+        auditService.saveLog(
+                account,
+                AuditAction.ACCEPT_APPEAL_REQUEST,
+                AuditEntityType.TEAM_REQUEST,
+                appealRequest.getRequestId(),
+                "BTC đã chấp nhận yêu cầu khiếu nại của team"
+        );
+
+        auditService.saveLog(
+                account,
+                AuditAction.ACCEPT_APPEAL_REQUEST,
+                AuditEntityType.TEAM_REQUEST,
+                appealRequest.getRequestId(),
+                "BTC đã xử lý yêu cầu khiếu nại của team"
+        );
+        TeamParticipant teamParticipant = participantRepository.findByTeamId(appealRequest.getTeam().getTeamId());
+        //tính lại điểm và ranking cho category sao khi chấm điểm lại
+        roundAdvancementService.calculateScoresAndRanking(teamParticipant.getCategoryRound().getCategoryRoundId());
+        teamParticipant.setStatus(ParticipantStatus.ACTIVE);
+        participantRepository.save(teamParticipant);
+
+        try {
+            TeamRequest updated = teamRequestRepository.save(appealRequest);
+
+            Account leaderAccount = updated.getTeam().getTeamMembers().stream()
+                    .filter(TeamMember::getIsLeader)
+                    .map(TeamMember::getStudent)
+                    .map(Student::getAccount)
+                    .findFirst()
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Không tìm thấy leader của team"));
+
+            notificationService.notifyTeamRequestResolved(
+                    account,
+                    leaderAccount,
+                    updated.getTeam().getTeamName(),
+                    updated.getRequestType()
+            );
+
+            return toResponse(updated, null, null);
+        } catch (ObjectOptimisticLockingFailureException e) {
+            throw new BadRequestException("Đơn khiếu nại này vừa mới được một thành viên BTC khác xử lý mất rồi!");
+        }
+    }
+
+    private TeamRequestResponse requestExpertToReEvaluation(CustomUserDetails userDetails, Integer requestId) {
+        Account account = userDetails.getAccount();
+        EventCoordinator eventCoordinator = eventCoordinatorRepository.findByAccount_AccountId(account.getAccountId())
+                .orElseThrow(() -> new BadRequestException("Bạn không phải là ban tổ chức, vì vậy bạn không được phép truy cập vào trình duyệt này."));
+        TeamRequest appealRequest = teamRequestRepository.findById(requestId)
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy đơn khiếu nại với id: " + requestId));
+        if (appealRequest.getRequestType() != RequestType.APPEAL) {
+            throw new BadRequestException("Đây không phải là đơn khiếu nại kết quả.");
+        }
+
+        if (appealRequest.getStatus() != RequestStatus.PENDING) {
+            throw new BadRequestException("Đơn khiếu nại này đã được ban tổ chức xử lý trước đó.");
+        }
+
+        TeamParticipant participant = appealRequest.getTeam().getRegistrations().stream()
+                .filter(registration -> registration.getStatus() == RegistrationStatus.APPROVED)
+                .map(Registration::getParticipants)
+                .flatMap(List::stream)
+                .filter(teamParticipants -> teamParticipants != null
+                        && teamParticipants.getCategoryRound() != null
+                        && teamParticipants.getCategoryRound().getRound()
+                        .getRoundId().equals(appealRequest.getRound().getRoundId()))
+                .findFirst()
+                .orElseThrow(() -> new BadRequestException(
+                        "Không tìm thấy CategoryRound mà team tham gia trong vòng thi này."));
+
+        CategoryRound categoryRound = participant.getCategoryRound();
+        Submission finalSubmission = participant.getSubmissions().stream()
+                .filter(Submission::isFinal)
+                .findFirst()
+                .orElseThrow(() -> new BadRequestException(
+                        "Đội thi chưa có bài nộp chính thức trong vòng này."));
+
+        List<Evaluation> evaluationsToUpdate = finalSubmission.getEvaluations().stream()
+                .filter(evaluation -> evaluation.getExpertAssign() != null)
+                .filter(evaluation -> evaluation.getExpertAssign().getCategoryRound() != null)
+                .filter(evaluation -> evaluation.getExpertAssign().getCategoryRound()
+                        .getCategoryRoundId() == categoryRound.getCategoryRoundId())
+                .filter(evaluation -> evaluation.getExpertAssign().getRole() == ExpertRole.CORE_JUDGE
+                        || evaluation.getExpertAssign().getRole() == ExpertRole.GUEST_JUDGE)
+                .toList();
+
+        if (evaluationsToUpdate.isEmpty()) {
+            throw new BadRequestException(
+                    "Không tìm thấy bảng chấm của judge được phân công cho CategoryRound này.");
+        }
+
+        Set<Account> expertsToNotify = new HashSet<>();
+        for (Evaluation evaluation : evaluationsToUpdate) {
+            evaluation.setStatus(EvaluationStatus.RE_EVALUATION);
+            expertsToNotify.add(evaluation.getExpertAssign().getExpert().getAccount());
+        }
+
+
+        evaluationRepository.saveAll(evaluationsToUpdate);
+
+        participant.setStatus(ParticipantStatus.RE_EVALUATING);
+        participantRepository.save(participant);
+
+        appealRequest.setStatus(RequestStatus.PROCESSING);
+        appealRequest.setResponder(account);
+        appealRequest.setResponseAt(LocalDateTime.now());
+        TeamRequest updated = teamRequestRepository.save(appealRequest);
+
+        notificationService.notifyExpertReEvaluation(account, expertsToNotify, appealRequest.getTeam().getTeamName());
+        auditService.saveLog(
+                account,
+                AuditAction.REQUEST_RE_EVALUATION,
+                AuditEntityType.TEAM_REQUEST,
+                appealRequest.getRequestId(),
+                "BTC phê duyệt đơn phúc khảo và đã chuyển trạng thái đơn sang xem xét và gửi yêu cầu chấm lại cho ban giám khảo."
+        );
+        return toResponse(updated, null, null);
+    }
+
+    private TeamRequestResponse processAppealRequest(CustomUserDetails userDetails, Integer requestId, ProcessTeamRequest command) {
+        return switch (command.getAction()) {
+            case REQUEST_RE_EVALUATION -> requestExpertToReEvaluation(userDetails, requestId);
+            case RESOLVE -> acceptAppealRequest(
+                    userDetails, requestId, command.getResponseMessage());
+            case REJECT -> rejectAppealRequest(
+                    userDetails, requestId, command.getResponseMessage());
+            case UPDATE_DRAW_RESULT -> throw new BadRequestException(
+                    "Khiếu nại điểm không hỗ trợ cập nhật kết quả bốc thăm");
+        };
+    }
+
+    private TeamRequestResponse processDrawResultVerification(CustomUserDetails userDetails, TeamRequest teamRequest, ProcessTeamRequest command) {
+        Account account = userDetails.getAccount();
+        eventCoordinatorRepository.findByAccount_AccountId(account.getAccountId())
+                .orElseThrow(() -> new BadRequestException(
+                        "Bạn không phải ban tổ chức nên không có quyền xử lý yêu cầu này"));
+
+        if (teamRequest.getStatus() == RequestStatus.RESOLVED
+                || teamRequest.getStatus() == RequestStatus.REJECTED
+                || teamRequest.getStatus() == RequestStatus.CANCELLED) {
+            throw new BadRequestException("Yêu cầu xác thực này đã được đóng");
+        }
+        if (command.getResponseMessage() == null
+                || command.getResponseMessage().isBlank()) {
+            throw new BadRequestException("Nội dung phản hồi không được để trống");
+        }
+
+        switch (command.getAction()) {
+            case UPDATE_DRAW_RESULT -> {
+                if (teamRequest.getStatus() != RequestStatus.PENDING
+                        && teamRequest.getStatus() != RequestStatus.IN_REVIEW) {
+                    throw new BadRequestException(
+                            "Chỉ có thể cập nhật kết quả khi yêu cầu đang chờ hoặc đang xem xét");
+                }
+                teamRequest.setStatus(RequestStatus.IN_REVIEW);
+            }
+            case RESOLVE -> {
+                if (teamRequest.getStatus() != RequestStatus.PENDING
+                        && teamRequest.getStatus() != RequestStatus.IN_REVIEW) {
+                    throw new BadRequestException(
+                            "Chỉ có thể hoàn tất yêu cầu đang chờ hoặc đã được cập nhật");
+                }
+                teamRequest.setStatus(RequestStatus.RESOLVED);
+            }
+            case REJECT -> teamRequest.setStatus(RequestStatus.REJECTED);
+            case REQUEST_RE_EVALUATION -> throw new BadRequestException(
+                    "Yêu cầu xác thực kết quả bốc thăm không thể chuyển cho giám khảo");
+        }
+        teamRequest.setResponder(account);
+        teamRequest.setResponseMessage(command.getResponseMessage());
+        teamRequest.setResponseAt(LocalDateTime.now());
+
+        TeamRequest updated = teamRequestRepository.save(teamRequest);
+
+        if (updated.getStatus() == RequestStatus.RESOLVED
+                || updated.getStatus() == RequestStatus.REJECTED) {
+            Student leader = updated.getTeam().getTeamMembers().stream()
+                    .filter(TeamMember::getIsLeader)
+                    .map(TeamMember::getStudent)
+                    .findFirst()
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Không tìm thấy leader của team"));
+
+            notificationService.notifyTeamRequestResolved(
+                    account,
+                    leader.getAccount(),
+                    updated.getTeam().getTeamName(),
+                    updated.getRequestType()
+            );
+        }
+
+        return toResponse(updated, null, null);
     }
 
     private TeamRequestResponse createDirectAppeal(
@@ -1187,7 +1189,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                 .responseMessage(request.getResponseMessage())
                 .build();
     }
-
 
 }
 
