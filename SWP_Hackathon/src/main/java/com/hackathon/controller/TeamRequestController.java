@@ -138,8 +138,8 @@ public class TeamRequestController {
                         userDetails, roundId);
         return ResponseEntity.ok(ApiResponse.success(response, "Ban giám khảo nhận các bài nộp yêu cầu phúc khảo thành công."));
     }
-    // STUDNET XEM DS ĐƠN ĐÃ GỬI YÊU CẦU ĐẾN MENTOR
-    @GetMapping("/{eventId}/student")
+    // STUDENT XEM DS ĐƠN ĐÃ GỬI YÊU CẦU ĐẾN MENTOR
+    @GetMapping("/{eventId}/mentor/student")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<List<TeamRequestResponse>>> getMyMentorSupportRequests(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -150,7 +150,7 @@ public class TeamRequestController {
         return ResponseEntity.ok(ApiResponse.success(response, "Sinh viên xem các yêu cầu đã gửi đến MENTOR thành công."));
     }
 
-    // STUDNET XEM DS ĐƠN ĐÃ GỬI YÊU CẦU ĐẾN MENTOR
+    // STUDNET XEM DS ĐƠN ĐÃ GỬI YÊU CẦU KHIẾU NẠI
     @GetMapping("/{eventId}/appeals/student")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<List<TeamRequestResponse>>> getMyAppealRequests(

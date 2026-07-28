@@ -13,9 +13,9 @@ public class SystemConfig {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(nullable = false, unique = true)
+    @Column(nullable = true)
     private String configKey; // Ví dụ: "MAX_TEAM_SIZE"
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String configValue; // Ví dụ: "5"
 }
