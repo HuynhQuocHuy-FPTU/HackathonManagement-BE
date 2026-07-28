@@ -7,7 +7,6 @@ import com.hackathon.dto.event.EventDTO;
 import com.hackathon.dto.expert.ExpertAssginmentRequestDTO;
 import com.hackathon.dto.expert.ExpertAssignmentResponseDTO;
 import com.hackathon.dto.round.RoundDTO;
-import com.hackathon.dto.submission.SubmissionResponse;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.AccountStatus;
 import com.hackathon.entity.enums.ExpertRole;
@@ -16,7 +15,6 @@ import com.hackathon.repository.AccountRepository;
 import com.hackathon.repository.ExpertAssignRepository;
 import com.hackathon.repository.ExpertRepository;
 import com.hackathon.security.CustomUserDetails;
-import com.hackathon.service.submission.SubmissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
