@@ -207,7 +207,7 @@ public class RoundAdvancementService {
             );
         }
 
-        // Sắp xếp các nhóm từ weight cao xuống thấp để phá hòa theo đúng độ ưu tiên.
+        // Sắp xếp các nhóm từ weight cao xuống thấp.
         List<List<Integer>> tieBreakCriteriaGroups =
                 criteriaIdsByWeight.entrySet().stream()
                         .sorted(Map.Entry.<BigDecimal, List<Integer>>
