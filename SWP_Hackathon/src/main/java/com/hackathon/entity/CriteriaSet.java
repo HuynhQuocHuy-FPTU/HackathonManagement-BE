@@ -36,8 +36,6 @@ public class CriteriaSet {
     @JsonIgnore
     private List<CriteriaDetail> criteriaDetails = new ArrayList<>();
 
-
-
     //1 Criteria_Set - N round
     @OneToMany(mappedBy = "criteriaSet", cascade = CascadeType.ALL,orphanRemoval = true)
     @JsonIgnore

@@ -86,5 +86,16 @@ public interface TeamRepository extends JpaRepository<Team, Integer> {
     Team findCurrentTeamByStudent(
             @Param("studentId") Integer studentId,
             @Param("status") TeamStatus status);
+
+    @Query("""
+                SELECT t
+                FROM Team t
+                JOIN t.teamMembers tm
+                WHERE tm.student.studentId = :studentId
+                  AND t.status IN :status
+            """)
+    Team findCurrentTeamByStudentAndStatus(
+            @Param("studentId") Integer studentId,
+            @Param("status") List<TeamStatus> status);
 }
 

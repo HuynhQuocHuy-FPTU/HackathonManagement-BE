@@ -36,7 +36,7 @@ public class RankingServiceImpl implements RankingService {
     private final AccountRepository accountRepository;
     //===============================================//
     //RANKING
-    //===============================================//
+    //===============================================//Create Event	EVT-CREATE-01	Verify successful event creation with valid information.	1. Login as Event Coordinator. 2. Open Create Event. 3. Enter valid event, category, round and criteria information. 4. Submit.	Event is created and a success notification is displayed.	Active Event Coordinator account; criteria set exists.	Untested	23/07/2026
 
 
     @Override

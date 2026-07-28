@@ -3,6 +3,7 @@ package com.hackathon.service;
 import com.hackathon.dto.TeamSelectionDTO;
 import com.hackathon.dto.registration.CountRegistrationDTO;
 import com.hackathon.dto.registration.RegistrationResponse;
+import com.hackathon.dto.registration.RegistrationHistoryResponse;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.*;
 import com.hackathon.exception.BadRequestException;
@@ -28,6 +29,40 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
     private final ParticipantService participantService;
     private final AuditService auditService;
     private final NotificationService notificationService;
+
+    @Override
+    @Transactional
+    public List<RegistrationHistoryResponse> getCurrentTeamRegistrationHistory(
+            CustomUserDetails userDetails
+    ) {
+        Account account = userDetails.getAccount();
+        if (account == null || account.getStudent() == null) {
+            throw new BadRequestException("Chỉ tài khoản sinh viên mới có thể xem lịch sử đăng ký của đội.");
+        }
+
+        Team currentTeam = teamRepository.findCurrentTeamByStudentAndStatus(
+                account.getStudent().getStudentId(),
+                List.of(TeamStatus.BUSY, TeamStatus.DRAFT, TeamStatus.PENDING)
+        );
+        if (currentTeam == null) {
+            throw new BadRequestException("Bạn không thuộc đội nào đang hoạt động.");
+        }
+
+        return registrationRepository
+                .findByTeam_TeamIdOrderByRegistrationDateDesc(currentTeam.getTeamId())
+                .stream()
+                .map(registration -> RegistrationHistoryResponse.builder()
+                        .registrationId(registration.getRegistrationId())
+                        .eventId(registration.getHackathonEvent().getEventId())
+                        .eventName(registration.getHackathonEvent().getEventName())
+                        .teamId(currentTeam.getTeamId())
+                        .teamName(currentTeam.getTeamName())
+                        .teamSize(currentTeam.getTeamSize())
+                        .registrationDate(registration.getRegistrationDate())
+                        .status(registration.getStatus())
+                        .build())
+                .toList();
+    }
 
     //1. Leader đại diện Team đăng ký cuộc thi
     @Override
@@ -407,5 +442,7 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
                 members
         );
     }
+
+
 
 }

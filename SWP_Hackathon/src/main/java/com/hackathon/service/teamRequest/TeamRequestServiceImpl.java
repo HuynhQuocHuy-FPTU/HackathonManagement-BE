@@ -1100,12 +1100,31 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                         notificationType
                 )
                 .orElseThrow(() -> new BadRequestException(
-                        "Không tìm thấy thông báo kết quả ban đầu"));
+                        requestType == RequestType.DRAW_RESULT_VERIFICATION
+                                ? "Chỉ có thể gửi yêu cầu xác minh kết quả bốc thăm sau khi đội đã nhận được thông báo kết quả bốc thăm ban đầu"
+                                : "Không tìm thấy thông báo bảng xếp hạng tạm thời của vòng thi"));
 
-        if (notification.getResponseDeadline() == null
-                || LocalDateTime.now().isAfter(notification.getResponseDeadline())) {
+        LocalDateTime now = LocalDateTime.now();
+        if (requestType == RequestType.APPEAL) {
+            if (round.getAppealStartTime() == null
+                    || round.getAppealEndTime() == null) {
+                throw new BadRequestException(
+                        "Vòng thi chưa thiết lập thời gian nhận đơn khiếu nại");
+            }
+            if (now.isBefore(round.getAppealStartTime())) {
+                throw new BadRequestException(
+                        "Chưa đến thời gian gửi đơn khiếu nại");
+            }
+            if (now.isAfter(round.getAppealEndTime())) {
+                throw new BadRequestException(
+                        "Đã hết thời hạn gửi đơn khiếu nại");
+            }
+        } else if (notification.getResponseDeadline() == null) {
             throw new BadRequestException(
-                    "Đã hết thời hạn gửi yêu cầu");
+                    "Thông báo kết quả bốc thăm ban đầu chưa thiết lập thời hạn xác minh");
+        } else if (now.isAfter(notification.getResponseDeadline())) {
+            throw new BadRequestException(
+                    "Đã hết thời hạn xác minh kết quả bốc thăm theo thông báo kết quả ban đầu");
         }
 
         return notification;

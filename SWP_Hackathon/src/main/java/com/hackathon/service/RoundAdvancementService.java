@@ -24,7 +24,9 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -157,24 +159,200 @@ public class RoundAdvancementService {
     public List<TeamParticipant> calculateRanking(
             List<TeamParticipant> participants
     ) {
-        participants.sort(
-                Comparator.comparing(
-                                TeamParticipant::getTotalScore,
-                                Comparator.nullsLast(Comparator.reverseOrder())
-                        )
-                        .thenComparing(
-                                this::getFinalSubmissionTime,
-                                Comparator.nullsLast(Comparator.naturalOrder())
-                        )
+        // Ưu tiên đầu tiên: đội có tổng điểm cao hơn sẽ xếp trên.
+        Comparator<TeamParticipant> scoreComparator = Comparator.comparing(
+                TeamParticipant::getTotalScore,
+                Comparator.nullsLast(Comparator.reverseOrder())
         );
 
-        int rank = 1;
+        /*
+         * Gom các tiêu chí có cùng weight vào một nhóm.
+         * Ví dụ: ba tiêu chí có weight 40 sẽ nằm trong cùng một List<Integer>.
+         * stripTrailingZeros() giúp 40, 40.0 và 40.00 được xem là cùng weight.
+         */
+        Map<BigDecimal, List<Integer>> criteriaIdsByWeight =
+                new HashMap<>();
+
+        // Stream chỉ dùng để lấy danh sách tiêu chí hợp lệ.
+        List<EvaluationCriteria> evaluationCriteria = participants.stream()
+                .map(TeamParticipant::getCategoryRound)
+                .filter(Objects::nonNull)
+                .map(CategoryRound::getRound)
+                .filter(Objects::nonNull)
+                .map(Round::getEvaluationCriterias)
+                .filter(Objects::nonNull)
+                .flatMap(List::stream)
+                .distinct()
+                .filter(criterion -> criterion.getWeight() != null)
+                .toList();
+
+        // Vòng for riêng dùng để gom các tiêu chí có cùng weight.
+        for (EvaluationCriteria criterion : evaluationCriteria) {
+            // Chuẩn hóa để 40, 40.0 và 40.00 thuộc cùng một nhóm.
+            BigDecimal weight = criterion.getWeight()
+                    .stripTrailingZeros();
+
+            List<Integer> criteriaIds =
+                    criteriaIdsByWeight.get(weight);
+
+            // Nếu chưa có nhóm cho weight này thì tạo và lưu vào Map.
+            if (criteriaIds == null) {
+                criteriaIds = new ArrayList<>();
+                criteriaIdsByWeight.put(weight, criteriaIds);
+            }
+
+            // Thêm ID tiêu chí hiện tại vào nhóm weight tương ứng.
+            criteriaIds.add(
+                    criterion.getEvaluationCriteriaId()
+            );
+        }
+
+        // Sắp xếp các nhóm từ weight cao xuống thấp để phá hòa theo đúng độ ưu tiên.
+        List<List<Integer>> tieBreakCriteriaGroups =
+                criteriaIdsByWeight.entrySet().stream()
+                        .sorted(Map.Entry.<BigDecimal, List<Integer>>
+                                comparingByKey().reversed())
+                        .map(Map.Entry::getValue)
+                        .toList();
+
+        Map<Integer, Map<Integer, BigDecimal>> criteriaScoresByParticipant =
+                new HashMap<>();
         for (TeamParticipant participant : participants) {
-            participant.setRank(rank++);
+            /*
+             * Tính trước điểm trung bình của từng tiêu chí cho mỗi đội.
+             * Mỗi tiêu chí có thể được nhiều giám khảo chấm.
+             */
+            criteriaScoresByParticipant.put(
+                    participant.getId(),
+                    getAverageCriteriaScores(participant)
+            );
+        }
+
+        /*
+         * Nếu tổng điểm bằng nhau, lần lượt so sánh điểm trung bình của từng
+         * nhóm weight, bắt đầu từ nhóm có weight cao nhất.
+         */
+        for (List<Integer> criteriaIds : tieBreakCriteriaGroups) {
+            scoreComparator = scoreComparator.thenComparing(
+                    participant -> getAverageWeightGroupScore(
+                            criteriaScoresByParticipant.get(participant.getId()),
+                            criteriaIds
+                    ),
+                    Comparator.nullsLast(Comparator.reverseOrder())
+            );
+        }
+
+        /*
+         * Thời gian nộp bài chỉ dùng để giữ thứ tự hiển thị ổn định.
+         * Nó không thuộc scoreComparator nên không ảnh hưởng đến việc đồng hạng.
+         */
+        Comparator<TeamParticipant> displayComparator =
+                scoreComparator.thenComparing(
+                this::getFinalSubmissionTime,
+                Comparator.nullsLast(Comparator.naturalOrder())
+        );
+        participants.sort(displayComparator);
+
+        TeamParticipant previousParticipant = null;
+        int currentRank = 0;
+        for (int index = 0; index < participants.size(); index++) {
+            TeamParticipant participant = participants.get(index);
+            /*
+             * Chỉ tạo hạng mới khi tổng điểm hoặc điểm của một nhóm weight khác.
+             * Nếu tất cả đều bằng nhau, đội hiện tại giữ cùng hạng với đội trước.
+             */
+            if (previousParticipant == null
+                    || scoreComparator.compare(
+                            previousParticipant,
+                            participant
+                    ) != 0) {
+                currentRank = index + 1;
+            }
+            participant.setRank(currentRank);
+            previousParticipant = participant;
         }
 
         participantRepository.saveAll(participants);
         return participants;
+    }
+
+    private BigDecimal getAverageWeightGroupScore(
+            Map<Integer, BigDecimal> scoresByCriteria,
+            List<Integer> criteriaIds
+    ) {
+        // Không thể tính điểm nhóm nếu không có dữ liệu điểm hoặc không có tiêu chí.
+        if (scoresByCriteria == null
+                || criteriaIds == null
+                || criteriaIds.isEmpty()) {
+            return null;
+        }
+
+        List<BigDecimal> scores = criteriaIds.stream()
+                .map(scoresByCriteria::get)
+                .filter(Objects::nonNull)
+                .toList();
+
+        /*
+         * Một đội phải có điểm của tất cả tiêu chí trong nhóm.
+         * Không lấy trung bình trên dữ liệu thiếu vì có thể tạo lợi thế không công bằng.
+         */
+        if (scores.size() != criteriaIds.size()) {
+            return null;
+        }
+
+        // Điểm nhóm = tổng điểm trung bình từng tiêu chí / số tiêu chí cùng weight.
+        BigDecimal total = scores.stream()
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return total.divide(
+                BigDecimal.valueOf(scores.size()),
+                SCORE_SCALE,
+                RoundingMode.HALF_UP
+        );
+    }
+
+    private Map<Integer, BigDecimal> getAverageCriteriaScores(
+            TeamParticipant participant
+    ) {
+        // Lưu toàn bộ điểm do các giám khảo chấm, được nhóm theo criteriaId.
+        Map<Integer, List<BigDecimal>> scoresByCriteria = new HashMap<>();
+
+        evaluationRepository
+                .findBySubmission_TeamParticipant(participant)
+                .stream()
+                .filter(evaluation ->
+                        evaluation.getStatus() == EvaluationStatus.GRADED
+                                || evaluation.getStatus()
+                                == EvaluationStatus.RE_EVALUATED
+                )
+                .map(Evaluation::getEvaluationDetails)
+                .filter(Objects::nonNull)
+                .flatMap(List::stream)
+                .filter(detail -> detail.getEvaluationCriteria() != null)
+                .filter(detail -> detail.getScore() != null)
+                .forEach(detail -> scoresByCriteria
+                        .computeIfAbsent(
+                                detail.getEvaluationCriteria()
+                                        .getEvaluationCriteriaId(),
+                                ignored -> new ArrayList<>()
+                        )
+                        .add(detail.getScore())
+                );
+
+        // Từ nhiều điểm của giám khảo, tính ra một điểm trung bình cho mỗi tiêu chí.
+        Map<Integer, BigDecimal> averagesByCriteria = new HashMap<>();
+        scoresByCriteria.forEach((criteriaId, scores) -> {
+            BigDecimal total = scores.stream()
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            averagesByCriteria.put(
+                    criteriaId,
+                    total.divide(
+                            BigDecimal.valueOf(scores.size()),
+                            SCORE_SCALE,
+                            RoundingMode.HALF_UP
+                    )
+            );
+        });
+        return averagesByCriteria;
     }
 
     //thăng vòng theo từng

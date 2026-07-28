@@ -34,7 +34,7 @@ public class SubmissionValidator {
             case GITHUB_URL:
                 if (githubUrl == null || githubUrl.isBlank()) throw new BadRequestException("Vòng này yêu cầu nộp link GitHub!");
                 if(!gitHubService.isValidGithubUrl(githubUrl)){
-                    throw new BadRequestException("Link github không hợp lệ! Vui lòng nhập đúng định dạng: https://github.com/username/repository-name");
+                    throw new BadRequestException("Link github không hợp lệ! Vui lòng nhập đúng định dạng: http://github.com/username/repository-name");
                 }
                 break;
             case FILE:
@@ -57,6 +57,62 @@ public class SubmissionValidator {
         if (round.getMaxFileCount() != null && files.size() > round.getMaxFileCount()) {
             throw new BadRequestException("Mỗi lần nộp không được vượt quá " + round.getMaxFileCount() + " file.");
         }
+
+        List<FileType> allowedFileTypes = round.getAllowedFileType();
+
+        for (MultipartFile file : files) {
+            if (file == null || file.isEmpty()) {
+                throw new BadRequestException("File tải lên không được để trống.");
+            }
+
+            String fileName = file.getOriginalFilename();
+            FileType extensionType = FileType.fromExtension(getExtension(fileName));
+            FileType mimeType = FileType.fromMimeType(file.getContentType());
+
+            if (extensionType == null) {
+                throw new BadRequestException(
+                        "Không nhận diện được phần mở rộng của file: " + fileName
+                );
+            }
+
+            if (mimeType == null) {
+                throw new BadRequestException(
+                        "Không nhận diện được MIME type của file: " + fileName
+                );
+            }
+
+            if (!extensionType.getMimeType().equalsIgnoreCase(mimeType.getMimeType())) {
+                throw new BadRequestException(
+                        "Phần mở rộng không khớp với loại nội dung của file: " + fileName
+                );
+            }
+
+            boolean isAllowed = allowedFileTypes == null
+                    || allowedFileTypes.isEmpty()
+                    || allowedFileTypes.stream().anyMatch(allowedType ->
+                            allowedType.getMimeType().equalsIgnoreCase(mimeType.getMimeType())
+                    );
+
+            if (!isAllowed) {
+                throw new BadRequestException(
+                        "File " + fileName + " không thuộc loại được phép. Các loại được phép: "
+                                + allowedFileTypes
+                );
+            }
+        }
+    }
+
+    private String getExtension(String fileName) {
+        if (fileName == null || fileName.isBlank()) {
+            return null;
+        }
+
+        int lastDotIndex = fileName.lastIndexOf('.');
+        if (lastDotIndex < 0 || lastDotIndex == fileName.length() - 1) {
+            return null;
+        }
+
+        return fileName.substring(lastDotIndex + 1);
     }
 
 

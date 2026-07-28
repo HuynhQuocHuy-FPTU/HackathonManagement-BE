@@ -3,6 +3,7 @@ package com.hackathon.controller;
 import com.hackathon.dto.TeamSelectionDTO;
 import com.hackathon.dto.registration.CountRegistrationDTO;
 import com.hackathon.dto.registration.RegistrationResponse;
+import com.hackathon.dto.registration.RegistrationHistoryResponse;
 import com.hackathon.dto.team.CreateTeamRequest;
 import com.hackathon.dto.team.InviteTeamRequest;
 import com.hackathon.dto.team.TeamResponse;
@@ -30,6 +31,19 @@ public class RegistrationController {
     private NotificationService notificationService;
     @Autowired
     private RegistrationEventService registrationEventService;
+
+    @GetMapping("/history/current-team")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<List<RegistrationHistoryResponse>>> getCurrentTeamRegistrationHistory(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        registrationEventService.getCurrentTeamRegistrationHistory(userDetails),
+                        "Lấy lịch sử đăng ký của đội hiện tại thành công"
+                )
+        );
+    }
 
     // Registration event
     @PostMapping("/{eventId}/register-event")
