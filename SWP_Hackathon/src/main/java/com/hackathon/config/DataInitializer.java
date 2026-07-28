@@ -109,16 +109,16 @@ public class DataInitializer implements CommandLineRunner {
 //        createExperts(password);
 //        createCriteriaSets();
 //
-//        Student[] students = createStudents(password);
-//        Team[] teams = createTeams(students);
+        createStudents(password);
+        Team[] teams = createTeams();
 
 //        registerTeamsForEvent(
 //                TARGET_EVENT_ID
 //        );
 
-//        submitForParticipantsWithoutSubmission(
-//                TARGET_ROUND_ID
-//        );
+        submitForParticipantsWithoutSubmission(
+                TARGET_ROUND_ID
+        );
 
         /*
          * Chấm các final submission theo ExpertAssign
@@ -474,8 +474,21 @@ public class DataInitializer implements CommandLineRunner {
     // TEAM
     // =====================================================
 
-    private Team[] createTeams(Student[] students) {
+    private Team[] createTeams() {
         Team[] teams = new Team[TEAM_COUNT];
+
+        /*
+         * Lấy toàn bộ student từ database rồi loại những student đã thuộc
+         * một team. Danh sách còn lại chỉ chứa student có thể được chia team.
+         */
+        List<Student> availableStudents =
+                new ArrayList<>(studentRepository.findAll());
+        availableStudents.removeIf(student ->
+                !teamMemberRepository
+                        .findByStudent(student)
+                        .isEmpty()
+        );
+
         int studentIndex = 0;
 
         for (int teamIndex = 0;
@@ -506,21 +519,31 @@ public class DataInitializer implements CommandLineRunner {
             teams[teamIndex] = team;
 
             boolean alreadyHasMembers =
-                    team.getTeamMembers() != null
-                            && !team.getTeamMembers()
+                    !teamMemberRepository
+                            .findByTeam(team)
                             .isEmpty();
 
             if (alreadyHasMembers) {
-                studentIndex += MEMBER_PER_TEAM;
                 continue;
             }
 
+            /*
+             * Giữ logic cũ: lấy lần lượt MEMBER_PER_TEAM student trong
+             * danh sách đã được lọc để thêm vào team hiện tại.
+             */
             for (int memberIndex = 0;
                  memberIndex < MEMBER_PER_TEAM;
                  memberIndex++) {
 
+                if (studentIndex >= availableStudents.size()) {
+                    throw new IllegalStateException(
+                            "Không đủ student chưa có team để tạo "
+                                    + teamName
+                    );
+                }
+
                 Student student =
-                        students[studentIndex++];
+                        availableStudents.get(studentIndex++);
 
                 teamMemberRepository.save(
                         TeamMember.builder()
