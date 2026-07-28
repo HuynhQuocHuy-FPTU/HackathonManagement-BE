@@ -116,6 +116,7 @@ public class GradingServiceImpl implements GradingService {
                         .evaluationCriteriaId(c.getEvaluationCriteriaId())
                         .criteriaName(c.getCriteriaName())
                         .weight(c.getWeight())
+                        .maxScore(round.getCriteriaSet().getMaxScore())
                         .description(c.getDescription())
 
                         .type(c.getType())
