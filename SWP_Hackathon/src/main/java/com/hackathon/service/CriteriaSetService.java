@@ -4,6 +4,7 @@ import com.hackathon.dto.criteria.CreateCriteriaSetRequest;
 import com.hackathon.dto.criteria.CriteriaDetailResponseDTO;
 import com.hackathon.dto.criteria.CriteriaSetRequestDTO;
 import com.hackathon.dto.criteria.CriteriaSetResponseDTO;
+import com.hackathon.dto.history.CriteriaHistoryResponse;
 import com.hackathon.security.CustomUserDetails;
 
 import java.util.List;
@@ -30,5 +31,8 @@ public interface CriteriaSetService {
 
     // Xoa bo tieu chi
     void deleteCriteriaSet(Integer criteriaSetId,CustomUserDetails userDetails);
+
+    // Lich su bo tieu chi
+    CriteriaHistoryResponse getHistoryCriteria(CustomUserDetails userDetails,  Integer criteriaSetId);
 
 }

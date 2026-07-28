@@ -117,6 +117,7 @@ public class GradingServiceImpl implements GradingService {
                         .criteriaName(c.getCriteriaName())
                         .weight(c.getWeight())
                         .description(c.getDescription())
+
                         .type(c.getType())
                         .build())
                 .collect(Collectors.toList());
@@ -435,20 +436,7 @@ public class GradingServiceImpl implements GradingService {
                 .filter(d -> d.getEvaluationCriteria() != null)
                 .collect(Collectors.toMap(d -> d.getEvaluationCriteria().getEvaluationCriteriaId(), d -> d));
 
-        System.out.println("EvaluationId = " + evaluation.getEvaluationId());
 
-        evaluation.getEvaluationDetails().forEach(d -> {
-            System.out.println(
-                    "CriteriaId = " + d.getEvaluationCriteria().getEvaluationCriteriaId()
-                            + ", Type = " + d.getEvaluationCriteria().getType()
-            );
-        });
-        System.out.println("EvaluationId = " + evaluation.getEvaluationId());
-        System.out.println("DetailsMap = " + detailsMap.keySet());
-
-        request.getCriteriaScores().forEach(c ->
-                System.out.println("Request = " + c.getEvaluationCriteriaId())
-        );
         for (CriteriaScoreRequest requestEval : request.getCriteriaScores()) {
             EvaluationDetail detail = detailsMap.get(requestEval.getEvaluationCriteriaId());
             if (detail == null) {

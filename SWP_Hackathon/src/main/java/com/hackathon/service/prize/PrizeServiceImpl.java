@@ -61,10 +61,6 @@ public class PrizeServiceImpl {
             for (PrizeRequestDTO rq : request) {
                 TeamParticipant tp = participantRepository.findById(rq.getTeamParticipantId())
                         .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin về đội thi này."));
-                System.out.println(
-                        tp.getId() +
-                                " rank=" + tp.getRank()
-                );
                 // Check có giải thưởng trước đó chưa
                 tp.setTitleAward(appendValue(tp.getTitleAward(), rq.getPrizeTitle()));
                 tp.setAward(appendValue(tp.getAward(), rq.getPrizeReward()));
