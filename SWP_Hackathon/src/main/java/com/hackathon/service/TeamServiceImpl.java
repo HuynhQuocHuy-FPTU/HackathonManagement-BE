@@ -35,9 +35,7 @@ public class TeamServiceImpl implements TeamService {
 
     private final EmailService emailService;
     private final AuditService auditService;
-//    private static final int MAX_TEAM_SIZE = 5;
-//    private static final long LOCK_BEFORE_DEADLINE_HOURS = 24;
-//    private static final long INVITATION_EXPIRE_DAYS = 3;
+
 
 
     // Nếu Đội đã nộp đơn và thời gian hiện tại cách thời gian đk event dưới 24 giờ -> CHẶN
@@ -687,7 +685,7 @@ public class TeamServiceImpl implements TeamService {
             notification.setMessage("Lời mời này không còn hiệu lực vì Đội thi đã đủ thành viên.");
             notification.setStatus(InvitationStatus.INVALID);
             notificationRepository.save(notification);
-            throw new BadRequestException("Team '" + team.getTeamName() + " đủ thành viên");
+            throw new BadRequestException("Team: " + team.getTeamName() + " đủ thành viên");
         }
 
         // 7. Check ng dung da la thanh vien cua nhom hay chua

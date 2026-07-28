@@ -28,9 +28,12 @@ public class SystemConfigServiceImpl implements SystemConfigService {
             throw new BadRequestException("Kích thược đội không được nhỏ hơn hoặc bằng 0.");
         }
 
-        SystemConfig config = systemConfigRepository.findByConfigKey(key.name())
-                .orElseThrow(() -> new BadRequestException("Không tìm thấy cấu hình."));
+        SystemConfig config = systemConfigRepository
+                .findByConfigKey(key.name())
+                .orElse(new SystemConfig());
+
         config.setConfigValue(String.valueOf(value));
+        config.setConfigKey(key.name());
         systemConfigRepository.save(config);
 
     }
