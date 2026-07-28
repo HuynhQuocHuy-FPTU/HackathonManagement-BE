@@ -10,21 +10,7 @@ import java.time.LocalDateTime;
 @Data
 @Entity
 @Table(
-        name = "Audit_Log",
-        indexes = {
-                @Index(
-                        name = "idx_audit_account",
-                        columnList = "Account_Id"
-                ),
-                @Index(
-                        name = "idx_audit_created_at",
-                        columnList = "createdAt"
-                ),
-                @Index(
-                        name = "idx_audit_action",
-                        columnList = "action"
-                )
-        }
+        name = "Audit_Log"
 )
 public class AuditLog {
     @Id
