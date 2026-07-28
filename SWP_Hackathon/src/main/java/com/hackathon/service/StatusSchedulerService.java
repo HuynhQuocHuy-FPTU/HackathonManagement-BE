@@ -27,7 +27,7 @@ public class StatusSchedulerService {
     private final RankingService rankingService;
     private final RoundAdvancementService roundAdvancementService;
 
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRate = 30000)
     public void autoCalculateScores() {
         LocalDateTime now = LocalDateTime.now();
         List<Round> rounds = roundRepository.findByEvaluationDeadlineLessThanEqualAndScoringProcessedAtIsNull(now);
@@ -69,7 +69,7 @@ public class StatusSchedulerService {
 //        }
 //    }
 
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRate = 30000)
     @Transactional
     public void updateEventStatusAuto() {
         List<EventStatus> excluded = List.of(
@@ -98,7 +98,7 @@ public class StatusSchedulerService {
         }
     }
 
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRate = 30000)
     @Transactional
     public void updateRoundStatusAuto() {
         List<EventStatus> eventStatuses = List.of(
@@ -123,7 +123,7 @@ public class StatusSchedulerService {
         }
     }
 
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRate = 30000)
     @Transactional
     public void updateWorkshopStatusAuto() {
         List<EventStatus> excluded = List.of(
