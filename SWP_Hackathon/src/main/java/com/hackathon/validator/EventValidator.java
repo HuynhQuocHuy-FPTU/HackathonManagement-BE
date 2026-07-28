@@ -25,7 +25,14 @@ public class EventValidator {
     // 1. Validator cho việc Tạo mới
     public void validatorCreate(CreateEventRequest request) throws BadRequestException {
         checkEventNameExists(request.getEventName());
-        validateTimeLogic(request.getStartDate(), request.getEndDate(), request.getRegistrationDeadline(), request.getWorkshopTime(), LocalDateTime.now());
+        validateTimeLogic(
+                request.getStartDate(),
+                request.getEndDate(),
+                request.getRegistrationDeadline(),
+                request.getWorkshopTime(),
+                LocalDateTime.now(),
+                false
+        );
         validateTeamSize(request.getMinTeamSize(), request.getMaxTeamSize());
     }
 
@@ -40,7 +47,8 @@ public class EventValidator {
                 request.getEndDate(),
                 request.getRegistrationDeadline(),
                 request.getWorkshopTime(),
-                LocalDateTime.now()
+                LocalDateTime.now(),
+                true
         );
         validateTeamSize(
                 request.getMinTeamSize(),
@@ -55,20 +63,29 @@ public class EventValidator {
         }
 
         validateRequiredFields(event);
-        validateTimeLogic(event.getStartDate(), event.getEndDate(), event.getRegistrationDeadline(), event.getWorkshopTime(), LocalDateTime.now());
+        validateTimeLogic(
+                event.getStartDate(),
+                event.getEndDate(),
+                event.getRegistrationDeadline(),
+                event.getWorkshopTime(),
+                LocalDateTime.now(),
+                true
+        );
         validateStructure(event);
     }
 
 
 
-    public void validateTimeLogic(LocalDateTime start, LocalDateTime end, LocalDateTime deadline, LocalDateTime workshop, LocalDateTime now) {
+    public void validateTimeLogic(LocalDateTime start, LocalDateTime end, LocalDateTime deadline, LocalDateTime workshop, LocalDateTime now, boolean validatePast
+    ) {
         if (start != null && end != null && start.isAfter(end))
             throw new BadRequestException("Ngày bắt đầu phải trước ngày kết thúc!");
-        if (start != null && start.isBefore(now))
+        if (validatePast && start != null && start.isBefore(now))
             throw new BadRequestException("Ngày bắt đầu không được nằm trong quá khứ!");
 
         if (deadline != null) {
-            if (deadline.isBefore(now)) throw new BadRequestException("Hạn chót đăng ký không được nằm trong quá khứ!");
+            if (validatePast && deadline.isBefore(now))
+                throw new BadRequestException("Hạn chót đăng ký không được nằm trong quá khứ!");
 
             if(deadline.isAfter(start)){
                 throw new BadRequestException("Hạn chót đăng ký phải trước ngày bắt đầu diễn ra buổi workshop");
@@ -76,7 +93,8 @@ public class EventValidator {
         }
 
         if (workshop != null) {
-            if (workshop.isBefore(now)) throw new BadRequestException("Workshop không được nằm trong quá khứ!");
+            if (validatePast && workshop.isBefore(now))
+                throw new BadRequestException("Workshop không được nằm trong quá khứ!");
 
             if(deadline != null && workshop.isBefore(deadline)){
                 throw new BadRequestException("Ngày diễn ra workshop không được bắt đầu trước ngày kết thúc đăng kí tham gia");
