@@ -140,7 +140,7 @@ public class RankingServiceImpl implements RankingService {
         updateAndSaveExcelJson(round, uploadUrl, "DRAFT");
         round.setStatus(RoundStatus.APPEALING);
         round.setAppealStartTime(LocalDateTime.now());
-        round.setAppealEndTime(LocalDateTime.now().plusHours(hoursAmount));
+        round.setAppealEndTime(LocalDateTime.now().plusMinutes(hoursAmount));
         roundRepository.save(round);
         log.info("Đã công bố bản nháp bảng xếp hạng vòng {}. Bắt đầu nhận phúc khảo.", roundId);
         notificationService.notifyRoundRankingPublished(eventCoordinator.getAccount(), roundId, false, hoursAmount);

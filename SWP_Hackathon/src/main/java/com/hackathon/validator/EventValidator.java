@@ -5,8 +5,10 @@ import com.hackathon.dto.event.UpdateEventRequest;
 import com.hackathon.dto.round.UpdateRoundRequest;
 import com.hackathon.entity.HackathonEvent;
 import com.hackathon.entity.enums.EventStatus;
+import com.hackathon.entity.enums.SystemConfigKey;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.HackathonEventRepository;
+import com.hackathon.service.systemConfig.SystemConfigService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -18,11 +20,8 @@ public class EventValidator {
     private HackathonEventRepository eventRepository;
     @Autowired
     private RoundValidator roundValidator;
-
-//    // Khoảng cách tối thiểu (đơn vị: ngày)
-//    private static final int MIN_GAP_REG_TO_START = 3;
-//    private static final int MIN_GAP_WORKSHOP_TO_START = 1;
-//    private static final int MIN_GAP_DEADLINE_TO_WORKSHOP = 1;
+    @Autowired
+    private SystemConfigService systemConfigService;
 
     // 1. Validator cho việc Tạo mới
     public void validatorCreate(CreateEventRequest request) throws BadRequestException {
@@ -71,9 +70,6 @@ public class EventValidator {
 
         if (deadline != null) {
             if (deadline.isBefore(now)) throw new BadRequestException("Hạn chót đăng ký không được nằm trong quá khứ!");
-//            if (start != null && deadline.isAfter(start.minusDays(MIN_GAP_REG_TO_START))) {
-//                throw new BadRequestException("Hạn chót đăng ký phải trước ngày bắt đầu ít nhất " + MIN_GAP_REG_TO_START + " ngày!");
-//            }
 
             if(deadline.isAfter(start)){
                 throw new BadRequestException("Hạn chót đăng ký phải trước ngày bắt đầu diễn ra buổi workshop");
@@ -82,12 +78,6 @@ public class EventValidator {
 
         if (workshop != null) {
             if (workshop.isBefore(now)) throw new BadRequestException("Workshop không được nằm trong quá khứ!");
-//            if (deadline != null && workshop.isBefore(deadline.plusDays(MIN_GAP_DEADLINE_TO_WORKSHOP))) {
-//                throw new BadRequestException("Workshop phải sau hạn chót đăng ký ít nhất " + MIN_GAP_DEADLINE_TO_WORKSHOP + " ngày!");
-//            }
-//            if (start != null && workshop.isAfter(start.minusDays(MIN_GAP_WORKSHOP_TO_START))) {
-//                throw new BadRequestException("Workshop phải trước ngày bắt đầu ít nhất " + MIN_GAP_WORKSHOP_TO_START + " ngày!");
-//            }
 
             if(deadline != null && workshop.isBefore(deadline)){
                 throw new BadRequestException("Ngày diễn ra workshop không được bắt đầu trước ngày kết thúc đăng kí tham gia");
@@ -130,6 +120,10 @@ public class EventValidator {
 
     private void validateTeamSize(Integer min, Integer max) {
         if (min != null && max != null && min > max) throw new BadRequestException("Số lượng thành viên tối thiểu không được lớn hơn tối đa!");
+
+        if(max > systemConfigService.getIntConfig(SystemConfigKey.MAX_TEAM_SIZE)){
+            throw new BadRequestException("Số lượng thành viên tối đa không được vượt quá " + systemConfigService.getIntConfig(SystemConfigKey.MAX_TEAM_SIZE));
+        }
     }
 
     private void checkEventNameExists(String name) {

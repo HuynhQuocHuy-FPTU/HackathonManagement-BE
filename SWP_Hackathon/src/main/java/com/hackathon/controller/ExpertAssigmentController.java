@@ -10,7 +10,7 @@ import com.hackathon.repository.RoundRepository;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.CategoryRoundService;
 import com.hackathon.service.ExpertAssignService;
-import com.hackathon.service.submission.SubmissionService;
+import com.hackathon.service.submission.SubmissionServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,7 +26,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ExpertAssigmentController {
     private final ExpertAssignService expertAssignService;
-    private final SubmissionService submissionService;
+    private final SubmissionServiceImpl submissionServiceImpl;
     private final RoundRepository roundRepository;
     private final CategoryRoundService categoryRoundService;
 
@@ -59,7 +59,7 @@ public class ExpertAssigmentController {
     public ResponseEntity<ApiResponse<List<SubmissionResponse>>> getSubmissions(
             @PathVariable Integer categoryRoundId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        List<SubmissionResponse> list = submissionService.getSubmissionForJudge(userDetails, categoryRoundId);
+        List<SubmissionResponse> list = submissionServiceImpl.getSubmissionForJudge(userDetails, categoryRoundId);
         return ResponseEntity.ok(ApiResponse.success(list, "Lấy danh sách bài nộp thuộc hạng mục của vòng đấu thành công"));
     }
 

@@ -25,4 +25,7 @@ public class EvaluationCriteriaResponse {
 
     // Loại tiêu chí (VD: CODE, PRESENTATION) để FE phân nhóm (Group) thành các Tab
     private CriteriaType type;
+
+    private Integer maxScore;
+
 }
