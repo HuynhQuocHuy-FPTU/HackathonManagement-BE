@@ -1,17 +1,13 @@
 package com.hackathon.service;
 
 import com.hackathon.dto.criteria.*;
-import com.hackathon.entity.Account;
-import com.hackathon.entity.CriteriaDetail;
-import com.hackathon.entity.CriteriaSet;
-import com.hackathon.entity.EventCoordinator;
+import com.hackathon.dto.history.CriteriaHistoryResponse;
+import com.hackathon.entity.*;
 import com.hackathon.entity.enums.AuditAction;
 import com.hackathon.entity.enums.AuditEntityType;
 import com.hackathon.entity.enums.AuditResult;
 import com.hackathon.exception.BadRequestException;
-import com.hackathon.repository.CriteriaDetailRepository;
-import com.hackathon.repository.CriteriaSetRepository;
-import com.hackathon.repository.EventCoordinatorRepository;
+import com.hackathon.repository.*;
 import com.hackathon.security.CustomUserDetails;
 import jakarta.transaction.Transactional;
 import lombok.Builder;
@@ -31,6 +27,9 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
     private final CriteriaDetailRepository criteriaDetailRepository;
     private final EventCoordinatorRepository eventCoordinatorRepository;
     private final AuditService auditService;
+    private final AccountRepository accountRepository;
+    private final AuditLogRepository auditLogRepository;
+    private final HackathonEventRepository hackathonEventRepository;
 
     // 1. Get all bo tieu chi hien co(criteria-set)
     @Override
@@ -332,7 +331,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
                         ));
         CriteriaSet criteriaSet = criteriaSetRepository.findByCriteriaSetId(criteriaSetId);
         if (criteriaSet == null) {
-            throw new BadRequestException("CriteriaSet not found with id: " + criteriaSetId);
+            throw new BadRequestException("Không tìm thấy bộ tiêu chí với Id: " + criteriaSetId);
         }
 
         criteriaSetRepository.delete(criteriaSet);
@@ -341,8 +340,43 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
                 AuditAction.DELETE_CRITERIA,
                 AuditEntityType.CRITERIA,
                 criteriaSet.getCriteriaSetId(),
-                "Deleted criteria " + criteriaSet.getCriteriaSetName()
+                "Xóa bộ tiêu chí " + criteriaSet.getCriteriaSetName()
         );
+    }
+
+    @Override
+    public CriteriaHistoryResponse getHistoryCriteria(CustomUserDetails userDetails, Integer criteriaSetId) {
+
+        EventCoordinator eventCoordinator = eventCoordinatorRepository.findByAccount_AccountId(userDetails.getAccount().getAccountId())
+                .orElseThrow(() -> new BadRequestException("Bạn không phải là ban tổ chức. Bạn không có quyền truy cập."));
+
+        CriteriaSet criteriaSet = criteriaSetRepository.findByCriteriaSetId(criteriaSetId);
+
+        CriteriaHistoryResponse historyResponse = new CriteriaHistoryResponse();
+
+        historyResponse.setAccountId(userDetails.getAccount().getAccountId());
+        historyResponse.setAccountName(eventCoordinator.getCoordinatorName());
+
+        historyResponse.setCriteriaSetId(criteriaSet.getCriteriaSetId());
+        historyResponse.setCriteriaSetName(criteriaSet.getCriteriaSetName());
+
+        List<CriteriaHistoryResponse.EventInfo> responses = criteriaSet.getRounds()
+                .stream()
+                .filter(round1 -> round1.getHackathonEvent() != null)
+                .map(round1 -> {
+                    HackathonEvent event = round1.getHackathonEvent();
+                    CriteriaHistoryResponse.EventInfo info = new CriteriaHistoryResponse.EventInfo();
+                    info.setEventId(event.getEventId());
+                    info.setEventName(event.getEventName());
+
+                    return info;
+                })
+                .distinct()
+                .toList();
+
+        historyResponse.setEventInfo(responses);
+
+        return historyResponse;
     }
 
     private CriteriaSetResponseDTO mapToResponse(CriteriaSet criteriaSet, List<CriteriaDetail> details) {

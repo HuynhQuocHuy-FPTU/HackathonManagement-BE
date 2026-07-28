@@ -83,13 +83,13 @@ public class AuditService {
         res.setMessage(log.getDescription());
         res.setCreatedAt(log.getCreatedAt());
         res.setActorName(log.getActorName());
-//        if (log.getData() != null && !log.getData().trim().isEmpty()) {
-//            try {
-//                res.setData(objectMapper.readTree(log.getData()));
-//            } catch (Exception e) {
-//                res.setData(log.getData());
-//            }
-//        }
+        if (log.getData() != null && !log.getData().trim().isEmpty()) {
+            try {
+                res.setData(objectMapper.readTree(log.getData()));
+            } catch (Exception e) {
+                res.setData(log.getData());
+            }
+        }
         return res;
     }
 

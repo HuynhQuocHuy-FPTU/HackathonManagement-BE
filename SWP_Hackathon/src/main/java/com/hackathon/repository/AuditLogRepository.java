@@ -1,6 +1,7 @@
 package com.hackathon.repository;
 
 import com.hackathon.entity.AuditLog;
+import com.hackathon.entity.enums.AuditEntityType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,4 +21,7 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
     )
     long countTotalLogs24h(@Param("from") LocalDateTime from);
     List<AuditLog> findTop10ByOrderByCreatedAtDesc();
+    List<AuditLog> findByEntityTypeAndEntityIdOrderByCreatedAtDesc(
+            AuditEntityType entityType,
+            Integer entityId);
 }

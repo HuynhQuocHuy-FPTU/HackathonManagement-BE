@@ -222,6 +222,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         if (hasPendingRequest) {
             throw new BadRequestException("Đội của bạn đã có một yêu cầu đang nằm trong danh sách chờ. Vui lòng đợi Mentor xử lý trước khi gửi yêu cầu mới!");
         }
+
         TeamParticipant activeParticipant = team.getRegistrations().stream()
                 .filter(registration -> registration.getStatus() == RegistrationStatus.APPROVED)
                 .map(Registration::getParticipants)
@@ -693,12 +694,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         for (Evaluation evaluation : evaluationsToUpdate) {
             evaluation.setStatus(EvaluationStatus.RE_EVALUATION);
             expertsToNotify.add(evaluation.getExpertAssign().getExpert().getAccount());
-//            List<EvaluationDetail> evaluationDetails = evaluationDetailRepository.findByEvaluation_EvaluationId(evaluation.getEvaluationId());
-//            for(EvaluationDetail evaluationDetail : evaluationDetails){
-//                evaluationDetail.setOriginalScore(evaluationDetail.getScore());
-//                evaluationDetail.setScore(null);
-//            }
-//            evaluationDetailRepository.saveAll(evaluationDetails);
         }
 
 
