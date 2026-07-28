@@ -82,7 +82,10 @@ public class EventServiceImpl implements EventService {
         if (request.getMaxTeamSize() != null) event.setMaxTeamSize(request.getMaxTeamSize());
         if (request.getMinTeamSize() != null) event.setMinTeamSize(request.getMinTeamSize());
         if (request.getRegistrationDeadline() != null) event.setRegistrationDeadline(request.getRegistrationDeadline());
-        if(request.getWorkshopTime() != null) event.setWorkshopTime(request.getWorkshopTime());
+        if (request.getWorkshopTime() != null) {
+            event.setWorkshopTime(request.getWorkshopTime());
+            event.setWorkshopStatus(WorkshopStatus.UPCOMING);
+        }
         if (request.getBannerUrl() != null) event.setBannerUrl(request.getBannerUrl());
 
         event.setEventCoordinator(coordinator);
@@ -446,7 +449,14 @@ public class EventServiceImpl implements EventService {
 
         HackathonEvent event = eventRepository.findById(eventId).orElseThrow(() -> new BadRequestException("Không tìm thấy cuộc thi"));
 
-        eventValidator.validateTimeLogic(updateTimeEventDTO.startTime(), updateTimeEventDTO.endTime(), updateTimeEventDTO.registrationDeadline(), updateTimeEventDTO.workshopTime(), LocalDateTime.now());
+        eventValidator.validateTimeLogic(
+                updateTimeEventDTO.startTime(),
+                updateTimeEventDTO.endTime(),
+                updateTimeEventDTO.registrationDeadline(),
+                updateTimeEventDTO.workshopTime(),
+                LocalDateTime.now(),
+                false
+        );
         eventValidator.validateEventEndAfterRounds(
                 updateTimeEventDTO.endTime(),
                 event
