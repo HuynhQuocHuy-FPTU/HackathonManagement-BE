@@ -18,6 +18,8 @@ import java.util.Optional;
 public interface RegistrationRepository extends JpaRepository<Registration, Integer> {
     List<Registration> findByTeam(Team team);
 
+    List<Registration> findByTeam_TeamIdOrderByRegistrationDateDesc(Integer teamId);
+
     List<Registration> findByStatus(RegistrationStatus status);
 
     Optional<Registration> findByTeamAndHackathonEvent_EventId(Team team, Integer eventId);

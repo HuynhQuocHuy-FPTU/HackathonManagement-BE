@@ -17,7 +17,7 @@ import java.util.List;
 @Component
 public class DataInitializer implements CommandLineRunner {
 
-    @Value("${app.init-data:true}") // Mặc định là false (không chạy)
+    @Value("${app.init-data:false}") // Mặc định là false (không chạy)
     private boolean initData;
 
     @Autowired

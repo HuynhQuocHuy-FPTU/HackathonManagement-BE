@@ -52,7 +52,8 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
         }
 
         // Tìm round đầu tiên
-        validateImportDistribution(eventId, drawResults);
+        validateNotAlreadyImported(eventId);
+        validateDrawResultDistribution(eventId, drawResults);
 
         Round firstRound = roundRepository.findFirstByHackathonEvent_EventIdOrderByOrderIndexAsc(eventId)
                 .orElseThrow(() -> new BadRequestException("Event " + event.getEventName() + " chưa có round nào"));
@@ -125,7 +126,18 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
         return updateTeamParticipants;
     }
 
-    private void validateImportDistribution(
+    private void validateNotAlreadyImported(Integer eventId) {
+        boolean hasImportedDrawResults = !participantRepository
+                .findAllByRegistration_HackathonEvent_EventIdAndCategoryRoundIsNotNull(eventId)
+                .isEmpty();
+        if (hasImportedDrawResults) {
+            throw new BadRequestException(
+                    "Kết quả bốc thăm đã được import; hãy sử dụng chức năng cập nhật"
+            );
+        }
+    }
+
+    private void validateDrawResultDistribution(
             Integer eventId,
             List<DrawResultRequestDTO> drawResults
     ) {
@@ -138,15 +150,6 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
                 );
         List<Category> categories =
                 categoryRepository.findAllByHackathonEvent_EventId(eventId);
-
-        boolean hasImportedDrawResults = !participantRepository
-                .findAllByRegistration_HackathonEvent_EventIdAndCategoryRoundIsNotNull(eventId)
-                .isEmpty();
-        if (hasImportedDrawResults) {
-            throw new BadRequestException(
-                    "Kết quả bốc thăm đã được import; hãy sử dụng chức năng cập nhật"
-            );
-        }
 
         if (categories.isEmpty()) {
             throw new BadRequestException(
@@ -242,13 +245,12 @@ public class LuckyDrawResultServiceImpl implements LuckyDrawResultService {
         HackathonEvent event = eventRepository.findByIdForRegistrationApproval(eventId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy event"));
 
-        validateUniqueCategoryAssignments(drawResults);
-
         // Tìm round đầu tiên
         Round firstRound = roundRepository.findFirstByHackathonEvent_EventIdOrderByOrderIndexAsc(eventId)
                 .orElseThrow(() -> new BadRequestException("Event " + eventId + " chưa có round nào"));
 
         validateDrawResultTime(event);
+        validateDrawResultDistribution(eventId, drawResults);
 
         for (DrawResultRequestDTO dto : drawResults) {
             Integer categoryId = dto.getCategoryId();
