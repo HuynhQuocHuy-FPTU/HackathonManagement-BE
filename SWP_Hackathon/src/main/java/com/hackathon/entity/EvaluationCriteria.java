@@ -27,6 +27,8 @@ public class EvaluationCriteria {
     private BigDecimal weight;
     @Column(name = "Description", columnDefinition = "NVARCHAR(1000)", nullable = true)
     private String description;
+    @Column(name = "Max_Score", nullable = true)
+    private int maxScore;
 
     @Column(name = "Criteria_Type", nullable = true)
     @Enumerated(EnumType.STRING)

@@ -149,7 +149,7 @@ public class SubmissionService {
     }
 
     public List<SubmissionResponse> getAllSubmission(){
-        List<Submission> list = submissionRepository.findAll();
+        List<Submission> list = submissionRepository.findAllByOrderByCreateAtDesc();
         return list.stream().map(this::mapToResponse).toList();
     }
 
@@ -174,6 +174,7 @@ public class SubmissionService {
         }
         return list.stream().map(this::mapToResponse).toList();
     }
+
     @Transactional
     public void setNotFinal(Integer submissionId, CustomUserDetails userDetails){
         Integer studentId = userDetails.getAccount().getStudent().getStudentId();

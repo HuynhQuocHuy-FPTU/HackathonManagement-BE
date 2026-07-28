@@ -33,6 +33,7 @@ public class EvaluationCriteriaServiceImpl implements EvaluationCriteriaService 
         //tạo EvaluationCriteria để snapshot dữ liệu()
         EvaluationCriteria evaluationCriteria = new EvaluationCriteria();
         evaluationCriteria.setRound(round);
+        evaluationCriteria.setMaxScore(round.getCriteriaSet().getMaxScore());
         evaluationCriteria.setCriteriaName(request.getCriteriaName());
         //custom
         evaluationCriteria.setWeight(request.getCustomWeight());
