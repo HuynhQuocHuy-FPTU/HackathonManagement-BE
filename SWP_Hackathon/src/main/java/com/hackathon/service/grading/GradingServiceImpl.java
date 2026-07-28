@@ -116,9 +116,8 @@ public class GradingServiceImpl implements GradingService {
                         .evaluationCriteriaId(c.getEvaluationCriteriaId())
                         .criteriaName(c.getCriteriaName())
                         .weight(c.getWeight())
-                        .maxScore(round.getCriteriaSet().getMaxScore())
+                        .maxScore(c.getMaxScore())
                         .description(c.getDescription())
-
                         .type(c.getType())
                         .build())
                 .collect(Collectors.toList());
@@ -193,14 +192,9 @@ public class GradingServiceImpl implements GradingService {
 
         // 7. Thực hiện thẩm định tính toàn vẹn (Chỉ thẩm định các tiêu chí thuộc phần targetType đang chấm)
         List<EvaluationCriteria> roundCriteria = round.getEvaluationCriterias();
-        BigDecimal maxScale = BigDecimal.valueOf(10);
-
-        if (round.getCriteriaSet() != null && round.getCriteriaSet().getMaxScore() != null) {
-            maxScale = BigDecimal.valueOf(round.getCriteriaSet().getMaxScore());
-        }
 
         // Gọi hàm validatePartial mà chúng ta đã định nghĩa ở Validator
-        criteriaValidator.validatePartial(request, roundCriteria, maxScale, targetType);
+        criteriaValidator.validatePartial(request, roundCriteria, targetType);
 
         // 8. ÁP DỤNG MÔ HÌNH UPSERT (Update hoặc Insert độc lập)
         boolean isFirstTimeGrading = false;
@@ -299,13 +293,8 @@ public class GradingServiceImpl implements GradingService {
         }
         // 7. Thực hiện thẩm định tính toàn vẹn của danh sách tiêu chí gửi lên
         List<EvaluationCriteria> roundCriteria = round.getEvaluationCriterias();
-        BigDecimal maxScale = BigDecimal.valueOf(10);
 
-        if (round.getCriteriaSet() != null && round.getCriteriaSet().getMaxScore() != null) {
-            maxScale = BigDecimal.valueOf(round.getCriteriaSet().getMaxScore());
-        }
-
-        criteriaValidator.validate(request, roundCriteria, maxScale);
+        criteriaValidator.validate(request, roundCriteria);
 
         // 8. Cập nhật lại điểm số
         evaluation.setExpertAssign(expertAssign);
@@ -431,7 +420,12 @@ public class GradingServiceImpl implements GradingService {
         if (evaluation.getOriginalScore() == null) {
             evaluation.setOriginalScore(evaluation.getScore());
         }
-        CriteriaSet criteriaSet = round.getCriteriaSet();
+
+        List<EvaluationCriteria> roundCriteria = round.getEvaluationCriterias();
+        if (roundCriteria == null || roundCriteria.isEmpty()) {
+            throw new BadRequestException("Vòng thi chưa cấu hình tiêu chí.");
+        }
+        BigDecimal maxScore = BigDecimal.valueOf(roundCriteria.getFirst().getMaxScore());
 
         Map<Integer, EvaluationDetail> detailsMap = evaluation.getEvaluationDetails().stream()
                 .filter(d -> d.getEvaluationCriteria() != null)
@@ -449,7 +443,6 @@ public class GradingServiceImpl implements GradingService {
 
             }
 
-            BigDecimal maxScore = BigDecimal.valueOf(criteriaSet.getMaxScore());
             if (requestEval.getScore().compareTo(BigDecimal.ZERO) < 0 || requestEval.getScore().compareTo(maxScore) > 0) {
                 throw new BadRequestException(
                         "Điểm của tiêu chí " + "phải nằm trong khoảng từ 0 đến " + maxScore + ".");
