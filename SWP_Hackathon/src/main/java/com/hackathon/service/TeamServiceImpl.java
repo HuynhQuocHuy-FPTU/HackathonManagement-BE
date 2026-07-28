@@ -8,10 +8,10 @@ import com.hackathon.entity.enums.*;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.*;
 import com.hackathon.security.CustomUserDetails;
+import com.hackathon.service.systemConfig.SystemConfigService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -31,13 +31,13 @@ public class TeamServiceImpl implements TeamService {
     private final StudentRepository studentRepository;
     private final ExpertRepository expertRepository;
     private final HackathonEventRepository hackathonEventRepository;
-
+    private final SystemConfigService systemConfigService;
 
     private final EmailService emailService;
     private final AuditService auditService;
-    private static final int MAX_TEAM_SIZE = 5;
-    private static final long LOCK_BEFORE_DEADLINE_HOURS = 24;
-    private static final long INVITATION_EXPIRE_DAYS = 3;
+//    private static final int MAX_TEAM_SIZE = 5;
+//    private static final long LOCK_BEFORE_DEADLINE_HOURS = 24;
+//    private static final long INVITATION_EXPIRE_DAYS = 3;
 
 
     // Nếu Đội đã nộp đơn và thời gian hiện tại cách thời gian đk event dưới 24 giờ -> CHẶN
@@ -46,6 +46,8 @@ public class TeamServiceImpl implements TeamService {
     public void checkEventRegistrationWindow(Team team) {
         List<Registration> registrations = registrationRepository.findByTeam(team);
         if (registrations != null && !registrations.isEmpty()) {
+            int lockHours = systemConfigService.getIntConfig(SystemConfigKey.LOCK_BEFORE_DEADLINE_HOURS);
+
             boolean isPastDeadline = registrations.stream()
                     .anyMatch(regis -> {
                         //  Nếu đơn APPROVED không cho phép làm dì hết
@@ -56,14 +58,14 @@ public class TeamServiceImpl implements TeamService {
                             HackathonEvent event = regis.getHackathonEvent();
                             if (event != null && event.getRegistrationDeadline() != null) {
                                 // CHECK: Nếu thời gian hiện tại đã vượt qua (Deadline - LOCK_HOURS)
-                                return LocalDateTime.now().isAfter(event.getRegistrationDeadline().minusHours(LOCK_BEFORE_DEADLINE_HOURS));
+                                return LocalDateTime.now().isAfter(event.getRegistrationDeadline().minusHours(lockHours));
                             }
                         }
                         return false;
                     });
 
             if (isPastDeadline) {
-                throw new BadRequestException("Hệ thống đã đóng cổng thay đổi thông tin do cuộc thi đã bước vào giai đoạn chốt sổ (Trước deadline " + LOCK_BEFORE_DEADLINE_HOURS + " giờ).");
+                throw new BadRequestException("Hệ thống đã đóng cổng thay đổi thông tin do cuộc thi đã bước vào giai đoạn chốt sổ (Trước deadline " + lockHours + " giờ).");
             }
 
         }
@@ -358,7 +360,6 @@ public class TeamServiceImpl implements TeamService {
     }
 
 
-
     //FUNCTION 2:UPDATE INFORMATION ABOUT TEAM AS NAME
     @Override
     @Transactional
@@ -633,11 +634,14 @@ public class TeamServiceImpl implements TeamService {
         }
         // 4.Check hạn của lời mời
         // Thoi han cua loi moi nay la 3 ngay, ke tu ngay gui thong bao(ngày tạo)
-        LocalDateTime expiredAt = notification.getCreatedAt().plusDays(3);
+        int expireDays = systemConfigService
+                .getIntConfig(SystemConfigKey.INVITATION_EXPIRE_DAYS);
+
+        LocalDateTime expiredAt = notification.getCreatedAt().plusDays(expireDays);
         if (LocalDateTime.now().isAfter(expiredAt)) {
             // Neu loi moi het han , thi vo hieu hoa loi moi(cap nhat trang thai thong bao)
             notification.setTitle("EXPIRED. Lời mời tham gia : " + team.getTeamName() + " hết hạn.");
-            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_DAYS + " ngày");
+            notification.setMessage("Lời mời này có thời hạn trong vòng " + expireDays + " ngày");
             notification.setStatus(InvitationStatus.EXPIRED);
             notificationRepository.save(notification);
             throw new BadRequestException("Lời mời tham gia của bạn hết hạn");
@@ -647,7 +651,8 @@ public class TeamServiceImpl implements TeamService {
         if (userCurrentTeams != null && !userCurrentTeams.isEmpty()) {
             // Lấy trước danh sách các đơn đăng ký (giải đấu) của Team mới chuẩn bị gia nhập
             List<Registration> newTeamRegistrations = registrationRepository.findByTeam(team);
-            List<Integer> newTeamEventIds = (newTeamRegistrations != null) ? newTeamRegistrations.stream()
+            List<Integer> newTeamEventIds = (newTeamRegistrations != null) ? newTeamRegistrations
+                                                                             .stream()
                                                                              .map(r -> r.getHackathonEvent().getEventId()).toList() : List.of();
 
             for (TeamMember tm : userCurrentTeams) {
@@ -675,7 +680,9 @@ public class TeamServiceImpl implements TeamService {
 
         // 6. Check so luong thanh vien hien tai cua nhom
         int currentSize = Optional.ofNullable(team.getTeamSize()).orElse(0);
-        if (currentSize >= MAX_TEAM_SIZE) {
+        int maxTeam = systemConfigService
+                .getIntConfig(SystemConfigKey.MAX_TEAM_SIZE);
+        if (currentSize >= maxTeam) {
             notification.setTitle("INVALID. Team đã đủ thành viên");
             notification.setMessage("Lời mời này không còn hiệu lực vì Đội thi đã đủ thành viên.");
             notification.setStatus(InvitationStatus.INVALID);
@@ -709,7 +716,7 @@ public class TeamServiceImpl implements TeamService {
         notificationRepository.save(notification);
 
         // 11. Check All Team, neu du 5 thanh vien , vo hieu hoa loi moi con lai
-        if (team.getTeamSize() == MAX_TEAM_SIZE) {
+        if (team.getTeamSize() == maxTeam) {
             List<Notification> otherInvites = notificationRepository.findByTeam(team);
             for (Notification oldNoti : otherInvites) {
                 if (oldNoti.getId().equals(notification.getId())) {
@@ -744,11 +751,12 @@ public class TeamServiceImpl implements TeamService {
         }
         // 4.Check hạn của lời mời
         // Thoi han cua loi moi nay la 3 ngay, ke tu ngay gui thong bao(ngày tạo)
-        LocalDateTime expiredAt = notification.getCreatedAt().plusDays(3);
+        int expireDays = systemConfigService.getIntConfig(SystemConfigKey.INVITATION_EXPIRE_DAYS);
+        LocalDateTime expiredAt = notification.getCreatedAt().plusDays(expireDays);
         if (LocalDateTime.now().isAfter(expiredAt)) {
             // Neu loi moi het han , thi vo hieu hoa loi moi(cap nhat trang thai thong bao)
             notification.setTitle("EXPIRED. Lời mời tham gia : " + team.getTeamName() + " hết hạn.");
-            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_DAYS + " ngày");
+            notification.setMessage("Lời mời này có thời hạn trong vòng " + expireDays + " ngày");
             notification.setStatus(InvitationStatus.EXPIRED);
             notificationRepository.save(notification);
             throw new BadRequestException("Lời mời tham gia của bạn hết hạn");
@@ -849,11 +857,12 @@ public class TeamServiceImpl implements TeamService {
         }
         // 4.Check hạn của lời mời
         // Thoi han cua loi moi nay la 3 ngay, ke tu ngay gui thong bao(ngày tạo)
-        LocalDateTime expiredAt = notification.getCreatedAt().plusDays(3);
+        int expireDays = systemConfigService.getIntConfig(SystemConfigKey.INVITATION_EXPIRE_DAYS);
+        LocalDateTime expiredAt = notification.getCreatedAt().plusDays(expireDays);
         if (LocalDateTime.now().isAfter(expiredAt)) {
             // Neu loi moi het han , thi vo hieu hoa loi moi(cap nhat trang thai thong bao)
             notification.setTitle("EXPIRED. Lời mời tham gia : " + team.getTeamName() + " hết hạn.");
-            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_DAYS + " ngày");
+            notification.setMessage("Lời mời này có thời hạn trong vòng " + expireDays + " ngày");
             notification.setStatus(InvitationStatus.EXPIRED);
             notificationRepository.save(notification);
             throw new BadRequestException("Lời mời tham gia của bạn hết hạn");
@@ -886,11 +895,12 @@ public class TeamServiceImpl implements TeamService {
                 + notification.getAccount().getAccountId());
         // 4.Check hạn của lời mời
         // Thoi han cua loi moi nay la 3 ngay, ke tu ngay gui thong bao(ngày tạo)
-        LocalDateTime expiredAt = notification.getCreatedAt().plusDays(3);
+        int expireDays = systemConfigService.getIntConfig(SystemConfigKey.INVITATION_EXPIRE_DAYS);
+        LocalDateTime expiredAt = notification.getCreatedAt().plusDays(expireDays);
         if (LocalDateTime.now().isAfter(expiredAt)) {
             // Neu loi moi het han , thi vo hieu hoa loi moi(cap nhat trang thai thong bao)
             notification.setTitle("EXPIRED. Lời mời tham gia : " + team.getTeamName() + " hết hạn.");
-            notification.setMessage("Lời mời này có thời hạn trong vòng " + INVITATION_EXPIRE_DAYS + " ngày");
+            notification.setMessage("Lời mời này có thời hạn trong vòng " + expireDays + " ngày");
             notification.setStatus(InvitationStatus.EXPIRED);
             notificationRepository.save(notification);
             throw new BadRequestException("Lời mời tham gia của bạn hết hạn");
@@ -1041,11 +1051,11 @@ public class TeamServiceImpl implements TeamService {
                 .filter(registration -> registration != null && registration.getStatus() == RegistrationStatus.APPROVED)
                 .filter(registration -> registration.getParticipants() != null)
                 .map(Registration::getParticipants)
-                .flatMap(List ::stream)
+                .flatMap(List::stream)
                 .filter(participant -> participant != null && participant.getStatus() == ParticipantStatus.ACTIVE)
                 .map(TeamParticipant::getCategoryRound)
                 .filter(cr -> cr != null && cr.getRound() != null)
-                .sorted(Comparator.comparing(cr -> cr.getRound().getOrderIndex() != null ? cr.getRound().getOrderIndex() :0)) // Sắp xếp theo thứ tự Vòng 1, Vòng 2, Vòng Final
+                .sorted(Comparator.comparing(cr -> cr.getRound().getOrderIndex() != null ? cr.getRound().getOrderIndex() : 0)) // Sắp xếp theo thứ tự Vòng 1, Vòng 2, Vòng Final
                 .toList();
         if (categoryRound.isEmpty()) {
             throw new BadRequestException("Đội của bạn hiện không tham gia vòng thi nào hoặc chưa được kích hoạt.");
@@ -1167,7 +1177,7 @@ public class TeamServiceImpl implements TeamService {
 
             CategoryRound currentTeamRound = team.getRegistrations().stream()
                     .map(Registration::getParticipants)
-                    .filter(p -> p!= null && !p.isEmpty())
+                    .filter(p -> p != null && !p.isEmpty())
                     .flatMap(List::stream)
                     .filter(p -> p.getCategoryRound() != null)
                     .map(TeamParticipant::getCategoryRound)
@@ -1223,12 +1233,12 @@ public class TeamServiceImpl implements TeamService {
             throw new BadRequestException("Bạn không có quyền  xem danh sách này. Chỉ có EXPERT với vai trò MENTOR mới có thể xem.");
         }
         HackathonEvent event = hackathonEventRepository.findById(eventId)
-                .orElseThrow(() ->  new BadRequestException("Không tìm thấy thông tin về Event này."));
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin về Event này."));
 
         List<Team> listTeam = new ArrayList<>();
 
         // TH2 Expert xem dc ds các Team mà các Expert khác quản lý nếu có cùng CATEGORY
-         if (account.getRole() == AccountRole.EXPERT) {
+        if (account.getRole() == AccountRole.EXPERT) {
             Expert expert = expertRepository.findByAccount_AccountId(account.getAccountId())
                     .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin Expert tương ứng với account này."));
             // Lấy Category mà Expert này đang quản lý
@@ -1243,8 +1253,8 @@ public class TeamServiceImpl implements TeamService {
             if (categoryRoundId.isEmpty()) {
                 throw new BadRequestException("Tài khoản Chuyên gia của bạn chưa được phân công vai trò MENTOR cho hạng mục nào.");
             }
-             System.out.println("CategoryRoundIds = " + categoryRoundId);
-             System.out.println("EventId = " + eventId);
+            System.out.println("CategoryRoundIds = " + categoryRoundId);
+            System.out.println("EventId = " + eventId);
             listTeam = teamRepository.findTeamsByCategoryRoundIdsAndEventId(categoryRoundId, eventId);
         }
 
@@ -1263,7 +1273,7 @@ public class TeamServiceImpl implements TeamService {
 
             if (registration != null) {
                 List<TeamParticipant> participant = registration.getParticipants();
-                for(TeamParticipant pt: participant){
+                for (TeamParticipant pt : participant) {
                     if (pt != null && pt.getCategoryRound() != null) {
                         CategoryRound cr = pt.getCategoryRound();
                         categoryName = (cr.getCategory() != null) ? cr.getCategory().getCategoryName() : "N/A";
@@ -1280,7 +1290,7 @@ public class TeamServiceImpl implements TeamService {
                     }
                 }
 
-            }else {
+            } else {
                 TeamDetailResponse response = TeamDetailResponse.builder()
                         .teamId(team.getTeamId())
                         .teamName(team.getTeamName())

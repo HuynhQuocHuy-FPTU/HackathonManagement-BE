@@ -87,20 +87,20 @@ public class RankingServiceImpl implements RankingService {
                 .categoriesRanking(categoriesRanking).build();
     }
 
-    private ParticipantResponseDTO mapToResponse(TeamParticipant teamParticipant) {
-        if (teamParticipant == null) {
-            return null;
-        }
-        String teamName = teamParticipant.getRegistration().getTeam().getTeamName();
-
-        return ParticipantResponseDTO.builder()
-                .participantId(teamParticipant.getId())
-                .teamName(teamName)
-                .totalScore(teamParticipant.getTotalScore())
-                .rank(teamParticipant.getRank())
-                .status(teamParticipant.getStatus())
-                .build();
-    }
+//    private ParticipantResponseDTO mapToResponse(TeamParticipant teamParticipant) {
+//        if (teamParticipant == null) {
+//            return null;
+//        }
+//        String teamName = teamParticipant.getRegistration().getTeam().getTeamName();
+//
+//        return ParticipantResponseDTO.builder()
+//                .participantId(teamParticipant.getId())
+//                .teamName(teamName)
+//                .totalScore(teamParticipant.getTotalScore())
+//                .rank(teamParticipant.getRank())
+//                .status(teamParticipant.getStatus())
+//                .build();
+//    }
 
     // Khi chấm điểm xong thì sẽ public Draft
     @Override

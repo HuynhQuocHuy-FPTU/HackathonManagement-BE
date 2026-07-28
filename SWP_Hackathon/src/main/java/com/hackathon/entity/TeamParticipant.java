@@ -1,6 +1,5 @@
 package com.hackathon.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hackathon.entity.enums.ParticipantStatus;
 import com.hackathon.entity.enums.SubmissionStatus;
 import jakarta.persistence.*;

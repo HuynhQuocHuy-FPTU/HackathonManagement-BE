@@ -5,8 +5,11 @@ import com.hackathon.dto.AuditLogResponse;
 import com.hackathon.dto.UserAdminResponse;
 import com.hackathon.dto.admin.InviteAccountRequest;
 import com.hackathon.dto.admin.UpdateAccountStatusRequest;
+import com.hackathon.entity.enums.SystemConfigKey;
 import com.hackathon.exception.ApiResponse;
+import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.AuditService;
+import com.hackathon.service.systemConfig.SystemConfigService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -16,6 +19,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import com.hackathon.service.admin.AdminService;
 
@@ -29,6 +33,7 @@ public class AdminController {
     private final AdminService adminService;
 
     private final AuditService auditService;
+    private final SystemConfigService systemConfigService;
 
     @GetMapping("/auditLog")
     public ResponseEntity<Page<AuditLogResponse>> getAllAuditLog(
@@ -91,6 +96,15 @@ public class AdminController {
     public ResponseEntity<ApiResponse<AdminOverviewResponse>> getOverviewForAdmin() {
         AdminOverviewResponse overViews = adminService.getOverviewForAdmin();
         return ResponseEntity.ok(ApiResponse.ok("Admin xem thông tin thành công", overViews));
+    }
+
+    @PutMapping("/system-config")
+    public ResponseEntity<String> updateSystemConfig(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam SystemConfigKey key,
+            @RequestParam Integer value) {
+        systemConfigService.updateSystemConfig(userDetails, value, key);
+        return ResponseEntity.ok("Cập nhật cấu hình thành công.");
     }
 
 

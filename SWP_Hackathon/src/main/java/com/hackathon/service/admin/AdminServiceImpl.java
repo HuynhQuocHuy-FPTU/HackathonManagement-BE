@@ -5,10 +5,7 @@ import com.hackathon.dto.AuditLogResponse;
 import com.hackathon.dto.UserAdminResponse;
 import com.hackathon.dto.admin.InviteAccountRequest;
 import com.hackathon.dto.admin.UpdateAccountStatusRequest;
-import com.hackathon.entity.Account;
-import com.hackathon.entity.AuditLog;
-import com.hackathon.entity.EventCoordinator;
-import com.hackathon.entity.Expert;
+import com.hackathon.entity.*;
 import com.hackathon.entity.enums.AccountRole;
 import com.hackathon.entity.enums.AccountStatus;
 import com.hackathon.exception.ApiException;
@@ -20,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -38,6 +36,7 @@ public class AdminServiceImpl implements AdminService {
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
     private final AuditLogRepository auditLogRepository;
+    private final ObjectMapper objectMapper;
 
     @Override
     public List<UserAdminResponse> getAllUsers() {
@@ -198,6 +197,7 @@ public class AdminServiceImpl implements AdminService {
             res.setRole(log.getAccount().getRole());
             res.setCreatedAt(log.getCreatedAt());
             res.setActorName(log.getActorName());
+//            res.setData();
             recentLogs.add(res);
         }
         return new AdminOverviewResponse(
@@ -208,5 +208,7 @@ public class AdminServiceImpl implements AdminService {
 
 
     }
+
+
 
 }
