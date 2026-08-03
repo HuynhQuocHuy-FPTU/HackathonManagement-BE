@@ -152,7 +152,7 @@ public class AccountServiceImpl implements AccountService {
             HackathonEvent event = cr.getRound().getHackathonEvent();
             Integer eventId = event.getEventId();
             String eventName = event.getEventName() != null ? event.getEventName() : "N/A";
-            String season = event.getSeason();
+            String season = event.getSeason() != null ? event.getSeason().name() : null;
 
             ExpertHistoryResponse.ExpertHistoryDetail response = ExpertHistoryResponse.ExpertHistoryDetail.builder()
                     .eventId(eventId)

@@ -22,8 +22,7 @@ public class EvaluationDetail {
     private BigDecimal score;
     @Column(name = "Comment", columnDefinition = "NVARCHAR(500)")
     private String comment;
-    @Column(name="Original_Score", precision = 10 , scale = 2)
-    private BigDecimal originalScore;
+
     @Column(name="Is_ReEvaluation")
     private Boolean isReEvaluation;
     // 1 evaluation - N evaluation detail

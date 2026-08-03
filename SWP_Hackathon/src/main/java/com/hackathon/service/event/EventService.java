@@ -20,6 +20,7 @@ public interface EventService {
     public void restoreEvent(Integer eventId);
     public void permanentlyDeleteEvent(Integer eventId);
     void cancelEvent(Integer eventId, String reason, CustomUserDetails currentUser);
+    void cancelEventAutomatically(Integer eventId, String reason);
     // Information about HackathonEvent Detail
     public EventResponse  getEventDetail(Integer eventID);
     //Search HackathonEvent by Name
@@ -27,7 +28,15 @@ public interface EventService {
     //General Information about HackathonEVent
     public List<EventResponse> getAllEvent();
 
+    public List<EventResponse> getAllEventsByYear(Integer seasonYear);
+
+    public List<Integer> getAllEventYears();
+
     public List<EventResponse> getPublicEvents();
+
+    public List<EventResponse> getPublicEventsByYear(Integer seasonYear);
+
+    public List<Integer> getPublicEventYears();
 
     public List<EventResponse> searchPublicEvents(String eventName);
 

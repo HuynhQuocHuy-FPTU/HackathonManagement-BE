@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TeamRequestRepository extends JpaRepository<TeamRequest,Integer> {
@@ -55,6 +56,13 @@ public interface TeamRequestRepository extends JpaRepository<TeamRequest,Integer
     List<TeamRequest> findByRound_RoundId(Integer roundId);
     List<TeamRequest> findByRound_RoundIdAndRequestTypeAndStatus(Integer roundId, RequestType requestType, RequestStatus status);
 
+    Optional<TeamRequest> findByTeam_TeamIdAndRound_RoundIdAndRequestTypeAndStatus(
+            Integer teamId,
+            Integer roundId,
+            RequestType requestType,
+            RequestStatus status
+    );
+
     List<TeamRequest> findByRound_RoundIdAndRequestTypeAndStatusIn(Integer roundId, RequestType type, List<RequestStatus> statuses);
 
     List<TeamRequest> findByRound_HackathonEvent_EventIdAndRequestTypeNotOrderByCreateDateDesc(
@@ -67,12 +75,17 @@ public interface TeamRequestRepository extends JpaRepository<TeamRequest,Integer
             RequestStatus status,
             Integer expertId
     );
-    @Query("SELECT tq FROM TeamRequest tq " +
+    @Query("SELECT DISTINCT tq FROM TeamRequest tq " +
             "JOIN tq.round r " +
-            "JOIN r.hackathonEvent he " +
-            "WHERE he.eventId = :eventId AND tq.requestType = :requestType")
-    List<TeamRequest> findByHackathonEvent_EventIdAndRequestType(
+            "JOIN tq.team t " +
+            "JOIN t.teamMembers tm " +
+            "WHERE r.hackathonEvent.eventId = :eventId " +
+            "AND tq.requestType IN :requestTypes " +
+            "AND tm.student.studentId = :studentId " +
+            "ORDER BY tq.createDate DESC")
+    List<TeamRequest> findMyRequestsByEventAndTypes(
             @Param("eventId") Integer eventId,
-            @Param("requestType") RequestType requestType
+            @Param("requestTypes") List<RequestType> requestTypes,
+            @Param("studentId") Integer studentId
     );
 }

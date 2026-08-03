@@ -14,6 +14,7 @@ import com.hackathon.service.CategoryService;
 import com.hackathon.service.ExpertService;
 import com.hackathon.service.RegistrationEventService;
 import com.hackathon.service.RoundService;
+import com.hackathon.service.StatusSchedulerService;
 import com.hackathon.service.event.EventService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,14 +37,26 @@ public class EventController {
     private CategoryService categoryService;
     @Autowired
     private RoundService roundService;
+    @Autowired
+    private StatusSchedulerService statusSchedulerService;
 
     // =========================================================
     // PUBLIC (Dành cho Guest/Student/Admin)
     // =========================================================
 
     @GetMapping("/public")
-    public ResponseEntity<List<EventResponse>> getPublicEvents() {
-        return ResponseEntity.ok(eventService.getPublicEvents());
+    public ResponseEntity<List<EventResponse>> getPublicEvents(
+            @RequestParam(required = false) Integer year
+    ) {
+        if (year == null) {
+            return ResponseEntity.ok(eventService.getPublicEvents());
+        }
+        return ResponseEntity.ok(eventService.getPublicEventsByYear(year));
+    }
+
+    @GetMapping("/public/years")
+    public ResponseEntity<List<Integer>> getPublicEventYears() {
+        return ResponseEntity.ok(eventService.getPublicEventYears());
     }
 
     @GetMapping("/public/search")
@@ -143,10 +156,31 @@ public class EventController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<ApiResponse<List<EventResponse>>> getAllEvent() {
+    public ResponseEntity<ApiResponse<List<EventResponse>>> getAllEvent(
+            @RequestParam(required = false) Integer year
+    ) {
+
+        List<EventResponse> events = year == null
+                ? eventService.getAllEvent()
+                : eventService.getAllEventsByYear(year);
 
         return ResponseEntity.ok(
-                ApiResponse.success(eventService.getAllEvent(), "Danh sách cuộc thi")
+                ApiResponse.success(events, "Danh sách cuộc thi")
+        );
+    }
+
+    @GetMapping("/years")
+    public ResponseEntity<ApiResponse<List<Integer>>> getAllEventYears() {
+        return ResponseEntity.ok(
+                ApiResponse.success(eventService.getAllEventYears(), "Danh sách năm tổ chức sự kiện")
+        );
+    }
+
+    @PostMapping("/check-minimum-teams")
+    public ResponseEntity<ApiResponse<Void>> checkMinimumTeams() {
+        statusSchedulerService.checkAndCancelEventsBelowMinimumTeams();
+        return ResponseEntity.ok(
+                ApiResponse.success(null, "Đã kiểm tra số đội tối thiểu của các sự kiện hết hạn đăng ký")
         );
     }
 

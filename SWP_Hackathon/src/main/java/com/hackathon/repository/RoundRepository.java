@@ -38,9 +38,6 @@ public interface RoundRepository extends JpaRepository<Round, Integer> {
 
     List<Round> findByStatusAndAppealEndTimeBefore(RoundStatus status, LocalDateTime time);
 
-    List<Round> findByAppealEndTimeLessThanEqualAndAdvancementProcessedAtIsNull(
-            LocalDateTime appealEndTime
-    );
 
     List<Round> findByEvaluationDeadlineLessThanEqualAndScoringProcessedAtIsNull(
             LocalDateTime evaluationDeadline
@@ -65,5 +62,8 @@ public interface RoundRepository extends JpaRepository<Round, Integer> {
             """)
     Optional<Round> findFinalRoundByEventId(@Param("eventId") Integer eventId);
 
+
+    List<Round> findByEndTimeLessThanEqualAndAdvancementProcessedAtIsNull(LocalDateTime currentTime
+    );
 
 }

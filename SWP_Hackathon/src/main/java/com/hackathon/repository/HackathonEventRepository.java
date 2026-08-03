@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 @Repository
 public interface HackathonEventRepository extends JpaRepository<HackathonEvent, Integer> {
@@ -28,9 +29,29 @@ public interface HackathonEventRepository extends JpaRepository<HackathonEvent, 
 
     List<HackathonEvent> findByStatusNotIn(List<EventStatus> status);
 
+    List<HackathonEvent> findBySeasonYearAndStatusNotIn(Integer seasonYear, List<EventStatus> statuses);
+
+    @Query("SELECT DISTINCT e.seasonYear FROM HackathonEvent e " +
+            "WHERE e.seasonYear IS NOT NULL AND e.status NOT IN :excludedStatuses " +
+            "ORDER BY e.seasonYear DESC")
+    List<Integer> findDistinctSeasonYearsByStatusNotIn(
+            @Param("excludedStatuses") List<EventStatus> excludedStatuses
+    );
+
     long countByStatusNotIn(List<EventStatus> statuses);
 
     List<HackathonEvent> findByStatus(EventStatus status);
+
+    List<HackathonEvent> findByStatusInAndRegistrationDeadlineLessThanEqual(
+            List<EventStatus> statuses,
+            LocalDateTime registrationDeadline
+    );
+
+    List<HackathonEvent> findBySeasonYear(Integer seasonYear);
+
+    @Query("SELECT DISTINCT e.seasonYear FROM HackathonEvent e " +
+            "WHERE e.seasonYear IS NOT NULL ORDER BY e.seasonYear DESC")
+    List<Integer> findDistinctSeasonYears();
 
     List<HackathonEvent> findByEventNameContainingIgnoreCase(String eventName);
 
