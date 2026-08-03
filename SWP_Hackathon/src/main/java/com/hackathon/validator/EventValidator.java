@@ -88,20 +88,20 @@ public class EventValidator {
                 throw new BadRequestException("Hạn chót đăng ký không được nằm trong quá khứ!");
 
             if(deadline.isAfter(start)){
-                throw new BadRequestException("Hạn chót đăng ký phải trước ngày bắt đầu diễn ra buổi workshop");
+                throw new BadRequestException("Hạn chót đăng ký phải trước ngày bắt đầu diễn ra sự kiện");
             }
         }
 
         if (workshop != null) {
             if (validatePast && workshop.isBefore(now))
-                throw new BadRequestException("Workshop không được nằm trong quá khứ!");
+                throw new BadRequestException("buổi bóc thăm không được nằm trong quá khứ!");
 
             if(deadline != null && workshop.isBefore(deadline)){
-                throw new BadRequestException("Ngày diễn ra workshop không được bắt đầu trước ngày kết thúc đăng kí tham gia");
+                throw new BadRequestException("Ngày diễn ra bóc thăm không được bắt đầu trước ngày kết thúc đăng kí tham gia");
             }
 
             if (start != null && workshop.isAfter(start)) {
-                throw new BadRequestException("Workshop phải trước ngày bắt đầu sự kiện");
+                throw new BadRequestException("buổi bóc thăm phải trước ngày bắt đầu sự kiện");
             }
 
         }
