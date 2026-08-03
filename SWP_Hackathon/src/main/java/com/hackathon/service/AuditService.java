@@ -27,7 +27,7 @@ public class AuditService {
     private final ExpertRepository expertRepository;
     private final ObjectMapper objectMapper;
 
-    public void saveLog(Account acc, AuditAction action, AuditEntityType entityType, Integer entityId, String description, String data) {
+    public AuditLog saveLog(Account acc, AuditAction action, AuditEntityType entityType, Integer entityId, String description, String data) {
         String actorName = "SYSTEM";
         if (acc!=null && acc.getRole() != null) {
 
@@ -62,7 +62,7 @@ public class AuditService {
         auditLog.setDescription(description);
         auditLog.setData(data);
         auditLog.setActorName(actorName);
-        auditLogRepository.save(auditLog);
+        return auditLogRepository.save(auditLog);
     }
 
     public void saveLog(Account acc, AuditAction action, AuditEntityType entityType, Integer entityId, String description) {

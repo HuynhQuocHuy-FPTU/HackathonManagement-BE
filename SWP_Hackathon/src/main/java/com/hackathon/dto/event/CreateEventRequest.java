@@ -2,6 +2,7 @@ package com.hackathon.dto.event;
 
 import com.hackathon.dto.category.CreateCategoryRequest;
 import com.hackathon.dto.round.CreateRoundRequest;
+import com.hackathon.entity.enums.EventSeason;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -29,6 +30,9 @@ public class CreateEventRequest {
     @Min(value = 1, message = "Số lượng đội tối đa phải lớn hơn hoặc bằng 1.")
     private Integer maxTeam;
 
+    @Min(value = 1, message = "Số lượng đội tối thiểu phải lớn hơn hoặc bằng 1.")
+    private Integer minTeam;
+
     @Min(value = 1, message = "Số lượng thành viên tối đa phải lớn hơn hoặc bằng 1")
     private Integer maxTeamSize;
 
@@ -42,6 +46,9 @@ public class CreateEventRequest {
 
     @FutureOrPresent(message = "Ngày phải là thời điểm trong tương lai")
     private LocalDateTime workshopTime;
+
+    @NotNull(message = "Season không được để trống")
+    private EventSeason season;
 
     private List<CreateCategoryRequest> categories;
     private List<CreateRoundRequest> rounds;

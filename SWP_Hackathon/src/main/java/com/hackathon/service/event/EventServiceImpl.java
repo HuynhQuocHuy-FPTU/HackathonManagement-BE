@@ -74,11 +74,13 @@ public class EventServiceImpl implements EventService {
         if (request.getEventName() != null) event.setEventName(request.getEventName());
         if (request.getStartDate() != null) event.setStartDate(request.getStartDate());
         if (request.getEndDate() != null) event.setEndDate(request.getEndDate());
-        if (request.getStartDate() != null) event.setSeason(generateSeason(request.getStartDate()));
+        event.setSeason(request.getSeason());
+        if (request.getStartDate() != null) event.setSeasonYear(request.getStartDate().getYear());
         if (request.getTitle() != null) event.setTitle(request.getTitle());
         if (request.getAddress() != null) event.setAddress(request.getAddress());
         if (request.getDescription() != null) event.setDescription(request.getDescription());
         if (request.getMaxTeam() != null) event.setMaxTeam(request.getMaxTeam());
+        if (request.getMinTeam() != null) event.setMinTeam(request.getMinTeam());
         if (request.getMaxTeamSize() != null) event.setMaxTeamSize(request.getMaxTeamSize());
         if (request.getMinTeamSize() != null) event.setMinTeamSize(request.getMinTeamSize());
         if (request.getRegistrationDeadline() != null) event.setRegistrationDeadline(request.getRegistrationDeadline());
@@ -166,11 +168,14 @@ public class EventServiceImpl implements EventService {
         event.setStartDate(request.getStartDate());
         event.setEndDate(request.getEndDate());
         event.setMaxTeam(request.getMaxTeam());
+        event.setMinTeam(request.getMinTeam());
         event.setMaxTeamSize(request.getMaxTeamSize());
         event.setMinTeamSize(request.getMinTeamSize());
         event.setBannerUrl(request.getBannerUrl());
         event.setRegistrationDeadline(request.getRegistrationDeadline());
         event.setWorkshopTime(request.getWorkshopTime());
+        event.setSeason(request.getSeason());
+        if (request.getStartDate() != null) event.setSeasonYear(request.getStartDate().getYear());
 
         event.setUpdateAt(LocalDateTime.now());
 
@@ -335,6 +340,7 @@ public class EventServiceImpl implements EventService {
     // CANCELLED
     // =========================================================
     @Override
+    @Transactional
     public void cancelEvent(Integer eventId, String reason, CustomUserDetails currentUser) {
         HackathonEvent event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy event"));
@@ -357,27 +363,57 @@ public class EventServiceImpl implements EventService {
             throw new IllegalArgumentException("Vui lòng nhập lý do hủy sự kiện.");
         }
 
-        // Thực hiện hủy
+        performCancellation(event, reason, currentUser.getAccount());
+    }
+
+    @Override
+    @Transactional
+    public void cancelEventAutomatically(Integer eventId, String reason) {
+        HackathonEvent event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy event"));
+
+        if (event.getStatus() == EventStatus.CANCELLED) {
+            return;
+        }
+        if (event.getStatus() != EventStatus.ACTIVE
+                && event.getStatus() != EventStatus.REGISTRATION_CLOSED) {
+            throw new BadRequestException("Trạng thái event không cho phép hệ thống tự động hủy");
+        }
+
+        Account coordinatorAccount = event.getEventCoordinator().getAccount();
+        performCancellation(event, reason, coordinatorAccount);
+        notificationService.notifyAutoCancelledEventCoordinator(
+                coordinatorAccount,
+                event.getEventName(),
+                reason
+        );
+    }
+
+    private void performCancellation(HackathonEvent event, String reason, Account actor) {
         event.setStatus(EventStatus.CANCELLED);
         event.setCancellationReason(reason);
         event.setUpdateAt(LocalDateTime.now());
-
-        // Lưu lịch sử
-        auditService.saveLog(currentUser.getAccount(), AuditAction.CANCELLD_EVENT, AuditEntityType.EVENT, eventId,"Cancelled event: " + event.getEventName());
-
         eventRepository.save(event);
 
-        List<Registration> registrationList = registrationEventService.getRegistrationsToCancelled(eventId);
+        List<Registration> registrationList = registrationEventService
+                .getRegistrationsToCancelled(event.getEventId());
         registrationEventService.transferStatusToRejectd(registrationList);
         List<Account> accLeaders = registrationList.stream()
-                .map(Registration::getTeam) // Lấy ra Team
-                .flatMap(team -> team.getTeamMembers().stream()) // Chuyển từ List<TeamMember> thành Stream<TeamMember>
-                .filter(TeamMember::getIsLeader) // Lọc lấy người là Leader
-                .map(member -> member.getStudent().getAccount()) // Lấy Account từ Student
-                .distinct() // Đảm bảo không trùng lặp (nếu cần)
+                .map(Registration::getTeam)
+                .flatMap(team -> team.getTeamMembers().stream())
+                .filter(TeamMember::getIsLeader)
+                .map(member -> member.getStudent().getAccount())
+                .distinct()
                 .toList();
-        // Ràng buộc 4: Gửi thông báo
-        notificationService.notifyCancelledEvent(currentUser.getAccount(), accLeaders, event.getEventName(), reason);
+
+        auditService.saveLog(
+                actor,
+                AuditAction.CANCELLD_EVENT,
+                AuditEntityType.EVENT,
+                event.getEventId(),
+                "Cancelled event: " + event.getEventName()
+        );
+        notificationService.notifyCancelledEvent(actor, accLeaders, event.getEventName(), reason);
     }
 
     // =========================================================
@@ -429,9 +465,42 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    public List<EventResponse> getAllEventsByYear(Integer seasonYear) {
+        return eventRepository.findBySeasonYear(seasonYear).stream()
+                .map(event -> mapToResponse(event, event.getRounds(), new ArrayList<>()))
+                .toList();
+    }
+
+    @Override
+    public List<Integer> getAllEventYears() {
+        return eventRepository.findDistinctSeasonYears();
+    }
+
+    @Override
     public List<EventResponse> getPublicEvents() {
         return eventRepository.findByStatusNotIn(List.of(EventStatus.DRAFT, EventStatus.DELETED, EventStatus.CANCELLED)).stream().map(event -> mapToResponse(event, event.getRounds(), event.getCategories()
                 )).toList();
+    }
+
+    @Override
+    public List<EventResponse> getPublicEventsByYear(Integer seasonYear) {
+        List<EventStatus> excludedStatuses = List.of(
+                EventStatus.DRAFT,
+                EventStatus.DELETED,
+                EventStatus.CANCELLED
+        );
+        return eventRepository.findBySeasonYearAndStatusNotIn(seasonYear, excludedStatuses).stream()
+                .map(event -> mapToResponse(event, event.getRounds(), event.getCategories()))
+                .toList();
+    }
+
+    @Override
+    public List<Integer> getPublicEventYears() {
+        return eventRepository.findDistinctSeasonYearsByStatusNotIn(List.of(
+                EventStatus.DRAFT,
+                EventStatus.DELETED,
+                EventStatus.CANCELLED
+        ));
     }
 
     @Override
@@ -463,6 +532,9 @@ public class EventServiceImpl implements EventService {
         );
 
         event.setStartDate(updateTimeEventDTO.startTime());
+        if (updateTimeEventDTO.startTime() != null) {
+            event.setSeasonYear(updateTimeEventDTO.startTime().getYear());
+        }
         event.setEndDate(updateTimeEventDTO.endTime());
         event.setWorkshopTime(updateTimeEventDTO.workshopTime());
         event.setRegistrationDeadline(updateTimeEventDTO.registrationDeadline());
@@ -488,15 +560,6 @@ public class EventServiceImpl implements EventService {
     // =========================================================
     // PRIVATE HELPERS
     // =========================================================
-
-    private String generateSeason(LocalDateTime startDate) {
-        int year = startDate.getYear();
-        int month = startDate.getMonthValue();
-
-        if (month <= 4) return "SPRING " + year;
-        if (month <= 8) return "SUMMER " + year;
-        return "FALL " + year;
-    }
 
     private String getCurrentEmail() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();

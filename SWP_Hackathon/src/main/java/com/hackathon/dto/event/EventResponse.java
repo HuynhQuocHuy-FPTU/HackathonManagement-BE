@@ -6,6 +6,7 @@ import com.hackathon.entity.Category;
 import com.hackathon.entity.HackathonEvent;
 import com.hackathon.entity.Round;
 import com.hackathon.entity.enums.EventStatus;
+import com.hackathon.entity.enums.EventSeason;
 import com.hackathon.entity.enums.WorkshopStatus;
 import lombok.*;
 
@@ -24,9 +25,11 @@ public class EventResponse {
     private LocalDateTime endDate;
     private String title;
     private String address;
-    private String season;
+    private EventSeason season;
+    private Integer seasonYear;
     private EventDescription description;
     private Integer maxTeam;
+    private Integer minTeam;
     private Integer maxTeamSize;
     private Integer minTeamSize;
     private String bannerUrl;
@@ -44,12 +47,14 @@ public class EventResponse {
         this.eventName = event.getEventName();
         this.title = event.getTitle();
         this.season = event.getSeason();
+        this.seasonYear = event.getSeasonYear();
         this.startDate = event.getStartDate();
         this.endDate = event.getEndDate();
         this.registrationDeadline = event.getRegistrationDeadline();
         this.address = event.getAddress();
         this.description = event.getDescription();
         this.maxTeam = event.getMaxTeam();
+        this.minTeam = event.getMinTeam();
         this.maxTeamSize = event.getMaxTeamSize();
         this.minTeamSize = event.getMinTeamSize();
         this.status = event.getStatus();

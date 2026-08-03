@@ -49,20 +49,20 @@ public class TeamServiceImpl implements TeamService {
             boolean isPastDeadline = registrations.stream()
                     .anyMatch(regis -> {
                         //  Nếu đơn APPROVED không cho phép làm dì hết
-                        if (regis.getStatus() == RegistrationStatus.APPROVED) {
+                        if (regis.getStatus() == RegistrationStatus.APPROVED && regis.getHackathonEvent().getStatus() == EventStatus.COMPLETED) {
                             return true;
                         }
                         if (regis.getStatus() == RegistrationStatus.PENDING) {
                             HackathonEvent event = regis.getHackathonEvent();
-                            if (event != null && event.getRegistrationDeadline() != null) {
+                            if (event.getRegistrationDeadline() != null) {
                                 // CHECK: Nếu thời gian hiện tại đã vượt qua (Deadline - LOCK_HOURS)
-                                return LocalDateTime.now().isAfter(event.getRegistrationDeadline().minusHours(lockHours));
+                                return !LocalDateTime.now().isAfter(event.getRegistrationDeadline().minusHours(lockHours));
                             }
                         }
                         return false;
                     });
 
-            if (isPastDeadline) {
+            if (!isPastDeadline) {
                 throw new BadRequestException("Hệ thống đã đóng cổng thay đổi thông tin do cuộc thi đã bước vào giai đoạn chốt sổ (Trước deadline " + lockHours + " giờ).");
             }
 

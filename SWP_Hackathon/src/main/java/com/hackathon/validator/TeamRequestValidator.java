@@ -6,12 +6,16 @@ import com.hackathon.entity.Notification;
 import com.hackathon.entity.Registration;
 import com.hackathon.entity.Round;
 import com.hackathon.entity.Team;
+import com.hackathon.entity.TeamParticipant;
 import com.hackathon.entity.TeamRequest;
 import com.hackathon.entity.enums.NotiResponseStatus;
 import com.hackathon.entity.enums.RequestStatus;
 import com.hackathon.entity.enums.RequestType;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.TeamRequestRepository;
+import com.hackathon.repository.AccountRepository;
+import com.hackathon.repository.TeamRepository;
+import com.hackathon.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -25,6 +29,40 @@ import java.util.stream.Collectors;
 public class TeamRequestValidator {
 
     private final TeamRequestRepository teamRequestRepository;
+    private final AccountRepository accountRepository;
+    private final TeamRepository teamRepository;
+
+    public Account requireStudentAccount(CustomUserDetails userDetails) {
+        if (userDetails == null || userDetails.getAccount() == null) {
+            throw new BadRequestException("Không tìm thấy thông tin tài khoản");
+        }
+
+        return accountRepository.findById(userDetails.getAccount().getAccountId())
+                .filter(account -> account.getStudent() != null)
+                .orElseThrow(() -> new BadRequestException(
+                        "Chỉ tài khoản sinh viên mới có thể tạo yêu cầu"));
+    }
+
+    public Team requireActiveLeadingTeam(Account account) {
+        return teamRepository.findActiveLeadingTeamByStudentId(
+                        account.getStudent().getStudentId())
+                .orElseThrow(() -> new BadRequestException(
+                        "Bạn không phải leader của team đang tham gia"));
+    }
+
+    public TeamParticipant requireParticipantInRound(Team team, Round round) {
+        return team.getRegistrations().stream()
+                .filter(registration -> registration.getStatus()
+                        == com.hackathon.entity.enums.RegistrationStatus.APPROVED)
+                .map(Registration::getParticipants)
+                .flatMap(List::stream)
+                .filter(participant -> participant.getCategoryRound() != null
+                        && participant.getCategoryRound().getRound().getRoundId()
+                        .equals(round.getRoundId()))
+                .findFirst()
+                .orElseThrow(() -> new BadRequestException(
+                        "Team không tham gia vòng thi này"));
+    }
 
     public void validateNotificationResponse(
             Notification notification,

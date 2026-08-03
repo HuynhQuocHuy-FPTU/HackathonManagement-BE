@@ -3,8 +3,10 @@ package com.hackathon.service;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.*;
 import com.hackathon.repository.HackathonEventRepository;
+import com.hackathon.repository.RegistrationRepository;
 import com.hackathon.repository.RoundRepository;
 import com.hackathon.service.ranking.RankingService;
+import com.hackathon.service.event.EventService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -27,6 +29,73 @@ public class StatusSchedulerService {
     private final RankingService rankingService;
     private final RoundAdvancementService roundAdvancementService;
     private final NotificationService notificationService;
+    private final RegistrationRepository registrationRepository;
+    private final EventService eventService;
+
+    @Scheduled(fixedRate = 30000)
+    public void finalizeRoundsAtEndTime() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Round> rounds = roundRepository.findByEndTimeLessThanEqualAndAdvancementProcessedAtIsNull(now);
+
+        for (Round round : rounds) {
+            try {
+                roundAdvancementService.calculateRoundScoresAutomatically(round.getRoundId());
+                roundAdvancementService.advanceRoundAutomatically(round.getRoundId());
+                log.info(
+                        "Đã tự động tính điểm, xếp hạng và thăng vòng cho round {} sau khi kết thúc.",
+                        round.getRoundId()
+                );
+            } catch (Exception exception) {
+                log.error(
+                        "Chưa thể hoàn tất tự động round {} sau khi kết thúc: {}",
+                        round.getRoundId(),
+                        exception.getMessage(),
+                        exception
+                );
+            }
+        }
+    }
+
+    @Scheduled(fixedRate = 30000)
+    public void checkAndCancelEventsBelowMinimumTeams() {
+        LocalDateTime now = LocalDateTime.now();
+        List<HackathonEvent> events = eventRepository.findByStatusInAndRegistrationDeadlineLessThanEqual(List.of(EventStatus.REGISTRATION_CLOSED),now);
+
+        for (HackathonEvent event : events) {
+            Integer minTeam = event.getMinTeam();
+            if (minTeam == null || minTeam < 1) {
+                log.warn("Bỏ qua kiểm tra số đội tối thiểu của event {} vì minTeam không hợp lệ.", event.getEventId());
+                continue;
+            }
+
+            long approvedTeamCount = registrationRepository.countByHackathonEvent_EventIdAndStatus(event.getEventId(), RegistrationStatus.APPROVED);
+
+            if (approvedTeamCount >= minTeam) {
+                continue;
+            }
+
+            String reason = "Không đủ số đội tối thiểu sau khi hết hạn đăng ký ("
+                    + approvedTeamCount + "/" + minTeam + " đội).";
+            try {
+                eventService.cancelEventAutomatically(event.getEventId(), reason);
+                log.info(
+                        "Đã tự động hủy event {} vì chỉ có {}/{} đội được duyệt.",
+                        event.getEventId(),
+                        approvedTeamCount,
+                        minTeam
+                );
+            } catch (Exception exception) {
+                log.error(
+                        "Không thể tự động hủy event {}: {}",
+                        event.getEventId(),
+                        exception.getMessage(),
+                        exception
+                );
+            }
+
+        }
+    }
+
 
 
     @Scheduled(fixedRate = 30000)

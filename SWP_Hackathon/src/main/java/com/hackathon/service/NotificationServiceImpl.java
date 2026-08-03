@@ -308,6 +308,30 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
+    public void notifyAutoCancelledEventCoordinator(
+            Account coordinatorAccount,
+            String eventName,
+            String reason
+    ) {
+        String title = "Sự kiện đã bị hệ thống tự động hủy";
+        String message = String.format(
+                "Sự kiện \"%s\" đã bị hệ thống tự động hủy. Lý do: %s",
+                eventName,
+                reason
+        );
+
+        createNotificationNoResponse(
+                coordinatorAccount,
+                coordinatorAccount,
+                NotificationType.CANCELLED_EVENT,
+                NotificationChannel.WEB,
+                title,
+                message
+        );
+    }
+
+    @Override
+    @Transactional
     public void checkResponseNoti(Long notificationId) {
         Notification notification = notificationRepository
                 .findById(notificationId)

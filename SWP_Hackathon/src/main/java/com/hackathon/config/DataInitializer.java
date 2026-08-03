@@ -25,7 +25,7 @@ public class DataInitializer implements CommandLineRunner {
      * Round phải thuộc event.
      */
     private static final Integer TARGET_EVENT_ID = 1;
-    private static final Integer TARGET_ROUND_ID = 1;
+    private static final Integer TARGET_ROUND_ID = 2;
 
     private static final int ADMIN_COUNT = 2;
     private static final int COORDINATOR_COUNT = 3;
@@ -34,7 +34,7 @@ public class DataInitializer implements CommandLineRunner {
     private static final int TEAM_COUNT = 10;
     private static final int MEMBER_PER_TEAM = 3;
 
-    @Value("${app.init-data:false}")
+    @Value("${app.init-data:true}")
     private boolean initData;
 
     @Autowired
@@ -108,25 +108,22 @@ public class DataInitializer implements CommandLineRunner {
 //        createEventCoordinators(password);
 //        createExperts(password);
 //        createCriteriaSets();
+////
+//        createStudents(password);
+//        Team[] teams = createTeams();
 //
-//        Student[] students = createStudents(password);
-//        Team[] teams = createTeams(students);
-
 //        registerTeamsForEvent(
 //                TARGET_EVENT_ID
 //        );
 
-//        submitForParticipantsWithoutSubmission(
-//                TARGET_ROUND_ID
-//        );
-
-        /*
-         * Chấm các final submission theo ExpertAssign
-         * của từng CategoryRound.
-         */
-        gradeSubmissionsByAssignments(
+        submitForParticipantsWithoutSubmission(
                 TARGET_ROUND_ID
         );
+
+//
+//        gradeSubmissionsByAssignments(
+//                TARGET_ROUND_ID
+//        );
     }
 
     // =====================================================
@@ -474,8 +471,21 @@ public class DataInitializer implements CommandLineRunner {
     // TEAM
     // =====================================================
 
-    private Team[] createTeams(Student[] students) {
+    private Team[] createTeams() {
         Team[] teams = new Team[TEAM_COUNT];
+
+        /*
+         * Lấy toàn bộ student từ database rồi loại những student đã thuộc
+         * một team. Danh sách còn lại chỉ chứa student có thể được chia team.
+         */
+        List<Student> availableStudents =
+                new ArrayList<>(studentRepository.findAll());
+        availableStudents.removeIf(student ->
+                !teamMemberRepository
+                        .findByStudent(student)
+                        .isEmpty()
+        );
+
         int studentIndex = 0;
 
         for (int teamIndex = 0;
@@ -506,21 +516,31 @@ public class DataInitializer implements CommandLineRunner {
             teams[teamIndex] = team;
 
             boolean alreadyHasMembers =
-                    team.getTeamMembers() != null
-                            && !team.getTeamMembers()
+                    !teamMemberRepository
+                            .findByTeam(team)
                             .isEmpty();
 
             if (alreadyHasMembers) {
-                studentIndex += MEMBER_PER_TEAM;
                 continue;
             }
 
+            /*
+             * Giữ logic cũ: lấy lần lượt MEMBER_PER_TEAM student trong
+             * danh sách đã được lọc để thêm vào team hiện tại.
+             */
             for (int memberIndex = 0;
                  memberIndex < MEMBER_PER_TEAM;
                  memberIndex++) {
 
+                if (studentIndex >= availableStudents.size()) {
+                    throw new IllegalStateException(
+                            "Không đủ student chưa có team để tạo "
+                                    + teamName
+                    );
+                }
+
                 Student student =
-                        students[studentIndex++];
+                        availableStudents.get(studentIndex++);
 
                 teamMemberRepository.save(
                         TeamMember.builder()

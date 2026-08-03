@@ -2,14 +2,11 @@ package com.hackathon.entity.enums;
 
 public enum NotificationType {
     TEAM_INVITATION,
-    TEAM_ACCEPTED,
-    TEAM_REJECTED,
 
     TEAM_REGISTRATION_APPROVED,
     TEAM_REGISTRATION_REJECTED,
 
     DISQUALIFY_TEAM,
-
     ASSIGNED_CATEGORY,
 
     CANCELLED_EVENT,
@@ -23,5 +20,4 @@ public enum NotificationType {
     SCORING_FAILED,
     RESULT_APPEAL,
     SUPPORT_TEAM
-
 }

@@ -276,9 +276,7 @@ public class RoundAdvancementService {
         return participants;
     }
 
-    private BigDecimal getAverageWeightGroupScore(
-            Map<Integer, BigDecimal> scoresByCriteria,
-            List<Integer> criteriaIds
+    private BigDecimal getAverageWeightGroupScore(Map<Integer, BigDecimal> scoresByCriteria, List<Integer> criteriaIds
     ) {
         // Không thể tính điểm nhóm nếu không có dữ liệu điểm hoặc không có tiêu chí.
         if (scoresByCriteria == null
@@ -400,11 +398,7 @@ public class RoundAdvancementService {
             }
 
             Registration registration = participant.getRegistration();
-            boolean alreadyAdvanced = participantRepository
-                    .existsByCategoryRound_CategoryRoundIdAndRegistration_RegistrationId(
-                            nextCategoryRound.getCategoryRoundId(),
-                            registration.getRegistrationId()
-                    );
+            boolean alreadyAdvanced = participantRepository.existsByCategoryRound_CategoryRoundIdAndRegistration_RegistrationId(nextCategoryRound.getCategoryRoundId(), registration.getRegistrationId());
 
             if (alreadyAdvanced) {
                 log.info(
@@ -466,21 +460,26 @@ public class RoundAdvancementService {
             );
         }
 
-        return processRoundAdvancement(roundId);
+        return processRoundAdvancement(roundId, true);
     }
 
     // Được scheduler gọi khi đã hết thời gian chờ thăng vòng.
     @Transactional
     public List<CategoryAdvancementResultDTO> advanceRoundAutomatically(Integer roundId) {
-        return processRoundAdvancement(roundId);
+        return processRoundAdvancement(roundId, false);
     }
 
-    private List<CategoryAdvancementResultDTO> processRoundAdvancement(Integer roundId) {
+    private List<CategoryAdvancementResultDTO> processRoundAdvancement(
+            Integer roundId,
+            boolean validateAppeal
+    ) {
         Round currentRound = roundRepository.findByIdForAdvancement(roundId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Không tìm thấy round hiện tại."));
 
-        validateAppealFinished(currentRound);
+        if (validateAppeal) {
+            validateAppealFinished(currentRound);
+        }
 
         // API hoặc scheduler đã xử lý trước đó.
         if (currentRound.getAdvancementProcessedAt() != null) {
@@ -537,7 +536,7 @@ public class RoundAdvancementService {
 
         if (LocalDateTime.now().isBefore(round.getResolveAppealDeadline())) {
             throw new BadRequestException(
-                    "Chưa hết thời hạn giải quyết khiếu nại của Ban tổ chức, không thể thăng vòng."            );
+                    "Chưa hết thời hạn giải quyết khiếu nại của Ban tổ chức, không thể thăng vòng."        );
         }
     }
 
@@ -584,8 +583,7 @@ public class RoundAdvancementService {
                         nextRound.getRoundId()
                 )
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Chưa cấu hình category này cho vòng tiếp theo "
-                                + "(thiếu CategoryRound)."
+                        "Chưa cấu hình category này cho vòng tiếp theo " + "(thiếu CategoryRound)."
                 ));
     }
 

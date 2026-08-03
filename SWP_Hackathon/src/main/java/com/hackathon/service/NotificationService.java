@@ -43,6 +43,8 @@ public interface NotificationService {
 
     void notifyCancelledEvent(Account actor, List<Account> teamLeaderAccounts, String eventName, String reason);
 
+    void notifyAutoCancelledEventCoordinator(Account coordinatorAccount, String eventName, String reason);
+
     void notifyTeamRequestResolved(
             Account actor,
             Account teamLeaderAccount,

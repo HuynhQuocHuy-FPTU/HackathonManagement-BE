@@ -44,14 +44,14 @@ public class GithubOAuthService {
     private final RestClient restClient = RestClient.create();
 
     private static final Pattern GITHUB_URL_PATTERN = Pattern.compile(
-            "^https?://github\\.com/([A-Za-z0-9-]+)/([A-Za-z0-9._-]+?)(?:\\.git)?/?$"
-    );
+            "^https?://github\\.com/([A-Za-z0-9-]+)/([A-Za-z0-9._-]+?)(?:\\.git)?/?$");
 
     // Bước 1: Tạo URL để frontend redirect người dùng sang trang GitHub xin quyền.
-     //accountId của người đang đăng nhập được ký vào "state" để xác minh ở bước callback.
+    // accountId của người đang đăng nhập được ký vào "state" để xác minh ở bước
+    // callback.
 
     public String buildAuthorizeUrl(CustomUserDetails userDetails) {
-        if(userDetails == null){
+        if (userDetails == null) {
             throw new BadRequestException("Bạn cần đăng nhập trước khi liên kết tài khoản Github");
         }
         Integer accountId = userDetails.getAccount().getAccountId();
@@ -60,14 +60,15 @@ public class GithubOAuthService {
         return UriComponentsBuilder.fromUriString("https://github.com/login/oauth/authorize")
                 .queryParam("client_id", clientId)
                 .queryParam("redirect_uri", redirectUri)
-                .queryParam("scope", "read:user")
+                .queryParam("scope", "read:user user:email")
                 .queryParam("state", state)
                 .queryParam("allow_signup", "false")
                 .build()
                 .toUriString();
     }
 
-    //Bước 2: Xử lý callback từ GitHub — đổi code lấy access_token, lấy thông tin user
+    // Bước 2: Xử lý callback từ GitHub — đổi code lấy access_token, lấy thông tin
+    // user
     @Transactional
     public void handleCallback(String code, String state) {
         Integer accountId;
@@ -82,6 +83,43 @@ public class GithubOAuthService {
 
         String accessToken = exchangeCodeForToken(code);
         GithubUserInfoResponse githubUser = fetchGithubUser(accessToken);
+
+        // Kiểm tra email chính chủ
+        boolean emailMatched = false;
+        String githubEmail = githubUser.getEmail();
+
+        if (githubEmail != null && githubEmail.equalsIgnoreCase(account.getEmail())) {
+            emailMatched = true;
+        } else {
+            // Nếu email bị ẩn hoặc không khớp, gọi thêm API /user/emails để lấy tất cả email (kể cả private)
+            try {
+                java.util.List<java.util.Map<String, Object>> emails = restClient.get()
+                        .uri("https://api.github.com/user/emails")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                        .header(HttpHeaders.ACCEPT, "application/vnd.github+json")
+                        .retrieve()
+                        .body(new org.springframework.core.ParameterizedTypeReference<java.util.List<java.util.Map<String, Object>>>() {});
+
+                if (emails != null) {
+                    for (java.util.Map<String, Object> emailObj : emails) {
+                        String emailStr = (String) emailObj.get("email");
+                        Boolean verified = (Boolean) emailObj.get("verified");
+                        if (Boolean.TRUE.equals(verified) && account.getEmail().equalsIgnoreCase(emailStr)) {
+                            emailMatched = true;
+                            githubEmail = emailStr; // Ghi nhận email khớp
+                            break;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Không thể lấy danh sách email từ GitHub: {}", e.getMessage());
+            }
+        }
+
+        if (!emailMatched) {
+            githubEmail = githubEmail == null ? "Bị ẩn/Không có" : githubEmail;
+            throw new BadRequestException("Email không chính chủ: Email GitHub (" + githubEmail + ") không khớp với email tài khoản.");
+        }
 
         // Kiểm tra tài khoản GitHub này đã được liên kết với account khác chưa
         accountRepository.findAccountByGithubId(githubUser.getId())
@@ -129,10 +167,12 @@ public class GithubOAuthService {
                 .body(GithubUserInfoResponse.class);
     }
 
-
-      //Dùng khi nộp bài: lấy owner login chính xác từ GitHub API (xử lý cả trường hợp
-     //public repo bị đổi tên / redirect), không cần access token vì chỉ áp dụng cho repo public.
-      //Trả về null nếu repo không tồn tại hoặc không truy cập được (coi như không xác minh được)
+    // Dùng khi nộp bài: lấy owner login chính xác từ GitHub API (xử lý cả trường
+    // hợp
+    // public repo bị đổi tên / redirect), không cần access token vì chỉ áp dụng cho
+    // repo public.
+    // Trả về null nếu repo không tồn tại hoặc không truy cập được (coi như không
+    // xác minh được)
 
     public String fetchRepoOwnerLogin(String gitHubUrl) {
         Matcher matcher = GITHUB_URL_PATTERN.matcher(gitHubUrl.trim());
@@ -149,7 +189,8 @@ public class GithubOAuthService {
                     .header(HttpHeaders.ACCEPT, "application/vnd.github+json")
                     .retrieve()
                     .onStatus(status -> status.value() == HttpStatus.NOT_FOUND.value(), (req, res) -> {
-                        throw new BadRequestException("Không tìm thấy repo GitHub này (repo không tồn tại hoặc là private)");
+                        throw new BadRequestException(
+                                "Không tìm thấy repo GitHub này (repo không tồn tại hoặc là private)");
                     })
                     .body(GithubRepoResponse.class);
 

@@ -34,6 +34,7 @@ public class EventValidator {
                 false
         );
         validateTeamSize(request.getMinTeamSize(), request.getMaxTeamSize());
+        validateTeamCount(request.getMinTeam(), request.getMaxTeam());
     }
 
     // 2. Validator cho việc Cập nhật
@@ -54,6 +55,7 @@ public class EventValidator {
                 request.getMinTeamSize(),
                 request.getMaxTeamSize()
         );
+        validateTeamCount(request.getMinTeam(), request.getMaxTeam());
     }
 
     // 3. Validator cho việc Công bố (Publish)
@@ -88,20 +90,20 @@ public class EventValidator {
                 throw new BadRequestException("Hạn chót đăng ký không được nằm trong quá khứ!");
 
             if(deadline.isAfter(start)){
-                throw new BadRequestException("Hạn chót đăng ký phải trước ngày bắt đầu diễn ra buổi workshop");
+                throw new BadRequestException("Hạn chót đăng ký phải trước ngày bắt đầu diễn ra sự kiện");
             }
         }
 
         if (workshop != null) {
             if (validatePast && workshop.isBefore(now))
-                throw new BadRequestException("Workshop không được nằm trong quá khứ!");
+                throw new BadRequestException("buổi bóc thăm không được nằm trong quá khứ!");
 
             if(deadline != null && workshop.isBefore(deadline)){
-                throw new BadRequestException("Ngày diễn ra workshop không được bắt đầu trước ngày kết thúc đăng kí tham gia");
+                throw new BadRequestException("Ngày diễn ra bóc thăm không được bắt đầu trước ngày kết thúc đăng kí tham gia");
             }
 
             if (start != null && workshop.isAfter(start)) {
-                throw new BadRequestException("Workshop phải trước ngày bắt đầu sự kiện");
+                throw new BadRequestException("buổi bóc thăm phải trước ngày bắt đầu sự kiện");
             }
 
         }
@@ -158,7 +160,11 @@ public class EventValidator {
         if (isNullOrBlank(event.getTitle())) throw new BadRequestException("Tiêu đề trống!");
         if (isNullOrBlank(event.getAddress())) throw new BadRequestException("Địa chỉ trống!");
         if (event.getDescription() == null) throw new BadRequestException("Mô tả trống!");
+        if (event.getSeason() == null) throw new BadRequestException("Mùa tổ chức sự kiện trống!");
+        if (event.getSeasonYear() == null) throw new BadRequestException("Năm tổ chức sự kiện trống!");
         if (event.getMaxTeam() == null || event.getMaxTeam() < 1) throw new BadRequestException("Số lượng đội thi không hợp lệ!");
+        if (event.getMinTeam() == null || event.getMinTeam() < 1) throw new BadRequestException("Số lượng đội tối thiểu không hợp lệ!");
+        validateTeamCount(event.getMinTeam(), event.getMaxTeam());
         if (event.getStartDate() == null) throw new BadRequestException("Ngày bắt đầu sự kiện trống!");
         if (event.getEndDate() == null) throw new BadRequestException("Ngày kết thúc sự kiện trống!");
         if (event.getRegistrationDeadline() == null) throw new BadRequestException("Hạn chót đăng ký trống!");
@@ -186,6 +192,12 @@ public class EventValidator {
 
         if(max > systemConfigService.getIntConfig(SystemConfigKey.MAX_TEAM_SIZE)){
             throw new BadRequestException("Số lượng thành viên tối đa không được vượt quá " + systemConfigService.getIntConfig(SystemConfigKey.MAX_TEAM_SIZE));
+        }
+    }
+
+    private void validateTeamCount(Integer min, Integer max) {
+        if (min != null && max != null && min > max) {
+            throw new BadRequestException("Số lượng đội tối thiểu không được lớn hơn số lượng đội tối đa!");
         }
     }
 

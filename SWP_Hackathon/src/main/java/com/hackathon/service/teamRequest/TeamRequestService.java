@@ -27,10 +27,6 @@ public interface TeamRequestService {
     List<TeamRequestResponse> getAppealRequestPublic(
             CustomUserDetails userDetails, Integer roundId);
 
-    List<TeamRequestResponse> getAppealRequestsForJudge(
-            CustomUserDetails userDetails, Integer roundId);
-
-
     TeamRequestResponse respondNotification(
             CustomUserDetails userDetails,
             Long notificationId,
