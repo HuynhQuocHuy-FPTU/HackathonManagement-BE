@@ -25,7 +25,7 @@ public class DataInitializer implements CommandLineRunner {
      * Round phải thuộc event.
      */
     private static final Integer TARGET_EVENT_ID = 1;
-    private static final Integer TARGET_ROUND_ID = 1;
+    private static final Integer TARGET_ROUND_ID = 2;
 
     private static final int ADMIN_COUNT = 2;
     private static final int COORDINATOR_COUNT = 3;
@@ -34,7 +34,7 @@ public class DataInitializer implements CommandLineRunner {
     private static final int TEAM_COUNT = 10;
     private static final int MEMBER_PER_TEAM = 3;
 
-    @Value("${app.init-data:false}")
+    @Value("${app.init-data:true}")
     private boolean initData;
 
     @Autowired
@@ -108,10 +108,10 @@ public class DataInitializer implements CommandLineRunner {
 //        createEventCoordinators(password);
 //        createExperts(password);
 //        createCriteriaSets();
+////
+//        createStudents(password);
+//        Team[] teams = createTeams();
 //
-        createStudents(password);
-        Team[] teams = createTeams();
-
 //        registerTeamsForEvent(
 //                TARGET_EVENT_ID
 //        );
@@ -120,13 +120,10 @@ public class DataInitializer implements CommandLineRunner {
                 TARGET_ROUND_ID
         );
 
-        /*
-         * Chấm các final submission theo ExpertAssign
-         * của từng CategoryRound.
-         */
-        gradeSubmissionsByAssignments(
-                TARGET_ROUND_ID
-        );
+//
+//        gradeSubmissionsByAssignments(
+//                TARGET_ROUND_ID
+//        );
     }
 
     // =====================================================

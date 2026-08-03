@@ -31,6 +31,23 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Integer>
 
     List<Evaluation> findBySubmission_SubmissionId(Integer submissionId);
 
+    boolean existsBySubmission_SubmissionIdAndStatus(
+            Integer submissionId, EvaluationStatus status);
+
+    @Query("SELECT e FROM Evaluation e "
+            + "JOIN FETCH e.submission s "
+            + "JOIN FETCH s.team t "
+            + "JOIN FETCH e.expertAssign ea "
+            + "JOIN FETCH ea.expert ex "
+            + "JOIN FETCH s.teamParticipant tp "
+            + "JOIN FETCH tp.categoryRound cr "
+            + "JOIN FETCH cr.category c "
+            + "WHERE cr.categoryRoundId = :categoryRoundId "
+            + "AND s.isFinal = true "
+            + "ORDER BY t.teamName ASC, ex.expertName ASC")
+    List<Evaluation> findForAuditByCategoryRound(
+            @Param("categoryRoundId") Integer categoryRoundId);
+
     /**
      * ĐẾM
      */

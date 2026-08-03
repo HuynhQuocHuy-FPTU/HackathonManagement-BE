@@ -127,17 +127,6 @@ public class TeamRequestController {
     }
 
 
-    // BAN GIÁM KHẢO NHẬN DS BÀI NỘP ĐỂ TIẾN HÀNH CHẤM LẠI
-    @GetMapping("/appeal/{roundId}/review-submissions")
-    @PreAuthorize("hasRole('EXPERT')")
-    public ResponseEntity<ApiResponse<List<TeamRequestResponse>>> getAppealRequestsForJudge(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable Integer roundId) {
-        List<TeamRequestResponse> response =
-                teamRequestService.getAppealRequestsForJudge(
-                        userDetails, roundId);
-        return ResponseEntity.ok(ApiResponse.success(response, "Ban giám khảo nhận các bài nộp yêu cầu phúc khảo thành công."));
-    }
     // STUDENT XEM DS ĐƠN ĐÃ GỬI YÊU CẦU ĐẾN MENTOR
     @GetMapping("/{eventId}/mentor/student")
     @PreAuthorize("hasRole('STUDENT')")

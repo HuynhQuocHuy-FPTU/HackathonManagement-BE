@@ -7,7 +7,6 @@ import com.hackathon.entity.enums.*;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.exception.ResourceNotFoundException;
 import com.hackathon.repository.*;
-import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.grading.support.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,9 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -32,7 +31,6 @@ public class GradingServiceImpl implements GradingService {
     private final SubmissionRepository submissionRepository;
     private final EvaluationRepository evaluationRepository;
     private final RoundRepository roundRepository;
-    private final ExpertRepository expertRepository;
     private final TeamRequestRepository teamRequestRepository;
 
     // Tiêm các thành phần xử lý quy tắc nghiệp vụ (SOLID Components)
@@ -41,16 +39,16 @@ public class GradingServiceImpl implements GradingService {
     private final CriteriaCompletenessValidator criteriaValidator;
     private final ScoreCalculator scoreCalculator;
     private final EvaluationMapper evaluationMapper;
-    private final EvaluationAuditLogger auditLogger;
+    private final EvaluationAuditLogService evaluationAuditLogService;
     private final CategoryRoundRepository categoryRoundRepository;
-    private final ParticipantRepository participantRepository;
 
 
     // =======================================================
     // API: TRẢ RA DANH SÁCH BÀI CẦN CHẤM
     // =======================================================
     @Override
-    public JudgeDashboardResponse listAssignedSubmissions(Account account, Integer categoryRoundId) {
+    public JudgeDashboardResponse listAssignedSubmissions(
+            Account account, Integer categoryRoundId) {
         Expert expert = assignmentResolver.resolveExpert(account);
         ExpertAssign expertAssign = assignmentResolver.requireJudgeAssignment(expert, categoryRoundId);
 
@@ -71,6 +69,11 @@ public class GradingServiceImpl implements GradingService {
             Evaluation eval = evaluationRepository.findByExpertAssignIdAndSubmissionId(expertAssign.getAssignId(), sub.getSubmissionId())
                     .orElse(null);
 
+            // Bài đang chấm lại chỉ xuất hiện ở API re-evaluations.
+            if (eval != null && eval.getStatus() == EvaluationStatus.RE_EVALUATION) {
+                return null;
+            }
+
             List<FileDTO> fileDTOList = new ArrayList<>();
             if (sub.getFiles() != null) {
                 for (com.hackathon.entity.SubmissionFile f : sub.getFiles()) {
@@ -89,9 +92,75 @@ public class GradingServiceImpl implements GradingService {
                     .myEvaluationStatus(eval != null ? eval.getStatus().name() : "NOT_GRADED")
                     .myTotalScore(eval != null ? eval.getScore() : null)
                     .build();
-        }).collect(Collectors.toList());
+        }).filter(java.util.Objects::nonNull).collect(Collectors.toList());
 
         // 4. Đóng gói toàn bộ vào DTO mới và trả về
+        return JudgeDashboardResponse.builder()
+                .gradingDeadline(deadline)
+                .isGradingOpen(isOpen)
+                .submissions(submissionResponses)
+                .build();
+    }
+
+    // =======================================================
+    // API: TRẢ RA DANH SÁCH BÀI CẦN CHẤM LẠI
+    // =======================================================
+    @Override
+    public JudgeDashboardResponse listReEvaluationSubmissions(
+            Account account, Integer categoryRoundId) {
+        Expert expert = assignmentResolver.resolveExpert(account);
+        ExpertAssign expertAssign = assignmentResolver.requireJudgeAssignment(
+                expert, categoryRoundId);
+
+        CategoryRound categoryRound = categoryRoundRepository.findById(categoryRoundId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Không tìm thấy hạng mục thuộc vòng đấu"));
+        Round round = categoryRound.getRound();
+
+        LocalDateTime deadline = round.getResolveAppealDeadline();
+        boolean isOpen = deadline != null && LocalDateTime.now().isBefore(deadline);
+
+        List<Submission> submissions = submissionRepository
+                .findFinalSubmissionsByCategoryRoundId(categoryRoundId);
+
+        List<AssignedSubmissionForJudgeResponse> submissionResponses = submissions.stream()
+                .map(submission -> {
+                    Evaluation evaluation = evaluationRepository
+                            .findByExpertAssignIdAndSubmissionId(
+                                    expertAssign.getAssignId(),
+                                    submission.getSubmissionId())
+                            .orElse(null);
+
+                    if (evaluation == null
+                            || evaluation.getStatus() != EvaluationStatus.RE_EVALUATION) {
+                        return null;
+                    }
+
+                    List<FileDTO> files = new ArrayList<>();
+                    if (submission.getFiles() != null) {
+                        for (SubmissionFile file : submission.getFiles()) {
+                            files.add(new FileDTO(
+                                    file.getFileName(), file.getFileUrl()));
+                        }
+                    }
+
+                    String commitUrl = submission.getGithubUrl()
+                            + "/commit/" + submission.getLatestCommitSha();
+
+                    return AssignedSubmissionForJudgeResponse.builder()
+                            .submissionId(submission.getSubmissionId())
+                            .teamName(submission.getTeam().getTeamName())
+                            .description(submission.getDescription())
+                            .githubUrl(commitUrl)
+                            .files(files)
+                            .submittedAt(submission.getCreateAt())
+                            .myEvaluationStatus(evaluation.getStatus().name())
+                            .myTotalScore(evaluation.getScore())
+                            .build();
+                })
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toList());
+
         return JudgeDashboardResponse.builder()
                 .gradingDeadline(deadline)
                 .isGradingOpen(isOpen)
@@ -181,42 +250,31 @@ public class GradingServiceImpl implements GradingService {
         // 5. Kiểm tra phân công chi tiết: Xác định vai trò Judge hợp lệ tại CategoryRound
         ExpertAssign expertAssign = assignmentResolver.requireJudgeAssignment(expert, categoryRound.getCategoryRoundId());
 
-        // 6. Kiểm tra thời hạn: Từ chối xử lý nếu thời gian hiện tại vượt mốc cấu hình đóng cổng chấm điểm của Round
-        if (!deadlinePolicy.isGradingOpen(round)) {
-            throw new BadRequestException("Hệ thống đã khóa sổ dữ liệu chấm điểm do quá thời hạn quy định.");
-        }
-
-        // 7. Thực hiện thẩm định tính toàn vẹn (Chỉ thẩm định các tiêu chí thuộc phần targetType đang chấm)
+        // 6. Thực hiện thẩm định tính toàn vẹn (Chỉ thẩm định các tiêu chí thuộc phần targetType đang chấm)
         List<EvaluationCriteria> roundCriteria = round.getEvaluationCriterias();
 
         // Gọi hàm validatePartial mà chúng ta đã định nghĩa ở Validator
         criteriaValidator.validatePartial(request, roundCriteria, targetType);
 
         // 8. ÁP DỤNG MÔ HÌNH UPSERT VÀ CHỤP NHANH DỮ LIỆU CŨ (SNAPSHOT)
-        boolean isFirstTimeGrading = false;
         Evaluation evaluation = evaluationRepository.findByExpertAssignIdAndSubmissionId(expertAssign.getAssignId(), submissionId)
                 .orElse(null);
 
-        BigDecimal oldTotalScore = null;
-        String oldTotalComment = null;
+        EvaluationStatus previousStatus = evaluation != null
+                ? evaluation.getStatus()
+                : EvaluationStatus.NOT_GRADED;
+        boolean isReEvaluation = previousStatus == EvaluationStatus.RE_EVALUATION;
 
         if (evaluation == null) {
             // Trường hợp 1: Chưa từng tồn tại bản ghi đánh giá -> Khởi tạo thực thể mới (Insert)
-            isFirstTimeGrading = true;
             evaluation = new Evaluation();
             evaluation.setExpertAssign(expertAssign);
             evaluation.setSubmission(submission);
             evaluation.setIsReEvaluation(false);
             evaluation.setEvaluationDetails(new ArrayList<>());
-        } else {
-            // Trường hợp 2: Đã tồn tại bản ghi (Update) -> Chặn nếu thực thể đang nằm trong trạng thái xử lý Phúc khảo
-            if (evaluation.getStatus() != null && evaluation.getStatus().equals(EvaluationStatus.RE_EVALUATION)) {
-                throw new BadRequestException("Thực thể đánh giá đang nằm trong trạng thái Khiếu nại/Phúc khảo hệ thống.");
-            }
-            // Chụp điểm và comment cũ trước khi sửa
-            oldTotalScore = evaluation.getScore();
-            oldTotalComment = evaluation.getComment();
         }
+
+        deadlinePolicy.validateScoringTime(round, isReEvaluation);
 
         // 9. ĐỒNG BỘ HÓA DỮ LIỆU ĐIỂM CHI TIẾT (PARTIAL MAPPING & MERGE)
         // Lấy danh sách điểm cũ chuyển thành Map để thao tác Add/Update trực tiếp trên từng Item,
@@ -228,8 +286,6 @@ public class GradingServiceImpl implements GradingService {
                 .filter(c -> c.getType() == targetType)
                 .collect(Collectors.toMap(EvaluationCriteria::getEvaluationCriteriaId, c -> c));
 
-        List<Map<String, Object>> detailChanges = new ArrayList<>();
-
         for (CriteriaScoreRequest scoreReq : request.getCriteriaScores()) {
             EvaluationCriteria criteria = targetCriteriaMap.get(scoreReq.getEvaluationCriteriaId());
             if (criteria == null) continue;
@@ -237,357 +293,118 @@ public class GradingServiceImpl implements GradingService {
             // Tái sử dụng bản ghi chi tiết cũ để cập nhật đè (Update), hoặc tạo mới (Add) nếu chưa có
             EvaluationDetail detail = existingDetailsMap.getOrDefault(criteria.getEvaluationCriteriaId(), new EvaluationDetail());
 
-            BigDecimal oldDetailScore = (detail.getId() == 0) ? null : detail.getScore();
-            String oldDetailComment = (detail.getId() == 0) ? null : detail.getComment();
-            BigDecimal newDetailScore = scoreReq.getScore();
-            String newDetailComment = scoreReq.getComment();
-
             detail.setEvaluationCriteria(criteria);
             detail.setScore(scoreReq.getScore());
             detail.setComment(scoreReq.getComment());
             detail.setEvaluation(evaluation);
+            if (isReEvaluation) {
+                detail.setIsReEvaluation(true);
+            }
 
             if (detail.getId() == 0) {
                 evaluation.getEvaluationDetails().add(detail);
-            }
-
-            boolean isScoreChanged = (oldDetailScore == null) || (oldDetailScore.compareTo(newDetailScore) != 0);
-            boolean isCommentChanged = (oldDetailComment == null && newDetailComment != null && !newDetailComment.isBlank())
-                    || (oldDetailComment != null && !oldDetailComment.equals(newDetailComment));
-
-            if (isScoreChanged || isCommentChanged) {
-                Map<String, Object> change = new LinkedHashMap<>();
-                change.put("newScore", newDetailScore);
-                change.put("oldScore", oldDetailScore);
-                change.put("newComment", newDetailComment);
-                change.put("oldComment", oldDetailComment);
-                change.put("criteriaName", criteria.getCriteriaName());
-                change.put("criteriaId", criteria.getEvaluationCriteriaId());
-                detailChanges.add(change);
             }
         }
 
         // 10. TÍNH TOÁN LẠI TỔNG ĐIỂM (Ủy thác quyền cho ScoreCalculator tính toán dựa trên list đã Merge)
         BigDecimal calculatedTotalScore = scoreCalculator.calculateWeightedTotal(evaluation.getEvaluationDetails());
-        String newTotalComment = request.getComment();
-
         evaluation.setScore(calculatedTotalScore);
         evaluation.setComment(request.getComment());
-        evaluation.setStatus(EvaluationStatus.GRADED); // Chuyển dịch trạng thái thực thể sang Đã chấm điểm
+        evaluation.setStatus(determineNextStatus(evaluation, roundCriteria, isReEvaluation));
+        if (isReEvaluation && evaluation.getStatus() == EvaluationStatus.GRADED) {
+            evaluation.setIsReEvaluation(false);
+        }
 
         // 11. ĐẨY DỮ LIỆU XUỐNG DB & KÍCH HOẠT LƯU VẾT HỆ THỐNG (Audit Service Log)
         evaluation = evaluationRepository.save(evaluation);
 
-        boolean isTotalCommentChanged = (oldTotalComment == null && newTotalComment != null && !newTotalComment.isBlank())
-                || (oldTotalComment != null && !oldTotalComment.equals(newTotalComment));
+        evaluationAuditLogService.saveAttempt(
+                account,
+                evaluation,
+                targetType,
+                isReEvaluation);
 
-        if (isFirstTimeGrading || !detailChanges.isEmpty() || isTotalCommentChanged) {
-            auditLogger.logGraded(
-                    account, evaluation, submission, expert.getExpertId(), isFirstTimeGrading,
-                    oldTotalScore, calculatedTotalScore,
-                    oldTotalComment, newTotalComment,
-                    detailChanges
-            );
+        if (isReEvaluation && evaluation.getStatus() == EvaluationStatus.GRADED) {
+            updateAppealProgress(evaluation, expert.getExpertName());
         }
 
-        LocalDateTime deadline = deadlinePolicy.getGradingDeadline(round);
+        LocalDateTime deadline = isReEvaluation
+                ? round.getResolveAppealDeadline()
+                : deadlinePolicy.getGradingDeadline(round);
 
         // 12. CHUYỂN ĐỔI DỮ LIỆU ĐẦU RA VÀ PHẢN HỒI PRESENTATION TẦNG
         return evaluationMapper.toResponse(evaluation, true, deadline);
     }
 
-    // Chấm điểm lại khi bị event coordinator từ chối
-    @Override
-    @Transactional
-    public JudgeEvaluationResponse updateEvaluation(Account account, Integer submissionId, SubmitEvaluationRequest request
-            , CriteriaType targetType) {
-        // 1. Phân tích ngữ cảnh người dùng: Xác thực đối tượng Chuyên gia
-        Expert expert = assignmentResolver.resolveExpert(account);
 
-        // 2. Kiểm tra sự tồn tại của Bài nộp (Submission) trong cơ sở dữ liệu
-        Submission submission = submissionRepository.findById(submissionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dữ liệu Bài nộp với mã định danh cung cấp: " + submissionId));
 
-        // 3.Tuyệt đối không cho phép chấm điểm trên các bài nộp là Bản nháp (Draft)
-        if (!submission.isFinal()) {
-            throw new BadRequestException("Bài nộp hiện tại đang ở trạng thái bản nháp, chưa được xác nhận nộp chính thức.");
+    private EvaluationStatus determineNextStatus(
+            Evaluation evaluation,
+            List<EvaluationCriteria> requiredCriteria,
+            boolean isReEvaluation) {
+        if (isReEvaluation) {
+            Set<Integer> requiredIds = requiredCriteria.stream()
+                    .map(EvaluationCriteria::getEvaluationCriteriaId)
+                    .collect(Collectors.toSet());
+            Set<Integer> reEvaluatedIds = evaluation.getEvaluationDetails().stream()
+                    .filter(detail -> detail.getEvaluationCriteria() != null)
+                    .filter(detail -> Boolean.TRUE.equals(detail.getIsReEvaluation()))
+                    .map(detail -> detail.getEvaluationCriteria()
+                            .getEvaluationCriteriaId())
+                    .collect(Collectors.toSet());
+            boolean allReEvaluated = reEvaluatedIds.containsAll(requiredIds);
+            return allReEvaluated
+                    ? EvaluationStatus.GRADED
+                    : EvaluationStatus.RE_EVALUATION;
         }
 
-        // 4. Khai thác dữ liệu quan hệ bắc cầu: Submission -> TeamParticipant -> CategoryRound -> Round
-        TeamParticipant participant = submission.getTeamParticipant();
-        CategoryRound categoryRound = participant.getCategoryRound();
-        Round round = categoryRound.getRound();
+        Set<Integer> requiredIds = requiredCriteria.stream()
+                .map(EvaluationCriteria::getEvaluationCriteriaId)
+                .collect(Collectors.toSet());
+        Set<Integer> gradedIds = evaluation.getEvaluationDetails().stream()
+                .filter(detail -> detail.getScore() != null)
+                .filter(detail -> detail.getEvaluationCriteria() != null)
+                .map(detail -> detail.getEvaluationCriteria().getEvaluationCriteriaId())
+                .collect(Collectors.toSet());
 
-        // 5. Kiểm tra phân công chi tiết: Xác định vai trò Judge hợp lệ tại CategoryRound (Hàm này đồng thời ngăn chặn Mentor)
-        ExpertAssign expertAssign = assignmentResolver.requireJudgeAssignment(expert, categoryRound.getCategoryRoundId());
-
-        // 6. Chỉ update những dữ liệu ở trạng thái RE_EVALUATION khi bị event từ chối yêu cầu chấm điểm lại
-        Evaluation evaluation = evaluationRepository.findByExpertAssignIdAndSubmissionId(expertAssign.getAssignId(), submissionId)
-                .orElseThrow(() -> new BadRequestException("Không tìm thấy dữ liệu chấm điểm"));
-
-        if (evaluation.getStatus() != EvaluationStatus.RE_EVALUATION) {
-            throw new BadRequestException("Hành động thất bại: Chỉ có thể cập nhật điểm số khi BTC yêu cầu chấm lại");
-        }
-
-        BigDecimal oldTotalScore = evaluation.getScore();
-        String oldTotalComment = evaluation.getComment();
-
-        // 7. Thực hiện thẩm định tính toàn vẹn của danh sách tiêu chí gửi lên
-        List<EvaluationCriteria> roundCriteria = round.getEvaluationCriterias();
-
-        criteriaValidator.validate(request, roundCriteria);
-
-        // 8. Cập nhật lại điểm số
-        evaluation.setExpertAssign(expertAssign);
-        evaluation.setSubmission(submission);
-
-        // 9. ĐỒNG BỘ HÓA DỮ LIỆU ĐIỂM CHI TIẾT (EvaluationDetail Mapping)
-        Map<Integer, EvaluationDetail> existingDetailsMap = evaluation.getEvaluationDetails().stream()
-                .collect(Collectors.toMap(d -> d.getEvaluationCriteria().getEvaluationCriteriaId(), d -> d));
-        Map<Integer, EvaluationCriteria> criteriaByIdMap = roundCriteria.stream()
-                .collect(Collectors.toMap(EvaluationCriteria::getEvaluationCriteriaId, c -> c));
-
-        List<Map<String, Object>> detailChanges = new ArrayList<>();
-
-        for (CriteriaScoreRequest scoreReq : request.getCriteriaScores()) {
-            EvaluationCriteria criteria = criteriaByIdMap.get(scoreReq.getEvaluationCriteriaId());
-            if (criteria == null) continue;
-
-            // Tái sử dụng bản ghi chi tiết cũ để cập nhật đè dữ liệu, tránh tạo bản ghi trùng lặp rác dữ liệu
-            EvaluationDetail detail = existingDetailsMap.get(criteria.getEvaluationCriteriaId());
-            boolean isNewDetail = false;
-
-            if (detail == null) {
-                detail = new EvaluationDetail();
-                isNewDetail = true;
-            }
-
-            BigDecimal oldDetailScore = isNewDetail ? null : detail.getScore();
-            String oldDetailComment = isNewDetail ? null : detail.getComment();
-            BigDecimal newDetailScore = scoreReq.getScore();
-            String newDetailComment = scoreReq.getComment();
-
-            // kiểm tra ID để tránh bỏ sót phần tử mới
-            if (isNewDetail || detail.getId() == 0) {
-                evaluation.getEvaluationDetails().add(detail);
-            }
-
-            detail.setEvaluationCriteria(criteria);
-            detail.setScore(scoreReq.getScore());
-            detail.setComment(scoreReq.getComment());
-            detail.setEvaluation(evaluation);
-
-            boolean isScoreChanged = (oldDetailScore == null) || (oldDetailScore.compareTo(newDetailScore) != 0);
-            boolean isCommentChanged = (oldDetailComment == null && newDetailComment != null && !newDetailComment.isBlank())
-                    || (oldDetailComment != null && !oldDetailComment.equals(newDetailComment));
-
-            if (isScoreChanged || isCommentChanged) {
-                Map<String, Object> change = new LinkedHashMap<>();
-                change.put("newScore", newDetailScore);
-                change.put("oldScore", oldDetailScore);
-                change.put("newComment", newDetailComment);
-                change.put("oldComment", oldDetailComment);
-                change.put("criteriaName", criteria.getCriteriaName());
-                change.put("criteriaId", criteria.getEvaluationCriteriaId());
-                detailChanges.add(change);
-            }
-        }
-
-        // 10. TÍNH TOÁN LẠI TỔNG ĐIỂM (Ủy thác quyền cho ScoreCalculator hạ tầng xử lý)
-        BigDecimal calculatedTotalScore = scoreCalculator.calculateWeightedTotal(evaluation.getEvaluationDetails());
-        String newTotalComment = request.getComment();
-
-        evaluation.setScore(calculatedTotalScore);
-        evaluation.setComment(request.getComment());
-        evaluation.setStatus(EvaluationStatus.GRADED);
-
-        // 11. ĐẨY DỮ LIỆU XUỐNG DB & KÍCH HOẠT LƯU VẾT HỆ THỐNG (Audit Service Log)
-        evaluation = evaluationRepository.save(evaluation);
-
-        boolean isTotalCommentChanged = (oldTotalComment == null && newTotalComment != null && !newTotalComment.isBlank())
-                || (oldTotalComment != null && !oldTotalComment.equals(newTotalComment));
-
-        if (!detailChanges.isEmpty() || isTotalCommentChanged) {
-            auditLogger.logGraded(
-                    account, evaluation, submission, expert.getExpertId(), false,
-                    oldTotalScore, calculatedTotalScore,
-                    oldTotalComment, newTotalComment,
-                    detailChanges
-            );
-        }
-
-        // 12. CHUYỂN ĐỔI DỮ LIỆU ĐẦU RA VÀ PHẢN HỒI PRESENTATION TẦNG
-        return evaluationMapper.toResponse(evaluation, false, null);
+        return gradedIds.containsAll(requiredIds)
+                ? EvaluationStatus.GRADED
+                : EvaluationStatus.PARTIALLY_GRADED;
     }
 
-    // Thực hiện chấm điểm lại khi nhận được yêu cầu của Expert
-    @Override
-    @Transactional
-    public JudgeEvaluationResponse reEvaluationSubmission(CustomUserDetails userDetails, ReEvaluationRequest
-            request, CriteriaType targetType) {
-        Account account = userDetails.getAccount();
-        Expert expert = expertRepository.findByAccount_AccountId(account.getAccountId())
-                .orElseThrow(() -> new BadRequestException("Tài khoản này không phải là tài khoản của Expert, vì vậy bạn không được phép truy cập vào trình duyệt này."));
+    private void updateAppealProgress(Evaluation completedEvaluation, String expertName) {
+        Submission submission = completedEvaluation.getSubmission();
+        TeamParticipant participant = submission.getTeamParticipant();
+        Integer submissionId = submission.getSubmissionId();
+        Integer teamId = submission.getTeam().getTeamId();
+        Integer roundId = participant.getCategoryRound().getRound().getRoundId();
 
-        //  Lấy tất cả đơn khiếu nại kết quả của vòng đấu này đang ở trạng thái INREVIEW
-        TeamRequest appealRequest = teamRequestRepository.findById(request.getRequestId())
-                .orElseThrow(() -> new BadRequestException("Không tìm thấy đơn khiếu nại phúc khảo nào."));
-        if (appealRequest.getStatus() != RequestStatus.PROCESSING) {
-            throw new BadRequestException("Đơn khiếu nại này không ở trạng thái PROCESSING");
-        }
-        // Từ ds khiếu nại lấy ra bài nộp để tiến hành chấm điểm lại
-        Round round = appealRequest.getRound();
+        boolean stillWaiting = evaluationRepository
+                .existsBySubmission_SubmissionIdAndStatus(
+                        submissionId, EvaluationStatus.RE_EVALUATION);
 
-        TeamParticipant participant = appealRequest.getTeam().getRegistrations().stream()
-                .filter(registration -> registration.getStatus() == RegistrationStatus.APPROVED)
-                .map(Registration::getParticipants)
-                .flatMap(List::stream)
-                .filter(tp -> tp.getCategoryRound() != null && tp.getCategoryRound().getRound().getRoundId().equals(round.getRoundId()))
-                .findFirst()
-                .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin tham gia vòng đấu của đội này."));
+        TeamRequest appealRequest = teamRequestRepository
+                .findByTeam_TeamIdAndRound_RoundIdAndRequestTypeAndStatus(
+                        teamId,
+                        roundId,
+                        RequestType.APPEAL,
+                        RequestStatus.PROCESSING)
+                .orElseThrow(() -> new BadRequestException(
+                        "Không tìm thấy đơn khiếu nại đang được xử lý cho bài chấm này."));
 
-        CategoryRound categoryRound = participant.getCategoryRound();
-        ExpertAssign expertAssign =
-                assignmentResolver.requireJudgeAssignment(expert, categoryRound.getCategoryRoundId());
-
-        Submission finalSubmission = participant.getSubmissions().stream()
-                .filter(Submission::isFinal)
-                .findFirst()
-                .orElseThrow(() -> new BadRequestException("Đội thi chưa xác nhận nộp bài chính thức cho vòng này."));
-
-        // Từ  bài nộp tìm ra expert này chấm
-        Evaluation evaluation = evaluationRepository.findByExpertAssignIdAndSubmissionId(expertAssign.getAssignId(), finalSubmission.getSubmissionId())
-                .orElseThrow(() -> new BadRequestException("Không tìm thấy dữ liệu chấm điểm cũ của bạn cho đội thi này."));
-
-
-        if (evaluation.getStatus() != EvaluationStatus.RE_EVALUATION) {
-            throw new BadRequestException("Bài đánh giá này chưa được yêu cầu để chấm lại.");
-        }
-
-        if (evaluation.getOriginalScore() == null) {
-            evaluation.setOriginalScore(evaluation.getScore());
-        }
-
-        List<EvaluationCriteria> roundCriteria = round.getEvaluationCriterias();
-        if (roundCriteria == null || roundCriteria.isEmpty()) {
-            throw new BadRequestException("Vòng thi chưa cấu hình tiêu chí.");
-        }
-        BigDecimal maxScore = BigDecimal.valueOf(roundCriteria.getFirst().getMaxScore());
-
-        Map<Integer, EvaluationDetail> detailsMap = evaluation.getEvaluationDetails().stream()
-                .filter(d -> d.getEvaluationCriteria() != null)
-                .collect(Collectors.toMap(d -> d.getEvaluationCriteria().getEvaluationCriteriaId(), d -> d));
-
-        BigDecimal oldEvaluationTotalScore = evaluation.getScore();
-        String oldEvaluationComment = evaluation.getComment();
-        List<Map<String, Object>> detailChanges = new ArrayList<>();
-
-        for (CriteriaScoreRequest requestEval : request.getCriteriaScores()) {
-            EvaluationDetail detail = detailsMap.get(requestEval.getEvaluationCriteriaId());
-            if (detail == null) {
-                throw new BadRequestException("Tiêu chí này không nằm trong danh sách tiêu chí chấm điểm của vòng đấu này.");
-            }
-
-            if (detail.getEvaluation().getEvaluationId() != evaluation.getEvaluationId()) {
-                throw new BadRequestException("Tiêu chí này không thuộc bài chấm đang được phúc khảo.");
-            }
-
-            if (requestEval.getScore().compareTo(BigDecimal.ZERO) < 0 || requestEval.getScore().compareTo(maxScore) > 0) {
-                throw new BadRequestException(
-                        "Điểm của tiêu chí " + "phải nằm trong khoảng từ 0 đến " + maxScore + ".");
-            }
-
-            BigDecimal oldDetailScore = detail.getScore();
-            String oldDetailComment = detail.getComment();
-
-            //  lưu điểm cũ của tiêu chí này nếu là lần đầu chấm lại
-            if (detail.getOriginalScore() == null) {
-                detail.setOriginalScore(detail.getScore());
-            }
-
-            BigDecimal newDetailScore = requestEval.getScore();
-            String newDetailComment = requestEval.getComment();
-
-            detail.setScore(newDetailScore);
-            detail.setComment(newDetailComment);
-            detail.setIsReEvaluation(true);
-
-            boolean isScoreChanged = (oldDetailScore == null) || (oldDetailScore.compareTo(newDetailScore) != 0);
-            boolean isCommentChanged = (oldDetailComment == null && newDetailComment != null && !newDetailComment.isBlank())
-                    || (oldDetailComment != null && !oldDetailComment.equals(newDetailComment));
-
-            if (isScoreChanged || isCommentChanged) {
-                Map<String, Object> change = new LinkedHashMap<>();
-                change.put("newScore", newDetailScore);
-                change.put("oldScore", oldDetailScore);
-                change.put("newComment", newDetailComment);
-                change.put("oldComment", oldDetailComment);
-                change.put("criteriaName", detail.getEvaluationCriteria().getCriteriaName());
-                change.put("criteriaId", detail.getEvaluationCriteria().getEvaluationCriteriaId());
-                detailChanges.add(change);
-            }
-        }
-
-        BigDecimal finalNewTotalScore = scoreCalculator.calculateWeightedTotal(evaluation.getEvaluationDetails());
-        String newTotalComment = request.getComment();
-
-        evaluation.setComment(request.getComment());
-        evaluation.setScore(finalNewTotalScore);
-        evaluation.setStatus(EvaluationStatus.GRADED);
-        evaluation.setIsReEvaluation(true);
-
-        // 1. Lấy tất cả các bảng điểm (Evaluation) của bài nộp này từ các giám khảo khác nhau
-        List<Evaluation> allEvaluationsForSub =
-                evaluationRepository.findBySubmission_SubmissionId(finalSubmission.getSubmissionId());
-
-        // chaams het all tieu chi moi sang score
-        boolean codeFinished =
-                evaluation.getEvaluationDetails().stream()
-                        .filter(d -> d.getEvaluationCriteria().getType() == CriteriaType.SUBMISSION)
-                        .allMatch(d -> Boolean.TRUE.equals(d.getIsReEvaluation()));
-
-        boolean presentationFinished =
-                evaluation.getEvaluationDetails().stream()
-                        .filter(d -> d.getEvaluationCriteria().getType() == CriteriaType.PRESENTATION)
-                        .allMatch(d -> Boolean.TRUE.equals(d.getIsReEvaluation()));
-
-        if (codeFinished && presentationFinished) {
-            evaluation.setStatus(EvaluationStatus.GRADED);
-        } else {
-            evaluation.setStatus(EvaluationStatus.RE_EVALUATION);
-        }
-
-        // 2. Kiểm tra xem có ông giám khảo nào còn đang bị kẹt ở trạng thái "RE_EVALUATION" hay không
-        boolean isAllJudgesFinished = allEvaluationsForSub.stream()
-                .noneMatch(eval -> eval.getStatus() == EvaluationStatus.RE_EVALUATION);
-
-        if (isAllJudgesFinished) {
-            // Tất cả judge đã chấm lại xong. Team quay về trạng thái hoạt động
-            // trong round; request chờ coordinator đưa ra kết luận cuối.
-            participantRepository.save(participant);
-            appealRequest.setStatus(RequestStatus.IN_REVIEW);
-            appealRequest.setResponseMessage("Toàn bộ hội đồng Giám khảo đã hoàn tất cập nhật lại điểm số phúc khảo.");
-        } else {
-            // Nếu vẫn còn giám khảo chưa chấm lại giữ nguyên IN_REVIEW
+        if (stillWaiting) {
             appealRequest.setStatus(RequestStatus.PROCESSING);
-            appealRequest.setResponseMessage(String.format("Giám khảo %s đã sửa điểm. Đang đợi các giám khảo khác trong hội đồng hoàn tất.", expert.getExpertName()));
+            appealRequest.setResponseMessage(String.format(
+                    "Giám khảo %s đã cập nhật điểm. Đang chờ các giám khảo khác hoàn tất.",
+                    expertName));
+        } else {
+            appealRequest.setStatus(RequestStatus.IN_REVIEW);
+            appealRequest.setResponseMessage(
+                    "Toàn bộ hội đồng giám khảo đã hoàn tất cập nhật điểm phúc khảo.");
         }
 
         appealRequest.setResponseAt(LocalDateTime.now());
         teamRequestRepository.save(appealRequest);
-        evaluationRepository.save(evaluation);
-
-        boolean isTotalCommentChanged = (oldEvaluationComment == null && newTotalComment != null && !newTotalComment.isBlank())
-                || (oldEvaluationComment != null && !oldEvaluationComment.equals(newTotalComment));
-
-        if (!detailChanges.isEmpty() || isTotalCommentChanged) {
-            auditLogger.logReEvaluation(
-                    account, evaluation, finalSubmission, expert.getExpertId(),
-                    oldEvaluationTotalScore, finalNewTotalScore,
-                    oldEvaluationComment, newTotalComment, detailChanges
-            );
-        }
-
-        return evaluationMapper.toResponse(evaluation, false, null);
     }
+
 }

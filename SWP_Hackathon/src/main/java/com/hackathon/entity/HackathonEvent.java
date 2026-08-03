@@ -3,6 +3,7 @@ package com.hackathon.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hackathon.dto.event.EventDescription;
 import com.hackathon.entity.enums.EventStatus;
+import com.hackathon.entity.enums.EventSeason;
 import com.hackathon.entity.enums.WorkshopStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -36,13 +37,18 @@ public class HackathonEvent {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "Description", columnDefinition = "NVARCHAR(MAX)", nullable = true)
     private EventDescription description;
-    @Column(name = "Season", columnDefinition = "NVARCHAR(100)", nullable = true)
-    private String season;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "Season", nullable = true)
+    private EventSeason season;
+    @Column(name = "Season_Year", nullable = true)
+    private Integer seasonYear;
     @Column(name = "Status", nullable = true)
     @Enumerated(EnumType.STRING)
     private EventStatus status;
     @Column(name = "Max_Team", nullable = true)
     private Integer maxTeam;
+    @Column(name = "Min_Team", nullable = true)
+    private Integer minTeam;
     @Column(name = "Max_Team_Size", nullable = true)
     private Integer maxTeamSize;
     @Column(name = "Min_Team_Size", nullable = true)

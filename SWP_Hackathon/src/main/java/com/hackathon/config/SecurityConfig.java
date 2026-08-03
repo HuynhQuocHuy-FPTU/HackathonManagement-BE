@@ -128,7 +128,8 @@ public class SecurityConfig {
                         ).hasRole("EVENTCOORDINATOR")
                         .requestMatchers("/api/events/create", "/api/events/publish/**",
                                 "/api/events/delete/**", "/api/events/update/**",
-                                "/api/events/restore/**", "/api/events/cancel/**", "/api/events/permanently/**")
+                                "/api/events/restore/**", "/api/events/cancel/**", "/api/events/permanently/**",
+                                "/api/events/check-minimum-teams")
                         .hasRole("EVENTCOORDINATOR")
                         .requestMatchers(HttpMethod.POST, "/api/round/advancement/*").hasRole("EVENTCOORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/api/export/**", "/api/dashboard/**")

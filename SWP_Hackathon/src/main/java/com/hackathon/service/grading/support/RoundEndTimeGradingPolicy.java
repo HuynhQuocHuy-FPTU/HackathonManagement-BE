@@ -31,4 +31,21 @@ public class RoundEndTimeGradingPolicy {
         }
         return deadline == null || now.isBefore(deadline);
     }
+
+    public void validateScoringTime(Round round, boolean isReEvaluation) {
+        if (isReEvaluation) {
+            LocalDateTime deadline = round.getResolveAppealDeadline();
+            if (deadline == null) {
+                throw new BadRequestException("Vòng thi chưa cấu hình thời hạn giải quyết khiếu nại.");
+            }
+            if (LocalDateTime.now().isAfter(deadline)) {
+                throw new BadRequestException("Đã hết thời hạn chấm điểm phúc khảo.");
+            }
+            return;
+        }
+
+        if (!isGradingOpen(round)) {
+            throw new BadRequestException("Hệ thống đã khóa sổ dữ liệu chấm điểm do quá thời hạn quy định.");
+        }
+    }
 }

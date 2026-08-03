@@ -36,7 +36,6 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class TeamRequestServiceImpl implements TeamRequestService {
     private final TeamRepository teamRepository;
-    private final AccountRepository accountRepository;
     private final ExpertRepository expertRepository;
     private final ExpertAssignRepository expertAssignRepository;
     private final RoundRepository roundRepository;
@@ -49,7 +48,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
     private final ParticipantRepository participantRepository;
     private final TeamRequestValidator teamRequestValidator;
     private final RoundAdvancementService roundAdvancementService;
-    private final StudentRepository studentRepository;
     private final HackathonEventRepository hackathonEventRepository;
 
     /**
@@ -75,21 +73,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
             Long notificationId,
             NotiResponseRequest command
     ) {
-        Account authenticatedAccount = userDetails.getAccount();
-        if (authenticatedAccount == null) {
-            throw new BadRequestException(
-                    "Không tìm thấy thông tin tài khoản");
-        }
-
-        Account account = accountRepository.findById(
-                        authenticatedAccount.getAccountId())
-                .orElseThrow(() -> new BadRequestException(
-                        "Không tìm thấy tài khoản"));
-
-        if (account.getStudent() == null) {
-            throw new BadRequestException(
-                    "Chỉ tài khoản sinh viên mới có thể phản hồi thông báo");
-        }
+        Account account = teamRequestValidator.requireStudentAccount(userDetails);
 
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new BadRequestException(
@@ -483,7 +467,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
     /**
      * Lấy các đơn khiếu nại liên quan đến bài chấm của giám khảo hiện tại.
      */
-    @Override
     public List<TeamRequestResponse> getAppealRequestsForJudge(
             CustomUserDetails userDetails,
             Integer roundId
@@ -636,16 +619,8 @@ public class TeamRequestServiceImpl implements TeamRequestService {
             CustomUserDetails userDetails,
             CreateDirectTeamRequest command
     ) {
-        Account account = userDetails.getAccount();
-        if (account == null || account.getStudent() == null) {
-            throw new BadRequestException(
-                    "Chỉ tài khoản student mới có thể tạo yêu cầu");
-        }
-
-        Team team = teamRepository.findActiveLeadingTeamByStudentId(
-                        account.getStudent().getStudentId())
-                .orElseThrow(() -> new BadRequestException(
-                        "Bạn không phải leader của team đang tham gia"));
+        Account account = teamRequestValidator.requireStudentAccount(userDetails);
+        Team team = teamRequestValidator.requireActiveLeadingTeam(account);
 
         return switch (command.getRequestType()) {
             case APPEAL -> createDirectAppeal(
@@ -662,32 +637,10 @@ public class TeamRequestServiceImpl implements TeamRequestService {
      */
     @Override
     public List<TeamRequestResponse> getMyMentorSupportRequests(CustomUserDetails userDetails, Integer eventId) {
-        Student student = studentRepository.findByAccount_AccountId(userDetails.getAccount().getAccountId())
-                .orElseThrow(() -> new BadRequestException("Bạn không phải là sinh viên."));
-        HackathonEvent event = hackathonEventRepository.findById(eventId)
-                .orElseThrow(() -> new BadRequestException("Không tìm thấy sự kiện"));
-        // Tìm tất cả đơn khiếu nại mà team này gửi
-        List<TeamRequest> teamRequests = teamRequestRepository.findByHackathonEvent_EventIdAndRequestType(eventId, RequestType.MENTOR_SUPPORT);
-        if (teamRequests == null || teamRequests.isEmpty()) {
-            throw new BadRequestException("Đội thi này không gửi bất kỳ yêu cầu hỗ trợ nào đến Mentor.");
-        }
-        List<TeamRequestResponse> responses = new ArrayList<>();
-        for (TeamRequest tq : teamRequests) {
-            TeamRequestResponse teamRequestResponse = TeamRequestResponse.builder()
-                    .requestId(tq.getRequestId())
-                    .teamId(tq.getTeam().getTeamId())
-                    .teamName(tq.getTeam().getTeamName())
-                    .createDate(tq.getCreateDate())
-                    .status(tq.getStatus())
-                    .round(tq.getRound().getRoundName())
-                    .requestType(tq.getRequestType())
-                    .requestMessage(tq.getRequestMessage())
-                    .responseMessage(tq.getResponseMessage())
-                    .build();
-            responses.add(teamRequestResponse);
-        }
-
-        return responses;
+        return getMyRequests(
+                userDetails,
+                eventId,
+                List.of(RequestType.MENTOR_SUPPORT));
     }
 
     /**
@@ -695,32 +648,31 @@ public class TeamRequestServiceImpl implements TeamRequestService {
      */
     @Override
     public List<TeamRequestResponse> getMyAppealRequests(CustomUserDetails userDetails, Integer eventId) {
-        Student student = studentRepository.findByAccount_AccountId(userDetails.getAccount().getAccountId())
-                .orElseThrow(() -> new BadRequestException("Bạn không phải là sinh viên."));
-        HackathonEvent event = hackathonEventRepository.findById(eventId)
-                .orElseThrow(() -> new BadRequestException("Không tìm thấy sự kiện"));
-        // Tìm tất cả đơn khiếu nại mà team này gửi
-        List<TeamRequest> teamRequests = teamRequestRepository.findByHackathonEvent_EventIdAndRequestType(eventId, RequestType.APPEAL);
-        if (teamRequests == null || teamRequests.isEmpty()) {
-            throw new BadRequestException("Đội thi này không gửi bất kỳ yêu cầu hỗ trợ nào đến Mentor.");
-        }
-        List<TeamRequestResponse> responses = new ArrayList<>();
+        return getMyRequests(
+                userDetails,
+                eventId,
+                List.of(
+                        RequestType.APPEAL,
+                        RequestType.DRAW_RESULT_VERIFICATION));
+    }
 
-        for(TeamRequest tq: teamRequests){
-            TeamRequestResponse teamRequestResponse = TeamRequestResponse.builder()
-                    .requestId(tq.getRequestId())
-                    .teamId(tq.getTeam().getTeamId())
-                    .teamName(tq.getTeam().getTeamName())
-                    .createDate(tq.getCreateDate())
-                    .status(tq.getStatus())
-                    .round(tq.getRound().getRoundName())
-                    .requestType(tq.getRequestType())
-                    .requestMessage(tq.getRequestMessage())
-                    .responseMessage(tq.getResponseMessage())
-                    .build();
-            responses.add(teamRequestResponse);
+    private List<TeamRequestResponse> getMyRequests(
+            CustomUserDetails userDetails,
+            Integer eventId,
+            List<RequestType> requestTypes
+    ) {
+        Account account = teamRequestValidator.requireStudentAccount(userDetails);
+        if (!hackathonEventRepository.existsById(eventId)) {
+            throw new BadRequestException("Không tìm thấy sự kiện");
         }
-        return responses;
+
+        return teamRequestRepository.findMyRequestsByEventAndTypes(
+                        eventId,
+                        requestTypes,
+                        account.getStudent().getStudentId())
+                .stream()
+                .map(request -> toResponse(request, null, null))
+                .toList();
     }
 
     //---------------------------------------------//
@@ -799,21 +751,8 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                     "Thông báo điểm không thuộc vòng thi này");
         }
 
-        Team team = account.getStudent().getTeamMembers().stream()
-                .filter(TeamMember::getIsLeader)
-                .map(TeamMember::getTeam)
-                .filter(item -> item.getRegistrations().stream()
-                        .filter(registration ->
-                                registration.getStatus() == RegistrationStatus.APPROVED)
-                        .map(Registration::getParticipants)
-                        .flatMap(List::stream)
-                        .anyMatch(participant ->
-                                participant.getCategoryRound() != null
-                                        && participant.getCategoryRound().getRound()
-                                        .getRoundId().equals(round.getRoundId())))
-                .findFirst()
-                .orElseThrow(() -> new BadRequestException(
-                        "Bạn không phải leader của đội tham gia vòng thi này"));
+        Team team = teamRequestValidator.requireActiveLeadingTeam(account);
+        teamRequestValidator.requireParticipantInRound(team, round);
 
         teamRequestValidator.validateNoOpenRequest(
                 team, round, RequestType.APPEAL);
@@ -971,12 +910,11 @@ public class TeamRequestServiceImpl implements TeamRequestService {
     }
 
     /**
-     * Chuyển đơn khiếu nại cho giám khảo để thực hiện chấm lại.
+     * Đổi trạng thái của evaluation và gửi noti cho judge chấm category đó.
      */
     private TeamRequestResponse requestExpertToReEvaluation(CustomUserDetails userDetails, Integer requestId) {
         Account account = userDetails.getAccount();
-        EventCoordinator eventCoordinator = eventCoordinatorRepository.findByAccount_AccountId(account.getAccountId())
-                .orElseThrow(() -> new BadRequestException("Bạn không phải là ban tổ chức, vì vậy bạn không được phép truy cập vào trình duyệt này."));
+        EventCoordinator eventCoordinator = eventCoordinatorRepository.findByAccount_AccountId(account.getAccountId()).orElseThrow(() -> new BadRequestException("Bạn không phải là ban tổ chức, vì vậy bạn không được phép truy cập vào trình duyệt này."));
         TeamRequest appealRequest = teamRequestRepository.findById(requestId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy đơn khiếu nại với id: " + requestId));
         if (appealRequest.getRequestType() != RequestType.APPEAL) {
@@ -1000,11 +938,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                         "Không tìm thấy CategoryRound mà team tham gia trong vòng thi này."));
 
         CategoryRound categoryRound = participant.getCategoryRound();
-        Submission finalSubmission = participant.getSubmissions().stream()
-                .filter(Submission::isFinal)
-                .findFirst()
-                .orElseThrow(() -> new BadRequestException(
-                        "Đội thi chưa có bài nộp chính thức trong vòng này."));
+        Submission finalSubmission = participant.getSubmissions().stream().filter(Submission::isFinal).findFirst().orElseThrow(() -> new BadRequestException("Đội thi chưa có bài nộp chính thức trong vòng này."));
 
         List<Evaluation> evaluationsToUpdate = finalSubmission.getEvaluations().stream()
                 .filter(evaluation -> evaluation.getExpertAssign() != null)
@@ -1023,6 +957,9 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         Set<Account> expertsToNotify = new HashSet<>();
         for (Evaluation evaluation : evaluationsToUpdate) {
             evaluation.setStatus(EvaluationStatus.RE_EVALUATION);
+            evaluation.setIsReEvaluation(true);
+            evaluation.getEvaluationDetails().forEach(
+                    detail -> detail.setIsReEvaluation(false));
             expertsToNotify.add(evaluation.getExpertAssign().getExpert().getAccount());
         }
 
@@ -1157,19 +1094,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         Round round = roundRepository.findById(command.getRoundId())
                 .orElseThrow(() -> new BadRequestException(
                         "Không tìm thấy vòng thi"));
-        //team có ít nhất 1 participant thuộc round này
-        boolean belongsToRound = team.getRegistrations().stream()
-                .filter(registration ->
-                        registration.getStatus() == RegistrationStatus.APPROVED)
-                .map(Registration::getParticipants)
-                .flatMap(List::stream)
-                .anyMatch(participant -> participant.getCategoryRound() != null
-                        && participant.getCategoryRound().getRound()
-                        .getRoundId().equals(round.getRoundId()));
-        if (!belongsToRound) {
-            throw new BadRequestException(
-                    "Team không tham gia vòng thi này");
-        }
+        teamRequestValidator.requireParticipantInRound(team, round);
 
         Notification sourceNotification = findInitialResultNotification(
                 leaderAccountId, round, RequestType.APPEAL);
@@ -1294,23 +1219,13 @@ public class TeamRequestServiceImpl implements TeamRequestService {
      * PROCESSING thì từ chối. Nếu không, tạo request PENDING, gắn notification
      * nguồn, lưu repository và chuyển entity thành response.
      */
-    private TeamRequestResponse saveDirectRequest(
-            Team team,
-            Round round,
-            RequestType requestType,
-            String requestMessage,
-            Notification sourceNotification
+    private TeamRequestResponse saveDirectRequest(Team team, Round round, RequestType requestType, String requestMessage, Notification sourceNotification
     ) {
         boolean hasOpenRequest =
-                teamRequestRepository
-                        .existsByTeam_TeamIdAndRound_RoundIdAndStatusInAndRequestType(
-                                team.getTeamId(),
-                                round.getRoundId(),
-                                List.of(
-                                        RequestStatus.PENDING,
-                                        RequestStatus.IN_REVIEW,
-                                        RequestStatus.PROCESSING),
-                                requestType
+                teamRequestRepository.existsByTeam_TeamIdAndRound_RoundIdAndStatusInAndRequestType(team.getTeamId(), round.getRoundId(), List.of(RequestStatus.PENDING,
+                                                                RequestStatus.IN_REVIEW,
+                                                                RequestStatus.PROCESSING),
+                                                                    requestType
                         );
         if (hasOpenRequest) {
             throw new BadRequestException(

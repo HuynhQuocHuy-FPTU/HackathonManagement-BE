@@ -3,7 +3,6 @@ package com.hackathon.service.grading;
 import com.hackathon.dto.evaluation.*;
 import com.hackathon.entity.Account;
 import com.hackathon.entity.enums.CriteriaType;
-import com.hackathon.security.CustomUserDetails;
 
 import java.util.List;
 
@@ -13,15 +12,15 @@ import java.util.List;
 public interface GradingService {
 //  JudgeEvaluationResponse submitOrUpdate(Account account, Integer submissionId, SubmitEvaluationRequest request);
 
-    JudgeDashboardResponse listAssignedSubmissions(Account account, Integer categoryRoundId);
+    JudgeDashboardResponse listAssignedSubmissions(
+            Account account, Integer categoryRoundId);
+
+    JudgeDashboardResponse listReEvaluationSubmissions(
+            Account account, Integer categoryRoundId);
 
     List<EvaluationCriteriaResponse> viewScoringCriteria(Integer roundId);
 
     JudgeEvaluationResponse viewMyEvaluation(Account account, Integer submissionId);
-
-    JudgeEvaluationResponse reEvaluationSubmission(CustomUserDetails userDetails, ReEvaluationRequest request,CriteriaType targetType);
-
-    JudgeEvaluationResponse updateEvaluation(Account account, Integer submissionId, SubmitEvaluationRequest request,CriteriaType targetType);
 
     JudgeEvaluationResponse submitPartialEvaluation(Account account, Integer submissionId, SubmitEvaluationRequest request, CriteriaType targetType);
 
