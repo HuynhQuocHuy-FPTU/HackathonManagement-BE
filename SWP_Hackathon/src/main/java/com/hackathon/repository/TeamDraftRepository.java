@@ -7,9 +7,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 
-public interface TeamDraftRepository extends JpaRepository<TeamDraft,Long> {
-//    Optional<TeamDraft> findByLeaderAccount(Account account);
-Optional<TeamDraft> findByAccount(Account account);
-//<TeamDraft> findByAccount(Account account);
+public interface TeamDraftRepository extends JpaRepository<TeamDraft, Long> {
+    //    Optional<TeamDraft> findByLeaderAccount(Account account);
+    Optional<TeamDraft> findByAccount(Account account);
+
+    Optional<TeamDraft> findByTeamNameIgnoreCase(String teamName);
 
 }

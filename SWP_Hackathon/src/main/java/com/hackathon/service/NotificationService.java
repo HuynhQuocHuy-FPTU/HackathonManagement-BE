@@ -80,6 +80,10 @@ public interface NotificationService {
     void notifyScoringCompletedToAllCoordinators(Round round);
 
     void notifyExpertReEvaluation(Account actor, Set<Account> expertsToNotify, String teamName);
-    void notifyResponseAppeal(Account actor, Account account , String teamName, boolean isChanged );
-    void notifyMentorSupportTeam(Account teamLeader,  List<ExpertAssign> mentors);
+
+    void notifyResponseAppeal(Account actor, Account account, String teamName, boolean isChanged);
+
+    void notifyMentorSupportTeam(Account teamLeader, List<ExpertAssign> mentors);
+
+    void notifyInviteTeam(Account teamLeader, Account account, String type, Long invitationId);
 }
