@@ -106,9 +106,9 @@ public class SubmissionServiceImpl implements SubmissionService{
             throw new BadRequestException("Đội bạn chưa tham gia cuộc thi nào");
         }
         CategoryRound cateRound = categoryRoundRepository.findById(categoryRound).orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hạng mục - vòng thi"));
-        if(LocalDateTime.now().isBefore(cateRound.getRound().getAppealStartTime())){
-            return null;
-        }
+        // if(LocalDateTime.now().isBefore(cateRound.getRound().getAppealStartTime())){
+        //     return null;
+        // }
         Submission submission = submissionRepository.findFinalSubmission(categoryRound, team.getTeamId());
         if(submission == null){
             throw new BadRequestException("Bạn chưa có bài nộp cuối cùng hoặc chưa có điểm");
