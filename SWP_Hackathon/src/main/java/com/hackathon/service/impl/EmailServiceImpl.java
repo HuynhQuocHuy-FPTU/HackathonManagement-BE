@@ -116,6 +116,7 @@ public class EmailServiceImpl implements EmailService {
     @Async
     public void sendNotifyToExpertReEvaluation(String toEmail, String teamName) {
 
+        // Simple Mail dung đe gui mail theo dang van ban
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(mailUsername);

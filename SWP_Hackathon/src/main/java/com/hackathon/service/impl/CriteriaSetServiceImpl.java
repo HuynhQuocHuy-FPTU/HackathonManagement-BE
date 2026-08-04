@@ -53,7 +53,6 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
         return sets.stream().map(set -> {
 
             CriteriaSetResponseDTO dto = new CriteriaSetResponseDTO();
-
             dto.setCriteriaSetId(set.getCriteriaSetId());
             dto.setCriteriaSetName(set.getCriteriaSetName());
             dto.setMaxScore(set.getMaxScore());
@@ -266,7 +265,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
                     throw new BadRequestException("Không tìm thấy tiêu chí nào với ID: " + dto.getCriteriaId());
                 }
 
-                // Thực hiện check thay đổi thủ công (Không dùng Objects.equals)
+                // Thực hiện check thay đổi thủ công
                 boolean isNameChanged = (detail.getCriteriaName() == null && dto.getCriteriaName() != null) ||
                         (detail.getCriteriaName() != null && !detail.getCriteriaName().equals(dto.getCriteriaName()));
 

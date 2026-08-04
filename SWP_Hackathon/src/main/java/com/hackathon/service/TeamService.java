@@ -3,6 +3,7 @@ package com.hackathon.service;
 import com.hackathon.dto.team.*;
 import com.hackathon.entity.Notification;
 import com.hackathon.entity.Team;
+import com.hackathon.entity.TeamInvitation;
 import com.hackathon.security.CustomUserDetails;
 
 import java.util.List;
@@ -16,7 +17,9 @@ public interface TeamService {
 
     String updateInfo(CustomUserDetails userDetails, String teamName);
 
-    void acceptInvite(Notification notification, CustomUserDetails userDetails);
+    void acceptTeamDraftInvite(TeamInvitation invitation, CustomUserDetails userDetails);
+
+    void acceptOfficialInvite(TeamInvitation invitation, CustomUserDetails userDetails);
 
     void leaveTeam(CustomUserDetails userDetails, Integer teamId);
 
@@ -24,13 +27,13 @@ public interface TeamService {
 
     void acceptGeneralInvite(Long notificationId, CustomUserDetails userDetails);
 
-    void acceptLeaderTransfer(Notification notification, CustomUserDetails userDetails);
+    void acceptLeaderTransfer(TeamInvitation invitation, CustomUserDetails userDetails);
 
     void rejectGeneralInvite(Long notificationId, CustomUserDetails userDetails);
 
-    void rejectLeaderTransferInvite(Notification notification, CustomUserDetails userDetails);
+    void rejectLeaderTransferInvite(TeamInvitation invitation, CustomUserDetails userDetails);
 
-    void rejectTeamInvite(Notification notification, CustomUserDetails userDetails);
+    void rejectTeamInvite(TeamInvitation teamInvitation,CustomUserDetails userDetails);
 
     TeamDetailResponse getTeamMember(Integer teamId, CustomUserDetails userDetails);
 

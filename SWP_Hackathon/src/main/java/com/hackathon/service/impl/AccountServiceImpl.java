@@ -42,7 +42,7 @@ public class AccountServiceImpl implements AccountService {
         Student accStudent = studentRepository.findById(studentId)
                 .orElseThrow(() -> new BadRequestException("Tài khoản này không phải tài khoản của sinh viên."));
 
-        //2. Lấy thông tin chung của student
+        //2. Lấmy thông tin chung của student
         StudentHistoryResponse historyResponse = new StudentHistoryResponse();
         historyResponse.setStudentName(accStudent.getStudentName());
         historyResponse.setUniversityName(accStudent.getUniversityName());
