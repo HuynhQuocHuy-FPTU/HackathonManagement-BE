@@ -104,21 +104,21 @@ public class DataInitializer implements CommandLineRunner {
         String password =
                 passwordEncoder.encode("123456");
 
-//        createAdmins(password);
-//        createEventCoordinators(password);
-//        createExperts(password);
-//        createCriteriaSets();
-////
-//        createStudents(password);
-//        Team[] teams = createTeams();
+        createAdmins(password);
+        createEventCoordinators(password);
+        createExperts(password);
+        createCriteriaSets();
+//
+        createStudents(password);
+        Team[] teams = createTeams();
 //
 //        registerTeamsForEvent(
 //                TARGET_EVENT_ID
 //        );
-
-        submitForParticipantsWithoutSubmission(
-                TARGET_ROUND_ID
-        );
+//
+//        submitForParticipantsWithoutSubmission(
+//                TARGET_ROUND_ID
+//        );
 
 //
 //        gradeSubmissionsByAssignments(

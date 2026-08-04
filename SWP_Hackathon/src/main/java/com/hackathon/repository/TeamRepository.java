@@ -16,7 +16,7 @@ import java.util.Optional;
 @Repository
 public interface TeamRepository extends JpaRepository<Team, Integer> {
     boolean existsByTeamNameIgnoreCase(String teamName);
-
+    Optional<Team>findByTeamNameIgnoreCase(String teamName);
     boolean existsByTeamNameIgnoreCaseAndTeamIdNot(String name, Integer teamId);
 
     //     Tìm những team mà expert được phân công quản lý

@@ -27,6 +27,7 @@ public class Notification {
     @Column(name = "Created_At")
     private LocalDateTime createdAt;
 
+
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private NotificationType type;
@@ -71,5 +72,12 @@ public class Notification {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "Round_ID")
     private Round round;
+
+    // 1 team draft - n  noti
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "Team_Draft_ID")
+    private TeamDraft teamDraft;
+
+
 
 }
