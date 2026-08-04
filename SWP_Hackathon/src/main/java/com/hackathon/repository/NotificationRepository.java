@@ -3,6 +3,7 @@ package com.hackathon.repository;
 import com.hackathon.entity.Account;
 import com.hackathon.entity.Notification;
 import com.hackathon.entity.Team;
+import com.hackathon.entity.TeamInvitation;
 import com.hackathon.entity.enums.InvitationStatus;
 import com.hackathon.entity.enums.NotiResponseStatus;
 import com.hackathon.entity.enums.NotificationType;
@@ -40,6 +41,10 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     void deleteByAccount_AccountIdAndType(Integer accountId, NotificationType type);
 
     void deleteByTeam(Team team);
-    List<Notification>findByTeamAndTypeAndStatus(Team team , NotificationType type, InvitationStatus status);
-    List<Notification> findByAccountAndTypeAndStatus(Account account,NotificationType type, InvitationStatus status);
+
+    List<Notification> findByTeamAndTypeAndStatus(Team team, NotificationType type, InvitationStatus status);
+
+    List<Notification> findByAccountAndTypeAndStatus(Account account, NotificationType type, InvitationStatus status);
+
+    Optional<Notification> findByTeamInvitation(TeamInvitation teamInvitation);
 }
