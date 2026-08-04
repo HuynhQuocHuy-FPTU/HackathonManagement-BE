@@ -11,7 +11,7 @@ import com.hackathon.repository.EvaluationAuditLogRepository;
 import com.hackathon.repository.EventCoordinatorRepository;
 import com.hackathon.repository.EvaluationRepository;
 import com.hackathon.repository.CategoryRoundRepository;
-import com.hackathon.service.AuditService;
+import com.hackathon.service.impl.AuditService;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;

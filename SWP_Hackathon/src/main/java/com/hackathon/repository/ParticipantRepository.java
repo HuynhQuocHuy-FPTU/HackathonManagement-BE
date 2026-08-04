@@ -48,10 +48,12 @@ public interface ParticipantRepository extends JpaRepository<TeamParticipant, In
             "JOIN tp.registration r " +
             "JOIN r.team t " +
             "WHERE t.teamId = :teamId " +
+            "AND tp.categoryRound.round.roundId = :roundId " +
             "AND r.status = RegistrationStatus.APPROVED " +
-            "AND tp.status = ParticipantStatus.RE_EVALUATING"
-            )
-    TeamParticipant findByTeamId(@Param("teamId") Integer teamId);
+            "AND tp.status = ParticipantStatus.RE_EVALUATING")
+    Optional<TeamParticipant> findReEvaluatingParticipant(
+            @Param("teamId") Integer teamId,
+            @Param("roundId") Integer roundId);
 
     @Query("SELECT tp FROM TeamParticipant tp " +
             "JOIN tp.registration r " +

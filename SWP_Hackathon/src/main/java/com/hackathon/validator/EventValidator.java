@@ -7,7 +7,7 @@ import com.hackathon.entity.enums.EventStatus;
 import com.hackathon.entity.enums.SystemConfigKey;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.HackathonEventRepository;
-import com.hackathon.service.systemConfig.SystemConfigService;
+import com.hackathon.service.SystemConfigService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

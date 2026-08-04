@@ -162,6 +162,89 @@ public class TeamController {
         return ResponseEntity.ok(ApiResponse.success(response, "Admin xem danh sách các team tham gia cuộc thi thành công"));
     }
 
+    @GetMapping("/active")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<List<TeamActiveResponse>>> getActiveTeams() {
+        List<TeamActiveResponse> response = teamService.getActiveTeams();
+        return ResponseEntity.ok(ApiResponse.success(
+                response,
+                "Lấy danh sách team đang hoạt động thành công"
+        ));
+    }
+
+    @PostMapping("/{teamId}/join-requests")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<TeamJoinResponse>> sendJoinRequest(
+            @PathVariable Integer teamId,
+            @Valid @RequestBody TeamJoinRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        TeamJoinResponse response = teamService.sendJoinRequest(
+                teamId,
+                userDetails,
+                request
+        );
+        return ResponseEntity.ok(ApiResponse.success(
+                response,
+                "Gửi yêu cầu tham gia team thành công"
+        ));
+    }
+
+    @GetMapping("/join-requests")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<List<TeamJoinResponse>>> getJoinRequestsForLeader(
+            @RequestParam(defaultValue = "PENDING") com.hackathon.entity.enums.InvitationStatus status,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        List<TeamJoinResponse> response = teamService.getPendingJoinRequests(
+                userDetails,
+                status
+        );
+        return ResponseEntity.ok(ApiResponse.success(
+                response,
+                "Lấy danh sách yêu cầu tham gia team thành công"
+        ));
+    }
+
+    @GetMapping("/join-requests/me")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<List<TeamJoinResponse>>> getMyJoinRequests(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        List<TeamJoinResponse> response =
+                teamService.getTeamJoinRequestForMember(userDetails);
+        return ResponseEntity.ok(ApiResponse.success(
+                response,
+                "Lấy danh sách yêu cầu đã gửi thành công"
+        ));
+    }
+
+    @PutMapping("/join-requests/{requestId}/accept")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<Void>> acceptJoinRequest(
+            @PathVariable Long requestId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        teamService.acceptJoinRequest(requestId, userDetails);
+        return ResponseEntity.ok(ApiResponse.success(
+                null,
+                "Chấp nhận yêu cầu tham gia team thành công"
+        ));
+    }
+
+    @PutMapping("/join-requests/{requestId}/reject")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<Void>> rejectJoinRequest(
+            @PathVariable Long requestId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        teamService.rejectJoinRequest(requestId, userDetails);
+        return ResponseEntity.ok(ApiResponse.success(
+                null,
+                "Từ chối yêu cầu tham gia team thành công"
+        ));
+    }
+
 
     // View Team of Leader về hạng mục thi ở từng vòng
     @PreAuthorize("hasRole('STUDENT')")
@@ -171,8 +254,5 @@ public class TeamController {
         TeamCompetitionResponse response = teamService.getTeamCompetition(userDetails);
         return ResponseEntity.ok(ApiResponse.success(response, "Team Leader xem hạng mục thi đấu thành công."));
     }
-
-
-
 
 }

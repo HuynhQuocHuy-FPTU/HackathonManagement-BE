@@ -8,7 +8,7 @@ import com.hackathon.entity.enums.NotificationType;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.NotificationService;
-import com.hackathon.service.teamRequest.TeamRequestService;
+import com.hackathon.service.TeamRequestService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
