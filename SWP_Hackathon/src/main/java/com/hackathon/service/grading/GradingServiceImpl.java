@@ -217,8 +217,11 @@ public class GradingServiceImpl implements GradingService {
         // 5. Lấy thông tin thời gian Deadline cấu hình
         LocalDateTime deadline = deadlinePolicy.getGradingDeadline(round);
 
+        // Kéo danh sách hội đồng và truyền vào Mapper
+        List<Evaluation> otherEvaluations = getOtherEvaluations(submissionId, expertAssign.getAssignId());
+
         // 6. Map ra DTO trả về cho Client tái hiện giao diện
-        return evaluationMapper.toResponse(evaluation, isEditable, deadline);
+        return evaluationMapper.toResponse(evaluation, isEditable, deadline, otherEvaluations);
     }
 
 
@@ -332,11 +335,12 @@ public class GradingServiceImpl implements GradingService {
                 ? round.getResolveAppealDeadline()
                 : deadlinePolicy.getGradingDeadline(round);
 
+        // Kéo danh sách hội đồng và truyền vào Mapper
+        List<Evaluation> otherEvaluations = getOtherEvaluations(submissionId, expertAssign.getAssignId());
+
         // 12. CHUYỂN ĐỔI DỮ LIỆU ĐẦU RA VÀ PHẢN HỒI PRESENTATION TẦNG
-        return evaluationMapper.toResponse(evaluation, true, deadline);
+        return evaluationMapper.toResponse(evaluation, true, deadline, otherEvaluations);
     }
-
-
 
     private EvaluationStatus determineNextStatus(
             Evaluation evaluation,
@@ -405,6 +409,14 @@ public class GradingServiceImpl implements GradingService {
 
         appealRequest.setResponseAt(LocalDateTime.now());
         teamRequestRepository.save(appealRequest);
+    }
+
+    /**
+     * Hàm Helper: Lấy danh sách bài chấm của Hội đồng (Trừ bản thân)
+     */
+    private List<Evaluation> getOtherEvaluations(Integer submissionId, Integer currentAssignId) {
+        List<EvaluationStatus> validStatuses = List.of(EvaluationStatus.GRADED, EvaluationStatus.RE_EVALUATION);
+        return evaluationRepository.findOtherBoardEvaluations(submissionId, currentAssignId, validStatuses);
     }
 
 }

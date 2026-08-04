@@ -73,4 +73,18 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Integer>
     long countReviewsByStatuses(@Param("expertId") Integer expertId,
                                 @Param("eventId") Integer eventId, @Param("statuses") List<EvaluationStatus> statuses,
                                 @Param("roles") List<com.hackathon.entity.enums.ExpertRole> roles);
+
+    /**
+     * Lấy danh sách điểm của các giám khảo khác trong hội đồng để hiệu chuẩn
+     */
+    @Query("SELECT e FROM Evaluation e " +
+            "WHERE e.submission.submissionId = :submissionId " +
+            "AND e.expertAssign.assignId != :currentAssignId " +
+            "AND e.status IN :validStatuses")
+    List<Evaluation> findOtherBoardEvaluations(
+            @Param("submissionId") Integer submissionId,
+            @Param("currentAssignId") Integer currentAssignId,
+            @Param("validStatuses") List<EvaluationStatus> validStatuses
+    );
+
 }
