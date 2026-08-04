@@ -8,8 +8,8 @@ import com.hackathon.dto.admin.UpdateAccountStatusRequest;
 import com.hackathon.entity.enums.SystemConfigKey;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
-import com.hackathon.service.AuditService;
-import com.hackathon.service.systemConfig.SystemConfigService;
+import com.hackathon.service.impl.AuditService;
+import com.hackathon.service.SystemConfigService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,7 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import com.hackathon.service.admin.AdminService;
+import com.hackathon.service.AdminService;
 
 import java.util.List;
 

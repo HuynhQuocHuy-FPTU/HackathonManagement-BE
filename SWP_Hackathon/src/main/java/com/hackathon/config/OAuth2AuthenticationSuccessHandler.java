@@ -3,7 +3,7 @@ package com.hackathon.config;
 import com.hackathon.dto.auth.AuthResponse;
 
 import com.hackathon.repository.AccountRepository;
-import com.hackathon.service.auth.AuthService;
+import com.hackathon.service.AuthService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

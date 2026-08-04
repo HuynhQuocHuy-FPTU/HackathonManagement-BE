@@ -30,7 +30,7 @@ public class DataInitializer implements CommandLineRunner {
     private static final int ADMIN_COUNT = 2;
     private static final int COORDINATOR_COUNT = 3;
     private static final int EXPERT_COUNT = 6;
-    private static final int STUDENT_COUNT = 30;
+    private static final int STUDENT_COUNT = 35;
     private static final int TEAM_COUNT = 10;
     private static final int MEMBER_PER_TEAM = 3;
 

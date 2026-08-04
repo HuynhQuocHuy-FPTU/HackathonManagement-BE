@@ -4,7 +4,7 @@ import com.hackathon.dto.event.PrizeRequestDTO;
 import com.hackathon.dto.event.PrizeResponseDTO;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
-import com.hackathon.service.prize.PrizeServiceImpl;
+import com.hackathon.service.impl.PrizeServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

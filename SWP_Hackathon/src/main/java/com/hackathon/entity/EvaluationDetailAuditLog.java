@@ -26,10 +26,10 @@ public class EvaluationDetailAuditLog {
     @Column(name = "Evaluation_Detail_ID")
     private Integer evaluationDetailId;
 
-    @Column(name = "Criteria_ID", nullable = false)
+    @Column(name = "Criteria_ID", nullable = true)
     private Integer criteriaId;
 
-    @Column(name = "Criteria_Name", nullable = false, columnDefinition = "NVARCHAR(255)")
+    @Column(name = "Criteria_Name", nullable = true, columnDefinition = "NVARCHAR(255)")
     private String criteriaName;
 
     @Column(name = "Score", nullable = false, precision = 10, scale = 2)

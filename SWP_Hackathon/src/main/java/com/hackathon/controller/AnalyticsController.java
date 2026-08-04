@@ -2,7 +2,7 @@ package com.hackathon.controller;
 
 import com.hackathon.dto.analytics.MetricResultDTO;
 import com.hackathon.dto.analytics.ReliabilityResultDTO;
-import com.hackathon.service.analytics.AnalyticsService;
+import com.hackathon.service.AnalyticsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;

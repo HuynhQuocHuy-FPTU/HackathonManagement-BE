@@ -3,7 +3,7 @@ package com.hackathon.controller;
 import com.hackathon.dto.role.RolePermissionResponse;
 import com.hackathon.dto.role.UpdateRolePermissionRequest;
 import com.hackathon.exception.ApiResponse;
-import com.hackathon.service.role.RolePermissionService;
+import com.hackathon.service.RolePermissionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

@@ -10,7 +10,7 @@ import com.hackathon.repository.RoundRepository;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.CategoryRoundService;
 import com.hackathon.service.ExpertAssignService;
-import com.hackathon.service.submission.SubmissionServiceImpl;
+import com.hackathon.service.impl.SubmissionServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

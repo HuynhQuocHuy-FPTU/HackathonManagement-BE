@@ -97,5 +97,10 @@ public interface TeamRepository extends JpaRepository<Team, Integer> {
     Team findCurrentTeamByStudentAndStatus(
             @Param("studentId") Integer studentId,
             @Param("status") List<TeamStatus> status);
+
+    List<Team> findByStatusAndTeamSizeLessThanOrderByCreateAtDesc(
+            TeamStatus status,
+            Integer maxTeamSize
+    );
 }
 
