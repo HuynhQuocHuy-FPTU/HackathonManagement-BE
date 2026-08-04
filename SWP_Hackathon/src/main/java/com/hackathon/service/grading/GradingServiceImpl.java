@@ -149,7 +149,8 @@ public class GradingServiceImpl implements GradingService {
         LocalDateTime deadline = deadlinePolicy.getGradingDeadline(round);
 
         // 6. Map ra DTO trả về cho Client tái hiện giao diện
-        return evaluationMapper.toResponse(evaluation, isEditable, deadline);
+        List<Evaluation> otherEvaluations = getOtherEvaluations(submissionId, expertAssign.getAssignId());
+        return evaluationMapper.toResponse(evaluation, isEditable, deadline, otherEvaluations);
     }
 
 
@@ -293,7 +294,8 @@ public class GradingServiceImpl implements GradingService {
         LocalDateTime deadline = deadlinePolicy.getGradingDeadline(round);
 
         // 12. CHUYỂN ĐỔI DỮ LIỆU ĐẦU RA VÀ PHẢN HỒI PRESENTATION TẦNG
-        return evaluationMapper.toResponse(evaluation, true, deadline);
+        List<Evaluation> otherEvaluations = getOtherEvaluations(submissionId, expertAssign.getAssignId());
+        return evaluationMapper.toResponse(evaluation, true, deadline, otherEvaluations);
     }
 
     // Chấm điểm lại khi bị event coordinator từ chối
@@ -417,7 +419,8 @@ public class GradingServiceImpl implements GradingService {
         }
 
         // 12. CHUYỂN ĐỔI DỮ LIỆU ĐẦU RA VÀ PHẢN HỒI PRESENTATION TẦNG
-        return evaluationMapper.toResponse(evaluation, false, null);
+        List<Evaluation> otherEvaluations = getOtherEvaluations(submissionId, expertAssign.getAssignId());
+        return evaluationMapper.toResponse(evaluation, false, null, otherEvaluations);
     }
 
     // Thực hiện chấm điểm lại khi nhận được yêu cầu của Expert
@@ -588,6 +591,18 @@ public class GradingServiceImpl implements GradingService {
             );
         }
 
-        return evaluationMapper.toResponse(evaluation, false, null);
+        List<Evaluation> otherEvaluations = getOtherEvaluations(finalSubmission.getSubmissionId(), expertAssign.getAssignId());
+        return evaluationMapper.toResponse(evaluation, false, null, otherEvaluations);
+    }
+
+    /**
+     * HÀM HELPER NỘI BỘ: Truy vấn danh sách bài chấm của Hội đồng (Trừ bản thân).
+     */
+    private List<Evaluation> getOtherEvaluations(Integer submissionId, Integer currentAssignId) {
+        // Khai báo danh sách các trạng thái hợp lệ
+        List<EvaluationStatus> validStatuses = List.of(EvaluationStatus.GRADED, EvaluationStatus.RE_EVALUATION);
+
+        // Gọi thẳng xuống DB để lấy đúng dữ liệu cần thiết
+        return evaluationRepository.findOtherBoardEvaluations(submissionId, currentAssignId, validStatuses);
     }
 }
