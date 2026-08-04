@@ -32,7 +32,7 @@ public class StatusSchedulerService {
     private final RegistrationRepository registrationRepository;
     private final EventService eventService;
 
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRate = 5000)
     public void finalizeRoundsAtEndTime() {
         LocalDateTime now = LocalDateTime.now();
         List<Round> rounds = roundRepository.findByEndTimeLessThanEqualAndAdvancementProcessedAtIsNull(now);
@@ -56,7 +56,7 @@ public class StatusSchedulerService {
         }
     }
 
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRate = 5000)
     public void checkAndCancelEventsBelowMinimumTeams() {
         LocalDateTime now = LocalDateTime.now();
         List<HackathonEvent> events = eventRepository.findByStatusInAndRegistrationDeadlineLessThanEqual(List.of(EventStatus.REGISTRATION_CLOSED),now);
@@ -98,7 +98,7 @@ public class StatusSchedulerService {
 
 
 
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRate = 5000)
     public void autoCalculateScores() {
         LocalDateTime now = LocalDateTime.now();
         List<Round> rounds = roundRepository.findByEvaluationDeadlineLessThanEqualAndScoringProcessedAtIsNull(now);
@@ -179,7 +179,7 @@ public class StatusSchedulerService {
 //        }
 //    }
 
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRate = 5000)
     @Transactional
     public void updateEventStatusAuto() {
         List<EventStatus> excluded = List.of(
@@ -208,7 +208,7 @@ public class StatusSchedulerService {
         }
     }
 
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRate = 5000)
     @Transactional
     public void updateRoundStatusAuto() {
         List<EventStatus> eventStatuses = List.of(
@@ -233,7 +233,7 @@ public class StatusSchedulerService {
         }
     }
 
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRate = 5000)
     @Transactional
     public void updateWorkshopStatusAuto() {
         List<EventStatus> excluded = List.of(
