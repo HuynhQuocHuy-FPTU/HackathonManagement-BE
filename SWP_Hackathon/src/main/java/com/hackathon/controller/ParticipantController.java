@@ -4,7 +4,7 @@ import com.hackathon.dto.participant.ExpertAssignedGroupDTO;
 import com.hackathon.dto.participant.CurrentParticipantDTO;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
-import com.hackathon.service.ParticipantServiceImpl;
+import com.hackathon.service.impl.ParticipantServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

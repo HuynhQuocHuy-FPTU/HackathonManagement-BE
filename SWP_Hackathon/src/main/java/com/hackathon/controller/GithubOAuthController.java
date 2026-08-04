@@ -1,7 +1,7 @@
 package com.hackathon.controller;
 
 import com.hackathon.security.CustomUserDetails;
-import com.hackathon.service.GithubOAuthService;
+import com.hackathon.service.impl.GithubOAuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;

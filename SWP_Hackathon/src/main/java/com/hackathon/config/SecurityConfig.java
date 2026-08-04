@@ -4,7 +4,7 @@ package com.hackathon.config;
 import com.hackathon.security.CustomUserDetailsService;
 import com.hackathon.security.JwtAuthFilter;
 
-import com.hackathon.service.auth.AuthService;
+import com.hackathon.service.AuthService;
 import com.hackathon.service.auth.CustomOAuth2UserService;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.Components;

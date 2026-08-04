@@ -13,6 +13,8 @@ import java.util.List;
 @Repository
 public interface SubmissionRepository extends JpaRepository<Submission, Integer> {
 
+    List<Submission> findByTeamParticipant_IdAndIsFinalTrue(Integer teamParticipantId);
+
     @Query("SELECT DISTINCT s FROM Submission s " +
             "JOIN TeamParticipant tp ON s.teamParticipant.id = tp.id " +
             "JOIN CategoryRound cr ON tp.categoryRound.categoryRoundId = cr.categoryRoundId " +

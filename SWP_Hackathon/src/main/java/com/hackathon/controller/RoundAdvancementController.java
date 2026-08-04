@@ -4,7 +4,7 @@ import com.hackathon.dto.team.CategoryAdvancementResultDTO;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.ParticipantService;
-import com.hackathon.service.RoundAdvancementService;
+import com.hackathon.service.impl.RoundAdvancementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

@@ -1,0 +1,206 @@
+package com.hackathon.service.impl;
+
+import com.hackathon.email.MailRequest;
+import com.hackathon.service.EmailService;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.thymeleaf.spring6.SpringTemplateEngine;
+import org.thymeleaf.context.Context;
+
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class EmailServiceImpl implements EmailService {
+
+    private final JavaMailSender mailSender;
+    private final SpringTemplateEngine templateEngine;
+
+    @Value("${spring.mail.username:}")
+    private String mailUsername;
+
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
+
+    @Value("${app.mail.dev-log-link:true}")
+    private boolean devLogLink;
+
+    @Override
+    @Async
+    public void sendVerificationEmail(String toEmail, String token) {
+        String verifyUrl = frontendUrl + "/verify-account?token=" + token;
+        String subject = "Xác thực tài khoản Hackathon";
+        String body = """
+                Xin chào,
+                
+                Vui lòng nhấn vào liên kết sau để xác thực email và kích hoạt tài khoản:
+                %s
+                
+                Liên kết có hiệu lực trong 24 giờ.
+                
+                Trân trọng,
+                Ban tổ chức Hackathon
+                """.formatted(verifyUrl);
+
+        if (!StringUtils.hasText(mailUsername)) {
+            if (devLogLink) {
+                log.info("=== DEV: Verification link for {} ===\n{}", toEmail, verifyUrl);
+            }
+            return;
+        }
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(mailUsername);
+        message.setTo(toEmail);
+        message.setSubject(subject);
+        message.setText(body);
+        mailSender.send(message);
+    }
+
+    @Override
+    @Async
+    public void sendForgotPasswordEmail(String toEmail, String otp) {
+        String resetUrl = frontendUrl + "/reset-password";
+        String subject = "[Hackathon System] Yêu cầu đặt lại mật khẩu";
+        String body = """
+                Xin chào,
+                
+                Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản của mình.
+                Vui lòng sử dụng mã xác thực sau để hoàn thành quá trình đặt lại mật khẩu:
+                %s
+                
+                Mã xác thực có hiệu lực trong 15 phút.
+                
+                Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.
+                
+                Trân trọng,
+                Ban tổ chức Hackathon
+                """.formatted(otp);
+
+        if (!StringUtils.hasText(mailUsername)) {
+            if (devLogLink) {
+                log.info("=== DEV: Forgot password link for {} ===\n{}", toEmail, resetUrl);
+            }
+            return;
+        }
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(mailUsername);
+        message.setTo(toEmail);
+        message.setSubject(subject);
+        message.setText(body);
+        mailSender.send(message);
+    }
+
+    @Override
+    @Async
+    public void sendGeneralEmail(String toEmail, String tile, String emailMessage) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(mailUsername);
+        message.setTo(toEmail);
+        message.setSubject("FPT HACKATHON - " + tile);
+        message.setText(emailMessage);
+        mailSender.send(message);
+    }
+
+    @Override
+    @Async
+    public void sendNotifyToExpertReEvaluation(String toEmail, String teamName) {
+
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(mailUsername);
+        message.setTo(toEmail);
+        message.setSubject("FPT HACKATHON - Yêu cầu chấm lại bài dự thi theo đơn phúc khảo");
+
+        message.setText("""
+            Kính gửi Quý Ban Giám khảo,
+
+            Ban Tổ chức trân trọng thông báo rằng đơn phúc khảo của đội %s đã được xem xét và chấp thuận.
+
+            Theo đó, Ban Tổ chức kính đề nghị Quý Ban Giám khảo tiến hành xem xét và chấm lại bài dự thi của đội theo quy định của cuộc thi.
+
+            Kính mong Quý Ban Giám khảo hoàn thành việc chấm lại trong thời gian quy định để Ban Tổ chức tổng hợp và công bố kết quả.
+
+            Trân trọng,
+
+            Ban Tổ chức FPT Hackathon
+            """.formatted(teamName));
+
+        mailSender.send(message);
+
+    }
+
+    @Override
+    @Async
+    public void sendTemporaryPasswordEmail(String toEmail, String tempPassword, String fullName) {
+        String loginUrl = frontendUrl + "/login";
+        String subject = "[Hackathon System] Thông tin cấp tài khoản thành viên mới";
+        String body = """
+                Xin chào %s,
+                
+                Bạn đã được Ban tổ chức cấp tài khoản thành viên trên hệ thống quản lý Hackathon.
+                Dưới đây là thông tin đăng nhập của bạn:
+                - Đường dẫn hệ thống: %s
+                - Tài khoản (Email): %s
+                - Mật khẩu tạm thời: %s
+                
+                LƯU Ý BẢO MẬT: 
+                Để đảm bảo an toàn, bạn bắt buộc phải thực hiện đổi mật khẩu trong lần đầu tiên đăng nhập thành công vào hệ thống.
+                
+                Trân trọng,
+                Ban tổ chức giải đấu.
+                """.formatted(fullName, loginUrl, toEmail, tempPassword);
+
+        if (!StringUtils.hasText(mailUsername)) {
+            if (devLogLink) {
+                log.info("=== DEV: Temporary password for {} ===\nPassword: {}\nLogin URL: {}", toEmail, tempPassword, loginUrl);
+            }
+            return;
+        }
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(mailUsername);
+        message.setTo(toEmail);
+        message.setSubject(subject);
+        message.setText(body);
+        mailSender.send(message);
+    }
+
+
+    @Override
+    @Async
+    public void sendEmail(MailRequest request, String templateName) throws MessagingException {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "utf-8");
+
+            Context context = new Context();
+            context.setVariables(request.getProps());
+
+            String html = templateEngine.process(templateName, context);
+
+            helper.setTo(request.getTo());
+            helper.setSubject(request.getSubject());
+            helper.setText(html, true);
+            mailSender.send(message);
+            System.out.println("Gửi Email thành công tới: " + request.getTo());
+
+        } catch (Exception e) {
+            System.out.println("Gửi Email thất bại tới: " + request.getTo() + e.getMessage());
+            throw new MessagingException("Lỗi gửi email: " + e.getMessage(), e);
+
+        }
+    }
+
+}
