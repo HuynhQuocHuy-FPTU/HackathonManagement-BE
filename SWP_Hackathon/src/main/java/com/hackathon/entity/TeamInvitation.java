@@ -34,6 +34,9 @@ public class TeamInvitation {
     @Column(name = "Email", columnDefinition = "NVARCHAR(MAX)")
     private String email;
 
+    @Column(columnDefinition = "NVARCHAR(500)")
+    private String reason;
+
     @ManyToOne
     @JoinColumn(name = "Team_ID", nullable = true)
     private Team team;

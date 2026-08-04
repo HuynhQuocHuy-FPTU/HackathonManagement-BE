@@ -5,6 +5,7 @@ import com.hackathon.entity.Team;
 import com.hackathon.entity.TeamDraft;
 import com.hackathon.entity.TeamInvitation;
 import com.hackathon.entity.enums.InvitationStatus;
+import com.hackathon.entity.enums.InvitationType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -21,7 +22,16 @@ public interface TeamInvitationRepository extends JpaRepository<TeamInvitation, 
 
     List<TeamInvitation> findByTeam(Team team);
     long countByTeamDraftAndStatus(TeamDraft teamDraft, InvitationStatus status);
-//    @Modifying
-//    @Query("UPDATE TeamInvitation t SET t.account = :account WHERE t.teamInvitationId = :id")
-//    void updateAccountForInvitation(@Param("id") Long invitationId, @Param("account") Account account);
+
+    boolean existsByTeamAndAccountAndStatusAndType(Team team, Account account, InvitationStatus status, InvitationType type);
+
+    List<TeamInvitation> findByTypeAndStatusAndTeam(InvitationType type, InvitationStatus status, Team team);
+
+    List<TeamInvitation> findByAccount(Account account);
+
+    List<TeamInvitation> findByAccountAndTypeOrderByCreatedAtDesc(
+            Account account,
+            InvitationType type
+    );
+
 }
