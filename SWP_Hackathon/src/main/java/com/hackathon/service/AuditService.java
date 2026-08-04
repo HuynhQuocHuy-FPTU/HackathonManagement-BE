@@ -26,7 +26,6 @@ public class AuditService {
     private final StudentRepository studentRepository;
     private final ExpertRepository expertRepository;
     private final ObjectMapper objectMapper;
-    private final AccountRepository accountRepository;
 
     public AuditLog saveLog(Account acc, AuditAction action, AuditEntityType entityType, Integer entityId, String description, String data) {
         String actorName = "SYSTEM";

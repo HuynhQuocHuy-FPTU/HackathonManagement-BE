@@ -208,7 +208,7 @@ public class SecurityConfig {
         DefaultOAuth2AuthorizationRequestResolver resolver =
                 new DefaultOAuth2AuthorizationRequestResolver(clientRegistrationRepository, "/oauth2/authorization");
 
-        // Bảo Spring Security: "Hãy nhớ lưu cái param tên là 'action' vào OAuth2 Request hộ tôi!"
+        // BSpring Security: "Hãy lưu cái param tên là 'action' vào OAuth2 Request
         resolver.setAuthorizationRequestCustomizer(customizer ->
                 customizer.additionalParameters(params -> {
                     ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
