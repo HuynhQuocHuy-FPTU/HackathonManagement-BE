@@ -358,7 +358,6 @@ public class TeamServiceImpl implements TeamService {
             }
             TeamInvitation invite = new TeamInvitation();
             invite.setAccount(memberAccount);
-//            invite.setTeam(officialTeam.getTeam());
             if (officialTeam != null) {
                 invite.setTeam(officialTeam.getTeam());
             } else {
@@ -683,13 +682,12 @@ public class TeamServiceImpl implements TeamService {
                 break;
 
             case LEADER_TRANSFER_REQUEST:
-//                this.acceptLeaderTransfer(invitation, userDetails);
+                this.acceptLeaderTransfer(invitation, userDetails);
                 break;
 
             default:
                 throw new BadRequestException("Loại thông báo không hợp lệ.");
         }
-        teamInvitationRepository.save(invitation);
 
     }
 
@@ -699,8 +697,6 @@ public class TeamServiceImpl implements TeamService {
     public void acceptTeamDraftInvite(TeamInvitation invitation, CustomUserDetails userDetails) {
         //1. Tim thong bao or loi moi tuong ung
         //2. Kiem tra team gui loi moi con ton tai khong
-
-
         //3.Lấy tài khoản nhận thông báo trực tiếp từ bản ghi Notification
         Account inviteAccount = userDetails.getAccount();
         if (inviteAccount == null || inviteAccount.getStudent() == null) {
@@ -755,7 +751,6 @@ public class TeamServiceImpl implements TeamService {
         teamDraftRepository.save(teamDraft);
 
         // 6. Check so luong thanh vien hien tai cua nhom
-//        int currentTeamSize = teamDraft.getTeamSize();
         int maxTeam = systemConfigService.getIntConfig(SystemConfigKey.MAX_TEAM_SIZE);
         int minTeam = systemConfigService.getIntConfig(SystemConfigKey.MIN_TEAM_SIZE);
 
@@ -768,7 +763,7 @@ public class TeamServiceImpl implements TeamService {
             } else {
                 Team newTeam = new Team();
                 newTeam.setTeamName(teamDraft.getTeamName().trim());
-                newTeam.setStatus(TeamStatus.DRAFT);
+                newTeam.setStatus(TeamStatus.ACTIVE);
                 newTeam.setTeamSize(currentTeamSize);
                 saveTeam = teamRepository.save(newTeam);
 
@@ -797,7 +792,8 @@ public class TeamServiceImpl implements TeamService {
         }
 
         // Xóa TeamDraft vì đã chính thức lên Team
-        teamDraft.setStatus(TeamStatus.OFFICIAL); // Hoặc tên hằng số trạng thái tương ứng trong Enum của bạn
+
+        teamDraft.setStatus(TeamStatus.OFFICIAL);
         teamDraftRepository.save(teamDraft);
 
         if (currentTeamSize >= maxTeam) {
@@ -813,7 +809,7 @@ public class TeamServiceImpl implements TeamService {
 
 
     @Override
-    @Transactional // Khong roll Back khi dinh loi xu ly tb hong
+    @Transactional
     public void acceptLeaderTransfer(TeamInvitation invitation, CustomUserDetails userDetails) {
         //1. Tim tb hoac loi moi tuong ung
         //2. Kiem tra Team loi moi con ton tai khong
@@ -828,10 +824,7 @@ public class TeamServiceImpl implements TeamService {
         int expireDays = systemConfigService.getIntConfig(SystemConfigKey.INVITATION_EXPIRE_DAYS);
         LocalDateTime expiredAt = invitation.getCreatedAt().plusDays(expireDays);
         if (LocalDateTime.now().isAfter(expiredAt)) {
-            // Neu loi moi het han , thi vo hieu hoa loi moi(cap nhat trang thai thong bao)
-//            notification.setTitle("EXPIRED. Lời mời tham gia : " + team.getTeamName() + " hết hạn.");
-//            notification.setMessage("Lời mời này có thời hạn trong vòng " + expireDays + " ngày");
-            invitation.setStatus(InvitationStatus.EXPIRED);
+       invitation.setStatus(InvitationStatus.EXPIRED);
             teamInvitationRepository.save(invitation);
             throw new BadRequestException("Lời mời tham gia của bạn hết hạn");
         }
@@ -853,10 +846,7 @@ public class TeamServiceImpl implements TeamService {
         newLeader.setIsLeader(true);
         teamMemberRepository.save(currentLeader);
         teamMemberRepository.save(newLeader);
-//        notification.setTitle("TRANSFER APPROVED. Bạn đã là Leader của Team: " + team.getTeamName());
-//        notification.setMessage("Bạn đã chấp nhận lời mời và chính thức trở thành Trưởng nhóm.");
-// notification.setResponseStatus(NotiResponseStatus.NONE);
-
+//
         invitation.setStatus(InvitationStatus.ACCEPTED);
         teamInvitationRepository.save(invitation);
 
@@ -928,17 +918,10 @@ public class TeamServiceImpl implements TeamService {
         int expireDays = systemConfigService.getIntConfig(SystemConfigKey.INVITATION_EXPIRE_DAYS);
         LocalDateTime expiredAt = invitation.getCreatedAt().plusDays(expireDays);
         if (LocalDateTime.now().isAfter(expiredAt)) {
-            // Neu loi moi het han , thi vo hieu hoa loi moi(cap nhat trang thai thong bao)
-//            notification.setTitle("EXPIRED. Lời mời tham gia : " + team.getTeamName() + " hết hạn.");
-//            notification.setMessage("Lời mời này có thời hạn trong vòng " + expireDays + " ngày");
             invitation.setStatus(InvitationStatus.EXPIRED);
             teamInvitationRepository.save(invitation);
             throw new BadRequestException("Lời mời tham gia của bạn hết hạn");
         }
-        Student newLeaderStudent = inviteAccount.getStudent();
-//        notification.setTitle("TRANSFER REJECTED. Tôi từ chối làm Leader Team: " + team.getTeamName());
-//        notification.setMessage("Bạn đã từ chối lời mời chuyển quyền Leader.");
-        //        invitation.setActor(inviteAccount);
 
         invitation.setStatus(InvitationStatus.REJECTED);
 

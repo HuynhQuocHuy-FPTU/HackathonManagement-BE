@@ -5,6 +5,7 @@ public enum TeamStatus {
     DRAFT ,// vừa tạo, chưa đăng ký
     BUSY, // Đã đăng ký và đang tham gia cuộc thi
     FINISHED,// Đã hoàn thành cuộc thi,
-    OFFICIAL
+    OFFICIAL,
+    ACTIVE
 
 }
