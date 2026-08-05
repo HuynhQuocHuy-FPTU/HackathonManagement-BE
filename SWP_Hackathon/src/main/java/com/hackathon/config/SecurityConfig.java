@@ -84,7 +84,8 @@ public class SecurityConfig {
                                 "/api/events/public/**",
                                 "/api/github/**",
                                 "/api/ranking/rounds/*/topN",
-                                "/api/analytics/**"
+                                "/api/analytics/**",
+                                "/api/teams/active"
                         ).permitAll()
 
                         // all
