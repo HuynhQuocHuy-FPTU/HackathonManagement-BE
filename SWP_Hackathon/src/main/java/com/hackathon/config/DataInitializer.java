@@ -3,6 +3,7 @@ package com.hackathon.config;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.*;
 import com.hackathon.repository.*;
+import com.hackathon.service.grading.EvaluationAuditLogService;
 import com.hackathon.service.grading.support.ScoreCalculator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -81,6 +83,12 @@ public class DataInitializer implements CommandLineRunner {
 
     @Autowired
     private EvaluationRepository evaluationRepository;
+
+    @Autowired
+    private EvaluationAuditLogRepository evaluationAuditLogRepository;
+
+    @Autowired
+    private EvaluationAuditLogService evaluationAuditLogService;
 
     @Autowired
     private CriteriaSetRepository criteriaSetRepository;
@@ -509,7 +517,7 @@ public class DataInitializer implements CommandLineRunner {
                                     .teamSize(
                                             MEMBER_PER_TEAM
                                     )
-                                    .status(TeamStatus.DRAFT)
+                                    .status(TeamStatus.ACTIVE)
                                     .build()
                     ));
 
@@ -857,15 +865,18 @@ public class DataInitializer implements CommandLineRunner {
                 ExpertAssign assignment =
                         assignments.get(judgeOrder);
 
-                boolean alreadyGraded =
+                Optional<Evaluation> existingEvaluation =
                         evaluationRepository
                                 .findByExpertAssignIdAndSubmissionId(
                                         assignment.getAssignId(),
                                         submission.getSubmissionId()
-                                )
-                                .isPresent();
+                                );
 
-                if (alreadyGraded) {
+                if (existingEvaluation.isPresent()) {
+                    saveInitialAuditAttemptsIfMissing(
+                            existingEvaluation.get(),
+                            criteria
+                    );
                     skippedCount++;
                     continue;
                 }
@@ -956,7 +967,8 @@ public class DataInitializer implements CommandLineRunner {
         /*
          * Evaluation cascade ALL xuống EvaluationDetail.
          */
-        evaluationRepository.save(evaluation);
+        Evaluation savedEvaluation = evaluationRepository.save(evaluation);
+        saveInitialAuditAttemptsIfMissing(savedEvaluation, criteria);
 
         System.out.println(
                 submission.getTeam().getTeamName()
@@ -966,6 +978,32 @@ public class DataInitializer implements CommandLineRunner {
                         + " = "
                         + totalScore
         );
+    }
+
+    private void saveInitialAuditAttemptsIfMissing(
+            Evaluation evaluation,
+            List<EvaluationCriteria> criteria
+    ) {
+        if (evaluationAuditLogRepository
+                .countByEvaluation_EvaluationId(
+                        evaluation.getEvaluationId()) > 0) {
+            return;
+        }
+
+        Account judgeAccount = evaluation.getExpertAssign()
+                .getExpert()
+                .getAccount();
+
+        criteria.stream()
+                .map(EvaluationCriteria::getType)
+                .filter(type -> type != null)
+                .distinct()
+                .forEach(type -> evaluationAuditLogService.saveAttempt(
+                        judgeAccount,
+                        evaluation,
+                        type,
+                        false
+                ));
     }
 
     /**

@@ -45,7 +45,7 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
 
         Team currentTeam = teamRepository.findCurrentTeamByStudentAndStatus(
                 account.getStudent().getStudentId(),
-                List.of(TeamStatus.BUSY, TeamStatus.DRAFT, TeamStatus.PENDING)
+                List.of(TeamStatus.BUSY, TeamStatus.ACTIVE, TeamStatus.PENDING)
         );
         if (currentTeam == null) {
             throw new BadRequestException("Bạn không thuộc đội nào đang hoạt động.");

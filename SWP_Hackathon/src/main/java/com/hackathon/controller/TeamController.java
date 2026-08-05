@@ -163,7 +163,6 @@ public class TeamController {
     }
 
     @GetMapping("/active")
-    @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<List<TeamActiveResponse>>> getActiveTeams() {
         List<TeamActiveResponse> response = teamService.getActiveTeams();
         return ResponseEntity.ok(ApiResponse.success(

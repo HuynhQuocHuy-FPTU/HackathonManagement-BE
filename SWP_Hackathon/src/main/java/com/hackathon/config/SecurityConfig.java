@@ -82,6 +82,7 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
                                 "/api/events/public/**",
+                                "/api/teams/active",
                                 "/api/github/**",
                                 "/api/ranking/rounds/*/topN",
                                 "/api/analytics/**"
