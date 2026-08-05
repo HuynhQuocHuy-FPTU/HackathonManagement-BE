@@ -85,7 +85,8 @@ public class SecurityConfig {
                                 "/api/teams/active",
                                 "/api/github/**",
                                 "/api/ranking/rounds/*/topN",
-                                "/api/analytics/**"
+                                "/api/analytics/**",
+                                "/api/teams/active"
                         ).permitAll()
 
                         // all

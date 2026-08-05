@@ -78,6 +78,10 @@ public class Notification {
     @JoinColumn(name = "Team_Draft_ID")
     private TeamDraft teamDraft;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "Team_Invitation_ID")
+    private TeamInvitation teamInvitation;
+
 
 
 }

@@ -26,6 +26,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final RoundRepository roundRepository;
     private final EventCoordinatorRepository eventCoordinatorRepository;
     private final EmailService emailService;
+    private final TeamInvitationRepository teamInvitationRepository;
 
     @Transactional
     @Override
@@ -94,6 +95,8 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void createNotificationNoResponse(Account acc, Account actor, NotificationType type, NotificationChannel channel, String title, String message) {
+
+
         Notification notification = new Notification();
 
         notification.setAccount(acc);
@@ -104,7 +107,10 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setMessage(message);
         notification.setRead(false);
         notification.setCreatedAt(LocalDateTime.now());
-        notificationRepository.save(notification);
+//        notificationRepository.save(notification);
+        Notification saved = notificationRepository.save(notification);
+        System.out.println("Đã lưu thành công Notification ID: " + saved.getId());
+
     }
 
     public void createNotificationNoResponse(Account acc, Account actor, NotificationType type, NotificationChannel channel, String title, String message, Round round) {
@@ -661,6 +667,48 @@ public class NotificationServiceImpl implements NotificationService {
                     message
             );
         }
+    }
+
+    @Override
+    public void notifyInviteTeam(Account teamLeader, Account account, String message, Long id) {
+        TeamInvitation invitation = teamInvitationRepository.findById(id)
+                .orElse(null);
+        createNotificationNoResponse(
+                account,             // 1. acc: Người nhận thông báo (là thành viên được mời)
+                teamLeader,          // 2. actor: Người gửi/Leader thực hiện hành động
+                NotificationType.TEAM_INVITATION,
+                NotificationChannel.WEB,
+                "Lời mời tham gia đội thi", // 5. title: Tiêu đề thông báo
+                message,      // 6. message: Nội dung chi tiết
+                invitation
+        );
+    }
+
+    public void createNotificationNoResponse(
+            Account acc,
+            Account actor,
+            NotificationType type,
+            NotificationChannel channel,
+            String title,
+            String message,
+            TeamInvitation invitation) {
+
+        Notification notification = new Notification();
+
+        notification.setAccount(acc);
+        notification.setActor(actor);
+
+        notification.setType(type);
+        notification.setChannel(channel);
+        notification.setTitle(title);
+        notification.setMessage(message);
+
+
+        // lưu ID của lời mời
+        notification.setTeamInvitation(invitation);
+        notification.setCreatedAt(LocalDateTime.now());
+
+        notificationRepository.save(notification);
     }
 
     private NotificationWebResponse toResponse(Notification n) {

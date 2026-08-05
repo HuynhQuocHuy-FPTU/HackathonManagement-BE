@@ -33,5 +33,6 @@ public interface TeamInvitationRepository extends JpaRepository<TeamInvitation, 
             Account account,
             InvitationType type
     );
-
+    boolean existsByTeamDraftAndEmail(TeamDraft teamDraft, String email);
+    boolean existsByAccountAndStatusAndTeamDraftNot(Account account, InvitationStatus status, TeamDraft teamDraft);
 }
