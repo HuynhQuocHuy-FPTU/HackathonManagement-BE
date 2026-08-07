@@ -13,11 +13,8 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Hiện thực dịch vụ Phân tích dữ liệu (Analytics Service) cho mô hình Research-Based Learning (RBL).
- * Lớp này chịu trách nhiệm xử lý các thuật toán thống kê mô tả, đo lường độ tin cậy của bộ tiêu chí
- * và mã hóa ẩn danh dữ liệu nghiên cứu khoa học.
- */
+// Phân tích dữ liệu điểm để phục vụ thống kê, nghiên cứu và đánh giá độ tin cậy khi chấm thi.
+// Các kết quả xuất ra được tổng hợp hoặc ẩn danh để không làm lộ danh tính đội và giám khảo.
 @Service
 @RequiredArgsConstructor
 public class AnalyticsServiceImpl implements AnalyticsService {
@@ -25,28 +22,26 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     private final EvaluationDetailRepository evaluationDetailRepository;
     private final StudentRepository studentRepository;
 
-    // =========================================================================
-    // 0. SCOPE RESOLVER (BỘ ĐIỀU HƯỚNG PHẠM VI DỮ LIỆU)
-    // =========================================================================
-    /**
-     * Hàm helper private dùng chung để định tuyến câu query xuống DB dựa trên phạm vi (scope).
-     */
+    // Chọn câu truy vấn phù hợp với phạm vi dữ liệu mà người dùng yêu cầu.
     private List<RawScoreDTO> fetchDataByScope(String scope, Integer id) {
+        // Chuẩn hóa phạm vi thành chữ thường để việc so sánh không phụ thuộc cách nhập hoa hay thường.
         switch (scope.toLowerCase()) {
+            // Lấy điểm của toàn bộ sự kiện.
             case "event": return evaluationDetailRepository.fetchRawScoresByEventId(id);
+            // Lấy điểm trong một vòng thi.
             case "round": return evaluationDetailRepository.fetchRawScoresByRoundId(id);
+            // Lấy điểm trong một danh mục của vòng.
             case "category": return evaluationDetailRepository.fetchRawScoresByCategoryRoundId(id);
+            // Lấy điểm của một bài nộp cụ thể.
             case "submission": return evaluationDetailRepository.fetchRawScoresBySubmissionId(id);
+            // Từ chối giá trị ngoài các phạm vi được hệ thống hỗ trợ.
             default: throw new IllegalArgumentException("Phạm vi dữ liệu (scope) không hợp lệ.");
         }
     }
 
-    // =========================================================================
-    // API 1: THỐNG KÊ MÔ TẢ THEO TIÊU CHÍ (CRITERIA STATS)
-    // =========================================================================
+    // Tính các chỉ số thống kê cơ bản của điểm theo từng tiêu chí.
     @Override
     public List<MetricResultDTO> getCriteriaStats(String scope, Integer id) {
-        // 1. Kéo tập dữ liệu điểm thô từ Database lên RAM thông qua DTO Projection
         List<RawScoreDTO> rawScores = fetchDataByScope(scope, id);
         if (rawScores.isEmpty()) return Collections.emptyList();
 
@@ -67,9 +62,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         }).collect(Collectors.toList());
     }
 
-    /**
-     * Thuật toán Thống kê mô tả (Descriptive Statistics)
-     */
+    // Tính số lượng, trung bình, phương sai, độ lệch chuẩn, giá trị nhỏ nhất và lớn nhất.
     private MetricResultDTO calculateMetrics(String groupKey, double[] scores) {
         // Sử dụng DoubleSummaryStatistics của Java 8 để tính nhanh Mean, Min, Max, Count
         DoubleSummaryStatistics stats = Arrays.stream(scores).summaryStatistics();
@@ -86,7 +79,6 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         // Tính Độ lệch chuẩn (Standard Deviation)
         double stdDev = Math.sqrt(variance);
 
-        // Đóng gói DTO và làm tròn 2 chữ số thập phân cho đẹp UI
         return MetricResultDTO.builder()
                 .groupByTarget(groupKey)
                 .countEvaluations(count)
@@ -98,9 +90,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .build();
     }
 
-    // =========================================================================
-    // API 2: ĐÁNH GIÁ ĐỘ TIN CẬY HỆ THỐNG (RELIABILITY ANALYTICS)
-    // =========================================================================
+    // Đánh giá tính nhất quán của tiêu chí và mức đồng thuận giữa các giám khảo.
     @Override
     public ReliabilityResultDTO calculateReliabilityMetrics(Integer eventId) {
         // 1. Lấy toàn bộ dữ liệu chấm điểm của cả Sự kiện
@@ -113,7 +103,6 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         double alpha = calculateCronbachAlpha(rawScores);
         double icc = calculateICC(rawScores);
 
-        // 3. Đóng gói kết quả kèm theo diễn giải (Interpretation) hỗ trợ Frontend hiển thị trực quan
         return ReliabilityResultDTO.builder()
                 .eventId(eventId)
                 .totalEvaluations(rawScores.size())
@@ -128,9 +117,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .build();
     }
 
-    /**
-     * Thuật toán Cronbach's Alpha đo tính nhất quán của bộ Tiêu chí chấm điểm.
-     */
+    // Tính hệ số Cronbach Alpha để đo mức nhất quán của bộ tiêu chí chấm điểm.
     private double calculateCronbachAlpha(List<RawScoreDTO> rawScores) {
         // 1. Tính k (Tổng số lượng tiêu chí được dùng để chấm)
         Map<Integer, List<RawScoreDTO>> scoresByCriteria = rawScores.stream()
@@ -158,10 +145,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         return ((double) k / (k - 1)) * (1 - (sumOfItemVariances / varianceOfTotalScores));
     }
 
-    /**
-     * Thuật toán ICC (Intraclass Correlation Coefficient) đo độ đồng thuận của Ban giám khảo.
-     * Sử dụng mô hình One-Way ANOVA để bóc tách sai số.
-     */
+    // Tính hệ số tương quan nội lớp để đo mức đồng thuận giữa các giám khảo.
+    // Phép tính tách chênh lệch giữa các đội khỏi sai số chấm bên trong cùng một đội.
     private double calculateICC(List<RawScoreDTO> rawScores) {
         // 1. Gom nhóm điểm theo từng Đội thi (Để xem các giám khảo chấm 1 đội có giống nhau không)
         Map<Integer, List<Double>> scoresByTeam = rawScores.stream()
@@ -207,6 +192,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         return Arrays.stream(values).map(v -> Math.pow(v - mean, 2)).sum() / (values.length - 1);
     }
 
+    // Diễn giải hệ số nhất quán tiêu chí thành mức độ dễ hiểu cho người xem.
     private String interpretAlpha(double alpha) {
         if (alpha >= 0.9) return "Excellent (Rất đồng nhất)";
         if (alpha >= 0.8) return "Good (Đồng nhất tốt)";
@@ -216,6 +202,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         return "Unacceptable (Không thể chấp nhận)";
     }
 
+    // Diễn giải hệ số đồng thuận thành mức đánh giá giữa các giám khảo.
     private String interpretICC(double icc) {
         if (icc >= 0.9) return "Excellent (Rất đồng thuận)";
         if (icc >= 0.75) return "Good (Đồng thuận tốt)";
@@ -223,9 +210,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         return "Poor (Bất đồng quan điểm)";
     }
 
-    // =========================================================================
-    // API 3: XUẤT TỆP CSV (EXPORT DATA)
-    // =========================================================================
+    // Xuất dữ liệu điểm đã ẩn danh thành tệp CSV dùng cho nghiên cứu.
     @Override
     public byte[] exportAnonymizedCsv(String scope, Integer id) {
         // 1. Tận dụng lại hàm fetch data
@@ -243,7 +228,6 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         csvBuilder.append('\ufeff');
         csvBuilder.append("Submission_Code,Judge_Code,Criterion_Name,Score,Round_ID\n");
 
-        // 4. Map từng dòng dữ liệu và gắn mã ẩn danh
         for (RawScoreDTO score : rawScores) {
             String teamCode = anonymize(score.getTeamId(), teamAnonymizer, "Team_");
             String judgeCode = anonymize(score.getJudgeId(), judgeAnonymizer, "Judge_");
@@ -277,9 +261,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .build();
     }
 
-    /**
-     * Hàm helper xử lý cấp phát mã ẩn danh tự động
-     */
+    // Cấp mã thay thế ổn định cho một định danh trong phạm vi lần xuất dữ liệu hiện tại.
     private String anonymize(Integer originalId, Map<Integer, String> dict, String prefix) {
         return dict.computeIfAbsent(originalId, id -> prefix + (dict.size() + 1));
     }

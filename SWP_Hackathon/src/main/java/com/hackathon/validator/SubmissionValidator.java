@@ -66,22 +66,34 @@ public class SubmissionValidator {
             }
 
             String fileName = file.getOriginalFilename();
-            FileType extensionType = FileType.fromExtension(getExtension(fileName));
+            String extension = getExtension(fileName);
+            FileType extensionType = FileType.fromExtension(extension);
             FileType mimeType = FileType.fromMimeType(file.getContentType());
 
             if (extensionType == null) {
                 throw new BadRequestException(
-                        "Không nhận diện được phần mở rộng của file: " + fileName
+                        "Loại file ." + (extension == null ? "không xác định" : extension)
+                                + " không được phép nộp. File: " + fileName
+                                + ". Các loại được phép: " + allowedFileTypes
                 );
+            }
+
+            // Trình duyệt có thể không gửi MIME chuẩn cho ZIP/RAR, khi đó dùng phần mở rộng đã nhận diện.
+            if (mimeType == null
+                    && extensionType.getGroup() == FileType.FileGroup.ARCHIVE) {
+                mimeType = extensionType;
             }
 
             if (mimeType == null) {
                 throw new BadRequestException(
                         "Không nhận diện được MIME type của file: " + fileName
+                                + ". MIME nhận được: " + file.getContentType()
                 );
             }
 
-            if (!extensionType.getMimeType().equalsIgnoreCase(mimeType.getMimeType())) {
+            FileType resolvedMimeType = mimeType;
+
+            if (!extensionType.getMimeType().equalsIgnoreCase(resolvedMimeType.getMimeType())) {
                 throw new BadRequestException(
                         "Phần mở rộng không khớp với loại nội dung của file: " + fileName
                 );
@@ -90,7 +102,7 @@ public class SubmissionValidator {
             boolean isAllowed = allowedFileTypes == null
                     || allowedFileTypes.isEmpty()
                     || allowedFileTypes.stream().anyMatch(allowedType ->
-                            allowedType.getMimeType().equalsIgnoreCase(mimeType.getMimeType())
+                            allowedType.getMimeType().equalsIgnoreCase(resolvedMimeType.getMimeType())
                     );
 
             if (!isAllowed) {

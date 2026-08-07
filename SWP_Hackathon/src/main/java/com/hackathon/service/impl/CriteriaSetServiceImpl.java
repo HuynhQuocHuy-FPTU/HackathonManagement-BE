@@ -19,6 +19,7 @@ import java.util.*;
 
 @Service
 @RequiredArgsConstructor
+// Quản lý bộ tiêu chí mẫu, các tiêu chí thành phần và lịch sử thay đổi của từng bộ.
 public class CriteriaSetServiceImpl implements CriteriaSetService {
 
     private final CriteriaSetRepository criteriaSetRepository;
@@ -31,6 +32,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
 
     // 1. Get all bo tieu chi hien co(criteria-set)
     @Override
+    // Lấy danh sách rút gọn của tất cả bộ tiêu chí để hiển thị và lựa chọn.
     public List<CriteriaSetResponseDTO> getAllCriteriaSets() {
         List<CriteriaSet> criteriaSets = criteriaSetRepository.findAll();
         return criteriaSets.stream()
@@ -46,6 +48,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
     // 3.  Lay tat ca thong tin trong bo tieu chi goc(template) va tieu chi chi tiet trong template
     @Override
     @Transactional
+    // Lấy đầy đủ từng bộ tiêu chí cùng các tiêu chí thành phần đang thuộc bộ đó.
     public List<CriteriaSetResponseDTO> getAllCriteriaSetDetail() {
 
         List<CriteriaSet> sets = criteriaSetRepository.findAll();
@@ -75,6 +78,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
 
     //2. Lay tat ca thong tin trong tieu chi chi tiet(detail) hien thi
     @Override
+    // Lấy toàn bộ tiêu chí chi tiết hiện có trong hệ thống.
     public List<CriteriaDetailResponseDTO> getAllCriteriaDetail() {
 
         return criteriaDetailRepository.findAll()
@@ -91,6 +95,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
 
     //4.Thong qua ID Cua criteriaSet lay duoc ds criteriaDetail tuong ung vs id cua Set
     @Override
+    // Tìm một bộ tiêu chí theo mã và trả về đầy đủ các tiêu chí thành phần.
     public CriteriaSetResponseDTO getCriteriaDetailById(Integer criteriaSetId) {
         // 1.
         CriteriaSet criteriaSet = criteriaSetRepository.findByCriteriaSetId(criteriaSetId);
@@ -104,13 +109,13 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
                     "Không tìm thấy bất kì tiêu chí nào trong bộ tiêu chí : " + criteriaSetId
             );
         }
-        // 3. Map DTO
         return mapToResponse(criteriaSet, details);
 
     }
 
     //5. Tao CriteriaSet
     @Override
+    // Tạo bộ tiêu chí mới, lưu các tiêu chí thành phần và ghi nhận người thực hiện.
     public CriteriaSetResponseDTO createCriteriaSet(CreateCriteriaSetRequest request, CustomUserDetails userDetails) {
         // Check Coordinator mới là người được tạo
         Account account = userDetails.getAccount();
@@ -160,7 +165,6 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
                 "Create criteria " + criteriaSet.getCriteriaSetName()
 
         );
-        // 4. Tra du lieu ve DTO
         return mapToResponse(saved, savedDetails);
 
     }
@@ -168,6 +172,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
     // 6. Update CriteriaSet(Có thể thêm xóa , sữa các tiêu chí chi tiết , nhưng không được xóa tiêu chí cha)
     @Override
     @Transactional
+    // Đồng bộ thông tin và danh sách tiêu chí của bộ hiện có, đồng thời lưu lịch sử thay đổi.
     public CriteriaSetResponseDTO updateCriteriaSet(CriteriaSetRequestDTO request, CustomUserDetails userDetails) {
         // Check Coordinator mới là người được tạo
         Account eventCoordinator = userDetails.getAccount();
@@ -317,6 +322,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
 
     // 7. Xoa bo tieu chi
     @Override
+    // Xóa bộ tiêu chí khi bộ đó không còn bị ràng buộc bởi dữ liệu chấm thi đang sử dụng.
     public void deleteCriteriaSet(Integer criteriaSetId, CustomUserDetails userDetails) {
         // Check Coordinator mới là người được tạo
         Account eventCoordinator = userDetails.getAccount();
@@ -342,6 +348,7 @@ public class CriteriaSetServiceImpl implements CriteriaSetService {
     }
 
     @Override
+    // Kiểm tra quyền và lấy lịch sử tạo, cập nhật hoặc xóa của bộ tiêu chí.
     public CriteriaHistoryResponse getHistoryCriteria(CustomUserDetails userDetails, Integer criteriaSetId) {
 
         EventCoordinator eventCoordinator = eventCoordinatorRepository.findByAccount_AccountId(userDetails.getAccount().getAccountId())

@@ -31,6 +31,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+// Xử lý đăng nhập, làm mới phiên, đăng xuất và các thao tác liên quan đến mật khẩu.
 public class AuthServiceImpl implements AuthService {
 
     private final AccountRepository accountRepository;
@@ -40,6 +41,7 @@ public class AuthServiceImpl implements AuthService {
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
 
+    // Xác thực thư điện tử và mật khẩu, sau đó tạo cặp mã truy cập cho tài khoản hợp lệ.
     @Override
     @Transactional
     public AuthResponse login(LoginRequest request) {
@@ -68,6 +70,7 @@ public class AuthServiceImpl implements AuthService {
         return buildAuthResponse(account);
     }
 
+    // Thu hồi mã làm mới để phiên đăng nhập hiện tại không thể tiếp tục được sử dụng.
     @Override
     @Transactional
     public void logout(String refreshToken) {
@@ -77,6 +80,7 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenRepository.save(token);
     }
 
+    // Kiểm tra mã làm mới còn hợp lệ rồi cấp mã truy cập mới cho tài khoản.
     @Override
     @Transactional
     public AuthResponse refreshAccessToken(String refreshTokenValue) {
@@ -124,6 +128,7 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
+    // Tạo mã đặt lại mật khẩu có thời hạn và gửi hướng dẫn đến thư điện tử của người dùng.
     @Override
     @Transactional
     public void forgotPassword(String email) {
@@ -139,6 +144,7 @@ public class AuthServiceImpl implements AuthService {
         emailService.sendForgotPasswordEmail(account.getEmail(), otp);
     }
 
+    // Xác minh mã đặt lại mật khẩu, lưu mật khẩu mới và vô hiệu hóa mã sau khi sử dụng.
     @Override
     @Transactional
     public void resetPassword(ResetPasswordRequest request) {
@@ -165,6 +171,7 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenRepository.revokeAllByAccount(account);
     }
 
+    // Kiểm tra mật khẩu hiện tại trước khi cập nhật mật khẩu mới cho người đang đăng nhập.
     @Override
     @Transactional
     public void changePassword(CustomUserDetails userDetails, ChangePasswordRequest request) {
@@ -189,6 +196,7 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenRepository.revokeAllByAccount(account); // Xóa token cũ
     }
 
+    // Đăng nhập bằng tài khoản Google đã được liên kết và tạo thông tin xác thực của hệ thống.
     @Override
     @Transactional
 
@@ -208,6 +216,7 @@ public class AuthServiceImpl implements AuthService {
         return buildAuthResponse(account);
     }
 
+    // Tạo tài khoản mới từ thư điện tử Google khi thư điện tử đó chưa tồn tại trong hệ thống.
     @Override
     public void registerWithGoogle(String email) {
         boolean exitsAccount = accountRepository.existsByEmail(email);

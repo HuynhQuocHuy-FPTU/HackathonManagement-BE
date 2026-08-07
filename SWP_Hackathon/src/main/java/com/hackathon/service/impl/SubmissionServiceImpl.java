@@ -9,6 +9,7 @@ import com.hackathon.exception.BadRequestException;
 import com.hackathon.exception.ResourceNotFoundException;
 import com.hackathon.repository.*;
 import com.hackathon.security.CustomUserDetails;
+import com.hackathon.service.GithubOAuthService;
 import com.hackathon.service.submission.CloudinaryService;
 import com.hackathon.service.submission.GitHubService;
 import com.hackathon.service.submission.SubmissionService;
@@ -26,6 +27,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+// Quản lý việc tạo, cập nhật, xem và xác minh bài nộp của đội trong từng vòng thi.
 public class SubmissionServiceImpl implements SubmissionService {
 
     private final CloudinaryService cloudinaryService;
@@ -44,45 +46,51 @@ public class SubmissionServiceImpl implements SubmissionService {
 
     @Override
     @Transactional
+    // Tạo bài nộp mới cho đội trong vòng thi và tải các tệp đính kèm lên nơi lưu trữ.
     public Submission createSubmission(Integer roundId, String gitHubUrl, CustomUserDetails userDetails, List<MultipartFile> files){
-        // 1. Kiểm tra vòng thi tồn tại
+        // Tìm vòng thi mà đội muốn nộp bài.
         Round round = roundRepository.findById(roundId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy vòng thi!"));
-        // 2. Kiểm tra xem có phải là leader không
+        // Lấy sinh viên đang đăng nhập và xác nhận sinh viên là trưởng nhóm.
         Integer studentId = userDetails.getAccount().getStudent().getStudentId();
         Team team = getTeamAsLeader(studentId);
-        // 2. Validate (Giờ đây validator sẽ check list files)
+        // Kiểm tra thời hạn, đường dẫn GitHub và loại tệp theo cấu hình của vòng.
         submissionValidator.validateSubmission(round, files, gitHubUrl);
-        // 2. Kiểm tra xem leader đã có liên kết tài khoản github chưa và có đúng với tài khoản đã liên kết không
+        // Xác minh kho mã nguồn thuộc tài khoản GitHub mà trưởng nhóm đã liên kết.
         this.verifyGithubOwnership(gitHubUrl, userDetails);
+        // Chỉ gọi GitHub lấy mã bản sửa đổi mới nhất khi có đường dẫn kho.
         String latestCommitSha = null;
         if (gitHubUrl != null && !gitHubUrl.isBlank()) {
             latestCommitSha = gitHubService.getLatestCommitSha(gitHubUrl);
         }
-        // 2. Lấy thông tin Participant (để xác định Team và người nộp)
+        // Tìm đăng ký của đội trong sự kiện và lần tham gia đang hoạt động.
         Registration approvedRegistration = registrationRepository.findByEventIdAndTeamId(round.getHackathonEvent().getEventId(), team.getTeamId()).orElseThrow(() -> new ResourceNotFoundException("Đội của bạn chưa tham gia vào event"));
         TeamParticipant participant = participantRepository.findTeamParticipantByRegistration_RegistrationIdAndStatus(approvedRegistration.getRegistrationId(), ParticipantStatus.ACTIVE).orElseThrow(() -> new ResourceNotFoundException("Đội của bạn không được phép nộp bài"));
 
+        // Đội phải được phân vào một danh mục vòng trước khi có thể nộp bài.
         if(participant.getCategoryRound() == null){
             throw new BadRequestException("Đội thi của bạn chưa tham gia vào 1 category cụ thể nào");
         }
 
-        // 5. Tạo bản ghi Submission (Header)
+        // Tạo thông tin chính của bài nộp và chụp lại mã bản sửa đổi tại thời điểm nộp.
         Submission submission = new Submission();
         submission.setGithubUrl(gitHubUrl);
         submission.setLatestCommitSha(latestCommitSha);
         submission.setCreateAt(LocalDateTime.now());
         submission.setFinal(false);
 
-        // Thiết lập quan hệ
+        // Liên kết bài nộp với đội và lần tham gia cụ thể trong vòng.
         submission.setTeam(team);
         submission.setTeamParticipant(participant);
         Submission savedSubmission = submissionRepository.save(submission);
 
-        // 6. Xử lý và lưu danh sách file vào bảng Submission_File
+        // Chỉ xử lý tệp khi người dùng thực sự gửi ít nhất một tệp đính kèm.
         if (files != null && !files.isEmpty()) {
+            // Tải và lưu thông tin từng tệp riêng biệt.
             for (MultipartFile file : files) {
-                FileType type = FileType.fromMimeType(file.getContentType());
+                // Xác định loại tệp từ loại nội dung đã được kiểm tra.
+                FileType type = resolveFileType(file);
+                // Tải nội dung tệp lên nơi lưu trữ và nhận đường dẫn truy cập.
                 String fileUrl = cloudinaryService.uploadFile(file,type);
 
                 SubmissionFile subFile = SubmissionFile.builder()
@@ -94,6 +102,7 @@ public class SubmissionServiceImpl implements SubmissionService {
                         .uploadedAt(LocalDateTime.now())
                         .build();
 
+                // Lưu thông tin tệp và liên kết với bài nộp vừa tạo.
                 submissionFileRepository.save(subFile);
             }
         }
@@ -101,16 +110,34 @@ public class SubmissionServiceImpl implements SubmissionService {
         return savedSubmission;
     }
 
+    // Ưu tiên MIME và dùng phần mở rộng làm dự phòng cho tệp nén không có MIME chuẩn.
+    private FileType resolveFileType(MultipartFile file) {
+        FileType type = FileType.fromMimeType(file.getContentType());
+        if (type != null) {
+            return type;
+        }
+
+        String fileName = file.getOriginalFilename();
+        int dotIndex = fileName == null ? -1 : fileName.lastIndexOf('.');
+        String extension = dotIndex >= 0 ? fileName.substring(dotIndex + 1) : null;
+        return FileType.fromExtension(extension);
+    }
+
+    // Lấy điểm, thứ hạng và trạng thái của bài nộp cuối cùng trong danh mục vòng.
     public ResultSubmissionResponse getResultOfSubmission(CustomUserDetails userDetails, Integer categoryRound) {
+        // Xác định sinh viên và đội đang tham gia sự kiện.
         Student student = userDetails.getAccount().getStudent();
         Team team = teamRepository.findCurrentTeamByStudent(student.getStudentId(), TeamStatus.BUSY);
+        // Không có đội bận thi đấu nghĩa là sinh viên chưa có kết quả để xem.
         if(team == null){
             throw new BadRequestException("Đội bạn chưa tham gia cuộc thi nào");
         }
+        // Xác nhận danh mục vòng được yêu cầu tồn tại.
         CategoryRound cateRound = categoryRoundRepository.findById(categoryRound).orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hạng mục - vòng thi"));
         // if(LocalDateTime.now().isBefore(cateRound.getRound().getAppealStartTime())){
         //     return null;
         // }
+        // Tìm đúng bài được chọn làm bài chính thức của đội trong danh mục vòng.
         Submission submission = submissionRepository.findFinalSubmission(categoryRound, team.getTeamId());
         if(submission == null){
             throw new BadRequestException("Bạn chưa có bài nộp cuối cùng hoặc chưa có điểm");
@@ -154,6 +181,7 @@ public class SubmissionServiceImpl implements SubmissionService {
     }
 
     @Override
+    // Lấy các bài nộp thuộc phạm vi giám khảo đang được phân công chấm.
     public List<SubmissionResponse> getSubmissionForJudge(CustomUserDetails userDetails, Integer categoryRoundId) {
         int expertId = userDetails.getAccount().getExpert().getExpertId();
 
@@ -162,11 +190,13 @@ public class SubmissionServiceImpl implements SubmissionService {
         return submissionList.stream().map(s -> this.mapToResponse(s)).toList();
     }
     @Override
+    // Lấy toàn bộ bài nộp trong hệ thống theo thời gian mới nhất trước.
     public List<SubmissionResponse> getAllSubmission(){
         List<Submission> list = submissionRepository.findAllByOrderByCreateAtDesc();
         return list.stream().map(this::mapToResponse).toList();
     }
     @Override
+    // Lấy các bài nộp của những đội sinh viên từng tham gia trong một vòng.
     public List<SubmissionResponse> getSubmissionForStudent(Integer roundId, CustomUserDetails userDetails){
         roundRepository.findById(roundId).orElseThrow(() -> new ResourceNotFoundException("Vòng thi không tồn tại"));
 
@@ -176,6 +206,7 @@ public class SubmissionServiceImpl implements SubmissionService {
             throw new BadRequestException("Bạn chưa tham gia vào team nào");
         }
 
+        // Xác nhận ít nhất một đội của sinh viên có tham gia vòng được yêu cầu.
         boolean isParticipating = participantRepository.existsByRegistration_Team_TeamIdInAndCategoryRound_Round_RoundId(teamIds, roundId);
 
         if (!isParticipating) {
@@ -190,6 +221,7 @@ public class SubmissionServiceImpl implements SubmissionService {
     }
     @Override
     @Transactional
+    // Bỏ trạng thái chính thức của bài nộp khi vẫn còn trong thời hạn thay đổi.
     public void setNotFinal(Integer submissionId, CustomUserDetails userDetails){
         Integer studentId = userDetails.getAccount().getStudent().getStudentId();
         Team team = getTeamAsLeader(studentId);
@@ -197,12 +229,14 @@ public class SubmissionServiceImpl implements SubmissionService {
                 .orElseThrow(() -> new BadRequestException(
                         "Không tìm thấy submission"));
 
+        // Chỉ trưởng nhóm sở hữu bài nộp mới được phép thay đổi.
         if (submission.getTeam() == null
                 || submission.getTeam().getTeamId() != team.getTeamId()) {
             throw new BadRequestException(
                     "Bạn không có quyền thay đổi bài nộp này");
         }
 
+        // Không cho thay đổi bài chính thức tại hoặc sau hạn nộp bài.
         Round round = submission.getTeamParticipant()
                 .getCategoryRound()
                 .getRound();
@@ -211,26 +245,31 @@ public class SubmissionServiceImpl implements SubmissionService {
                     "Đã hết thời gian thay đổi bài nộp chính thức");
         }
 
+        // Chỉ bài đang là chính thức mới có thể bị bỏ trạng thái chính thức.
         if (!submission.isFinal()) {
             throw new BadRequestException(
                     "Submission này không phải là bài nộp chính thức");
         }
 
+        // Bỏ cờ chính thức và lưu bài nộp.
         submission.setFinal(false);
         submissionRepository.save(submission);
 
+        // Đồng bộ trạng thái nộp bài của đội về chưa nộp chính thức.
         TeamParticipant participant = submission.getTeamParticipant();
         participant.setSubmissionStatus(SubmissionStatus.NOT_SUBMITTED);
         participantRepository.save(participant);
     }
     @Override
     @Transactional
+    // Chọn một bài của đội làm bài nộp chính thức duy nhất trong vòng.
     public void chooseFinalSubmission(Integer submissionId, CustomUserDetails userDetails){
         Integer studentId = userDetails.getAccount().getStudent().getStudentId();
         Team team = getTeamAsLeader(studentId);
 
         Submission submission = submissionRepository.findById(submissionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bài nộp"));
+        // Kiểm tra thời hạn nộp trước khi thay đổi bài chính thức.
         if(!LocalDateTime.now().isBefore(submission.getTeamParticipant().getCategoryRound().getRound().getSubmissionDeadline())){
             throw new BadRequestException("Đã hết thời gian nộp bài");
         }
@@ -242,19 +281,23 @@ public class SubmissionServiceImpl implements SubmissionService {
 
         // Mỗi TeamParticipant (team trong một CategoryRound) chỉ có một bài chính thức.
         // Không thay đổi bài chính thức của team ở vòng hoặc hạng mục khác.
+        // Bỏ cờ chính thức của các bài cũ thuộc cùng lần tham gia.
         List<Submission> previousFinalSubmissions = submissionRepository
                 .findByTeamParticipant_IdAndIsFinalTrue(submission.getTeamParticipant().getId());
         previousFinalSubmissions.stream()
                 .filter(s -> s.getSubmissionId() != submission.getSubmissionId())
                 .forEach(s -> s.setFinal(false));
         submissionRepository.saveAll(previousFinalSubmissions);
+        // Đồng bộ trạng thái đội đã có bài nộp chính thức.
         TeamParticipant teamParticipant = submission.getTeamParticipant();
         teamParticipant.setSubmissionStatus(SubmissionStatus.SUBMITTED);
         participantRepository.save(teamParticipant);
+        // Đánh dấu bài được chọn là chính thức và lưu thay đổi cuối cùng.
         submission.setFinal(true);
         submissionRepository.save(submission);
     }
 
+    // Tìm đội mà sinh viên hiện giữ vai trò trưởng nhóm.
     private Team getTeamAsLeader(Integer studentId) {
         Student student = studentRepository.findByIdWithTeamMembers(studentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thông tin sinh viên"));
@@ -266,13 +309,17 @@ public class SubmissionServiceImpl implements SubmissionService {
                 .orElseThrow(() -> new BadRequestException("Bạn không phải là leader của đội"));
     }
 
+    // Xác minh chủ sở hữu kho mã nguồn trùng với tài khoản GitHub đã liên kết.
     private void verifyGithubOwnership(String gitHubUrl, CustomUserDetails userDetails) {
+        // Không kiểm tra quyền sở hữu khi vòng không yêu cầu đường dẫn GitHub.
         if(gitHubUrl == null || gitHubUrl.isBlank()) return;
+        // Tài khoản phải hoàn tất liên kết GitHub trước khi gửi kho mã nguồn.
         String linkedGithubUsername = userDetails.getAccount().getGithubUsername();
         if (linkedGithubUsername == null || linkedGithubUsername.isBlank()) {
             throw new BadRequestException("Bạn cần liên kết tài khoản GitHub trước khi nộp bài");
         }
 
+        // Lấy tên chủ sở hữu thực tế từ GitHub thay vì chỉ tin vào chuỗi đường dẫn.
         String repoOwnerLogin = githubOAuthService.fetchRepoOwnerLogin(gitHubUrl);
         if (!linkedGithubUsername.equalsIgnoreCase(repoOwnerLogin)) {
             throw new BadRequestException(

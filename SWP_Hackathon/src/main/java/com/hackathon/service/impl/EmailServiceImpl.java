@@ -20,6 +20,7 @@ import org.thymeleaf.context.Context;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+// Tạo nội dung và gửi các loại thư điện tử phục vụ xác thực, bảo mật và thông báo.
 public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender mailSender;
@@ -36,9 +37,13 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     @Async
+    // Gửi đường dẫn xác minh để người dùng kích hoạt tài khoản mới.
     public void sendVerificationEmail(String toEmail, String token) {
+        // Ghép mã xác minh vào đường dẫn của giao diện người dùng.
         String verifyUrl = frontendUrl + "/verify-account?token=" + token;
+        // Thiết lập tiêu đề giúp người nhận nhận biết mục đích của thư.
         String subject = "Xác thực tài khoản Hackathon";
+        // Tạo nội dung thư văn bản và chèn đường dẫn xác minh.
         String body = """
                 Xin chào,
                 
@@ -51,24 +56,31 @@ public class EmailServiceImpl implements EmailService {
                 Ban tổ chức Hackathon
                 """.formatted(verifyUrl);
 
+        // Khi chưa cấu hình tài khoản gửi thư, chỉ ghi đường dẫn trong môi trường phát triển.
         if (!StringUtils.hasText(mailUsername)) {
+            // Chỉ ghi thông tin nhạy cảm khi cấu hình phát triển cho phép.
             if (devLogLink) {
                 log.info("=== DEV: Verification link for {} ===\n{}", toEmail, verifyUrl);
             }
             return;
         }
 
+        // Tạo thư văn bản đơn giản sau khi đã xác nhận cấu hình gửi thư tồn tại.
         SimpleMailMessage message = new SimpleMailMessage();
+        // Gán lần lượt người gửi, người nhận, tiêu đề và nội dung của thư.
         message.setFrom(mailUsername);
         message.setTo(toEmail);
         message.setSubject(subject);
         message.setText(body);
+        // Chuyển thư cho bộ gửi thư của hệ thống.
         mailSender.send(message);
     }
 
     @Override
     @Async
+    // Gửi mã xác thực dùng cho quá trình đặt lại mật khẩu.
     public void sendForgotPasswordEmail(String toEmail, String otp) {
+        // Chuẩn bị đường dẫn trang nhập mật khẩu mới để dùng khi ghi nhật ký phát triển.
         String resetUrl = frontendUrl + "/reset-password";
         String subject = "[Hackathon System] Yêu cầu đặt lại mật khẩu";
         String body = """
@@ -86,6 +98,7 @@ public class EmailServiceImpl implements EmailService {
                 Ban tổ chức Hackathon
                 """.formatted(otp);
 
+        // Không gọi máy chủ thư khi tài khoản gửi chưa được cấu hình.
         if (!StringUtils.hasText(mailUsername)) {
             if (devLogLink) {
                 log.info("=== DEV: Forgot password link for {} ===\n{}", toEmail, resetUrl);
@@ -93,6 +106,7 @@ public class EmailServiceImpl implements EmailService {
             return;
         }
 
+        // Tạo và gửi thư văn bản chứa mã đặt lại mật khẩu.
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(mailUsername);
         message.setTo(toEmail);
@@ -103,7 +117,9 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     @Async
+    // Gửi một thư văn bản chung với tiêu đề và nội dung do luồng gọi cung cấp.
     public void sendGeneralEmail(String toEmail, String tile, String emailMessage) {
+        // Khởi tạo thư và điền đầy đủ thông tin bắt buộc trước khi gửi.
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(mailUsername);
         message.setTo(toEmail);
@@ -114,15 +130,15 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     @Async
+    // Thông báo cho giám khảo khi có bài dự thi cần được chấm lại.
     public void sendNotifyToExpertReEvaluation(String toEmail, String teamName) {
-
-        // Simple Mail dung đe gui mail theo dang van ban
-
+        // Sử dụng thư văn bản vì nội dung thông báo không cần mẫu giao diện phức tạp.
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(mailUsername);
         message.setTo(toEmail);
         message.setSubject("FPT HACKATHON - Yêu cầu chấm lại bài dự thi theo đơn phúc khảo");
 
+        // Chèn tên đội vào nội dung để giám khảo xác định đúng bài cần xử lý.
         message.setText("""
             Kính gửi Quý Ban Giám khảo,
 
@@ -137,13 +153,16 @@ public class EmailServiceImpl implements EmailService {
             Ban Tổ chức FPT Hackathon
             """.formatted(teamName));
 
+        // Gửi thông báo sau khi hoàn thiện nội dung.
         mailSender.send(message);
 
     }
 
     @Override
     @Async
+    // Gửi tài khoản và mật khẩu tạm thời cho thành viên được ban tổ chức mời.
     public void sendTemporaryPasswordEmail(String toEmail, String tempPassword, String fullName) {
+        // Tạo đường dẫn đăng nhập để người nhận có thể sử dụng tài khoản ngay.
         String loginUrl = frontendUrl + "/login";
         String subject = "[Hackathon System] Thông tin cấp tài khoản thành viên mới";
         String body = """
@@ -162,6 +181,7 @@ public class EmailServiceImpl implements EmailService {
                 Ban tổ chức giải đấu.
                 """.formatted(fullName, loginUrl, toEmail, tempPassword);
 
+        // Nếu chưa cấu hình gửi thư, ghi thông tin theo chế độ phát triển rồi kết thúc.
         if (!StringUtils.hasText(mailUsername)) {
             if (devLogLink) {
                 log.info("=== DEV: Temporary password for {} ===\nPassword: {}\nLogin URL: {}", toEmail, tempPassword, loginUrl);
@@ -180,23 +200,31 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     @Async
+    // Gửi thư HTML bằng mẫu Thymeleaf và dữ liệu động trong yêu cầu gửi thư.
     public void sendEmail(MailRequest request, String templateName) throws MessagingException {
         try {
+            // Tạo thư MIME để hỗ trợ nội dung HTML và các phần mở rộng khi cần.
             MimeMessage message = mailSender.createMimeMessage();
 
+            // Dùng mã hóa UTF-8 để nội dung tiếng Việt hiển thị đúng.
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "utf-8");
 
+            // Đưa các biến động của yêu cầu vào ngữ cảnh xử lý mẫu.
             Context context = new Context();
             context.setVariables(request.getProps());
 
+            // Kết hợp mẫu và dữ liệu để tạo nội dung HTML hoàn chỉnh.
             String html = templateEngine.process(templateName, context);
 
+            // Gán người nhận, tiêu đề và nội dung HTML trước khi gửi.
             helper.setTo(request.getTo());
             helper.setSubject(request.getSubject());
             helper.setText(html, true);
+            // Gửi thư sau khi toàn bộ trường bắt buộc đã được thiết lập.
             mailSender.send(message);
             System.out.println("Gửi Email thành công tới: " + request.getTo());
 
+            // Chuyển lỗi gửi thư sang ngoại lệ chuyên biệt để luồng gọi có thể xử lý thống nhất.
         } catch (Exception e) {
             System.out.println("Gửi Email thất bại tới: " + request.getTo() + e.getMessage());
             throw new MessagingException("Lỗi gửi email: " + e.getMessage(), e);

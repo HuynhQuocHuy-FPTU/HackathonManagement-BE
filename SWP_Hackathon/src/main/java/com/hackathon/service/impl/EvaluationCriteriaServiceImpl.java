@@ -16,26 +16,33 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-
+// Quản lý bản chụp tiêu chí chấm điểm được áp dụng cho từng vòng thi.
 public class EvaluationCriteriaServiceImpl implements EvaluationCriteriaService {
 
     private final EvaluationCriteriaRepository evaluationCriteriaRepository;
     @Override
+    // Tạo tiêu chí chấm điểm cho vòng dựa trên cấu hình được gửi lên.
     public EvaluationCriteria createEvaluationCritera(EvaluationCriteriaRequestDTO request, int criteriaSetId, Round round) {
 
-        //tạo EvaluationCriteria để snapshot dữ liệu()
+        // Tạo bản ghi mới để giữ nguyên nội dung tiêu chí tại thời điểm cấu hình vòng.
         EvaluationCriteria evaluationCriteria = new EvaluationCriteria();
+        // Gắn tiêu chí với vòng thi sẽ sử dụng tiêu chí này.
         evaluationCriteria.setRound(round);
+        // Sao chép điểm tối đa từ bộ tiêu chí đang được vòng lựa chọn.
         evaluationCriteria.setMaxScore(round.getCriteriaSet().getMaxScore());
+        // Lưu tên tiêu chí dùng khi giám khảo thực hiện chấm bài.
         evaluationCriteria.setCriteriaName(request.getCriteriaName());
-        //custom
+        // Lưu trọng số riêng được cấu hình cho tiêu chí trong vòng.
         evaluationCriteria.setWeight(request.getCustomWeight());
+        // Lưu mô tả để giám khảo hiểu yêu cầu cần đánh giá.
         evaluationCriteria.setDescription(request.getDescription());
+        // Lưu loại tiêu chí để áp dụng đúng cách nhập hoặc tính điểm.
         evaluationCriteria.setType(request.getType());
 
-        //lưu xuống DB
+        // Lưu bản chụp tiêu chí vào cơ sở dữ liệu.
         EvaluationCriteria saveEvaluationCriteria = evaluationCriteriaRepository.save(evaluationCriteria);
 
+        // Trả về tiêu chí đã lưu để luồng tạo vòng tiếp tục sử dụng.
         return saveEvaluationCriteria;
 
     }
@@ -52,24 +59,27 @@ public class EvaluationCriteriaServiceImpl implements EvaluationCriteriaService 
     }
 
     @Override
+    // Lấy toàn bộ tiêu chí chấm điểm đang thuộc một vòng thi.
     public List<EvaluationCriteriaResponseDTO> getEvaluationCriteriaResponse(Round round) {
 
+        // Không có vòng đầu vào thì không có tiêu chí nào để truy vấn.
         if(round == null){
             return new ArrayList<>();
         }
-        //1. Lấy dữ liệu từ Repository theo id của round
+        // Tìm các tiêu chí theo mã vòng thi.
         List<EvaluationCriteria> evaluationCriterias = evaluationCriteriaRepository.findByRound_RoundId(round.getRoundId());
-        //2. Nếu dưới db không có dữ liệu thì trả về mảng rỗng
+        // Trả danh sách rỗng khi vòng chưa được cấu hình tiêu chí.
         if(evaluationCriterias == null || evaluationCriterias.isEmpty()){
             return new ArrayList<>();
         }
 
-        //3. Sử dụng Stream API để map taonf bộ danh sách entity sang response
         return evaluationCriterias.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
     @Override
+    // Xóa toàn bộ tiêu chí chấm điểm gắn với một vòng thi.
     public void deletedEvaluationCriteria(Integer roundId) {
+        // Thực hiện xóa theo mã vòng để làm sạch cấu hình cũ trước khi cập nhật.
         evaluationCriteriaRepository.deleteByRound_RoundId(roundId);
     }
 

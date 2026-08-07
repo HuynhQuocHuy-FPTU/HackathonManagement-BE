@@ -16,6 +16,7 @@ import java.util.*;
 
 @Service
 @RequiredArgsConstructor
+// Tổng hợp lịch sử tham gia sự kiện của sinh viên và lịch sử chấm thi của chuyên gia.
 public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
@@ -24,6 +25,8 @@ public class AccountServiceImpl implements AccountService {
     private final RegistrationRepository registrationRepository;
 
 
+    // Kiểm tra quyền truy cập rồi tổng hợp đội, sự kiện, vòng thi và kết quả của sinh viên.
+    // Dữ liệu được gom theo từng lần đăng ký để trả về đầy đủ quá trình tham gia cuộc thi.
     @Override
     public StudentHistoryResponse studentHistory(Integer studentId, CustomUserDetails userDetails) {
         Account currentAccount = userDetails.getAccount();
@@ -119,6 +122,8 @@ public class AccountServiceImpl implements AccountService {
     }
 
 
+    // Kiểm tra tài khoản chuyên gia và lấy toàn bộ lịch sử được phân công chấm bài.
+    // Kết quả bao gồm thông tin sự kiện, vòng thi, vai trò và trạng thái đánh giá tương ứng.
     @Override
     public ExpertHistoryResponse expertHistory(Integer accountId, CustomUserDetails userDetails) {
 

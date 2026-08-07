@@ -12,6 +12,7 @@ import tools.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
+// Ghi và truy xuất lịch sử các thao tác quan trọng được thực hiện trong hệ thống.
 public class AuditService {
     private final AuditLogRepository auditLogRepository;
     private final EventCoordinatorRepository eventCoordinatorRepository;
@@ -19,11 +20,16 @@ public class AuditService {
     private final ExpertRepository expertRepository;
     private final ObjectMapper objectMapper;
 
+    // Tạo lịch sử thao tác kèm dữ liệu chi tiết và xác định tên người thực hiện theo vai trò.
     public AuditLog saveLog(Account acc, AuditAction action, AuditEntityType entityType, Integer entityId, String description, String data) {
+        // Mặc định thao tác được xem là do hệ thống thực hiện khi không có tài khoản cụ thể.
         String actorName = "SYSTEM";
+        // Chỉ tìm tên hiển thị khi tài khoản và vai trò đều tồn tại.
         if (acc!=null && acc.getRole() != null) {
 
+            // Lấy mã tài khoản dùng để tra cứu hồ sơ riêng theo vai trò.
             int accountId = acc.getAccountId();
+            // Chọn đúng nguồn dữ liệu chứa tên của người thực hiện.
             switch (acc.getRole()) {
                 case EVENTCOORDINATOR:
                     actorName = eventCoordinatorRepository.findByAccount_AccountId(accountId)
@@ -46,6 +52,7 @@ public class AuditService {
         }
 
 
+        // Tạo bản ghi lịch sử sau khi đã xác định đầy đủ người thực hiện.
         AuditLog auditLog = new AuditLog();
         auditLog.setAction(action);
         auditLog.setEntityType(entityType);
@@ -54,9 +61,11 @@ public class AuditService {
         auditLog.setDescription(description);
         auditLog.setData(data);
         auditLog.setActorName(actorName);
+        // Lưu và trả về bản ghi để các lịch sử chuyên biệt có thể liên kết tiếp.
         return auditLogRepository.save(auditLog);
     }
 
+    // Ghi lịch sử không kèm dữ liệu mở rộng bằng cách dùng chung hàm lưu đầy đủ.
     public void saveLog(Account acc, AuditAction action, AuditEntityType entityType, Integer entityId, String description) {
         this.saveLog(acc, action, entityType, entityId, description, null);
 
@@ -84,7 +93,9 @@ public class AuditService {
         return res;
     }
 
+    // Lấy lịch sử theo từng trang để tránh tải toàn bộ dữ liệu cùng lúc.
     public Page<AuditLogResponse> getAllAuditLog(Pageable pageable) {
+        // Truy vấn đúng trang và thông tin sắp xếp được truyền vào.
         Page<AuditLog> list = auditLogRepository.findAll(pageable);
         return list.map(this::toResponse);
     }

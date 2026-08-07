@@ -36,6 +36,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+// Quản lý toàn bộ vòng đời sự kiện từ lúc tạo, công khai, cập nhật đến khi kết thúc hoặc xóa.
 public class EventServiceImpl implements EventService {
 
     private final HackathonEventRepository eventRepository;
@@ -58,6 +59,7 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     @PreAuthorize("hasRole('EVENTCOORDINATOR')")
+    // Kiểm tra dữ liệu đầu vào, tạo sự kiện cùng các vòng thi và danh mục được cấu hình ban đầu.
     public EventResponse createEvent(CreateEventRequest request) throws BadRequestException {
 
         // 1. Validate business rule trước khi chạm DB
@@ -143,6 +145,7 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     @PreAuthorize("hasRole('EVENTCOORDINATOR')")
+    // Cập nhật thông tin sự kiện và đồng bộ lại danh sách vòng thi, danh mục liên quan.
     public EventResponse updateEvent(UpdateEventRequest request, Integer eventId) {
 
         CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -254,6 +257,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @PreAuthorize("hasRole('EVENTCOORDINATOR')")
+    // Công khai sự kiện sau khi xác nhận sự kiện đã có đủ dữ liệu bắt buộc.
     public void publishEvent(Integer eventId) {
         CustomUserDetails userDetails =
                 (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -281,6 +285,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @PreAuthorize("hasRole('EVENTCOORDINATOR')")
+    // Đánh dấu sự kiện đã xóa để ẩn khỏi các danh sách hoạt động nhưng vẫn có thể khôi phục.
     public void deleteEvent(Integer eventId) {
         CustomUserDetails userDetails =
                 (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -311,6 +316,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @PreAuthorize("hasRole('EVENTCOORDINATOR')")
+    // Khôi phục sự kiện đã xóa mềm và đưa sự kiện trở lại trạng thái quản lý bình thường.
     public void restoreEvent(Integer eventId) {
         CustomUserDetails userDetails =
                 (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -340,6 +346,7 @@ public class EventServiceImpl implements EventService {
     // =========================================================
     @Override
     @Transactional
+    // Hủy sự kiện theo yêu cầu của người có quyền và ghi nhận lý do cùng người thực hiện.
     public void cancelEvent(Integer eventId, String reason, CustomUserDetails currentUser) {
         HackathonEvent event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy event"));
@@ -367,6 +374,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
+    // Hủy sự kiện tự động khi tác vụ nền phát hiện sự kiện không còn đáp ứng điều kiện tiếp tục.
     public void cancelEventAutomatically(Integer eventId, String reason) {
         HackathonEvent event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy event"));
@@ -388,6 +396,7 @@ public class EventServiceImpl implements EventService {
         );
     }
 
+    // Dùng chung quy trình đổi trạng thái, lưu lý do và gửi thông báo khi sự kiện bị hủy.
     private void performCancellation(HackathonEvent event, String reason, Account actor) {
         event.setStatus(EventStatus.CANCELLED);
         event.setCancellationReason(reason);
@@ -431,6 +440,7 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     @PreAuthorize("hasRole('EVENTCOORDINATOR')")
+    // Xóa vĩnh viễn sự kiện đã xóa mềm cùng các dữ liệu phụ thuộc theo quy tắc hệ thống.
     public void permanentlyDeleteEvent(Integer eventId) {
         CustomUserDetails userDetails =
                 (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -458,6 +468,7 @@ public class EventServiceImpl implements EventService {
     // =========================================================
 
     @Override
+    // Lấy chi tiết một sự kiện cùng các vòng thi và danh mục để trả về cho người dùng.
     public EventResponse getEventDetail(Integer eventId) {
         HackathonEvent event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy sự kiện"));
@@ -466,6 +477,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    // Lấy toàn bộ sự kiện chưa bị xóa để phục vụ màn hình quản lý.
     public List<EventResponse> getAllEvent() {
         return eventRepository.findAll().stream()
                 .map(event -> mapToResponse(event, event.getRounds(), new ArrayList<>()))
@@ -473,6 +485,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    // Lọc danh sách sự kiện quản lý theo năm tổ chức được yêu cầu.
     public List<EventResponse> getAllEventsByYear(Integer seasonYear) {
         return eventRepository.findBySeasonYear(seasonYear).stream()
                 .map(event -> mapToResponse(event, event.getRounds(), new ArrayList<>()))
@@ -480,17 +493,20 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    // Lấy danh sách các năm có sự kiện để tạo bộ lọc trên giao diện quản lý.
     public List<Integer> getAllEventYears() {
         return eventRepository.findDistinctSeasonYears();
     }
 
     @Override
+    // Lấy các sự kiện đã công khai và đủ điều kiện hiển thị cho người dùng bên ngoài.
     public List<EventResponse> getPublicEvents() {
         return eventRepository.findByStatusNotIn(List.of(EventStatus.DRAFT, EventStatus.DELETED, EventStatus.CANCELLED)).stream().map(event -> mapToResponse(event, event.getRounds(), event.getCategories()
                 )).toList();
     }
 
     @Override
+    // Lọc các sự kiện công khai theo năm tổ chức.
     public List<EventResponse> getPublicEventsByYear(Integer seasonYear) {
         List<EventStatus> excludedStatuses = List.of(
                 EventStatus.DRAFT,
@@ -503,6 +519,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    // Lấy danh sách năm đang có ít nhất một sự kiện công khai.
     public List<Integer> getPublicEventYears() {
         return eventRepository.findDistinctSeasonYearsByStatusNotIn(List.of(
                 EventStatus.DRAFT,
@@ -512,11 +529,13 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    // Tìm các sự kiện công khai có tên phù hợp với từ khóa người dùng nhập.
     public List<EventResponse> searchPublicEvents(String eventName) {
         return eventRepository.findHackathonEventByEventNameContainingIgnoreCaseAndStatus(eventName, EventStatus.ACTIVE).stream().map(event -> mapToResponse(event, event.getRounds(), event.getCategories())).toList();
     }
 
     @Override
+    // Cập nhật các mốc thời gian của sự kiện sau khi kiểm tra quyền và tính hợp lệ của lịch mới.
     public void updateTimeEvent(CustomUserDetails userDetails, Integer eventId, UpdateTimeEventDTO updateTimeEventDTO) {
         EventCoordinator eventCoordinator = userDetails.getAccount().getEventCoordinator();
 
@@ -551,6 +570,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    // Lấy danh sách sự kiện đã xóa mềm để quản trị viên có thể khôi phục hoặc xóa vĩnh viễn.
     public List<EventResponse> getDeletedEvents() {
         return eventRepository.findByStatus(EventStatus.DELETED).stream()
                 .map(event -> mapToResponse(event, new ArrayList<>(), new ArrayList<>()))
@@ -558,6 +578,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    // Tìm sự kiện trong khu vực quản lý theo tên, không giới hạn ở sự kiện công khai.
     public List<EventResponse> searchByEventName(String eventName) {
         return eventRepository.findByEventNameContainingIgnoreCase(eventName).stream()
                 .map(event -> mapToResponse(event, new ArrayList<>(), new ArrayList<>()))
@@ -569,6 +590,7 @@ public class EventServiceImpl implements EventService {
     // PRIVATE HELPERS
     // =========================================================
 
+    // Lấy thư điện tử của tài khoản đang xác thực để xác định người thực hiện thao tác.
     private String getCurrentEmail() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
 

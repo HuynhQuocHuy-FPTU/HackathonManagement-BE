@@ -27,6 +27,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+// Quản lý cấu hình, thời gian và danh sách các vòng thi thuộc một sự kiện.
 public class RoundServiceImpl implements RoundService {
 
     @Autowired
@@ -50,6 +51,7 @@ public class RoundServiceImpl implements RoundService {
     private EvaluationCriteriaRepository evaluationCriteriaRepository;
 
     @Override
+    // Kiểm tra lịch thi rồi tạo một vòng mới và gắn vòng đó vào đúng sự kiện.
     public Round createRound(CreateRoundRequest request, int eventId) throws BadRequestException {
 
         //1. Get hackathon event & criteria set
@@ -121,10 +123,8 @@ public class RoundServiceImpl implements RoundService {
             return null;
         }
 
-        //1. Map danh sách tiêu chí chấm điểm từ entity sang Response
         List<EvaluationCriteriaResponseDTO> criteriaResponses = evaluationCriteriaService.getEvaluationCriteriaResponse(round);
 
-        //2. map danh sách expert sang response
         List<CategoryExpertAssignResponseDTO> expertResponse = expertAssignService.getExpertAssignmentsByRound(round);
 
         return new RoundResponse(round, criteriaResponses, expertResponse);
@@ -132,6 +132,7 @@ public class RoundServiceImpl implements RoundService {
 
     @Override
     @Transactional
+    // Cập nhật một vòng thi và kiểm tra lịch mới không xung đột với các vòng còn lại.
     public Round updateSingleRound(UpdateRoundRequest roundRequest, List<Round> currentRounds, Integer eventId) throws BadRequestException {
         Round saveRound;
 
@@ -203,6 +204,7 @@ public class RoundServiceImpl implements RoundService {
     }
     @Override
     @Transactional
+    // Xóa các vòng hiện tại không còn xuất hiện trong danh sách cập nhật của sự kiện.
     public List<Round> deleteRoundsExcluding(List<UpdateRoundRequest> roundRequests, List<Round> currentRounds) {
 
         // 1. Lấy danh sách ID của các Round mà Frontend gửi lên (chỉ lấy những cái có ID, tức là Round cũ cần giữ lại)
@@ -230,6 +232,7 @@ public class RoundServiceImpl implements RoundService {
 
     @Override
     @Transactional
+    // Xóa toàn bộ vòng thi thuộc sự kiện được chỉ định.
     public void deleteByEventId(Integer eventId) {
         List<Round> rounds = roundRepository.findAllByHackathonEvent_EventId(eventId);
         if (!rounds.isEmpty()) {
@@ -245,6 +248,7 @@ public class RoundServiceImpl implements RoundService {
 
     @Override
     @Transactional
+    // Lấy tất cả vòng thi của một sự kiện theo mã sự kiện.
     public List<Round> findAllByEventId(Integer eventId) {
         List<Round> rounds = new ArrayList<>();
         rounds = roundRepository.findAllByHackathonEvent_EventId(eventId);
@@ -252,6 +256,7 @@ public class RoundServiceImpl implements RoundService {
     }
 
     @Override
+    // Lấy các vòng thi có trạng thái khác trạng thái cần loại trừ.
     public List<Round> getRoundByStatusNot(RoundStatus status) {
 
         List<Round> rounds = roundRepository.findByStatusNot(status);
@@ -259,17 +264,20 @@ public class RoundServiceImpl implements RoundService {
     }
 
     @Override
+    // Lưu thông tin vòng thi mới hoặc các thay đổi của vòng thi hiện có.
     public Round saveRound(Round round) {
         return roundRepository.save(round);
     }
 
     @Override
+    // Tìm vòng thi theo mã và trả về kết quả có thể rỗng nếu không tồn tại.
     public Optional<Round> findById(Integer roundId) {
         return roundRepository.findById(roundId);
     }
 
     @Override
     @Transactional
+    // Cập nhật lịch của vòng thi sau khi kiểm tra quyền, thứ tự thời gian và giới hạn sự kiện.
     public void updateTimeRound(UpdateTimeRoundRequest updateTimeRoundRequest, CustomUserDetails userDetails, Integer roundId) {
 
         EventCoordinator eventCoordinator = userDetails.getAccount().getEventCoordinator();

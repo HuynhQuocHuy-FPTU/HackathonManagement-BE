@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 
+// Quản lý vòng đời đội thi, lời mời, yêu cầu tham gia và quyền trưởng nhóm.
 public class TeamServiceImpl implements TeamService {
     private final TeamRepository teamRepository;
     private final AccountRepository accRepository;
@@ -46,6 +47,7 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     @Transactional(readOnly = true)
+    // Lấy các đội đang hoạt động và còn khả năng tiếp nhận thành viên.
     public List<TeamActiveResponse> getActiveTeams() {
         int maxTeamSize = systemConfigService.getIntConfig(SystemConfigKey.MAX_TEAM_SIZE);
         return teamRepository
@@ -60,6 +62,7 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     @Transactional
+    // Gửi yêu cầu tham gia đội sau khi kiểm tra sinh viên và tình trạng của đội đích.
     public TeamJoinResponse sendJoinRequest(Integer teamId, CustomUserDetails userDetails, TeamJoinRequest request) {
         if (userDetails == null || userDetails.getAccount() == null) {
             throw new BadRequestException("Bạn chưa đăng nhập.");
@@ -128,6 +131,7 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     @Transactional(readOnly = true)
+    // Lấy các yêu cầu tham gia đang chờ trưởng nhóm xử lý theo trạng thái yêu cầu.
     public List<TeamJoinResponse> getPendingJoinRequests(CustomUserDetails userDetails, InvitationStatus status) {
         if (userDetails == null || userDetails.getAccount() == null) {
             throw new BadRequestException("Bạn chưa đăng nhập.");
@@ -148,6 +152,7 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     @Transactional(readOnly = true)
+    // Lấy các yêu cầu hoặc lời mời tham gia đội dành cho sinh viên hiện tại.
     public List<TeamJoinResponse> getTeamJoinRequestForMember(CustomUserDetails userDetails) {
         if (userDetails == null || userDetails.getAccount() == null) {
             throw new BadRequestException("Bạn chưa đăng nhập.");
@@ -172,6 +177,7 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     @Transactional
+    // Cho trưởng nhóm chấp nhận yêu cầu và thêm sinh viên vào đội nếu vẫn còn chỗ.
     public void acceptJoinRequest(Long requestId, CustomUserDetails userDetails) {
         if (userDetails == null || userDetails.getAccount() == null) {
             throw new BadRequestException("Bạn chưa đăng nhập.");
@@ -225,6 +231,7 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     @Transactional
+    // Từ chối yêu cầu tham gia đội và cập nhật trạng thái phản hồi.
     public void rejectJoinRequest(Long requestId, CustomUserDetails userDetails) {
         if (userDetails == null || userDetails.getAccount() == null) {
             throw new BadRequestException("Bạn chưa đăng nhập.");
@@ -267,6 +274,7 @@ public class TeamServiceImpl implements TeamService {
     // Nếu Đội đã nộp đơn và thời gian hiện tại cách thời gian đk event dưới 24 giờ -> CHẶN
     // Check đơn đăng ký và thời hạn 24h của Team dựa trên Event đã gửi đơn.
     // Nếu như chưa dk thì có quyền thay đổi tùy thích
+    // Kiểm tra đội có đang chịu ràng buộc bởi thời gian đăng ký của sự kiện hay không.
     public void checkEventRegistrationWindow(Team team) {
         List<Registration> registrations = registrationRepository.findByTeam(team);
         if (registrations == null || registrations.isEmpty()) {
@@ -297,9 +305,7 @@ public class TeamServiceImpl implements TeamService {
 
     }
 
-    /**
-     * Hàm  kiểm tra lịch sử tham gia sự kiện và trạng thái bận của sinh viên
-     */
+    // Hàm  kiểm tra lịch sử tham gia sự kiện và trạng thái bận của sinh viên
     private void validateStudentAvailability(Student student, Team targetTeam) {
         List<TeamMember> userCurrentTeams = teamMemberRepository.findByStudent(student);
         if (userCurrentTeams == null || userCurrentTeams.isEmpty()) {
@@ -321,6 +327,9 @@ public class TeamServiceImpl implements TeamService {
                 }
                 if (tm.getTeam().getStatus() == TeamStatus.ACTIVE) {
                     throw new BadRequestException("Bạn đang là thành viên của mội đội khác, không thể tham gia đội này!");
+                }
+                if (tm.getTeam().getStatus() == TeamStatus.PENDING) {
+                    throw new BadRequestException("Bạn đang là thành viên của một đội khác đang chờ xét duyệt, không thể tham gia đội này!");
                 }
 
                 if (!targetEventIds.isEmpty()) {
@@ -345,6 +354,7 @@ public class TeamServiceImpl implements TeamService {
 
     @Transactional
     @Override
+    // Tạo đội mới, chỉ định người tạo làm trưởng nhóm và xử lý danh sách thành viên ban đầu.
     public TeamResponse createTeam(CreateTeamRequest request, @NonNull CustomUserDetails userDetail) {
         // 1. Lay thong tin cua account dang login (Nguoi tao tem se duoc gan role la leader)
         Account leaderAccount = userDetail.getAccount();
@@ -500,6 +510,7 @@ public class TeamServiceImpl implements TeamService {
 
     @Transactional
     @Override
+    // Gửi lời mời vào đội sau khi kiểm tra quyền trưởng nhóm và tình trạng người được mời.
     public TeamResponse sendTeamInvitation(InviteTeamRequest request, CustomUserDetails userDetails) {
         // 1. Leader gửi lời mời đến thành viên mình mong muốn
         Account leaderAcc = userDetails.getAccount();
@@ -671,6 +682,7 @@ public class TeamServiceImpl implements TeamService {
     //FUNCTION 2:UPDATE INFORMATION ABOUT TEAM AS NAME
     @Override
     @Transactional
+    // Cập nhật tên đội sau khi xác nhận người thao tác là trưởng nhóm hợp lệ.
     public String updateInfo(CustomUserDetails userDetails, String teamName) {
 
         // 1. Lấy thông tin người dùng hiện đang đăng nhập từ JWT/OAuth2.
@@ -723,6 +735,7 @@ public class TeamServiceImpl implements TeamService {
     }
 
     @Override
+    // Chấp nhận lời mời chính thức và thêm sinh viên vào đội sau khi kiểm tra điều kiện.
     public void acceptOfficialInvite(TeamInvitation invitation, CustomUserDetails userDetails) {
         Team team = teamRepository.findById(invitation.getTeam().getTeamId())
                 .orElseThrow(() -> new BadRequestException("Team không tồn tại hoặc đã bị xóa."));
@@ -796,6 +809,7 @@ public class TeamServiceImpl implements TeamService {
 
     @Transactional
     @Override
+    // Cho thành viên rời đội nếu không vi phạm ràng buộc đăng ký hoặc vai trò trưởng nhóm.
     public void leaveTeam(CustomUserDetails userDetails, Integer teamId) {
         Account currentUser = userDetails.getAccount();
         Student student = currentUser.getStudent();
@@ -887,6 +901,7 @@ public class TeamServiceImpl implements TeamService {
     //FUNCTION 4: CHUYỂN QUYỀN LEADER(Chỉ mới gửi lời mời đến thành viên muốn chuyển quyền )
     @Override
     @Transactional
+    // Gửi yêu cầu chuyển quyền trưởng nhóm cho một thành viên đủ điều kiện.
     public void transferLeader(Integer teamId, TeamRequestDTO request, CustomUserDetails userDetails) {
 
         // 2. Check Team
@@ -1203,9 +1218,7 @@ public class TeamServiceImpl implements TeamService {
 
     }
 
-    /*
-    TỪ CHỐI LỜI MỜI
-     */
+    // TỪ CHỐI LỜI MỜI
     @Override
     @Transactional
     public void rejectGeneralInvite(Long notificationId, CustomUserDetails userDetails) {
@@ -1321,6 +1334,7 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     @Transactional()
+    // Lấy đội hiện tại và thông tin thành viên của sinh viên đang đăng nhập.
     public TeamDetailResponse getTeamDetailByStudentId(CustomUserDetails userDetails) {
         Account currentAccount = userDetails.getAccount();
         TeamDraft teamDraft = teamDraftRepository.findByAccount(currentAccount).orElse(null);
@@ -1381,7 +1395,6 @@ public class TeamServiceImpl implements TeamService {
             }
 
 
-            // 4. Đóng gói dữ liệu trả về cho Frontend
             return TeamDetailResponse.builder()
                     .teamId(team.getTeamId())
                     .teamName(team.getTeamName())
@@ -1440,6 +1453,7 @@ public class TeamServiceImpl implements TeamService {
 
     //FUNCTION STUDENT XEM THÔNG TIN TEAM CỦA MÌNH
     @Override
+    // Lấy danh sách thành viên của đội sau khi kiểm tra quyền xem thông tin.
     public TeamDetailResponse getTeamMember(Integer teamId, CustomUserDetails userDetails) {
         //1. Check team có tồn tại không
         Team team = teamRepository.findById(teamId).orElseThrow(() -> new BadRequestException("Team không tồn tại"));
@@ -1472,12 +1486,12 @@ public class TeamServiceImpl implements TeamService {
             }
         }
 
-        // 4. Đóng gói dữ liệu trả về cho Frontend
         return TeamDetailResponse.builder().teamId(team.getTeamId()).teamName(team.getTeamName()).leader(leaderInfo).members(officialMembers).createAt(team.getCreateAt()).invitations(inviteInfo).build();
     }
 
     // Leader xem  thông tin về hạng mục thi của đội
     @Override
+    // Tổng hợp sự kiện, vòng thi và kết quả thi đấu hiện tại của đội sinh viên.
     public TeamCompetitionResponse getTeamCompetition(CustomUserDetails userDetails) {
         // Check leader
         Account account = userDetails.getAccount();
@@ -1542,6 +1556,7 @@ public class TeamServiceImpl implements TeamService {
 
     //FUNCTION ADMIN QUẢN LÝ LIST THÔNG TIN TEAM
     @Override
+    // Lấy toàn bộ đội cùng thành viên để quản trị viên theo dõi và quản lý.
     public List<TeamDetailResponse> getTeamForAdmin(CustomUserDetails userDetails) {
         //1. Check admin
         Account account = userDetails.getAccount();
@@ -1565,6 +1580,7 @@ public class TeamServiceImpl implements TeamService {
 
     // FUNCTION EXPERT XEM THÔNG TIN CÁC ĐỘI THI MÀ MÌNH QUẢN LÝ
     @Override
+    // Lấy chi tiết một đội cụ thể theo mã đội và quyền của người yêu cầu.
     public TeamDetailResponse getTeamDetail(Integer teamId, CustomUserDetails userDetails) {
         //1. Check admin
         Account account = userDetails.getAccount();
@@ -1620,6 +1636,7 @@ public class TeamServiceImpl implements TeamService {
     }
 
     // MENTOR CÓ CÙNG HẠNG MỤC THỂ XEM THÔNG TIN CHUNG VỀ TEAM MÌNH DC PHÂN CÔNG
+    // Lấy các đội liên quan đến một sự kiện để phục vụ ban tổ chức.
     public List<TeamDetailResponse> getTeamInfo(Integer eventId, CustomUserDetails userDetails) {
 
         //1. Check coordinator , expert vs vai trò là mentor có thể xem.
@@ -1691,6 +1708,7 @@ public class TeamServiceImpl implements TeamService {
         return response;
     }
 
+    // Tìm đội đang hoạt động mà sinh viên hiện giữ vai trò trưởng nhóm.
     private Team getActiveTeamLedBy(Student student) {
         Team team = teamRepository.findCurrentTeamByStudentAndStatus(
                 student.getStudentId(),
@@ -1705,6 +1723,7 @@ public class TeamServiceImpl implements TeamService {
         return team;
     }
 
+    // Xác nhận sinh viên là trưởng của đúng đội trước khi xử lý yêu cầu tham gia.
     private void validateTeamLeader(Team team, Student student) {
         if (team == null) {
             throw new BadRequestException("Team không tồn tại");
@@ -1723,6 +1742,7 @@ public class TeamServiceImpl implements TeamService {
         }
     }
 
+    // Chỉ cho phép xử lý yêu cầu tham gia vẫn đang ở trạng thái chờ.
     private void validatePendingJoinRequest(TeamInvitation request) {
         if (request.getType() != InvitationType.JOIN_REQUEST) {
             throw new BadRequestException(

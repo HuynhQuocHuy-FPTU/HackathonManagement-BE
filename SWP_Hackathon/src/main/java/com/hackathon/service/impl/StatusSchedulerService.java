@@ -24,27 +24,29 @@ import static com.hackathon.entity.enums.RoundStatus.FINAL_RESULT;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+// Tự động cập nhật trạng thái sự kiện, workshop, vòng thi và kích hoạt các nghiệp vụ đúng thời điểm.
 public class StatusSchedulerService {
 
     private final RoundService roundService;
     private final HackathonEventRepository eventRepository;
     private final RoundRepository roundRepository;
     private final RankingService rankingService;
-    private final RoundAdvancementService roundAdvancementService;
+    private final RoundAdvancementServiceImpl roundAdvancementServiceImpl;
     private final NotificationService notificationService;
     private final RegistrationRepository registrationRepository;
     private final EventService eventService;
     private final TeamRepository teamRepository;
 
     @Scheduled(fixedRate = 5000)
+    // Tự động kết thúc các vòng đã qua thời gian và thực hiện bước chuyển vòng cần thiết.
     public void finalizeRoundsAtEndTime() {
         LocalDateTime now = LocalDateTime.now();
         List<Round> rounds = roundRepository.findByEndTimeLessThanEqualAndAdvancementProcessedAtIsNull(now);
 
         for (Round round : rounds) {
             try {
-                roundAdvancementService.calculateRoundScoresAutomatically(round.getRoundId());
-                roundAdvancementService.advanceRoundAutomatically(round.getRoundId());
+                roundAdvancementServiceImpl.calculateRoundScoresAutomatically(round.getRoundId());
+                roundAdvancementServiceImpl.advanceRoundAutomatically(round.getRoundId());
                 log.info(
                         "Đã tự động tính điểm, xếp hạng và thăng vòng cho round {} sau khi kết thúc.",
                         round.getRoundId()
@@ -62,6 +64,7 @@ public class StatusSchedulerService {
     }
 
     @Scheduled(fixedRate = 5000)
+    // Hủy các sự kiện không đạt số đội tối thiểu khi đã đến mốc kiểm tra.
     public void checkAndCancelEventsBelowMinimumTeams() {
         LocalDateTime now = LocalDateTime.now();
         List<HackathonEvent> events = eventRepository.findByStatusInAndRegistrationDeadlineLessThanEqual(List.of(EventStatus.REGISTRATION_CLOSED),now);
@@ -104,13 +107,14 @@ public class StatusSchedulerService {
 
 
     @Scheduled(fixedRate = 5000)
+    // Tự động tính điểm cho các vòng đã hết hạn chấm và chưa được xử lý.
     public void autoCalculateScores() {
         LocalDateTime now = LocalDateTime.now();
         List<Round> rounds = roundRepository.findByEvaluationDeadlineLessThanEqualAndScoringProcessedAtIsNull(now);
 
         for (Round round : rounds) {
             try {
-                roundAdvancementService.calculateRoundScoresAutomatically(round.getRoundId());
+                roundAdvancementServiceImpl.calculateRoundScoresAutomatically(round.getRoundId());
                 log.info("Đã tự động tính điểm cho round {}.", round.getRoundId());
                 notifyCoordinatorsAboutScoringCompleted(round);
             } catch (Exception exception) {
@@ -125,6 +129,7 @@ public class StatusSchedulerService {
         }
     }
 
+    // Gửi thông báo hoàn tất tính điểm đến ban tổ chức và đánh dấu đã thông báo.
     private void notifyCoordinatorsAboutScoringCompleted(Round round) {
         try {
             notificationService.notifyScoringCompletedToAllCoordinators(round);
@@ -138,6 +143,7 @@ public class StatusSchedulerService {
         }
     }
 
+    // Gửi cảnh báo tính điểm thất bại nhưng giới hạn tần suất để tránh thông báo lặp.
     private void notifyCoordinatorAboutScoringFailure(Round round, Exception exception) {
         if (round.getScoringFailureNotifiedAt() != null) {
             return;
@@ -186,6 +192,7 @@ public class StatusSchedulerService {
 
     @Scheduled(fixedRate = 5000)
     @Transactional
+    // Duyệt các sự kiện và cập nhật trạng thái theo thời gian hiện tại.
     public void updateEventStatusAuto() {
         List<EventStatus> excluded = List.of(
                 EventStatus.DRAFT,
@@ -218,6 +225,7 @@ public class StatusSchedulerService {
 
     @Scheduled(fixedRate = 5000)
     @Transactional
+    // Duyệt các vòng thi và cập nhật trạng thái theo lịch đã cấu hình.
     public void updateRoundStatusAuto() {
         List<EventStatus> eventStatuses = List.of(
                 EventStatus.DRAFT,
@@ -243,6 +251,7 @@ public class StatusSchedulerService {
 
     @Scheduled(fixedRate = 5000)
     @Transactional
+    // Cập nhật trạng thái workshop dựa trên thời gian và trạng thái sự kiện.
     public void updateWorkshopStatusAuto() {
         List<EventStatus> excluded = List.of(
                 EventStatus.DRAFT,
@@ -264,6 +273,7 @@ public class StatusSchedulerService {
     }
 
 
+    // Xác định trạng thái sự kiện phù hợp với các mốc đăng ký, workshop và thi đấu.
     private EventStatus resolveEventStatus(HackathonEvent event, LocalDateTime now) {
 
         EventStatus currentStatus = event.getStatus();
@@ -287,6 +297,7 @@ public class StatusSchedulerService {
     }
 
 
+        // Xác định trạng thái vòng dựa trên thời gian nộp bài, chấm điểm và khiếu nại.
         private RoundStatus resolveRoundStatus(Round round, LocalDateTime now) {
         RoundStatus currentStatus = round.getStatus();
 
@@ -371,6 +382,7 @@ public class StatusSchedulerService {
 //    }
 
 
+    // Tính trạng thái workshop từ thời gian bắt đầu và trạng thái hoàn thành hoặc hủy hiện tại.
     private WorkshopStatus calculateStatus(HackathonEvent event, LocalDateTime now) {
         if (event == null || event.getWorkshopTime() == null) return null;
 

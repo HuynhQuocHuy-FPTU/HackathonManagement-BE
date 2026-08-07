@@ -5,7 +5,7 @@ import com.hackathon.dto.DrawResultRequestDTO;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.LuckyDrawResultService;
-import com.hackathon.service.impl.WorkshopService;
+import com.hackathon.service.WorkshopService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;

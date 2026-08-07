@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 @Transactional
 @Service
+// Quản lý mối liên kết giữa danh mục, vòng thi và các đội được phân vào từng danh mục.
 public class CategoryRoundServiceImpl implements CategoryRoundService {
     @Autowired
     private CategoryRoundRepository categoryRoundRepository;
@@ -28,6 +29,7 @@ public class CategoryRoundServiceImpl implements CategoryRoundService {
     private ExpertRepository expertRepository;
 
     @Override
+    // Tạo cấu hình danh mục theo vòng cho tất cả danh mục được áp dụng trong vòng thi.
     public List<CategoryRound> createCategoryRound(List<Category> categories, Round round) {
         List<CategoryRound> categoryRounds = new ArrayList<>();
 
@@ -48,6 +50,7 @@ public class CategoryRoundServiceImpl implements CategoryRoundService {
     }
 
     @Override
+    // Xóa các liên kết danh mục theo vòng thuộc một sự kiện.
     public void deleteByEventId(Integer eventId) {
         categoryRoundRepository.deleteByEventId(eventId);
     }
@@ -55,6 +58,7 @@ public class CategoryRoundServiceImpl implements CategoryRoundService {
 
     //Mentor xem tất cả các CategoryRound mình được phân công trong trạng thái EVENT ĐANG DIỄN RA
     @Override
+    // Lấy các danh mục theo vòng mà chuyên gia hiện tại được phân công trong sự kiện.
     public List<CategoryRoundResponseDTO> getAssignedCategoryRounds(CustomUserDetails userDetails, Integer eventId) {
         Expert expert = expertRepository.findByAccount_AccountId(userDetails.getAccount().getAccountId())
                 .orElseThrow(() -> new BadRequestException("Bạn không phải là Expert"));
@@ -84,6 +88,7 @@ public class CategoryRoundServiceImpl implements CategoryRoundService {
     }
 
     @Override
+    // Lấy toàn bộ danh mục theo vòng đã được phân công để phục vụ việc quản lý của sự kiện.
     public List<CategoryRoundResponseDTO> getAllAssignedCategoryRounds(CustomUserDetails userDetails, Integer eventId) {
         // 1. Tìm thông tin của Expert dựa vào tài khoản đang đăng nhập
         Expert expert = expertRepository.findByAccount_AccountId(userDetails.getAccount().getAccountId())
@@ -94,7 +99,6 @@ public class CategoryRoundServiceImpl implements CategoryRoundService {
         // chứ không dùng findExpertAssignmentsByRole(... , ExpertRole.MENTOR, ...) như hàm cũ!
         List<ExpertAssign> allAssignments = expertAssignRepository.findExpertAssignments(expert.getExpertId(), eventId);
 
-        // 3. Mapping dữ liệu trả về cho Frontend
         List<CategoryRoundResponseDTO> dtoList = new ArrayList<>();
         for (ExpertAssign ex : allAssignments) {
             CategoryRound cr = ex.getCategoryRound();
