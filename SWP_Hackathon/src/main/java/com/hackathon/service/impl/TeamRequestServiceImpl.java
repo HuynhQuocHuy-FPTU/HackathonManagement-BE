@@ -1191,6 +1191,19 @@ public class TeamRequestServiceImpl implements TeamRequestService {
             Round round,
             RequestType requestType
     ) {
+        LocalDateTime now = LocalDateTime.now();
+        if (requestType == RequestType.DRAW_RESULT_VERIFICATION) {
+            if (round.getHackathonEvent() == null) {
+                throw new BadRequestException(
+                        "Không tìm thấy sự kiện của kết quả bốc thăm");
+            }
+            if (round.getHackathonEvent().getStartDate() != null
+                    && !now.isBefore(round.getHackathonEvent().getStartDate())) {
+                throw new BadRequestException(
+                        "Sự kiện đã bắt đầu, không thể gửi yêu cầu xác minh kết quả bốc thăm");
+            }
+        }
+
         NotificationType notificationType =
                 requestType == RequestType.APPEAL
                         ? NotificationType.RANKING_DRAFT
@@ -1203,10 +1216,9 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                 )
                 .orElseThrow(() -> new BadRequestException(
                         requestType == RequestType.DRAW_RESULT_VERIFICATION
-                                ? "Chỉ có thể gửi yêu cầu xác minh kết quả bốc thăm sau khi đội đã nhận được thông báo kết quả bốc thăm ban đầu"
+                                ? "Bạn chưa có thông báo về kết quả bốc thăm"
                                 : "Không tìm thấy thông báo bảng xếp hạng tạm thời của vòng thi"));
 
-        LocalDateTime now = LocalDateTime.now();
         if (requestType == RequestType.APPEAL) {
             if (round.getAppealStartTime() == null
                     || round.getAppealEndTime() == null) {
