@@ -2,6 +2,7 @@ package com.hackathon.controller;
 
 import com.hackathon.dto.auth.AuthResponse;
 import com.hackathon.dto.user.UpdateProfileRequest;
+import com.hackathon.dto.user.UserProfileResponse;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.UserService;
@@ -39,6 +40,15 @@ public class UserController {
         }
         AuthResponse response = userService.updateProfile(userDetails, request);
         return ResponseEntity.ok(ApiResponse.ok("Cập nhật thông tin cá nhân thành công", response));
+    }
+
+    @GetMapping("/{accountId}/profile")
+    public ResponseEntity<ApiResponse<UserProfileResponse>> getUserProfileById(
+            @PathVariable("accountId") Integer accountId) {
+
+        UserProfileResponse userProfile = userService.getUserProfileById(accountId);
+
+        return ResponseEntity.ok(ApiResponse.ok("Tải hồ sơ người dùng thành công", userProfile));
     }
 
 //    @PostMapping("/change-password")
