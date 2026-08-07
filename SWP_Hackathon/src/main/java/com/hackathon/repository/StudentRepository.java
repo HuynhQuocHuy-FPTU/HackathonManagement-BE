@@ -37,5 +37,12 @@ public interface StudentRepository extends JpaRepository<Student, Integer> {
             @Param("statuses") List<ParticipantStatus> statuses
     );
     Optional<Student> findByAccount_AccountId(Integer accountId);
+    Optional<Student> findByAccount_Email(String email);
+
+
+    @Query("SELECT COUNT(s) FROM Student s WHERE " +
+            "LOWER(s.account.email) LIKE '%fpt.edu.vn' " +
+            "OR LOWER(s.universityName) LIKE '%fpt%'")
+    long countFptStudents();
 
 }

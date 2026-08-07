@@ -61,9 +61,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
      * 5. Lưu TeamRequest, đóng quyền phản hồi notification và lưu nội dung
      *    phản hồi của sinh viên.
      *
-     * @param userDetails thông tin tài khoản đang đăng nhập
      * @param notificationId notification được sinh viên phản hồi
-     * @param command nội dung phản hồi và round cần khiếu nại
      * @return TeamRequest vừa được tạo ở trạng thái PENDING
      */
     @Override

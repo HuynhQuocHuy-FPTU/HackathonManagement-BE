@@ -2,6 +2,7 @@ package com.hackathon.service;
 
 import com.hackathon.dto.analytics.MetricResultDTO;
 import com.hackathon.dto.analytics.ReliabilityResultDTO;
+import com.hackathon.dto.analytics.StudentCountResponse;
 
 import java.util.List;
 
@@ -13,5 +14,7 @@ public interface AnalyticsService {
     ReliabilityResultDTO calculateReliabilityMetrics(Integer eventId);
 
     byte[] exportAnonymizedCsv(String scope, Integer id);
+
+    StudentCountResponse getStudentCounts();
 
 }
