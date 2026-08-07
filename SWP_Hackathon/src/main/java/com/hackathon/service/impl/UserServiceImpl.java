@@ -2,11 +2,13 @@ package com.hackathon.service.impl;
 
 import com.hackathon.dto.auth.AuthResponse;
 import com.hackathon.dto.user.UpdateProfileRequest;
+import com.hackathon.dto.user.UserProfileResponse;
 import com.hackathon.entity.Account;
 import com.hackathon.entity.enums.AccountRole;
 import com.hackathon.entity.enums.EventStatus;
 import com.hackathon.entity.enums.ParticipantStatus;
 import com.hackathon.exception.ApiException;
+import com.hackathon.exception.ResourceNotFoundException;
 import com.hackathon.repository.AccountRepository;
 import com.hackathon.repository.ExpertRepository;
 import com.hackathon.repository.StudentRepository;
@@ -112,7 +114,7 @@ public class UserServiceImpl implements UserService {
     }
 
     // =========================================================================
-    // CÁC HÀM XỬ LÝ PRIVATE (Tuân thủ nguyên tắc SRP và OCP)
+    // CÁC HÀM XỬ LÝ PRIVATE
     // =========================================================================
 
     private String updateStudentProfile(Account account, UpdateProfileRequest request) {
@@ -173,5 +175,66 @@ public class UserServiceImpl implements UserService {
         if (request.getOrganization() != null) coordinator.setOrganization(request.getOrganization());
 
         return coordinator.getOrganization();
+    }
+
+    @Override
+    @Transactional(readOnly = true) // Bật readOnly để tối ưu performance cho truy vấn SELECT
+    public UserProfileResponse getUserProfileById(Integer accountId) {
+
+        // 1. Lấy thông tin tài khoản (Đã bao gồm JOIN FETCH tối ưu DB)
+        Account account = accountRepository.findByIdWithProfile(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + accountId));
+
+        // 2. Khởi tạo dữ liệu cơ bản chung cho mọi Role
+        UserProfileResponse.UserProfileResponseBuilder response = UserProfileResponse.builder()
+                .accountId(account.getAccountId())
+                .role(account.getRole())
+                .email(account.getEmail())
+                .avatarUrl(account.getAvatarUrl())
+                .githubUsername(account.getGithubUsername())
+                .githubUrl(account.getGithubUsername() != null ? "https://github.com/" + account.getGithubUsername() : null);
+
+        // 3. Phân loại và Map dữ liệu chi tiết dựa trên Role
+        switch (account.getRole()) {
+            case STUDENT:
+                if (account.getStudent() != null) {
+                    response.displayName(account.getStudent().getStudentName())
+                            .studentCode(account.getStudent().getStudentCode())
+                            .universityName(account.getStudent().getUniversityName())
+                            .major(account.getStudent().getMajor())
+                            .address(account.getStudent().getAddress());
+                } else {
+                    response.displayName("Sinh viên (Chưa cập nhật hồ sơ)");
+                }
+                break;
+
+            case EXPERT:
+                if (account.getExpert() != null) {
+                    response.displayName(account.getExpert().getExpertName())
+                            .department(account.getExpert().getDepartment())
+                            .organization(account.getExpert().getOrganization());
+                } else {
+                    response.displayName("Chuyên gia (Chưa cập nhật hồ sơ)");
+                }
+                break;
+
+            case EVENTCOORDINATOR:
+            case ADMIN:
+                if (account.getEventCoordinator() != null) {
+                    response.displayName(account.getEventCoordinator().getCoordinatorName())
+                            .department(account.getEventCoordinator().getDepartment())
+                            .organization(account.getEventCoordinator().getOrganization());
+                } else {
+                    response.displayName("Ban Tổ Chức");
+                }
+                break;
+
+            default:
+                response.displayName("Người dùng hệ thống");
+                break;
+        }
+
+        // 4. Trả về DTO hoàn chỉnh (Các trường NULL sẽ tự động bị cắt bỏ bởi @JsonInclude)
+        return response.build();
     }
 }

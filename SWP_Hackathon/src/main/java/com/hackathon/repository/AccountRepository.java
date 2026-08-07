@@ -55,4 +55,16 @@ public interface AccountRepository extends JpaRepository<Account, Integer> {
 
     long countByRole(AccountRole role);
     long countByStatus(AccountStatus status);
+
+    /**
+     * TỐI ƯU HÓA: Sử dụng LEFT JOIN FETCH để kéo toàn bộ dữ liệu Profile
+     * (Student, Expert, EventCoordinator) trong 1 câu truy vấn duy nhất.
+     * Giải quyết triệt để lỗi N+1 Query.
+     */
+    @Query("SELECT a FROM Account a " +
+            "LEFT JOIN FETCH a.student " +
+            "LEFT JOIN FETCH a.expert " +
+            "LEFT JOIN FETCH a.eventCoordinator " +
+            "WHERE a.accountId = :accountId")
+    Optional<Account> findByIdWithProfile(@Param("accountId") Integer accountId);
 }

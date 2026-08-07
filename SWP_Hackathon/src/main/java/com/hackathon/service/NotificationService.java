@@ -86,4 +86,6 @@ public interface NotificationService {
     void notifyMentorSupportTeam(Account teamLeader, List<ExpertAssign> mentors);
 
     void notifyInviteTeam(Account teamLeader, Account account, String type, Long invitationId);
+
+    void notifyMentorResponseSupportTeam(Account teamLeader, Account mentor , String responseMessage,boolean isAccepted);
 }

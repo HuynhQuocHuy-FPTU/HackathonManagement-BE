@@ -2,6 +2,7 @@ package com.hackathon.repository;
 
 import com.hackathon.entity.Account;
 import com.hackathon.entity.TeamDraft;
+import com.hackathon.entity.enums.TeamStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -13,4 +14,5 @@ public interface TeamDraftRepository extends JpaRepository<TeamDraft, Long> {
 
     Optional<TeamDraft> findByTeamNameIgnoreCase(String teamName);
 
+    List<TeamDraft> findAllByStatus(TeamStatus status);
 }

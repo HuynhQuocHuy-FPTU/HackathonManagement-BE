@@ -21,6 +21,7 @@ public interface TeamInvitationRepository extends JpaRepository<TeamInvitation, 
     List<TeamInvitation> findByTeamDraft(TeamDraft teamDraft);
 
     List<TeamInvitation> findByTeam(Team team);
+
     long countByTeamDraftAndStatus(TeamDraft teamDraft, InvitationStatus status);
 
     boolean existsByTeamAndAccountAndStatusAndType(Team team, Account account, InvitationStatus status, InvitationType type);
@@ -33,6 +34,9 @@ public interface TeamInvitationRepository extends JpaRepository<TeamInvitation, 
             Account account,
             InvitationType type
     );
+    boolean existsByTeamAndAccountAndStatus(Team team, Account account, InvitationStatus status);
+
     boolean existsByTeamDraftAndEmail(TeamDraft teamDraft, String email);
+
     boolean existsByAccountAndStatusAndTeamDraftNot(Account account, InvitationStatus status, TeamDraft teamDraft);
 }

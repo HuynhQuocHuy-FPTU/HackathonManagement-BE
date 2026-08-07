@@ -28,8 +28,6 @@ import java.util.List;
 public class RegistrationController {
 
     @Autowired
-    private NotificationService notificationService;
-    @Autowired
     private RegistrationEventService registrationEventService;
 
     @GetMapping("/history/current-team")
