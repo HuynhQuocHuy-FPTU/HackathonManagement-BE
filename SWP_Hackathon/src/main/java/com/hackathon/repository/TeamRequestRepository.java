@@ -17,29 +17,7 @@ public interface TeamRequestRepository extends JpaRepository<TeamRequest,Integer
 
     //Tìm các request PENDING chưa có ai nhận (expertAssign IS NULL)
     //thuộc về các Đội thi đấu ở Hạng mục mà Mentor này được phân công.
-//    @Query(value = "SELECT DISTINCT tr FROM TeamRequest tr " +
-//            "JOIN tr.team t " +
-//            "JOIN t.registrations reg " +
-//            "JOIN reg.participants p " +
-//            "WHERE tr.status = 'PENDING' " +
-//            "AND tr.expertAssign IS NULL " +  // Chỉ lấy request chưa ai nhận
-//            "AND reg.status = 'APPROVED' " +
-//            "AND p.categoryRound.round.status = 'ONGOING' " +
-//            "AND p.categoryRound.categoryRoundId IN " +
-//            "    (SELECT ea.categoryRound.categoryRoundId FROM ExpertAssign ea " +
-//            "     WHERE ea.expert.expertId = :expertId " +
-//            "     AND ea.role = 'MENTOR')",
-//            countQuery = "SELECT COUNT(tr) FROM TeamRequest tr " +
-//                    "JOIN tr.team t " +
-//                    "JOIN t.registrations reg " +
-//                    "JOIN reg.participants p " +
-//                    "WHERE tr.status = 'PENDING' " +
-//                    "AND tr.expertAssign IS NULL " +
-//                    "AND reg.status = 'APPROVED' " +
-//                    "AND p.categoryRound.round.status = 'ONGOING' " +
-//                    "AND p.categoryRound.categoryRoundId IN " +
-//                    "(SELECT ea.categoryRound.categoryRoundId FROM ExpertAssign ea " +
-//                    "WHERE ea.expert.expertId = :expertId AND ea.role = 'MENTOR')")
+
     @Query(value = "SELECT tr FROM TeamRequest tr " +
             "JOIN tr.team t " +
             "JOIN t.registrations reg " +
