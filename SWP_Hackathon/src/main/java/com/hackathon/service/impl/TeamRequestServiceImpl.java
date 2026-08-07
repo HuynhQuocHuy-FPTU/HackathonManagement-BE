@@ -1182,22 +1182,15 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                         ? NotificationType.RANKING_DRAFT
                         : NotificationType.ASSIGNED_CATEGORY;
 
-        Notification notification = notificationRepository.findFirstByAccount_AccountIdAndRound_RoundIdAndTypeOrderByCreatedAtAsc(
-                        leaderAccountId,
-                        round.getRoundId(),
-                        notificationType
-                )
-                .orElseThrow(() -> new BadRequestException(
-                        requestType == RequestType.DRAW_RESULT_VERIFICATION
-                                ? "Chỉ có thể gửi yêu cầu xác minh kết quả bốc thăm sau khi đội đã nhận được thông báo kết quả bốc thăm ban đầu"
-                                : "Không tìm thấy thông báo bảng xếp hạng tạm thời của vòng thi"));
-
         LocalDateTime now = LocalDateTime.now();
+
+        // Với khiếu nại điểm, ưu tiên kiểm tra thời gian trước khi tìm thông báo.
+        // Nhờ đó người dùng nhận đúng lý do khi thời gian khiếu nại chưa bắt đầu.
         if (requestType == RequestType.APPEAL) {
             if (round.getAppealStartTime() == null
                     || round.getAppealEndTime() == null) {
                 throw new BadRequestException(
-                        "Vòng thi chưa thiết lập thời gian nhận đơn khiếu nại");
+                        "Chưa đến thời gian của khiếu nại của vòng thi");
             }
             if (now.isBefore(round.getAppealStartTime())) {
                 throw new BadRequestException(
@@ -1207,12 +1200,36 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                 throw new BadRequestException(
                         "Đã hết thời hạn gửi đơn khiếu nại");
             }
-        } else if (notification.getResponseDeadline() == null) {
-            throw new BadRequestException(
-                    "Thông báo kết quả bốc thăm ban đầu chưa thiết lập thời hạn xác minh");
-        } else if (now.isAfter(notification.getResponseDeadline())) {
-            throw new BadRequestException(
-                    "Đã hết thời hạn xác minh kết quả bốc thăm theo thông báo kết quả ban đầu");
+        }
+
+        Notification notification = notificationRepository.findFirstByAccount_AccountIdAndRound_RoundIdAndTypeOrderByCreatedAtAsc(
+                        leaderAccountId,
+                        round.getRoundId(),
+                        notificationType
+                )
+                .orElseThrow(() -> new BadRequestException(
+                        requestType == RequestType.DRAW_RESULT_VERIFICATION
+                                ? "Bạn chưa có thông báo về kết quả bốc thăm"
+                                : "Chưa có thông báo kết quả tạm thời của vòng thi nên chưa thể gửi yêu cầu khiếu nại"));
+
+        if (requestType == RequestType.DRAW_RESULT_VERIFICATION) {
+            if (round.getHackathonEvent() == null) {
+                throw new BadRequestException(
+                        "Không tìm thấy sự kiện của kết quả bốc thăm");
+            }
+            if (round.getHackathonEvent().getStartDate() != null
+                    && !now.isBefore(round.getHackathonEvent().getStartDate())) {
+                throw new BadRequestException(
+                        "Sự kiện đã bắt đầu, không thể gửi yêu cầu xác minh kết quả bốc thăm");
+            }
+            if (notification.getResponseDeadline() == null) {
+                throw new BadRequestException(
+                        "Thông báo kết quả bốc thăm chưa thiết lập thời hạn phản hồi");
+            }
+            if (now.isAfter(notification.getResponseDeadline())) {
+                throw new BadRequestException(
+                        "Đã hết thời hạn xác minh kết quả bốc thăm theo thông báo kết quả ban đầu");
+            }
         }
 
         return notification;
@@ -1251,13 +1268,6 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                 teamRequestRepository.save(teamRequest), null, null);
     }
 
-    /**
-     * Chuyển TeamRequest entity thành TeamRequestResponse.
-     *
-     * Nếu caller truyền CategoryRound thì round/category được lấy từ đó.
-     * Nếu không, round lấy trực tiếp từ TeamRequest và category hiển thị N/A.
-     * Helper này không thay đổi hoặc lưu dữ liệu.
-     */
     private TeamRequestResponse toResponse(
             TeamRequest request,
             CategoryRound categoryRound,
