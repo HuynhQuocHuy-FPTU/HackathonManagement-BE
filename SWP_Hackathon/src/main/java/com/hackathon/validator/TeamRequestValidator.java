@@ -9,6 +9,7 @@ import com.hackathon.entity.Team;
 import com.hackathon.entity.TeamParticipant;
 import com.hackathon.entity.TeamRequest;
 import com.hackathon.entity.enums.NotiResponseStatus;
+import com.hackathon.entity.enums.NotificationType;
 import com.hackathon.entity.enums.RequestStatus;
 import com.hackathon.entity.enums.RequestType;
 import com.hackathon.exception.BadRequestException;
@@ -77,8 +78,26 @@ public class TeamRequestValidator {
             throw new BadRequestException(
                     "Thông báo này không cho phép phản hồi");
         }
+
+        LocalDateTime now = LocalDateTime.now();
+        if (notification.getType() == NotificationType.ASSIGNED_CATEGORY) {
+            if (notification.getRound() == null) {
+                throw new BadRequestException(
+                        "Thông báo kết quả bốc thăm chưa liên kết với vòng thi");
+            }
+            if (notification.getRound().getHackathonEvent() == null) {
+                throw new BadRequestException(
+                        "Không tìm thấy sự kiện của kết quả bốc thăm");
+            }
+            if (notification.getRound().getHackathonEvent().getStartDate() != null
+                    && !now.isBefore(notification.getRound().getHackathonEvent().getStartDate())) {
+                throw new BadRequestException(
+                        "Sự kiện đã bắt đầu, không thể gửi yêu cầu xác minh kết quả bốc thăm");
+            }
+        }
+
         if (notification.getResponseDeadline() == null
-                || LocalDateTime.now().isAfter(notification.getResponseDeadline())) {
+                || now.isAfter(notification.getResponseDeadline())) {
             throw new BadRequestException("Đã hết thời hạn phản hồi");
         }
         if (notification.getResponseStatus() != null

@@ -2,7 +2,6 @@ package com.hackathon.dto.round;
 
 import com.hackathon.entity.EvaluationCriteria;
 import com.hackathon.entity.enums.ParticipantStatus;
-import com.hackathon.entity.enums.FileType;
 import com.hackathon.entity.enums.RoundStatus;
 import com.hackathon.entity.enums.SubmissionType;
 import lombok.Builder;
@@ -22,8 +21,6 @@ public record RoundStatusDTO(
         LocalDateTime SubmissionDeadline,
         LocalDateTime StartTime,
         LocalDateTime EndTime,
-        List<FileType> allowedFileTypes,
-        Integer maxFileCount,
         List<EvaluationCriteria> evaluetionCriteria
 ) {
 }

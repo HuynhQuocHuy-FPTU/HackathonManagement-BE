@@ -1,6 +1,7 @@
 package com.hackathon.entity.enums;
 
 import java.util.Arrays;
+import java.util.List;
 
 public enum FileType {
     PDF("application/pdf", FileGroup.DOCUMENT),
@@ -10,7 +11,13 @@ public enum FileType {
     PPTX("application/vnd.openxmlformats-officedocument.presentationml.presentation", FileGroup.DOCUMENT),
     XLS("application/vnd.ms-excel", FileGroup.DOCUMENT),
     XLSX("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", FileGroup.DOCUMENT),
-    ZIP("application/zip", FileGroup.ARCHIVE),
+    ZIP(
+            "application/zip",
+            FileGroup.ARCHIVE,
+            "application/x-zip-compressed",
+            "application/x-zip",
+            "multipart/x-zip"
+    ),
     RAR("application/x-rar-compressed", FileGroup.ARCHIVE),
     PNG("image/png", FileGroup.IMAGE),
     JPG("image/jpeg", FileGroup.IMAGE),
@@ -19,10 +26,16 @@ public enum FileType {
 
 
     private final String mimeType;
+    private final List<String> mimeTypes;
     private final FileGroup group;
 
-    FileType(String mimeType, FileGroup group) {
+    FileType(String mimeType, FileGroup group, String... alternativeMimeTypes) {
         this.mimeType = mimeType;
+        this.mimeTypes = java.util.stream.Stream.concat(
+                        java.util.stream.Stream.of(mimeType),
+                        Arrays.stream(alternativeMimeTypes)
+                )
+                .toList();
         this.group = group;
     }
 
@@ -32,6 +45,10 @@ public enum FileType {
 
     public FileGroup getGroup() {
         return group;
+    }
+
+    public List<String> getMimeTypes() {
+        return mimeTypes;
     }
 
     public boolean isImage() {
@@ -50,7 +67,8 @@ public enum FileType {
     public static FileType fromMimeType(String mimeType) {
         if (mimeType == null || mimeType.isBlank()) return null;
         return Arrays.stream(values())
-                .filter(type -> type.mimeType.equalsIgnoreCase(mimeType.trim()))
+                .filter(type -> type.mimeTypes.stream()
+                        .anyMatch(value -> value.equalsIgnoreCase(mimeType.trim())))
                 .findFirst()
                 .orElse(null);
     }
