@@ -7,7 +7,6 @@ import com.hackathon.entity.enums.*;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.exception.ResourceNotFoundException;
 import com.hackathon.repository.*;
-import com.hackathon.service.grading.EvaluationAuditLogService;
 import com.hackathon.service.grading.GradingService;
 import com.hackathon.service.grading.support.*;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +40,7 @@ public class GradingServiceImpl implements GradingService {
     private final CriteriaCompletenessValidator criteriaValidator;
     private final ScoreCalculator scoreCalculator;
     private final EvaluationMapper evaluationMapper;
-    private final EvaluationAuditLogService evaluationAuditLogService;
+    private final EvaluationAuditLogServiceImpl evaluationAuditLogServiceImpl;
     private final CategoryRoundRepository categoryRoundRepository;
 
 
@@ -82,7 +81,11 @@ public class GradingServiceImpl implements GradingService {
                     fileDTOList.add(new FileDTO(f.getFileName(), f.getFileUrl()));
                 }
             }
-            String commitUrl = sub.getGithubUrl() + "/commit/" + sub.getLatestCommitSha();
+            String commitUrl = sub.getGithubUrl();
+            if (commitUrl != null && sub.getLatestCommitSha() != null
+                    && !sub.getLatestCommitSha().isBlank()) {
+                commitUrl += "/commit/" + sub.getLatestCommitSha();
+            }
 
             return AssignedSubmissionForJudgeResponse.builder()
                     .submissionId(sub.getSubmissionId())
@@ -146,8 +149,11 @@ public class GradingServiceImpl implements GradingService {
                         }
                     }
 
-                    String commitUrl = submission.getGithubUrl()
-                            + "/commit/" + submission.getLatestCommitSha();
+                    String commitUrl = submission.getGithubUrl();
+                    if (commitUrl != null && submission.getLatestCommitSha() != null
+                            && !submission.getLatestCommitSha().isBlank()) {
+                        commitUrl += "/commit/" + submission.getLatestCommitSha();
+                    }
 
                     return AssignedSubmissionForJudgeResponse.builder()
                             .submissionId(submission.getSubmissionId())
@@ -323,7 +329,7 @@ public class GradingServiceImpl implements GradingService {
         // 11. ĐẨY DỮ LIỆU XUỐNG DB & KÍCH HOẠT LƯU VẾT HỆ THỐNG (Audit Service Log)
         evaluation = evaluationRepository.save(evaluation);
 
-        evaluationAuditLogService.saveAttempt(
+        evaluationAuditLogServiceImpl.saveAttempt(
                 account,
                 evaluation,
                 targetType,

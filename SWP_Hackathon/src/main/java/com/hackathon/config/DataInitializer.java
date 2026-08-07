@@ -1,8 +1,11 @@
 package com.hackathon.config;
 
+import com.hackathon.dto.event.EventDescription;
+import com.hackathon.dto.event.Prize;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.*;
 import com.hackathon.repository.*;
+import com.hackathon.service.impl.EvaluationAuditLogServiceImpl;
 import com.hackathon.service.grading.support.ScoreCalculator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +19,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -34,7 +38,7 @@ public class DataInitializer implements CommandLineRunner {
     private static final int TEAM_COUNT = 10;
     private static final int MEMBER_PER_TEAM = 3;
 
-    @Value("${app.init-data:true}")
+    @Value("${app.init-data:false}")
     private boolean initData;
 
     @Autowired
@@ -65,6 +69,9 @@ public class DataInitializer implements CommandLineRunner {
     private CategoryRoundRepository categoryRoundRepository;
 
     @Autowired
+    private CategoryRepository categoryRepository;
+
+    @Autowired
     private RegistrationRepository registrationRepository;
 
     @Autowired
@@ -81,6 +88,12 @@ public class DataInitializer implements CommandLineRunner {
 
     @Autowired
     private EvaluationRepository evaluationRepository;
+
+    @Autowired
+    private EvaluationAuditLogRepository evaluationAuditLogRepository;
+
+    @Autowired
+    private EvaluationAuditLogServiceImpl evaluationAuditLogServiceImpl;
 
     @Autowired
     private CriteriaSetRepository criteriaSetRepository;
@@ -106,15 +119,18 @@ public class DataInitializer implements CommandLineRunner {
 
         createAdmins(password);
         createEventCoordinators(password);
+
         createExperts(password);
         createCriteriaSets();
-//
+
         createStudents(password);
         Team[] teams = createTeams();
 
-//        registerTeamsForEvent(
-//                TARGET_EVENT_ID
-//        );
+        createDemoEvents();
+
+        registerTeamsForEvent(
+                TARGET_EVENT_ID
+        );
 //
 //        submitForParticipantsWithoutSubmission(
 //                TARGET_ROUND_ID
@@ -207,6 +223,263 @@ public class DataInitializer implements CommandLineRunner {
                 );
             }
         }
+    }
+
+    private void createDemoEvents() {
+        EventCoordinator coordinator = eventCoordinatorRepository
+                .findFirstByOrderByCoordinatorIdAsc()
+                .orElseThrow(() -> new IllegalStateException(
+                        "Không có Event Coordinator để tạo event demo"));
+
+        LocalDateTime now = LocalDateTime.now();
+
+        createEventIfAbsent(
+                "AI Innovation Hackathon 2026",
+                "AI Innovation Challenge",
+                "FPT University HCM",
+                now.plusDays(10),
+                now.plusDays(12),
+                now.plusDays(7),
+                now.plusDays(9),
+                EventSeason.SUMMER,
+                coordinator
+        );
+
+        createEventIfAbsent(
+                "Green Tech Hackathon 2026",
+                "Technology for a Greener Future",
+                "FPT University Da Nang",
+                now.plusDays(25),
+                now.plusDays(27),
+                now.plusDays(20),
+                now.plusDays(23),
+                EventSeason.FALL,
+                coordinator
+        );
+
+        createEventIfAbsent(
+                "Smart City Hackathon 2026",
+                "Building Smarter Cities",
+                "FPT University Ha Noi",
+                now.plusDays(40),
+                now.plusDays(42),
+                now.plusDays(35),
+                now.plusDays(38),
+                EventSeason.FALL,
+                coordinator
+        );
+    }
+
+    private void createEventIfAbsent(
+            String eventName,
+            String title,
+            String address,
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            LocalDateTime registrationDeadline,
+            LocalDateTime workshopTime,
+            EventSeason season,
+            EventCoordinator coordinator
+    ) {
+        HackathonEvent event = eventRepository
+                .findByEventNameContainingIgnoreCase(eventName)
+                .stream()
+                .filter(item -> eventName.equalsIgnoreCase(
+                        item.getEventName()))
+                .findFirst()
+                .orElseGet(() -> HackathonEvent.builder()
+                        .eventName(eventName)
+                        .status(EventStatus.ACTIVE)
+                        .createAt(LocalDateTime.now())
+                        .eventCoordinator(coordinator)
+                        .build());
+
+        event.setTitle(title);
+        event.setAddress(address);
+        event.setStartDate(startDate);
+        event.setEndDate(endDate);
+        event.setRegistrationDeadline(registrationDeadline);
+        event.setWorkshopTime(workshopTime);
+        event.setWorkshopStatus(WorkshopStatus.UPCOMING);
+        event.setSeason(season);
+        event.setSeasonYear(startDate.getYear());
+        event.setMinTeam(2);
+        event.setMaxTeam(20);
+        event.setMinTeamSize(2);
+        event.setMaxTeamSize(5);
+        event.setBannerUrl("https://placehold.co/1200x400");
+        event.setDescription(createDemoEventDescription(title));
+
+        HackathonEvent savedEvent = eventRepository.save(event);
+        createDemoEventStructureIfMissing(savedEvent);
+    }
+
+    private EventDescription createDemoEventDescription(String title) {
+        return new EventDescription(
+                title + " là sân chơi phát triển sản phẩm công nghệ sáng tạo.",
+                List.of(
+                        new Prize("Giải Nhất", "20.000.000 VNĐ"),
+                        new Prize("Giải Nhì", "10.000.000 VNĐ"),
+                        new Prize("Giải Ba", "5.000.000 VNĐ")
+                ),
+                List.of(
+                        "Nhận cố vấn từ chuyên gia",
+                        "Mở rộng mạng lưới nghề nghiệp",
+                        "Nhận chứng nhận tham gia"
+                ),
+                List.of(
+                        "Gian lận hoặc sao chép sản phẩm",
+                        "Vi phạm quy tắc ứng xử"
+                ),
+                List.of(
+                        "Mỗi sinh viên chỉ thuộc một team",
+                        "Nộp bài đúng thời hạn",
+                        "Tuân thủ quyết định của ban tổ chức"
+                )
+        );
+    }
+
+    private void createDemoEventStructureIfMissing(HackathonEvent event) {
+        List<Category> categories = categoryRepository
+                .findAllByHackathonEvent_EventId(event.getEventId());
+        if (categories.isEmpty()) {
+            categories = categoryRepository.saveAll(List.of(
+                    createCategory(event, "Artificial Intelligence"),
+                    createCategory(event, "Software Solutions")
+            ));
+        }
+
+        List<Round> rounds = roundRepository
+                .findAllByHackathonEvent_EventId(event.getEventId());
+        if (!rounds.isEmpty()) {
+            return;
+        }
+
+        CriteriaSet criteriaSet = criteriaSetRepository.findAll()
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(
+                        "Không có criteria set để tạo round demo"));
+
+        List<Expert> judges = expertRepository.findAll()
+                .stream()
+                .limit(2)
+                .toList();
+        if (judges.isEmpty()) {
+            throw new IllegalStateException(
+                    "Không có expert để phân công event demo");
+        }
+
+        Round preliminaryRound = createDemoRound(
+                event,
+                criteriaSet,
+                "Vòng sơ loại",
+                1,
+                event.getStartDate(),
+                event.getStartDate().plusHours(20),
+                5
+        );
+        Round finalRound = createDemoRound(
+                event,
+                criteriaSet,
+                "Vòng chung kết",
+                2,
+                event.getStartDate().plusDays(1),
+                event.getEndDate(),
+                3
+        );
+
+        for (Round round : List.of(preliminaryRound, finalRound)) {
+            createEvaluationCriteriaForRound(round, criteriaSet);
+            for (Category category : categories) {
+                CategoryRound categoryRound = new CategoryRound();
+                categoryRound.setCategory(category);
+                categoryRound.setRound(round);
+                CategoryRound savedCategoryRound =
+                        categoryRoundRepository.save(categoryRound);
+
+                for (int index = 0; index < judges.size(); index++) {
+                    ExpertAssign assignment = ExpertAssign.builder()
+                            .expert(judges.get(index))
+                            .categoryRound(savedCategoryRound)
+                            .role(index == 0
+                                    ? ExpertRole.CORE_JUDGE
+                                    : ExpertRole.GUEST_JUDGE)
+                            .build();
+                    expertAssignRepository.save(assignment);
+                }
+            }
+        }
+    }
+
+    private Category createCategory(
+            HackathonEvent event,
+            String categoryName
+    ) {
+        Category category = new Category();
+        category.setCategoryName(categoryName);
+        category.setHackathonEvent(event);
+        return category;
+    }
+
+    private Round createDemoRound(
+            HackathonEvent event,
+            CriteriaSet criteriaSet,
+            String roundName,
+            int orderIndex,
+            LocalDateTime startTime,
+            LocalDateTime endTime,
+            int topN
+    ) {
+        Round round = Round.builder()
+                .roundName(roundName)
+                .description("Vòng thi demo của " + event.getEventName())
+                .startTime(startTime)
+                .endTime(endTime)
+                .submissionDeadline(endTime.minusHours(4))
+                .evaluationDeadline(endTime.minusHours(2))
+                .resolveAppealDeadline(endTime.minusHours(1))
+                .advancementRule("TOP_N")
+                .topN(topN)
+                .orderIndex(orderIndex)
+                .submissionType(SubmissionType.BOTH)
+                .allowedFileType(List.of(FileType.PDF, FileType.ZIP))
+                .maxFileCount(3)
+                .status(RoundStatus.UPCOMING)
+                .criteriaSet(criteriaSet)
+                .hackathonEvent(event)
+                .build();
+        return roundRepository.save(round);
+    }
+
+    private void createEvaluationCriteriaForRound(
+            Round round,
+            CriteriaSet criteriaSet
+    ) {
+        List<CriteriaDetail> criteriaDetails = criteriaDetailRepository
+                .findByCriteriaSet_CriteriaSetId(
+                        criteriaSet.getCriteriaSetId());
+
+        if (criteriaDetails.isEmpty()) {
+            throw new IllegalStateException(
+                    "Criteria set '" + criteriaSet.getCriteriaSetName()
+                            + "' chưa có tiêu chí chi tiết");
+        }
+
+        List<EvaluationCriteria> evaluationCriteria = criteriaDetails
+                .stream()
+                .map(detail -> {
+                    EvaluationCriteria criterion = new EvaluationCriteria();
+                    criterion.setCriteriaName(detail.getCriteriaName());
+                    criterion.setDescription(detail.getDescription());
+                    criterion.setWeight(detail.getWeight());
+                    criterion.setMaxScore(criteriaSet.getMaxScore());
+                    criterion.setType(detail.getCriteriaType());
+                    criterion.setRound(round);
+                    return criterion;
+                })
+                .toList();
+        evaluationCriteriaRepository.saveAll(evaluationCriteria);
     }
 
     private void createExperts(String password) {
@@ -509,7 +782,7 @@ public class DataInitializer implements CommandLineRunner {
                                     .teamSize(
                                             MEMBER_PER_TEAM
                                     )
-                                    .status(TeamStatus.DRAFT)
+                                    .status(TeamStatus.ACTIVE)
                                     .build()
                     ));
 
@@ -857,15 +1130,18 @@ public class DataInitializer implements CommandLineRunner {
                 ExpertAssign assignment =
                         assignments.get(judgeOrder);
 
-                boolean alreadyGraded =
+                Optional<Evaluation> existingEvaluation =
                         evaluationRepository
                                 .findByExpertAssignIdAndSubmissionId(
                                         assignment.getAssignId(),
                                         submission.getSubmissionId()
-                                )
-                                .isPresent();
+                                );
 
-                if (alreadyGraded) {
+                if (existingEvaluation.isPresent()) {
+                    saveInitialAuditAttemptsIfMissing(
+                            existingEvaluation.get(),
+                            criteria
+                    );
                     skippedCount++;
                     continue;
                 }
@@ -956,7 +1232,8 @@ public class DataInitializer implements CommandLineRunner {
         /*
          * Evaluation cascade ALL xuống EvaluationDetail.
          */
-        evaluationRepository.save(evaluation);
+        Evaluation savedEvaluation = evaluationRepository.save(evaluation);
+        saveInitialAuditAttemptsIfMissing(savedEvaluation, criteria);
 
         System.out.println(
                 submission.getTeam().getTeamName()
@@ -966,6 +1243,32 @@ public class DataInitializer implements CommandLineRunner {
                         + " = "
                         + totalScore
         );
+    }
+
+    private void saveInitialAuditAttemptsIfMissing(
+            Evaluation evaluation,
+            List<EvaluationCriteria> criteria
+    ) {
+        if (evaluationAuditLogRepository
+                .countByEvaluation_EvaluationId(
+                        evaluation.getEvaluationId()) > 0) {
+            return;
+        }
+
+        Account judgeAccount = evaluation.getExpertAssign()
+                .getExpert()
+                .getAccount();
+
+        criteria.stream()
+                .map(EvaluationCriteria::getType)
+                .filter(type -> type != null)
+                .distinct()
+                .forEach(type -> evaluationAuditLogServiceImpl.saveAttempt(
+                        judgeAccount,
+                        evaluation,
+                        type,
+                        false
+                ));
     }
 
     /**

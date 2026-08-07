@@ -284,6 +284,8 @@ public class ParticipantServiceImpl implements ParticipantService {
                 .StartTime(round.getStartTime())
                 .submissionType(round.getSubmissionType())
                 .EndTime(round.getEndTime())
+                .allowedFileTypes(round.getAllowedFileType())
+                .maxFileCount(round.getMaxFileCount())
                 .build();
     }
 

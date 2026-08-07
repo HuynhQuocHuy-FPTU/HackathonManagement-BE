@@ -5,7 +5,7 @@ import com.hackathon.dto.evaluation.EvaluationDetailAuditResponse;
 import com.hackathon.dto.evaluation.EvaluationAuditListResponse;
 import com.hackathon.exception.ApiResponse;
 import com.hackathon.security.CustomUserDetails;
-import com.hackathon.service.grading.EvaluationAuditLogService;
+import com.hackathon.service.impl.EvaluationAuditLogServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,7 +23,7 @@ import java.util.List;
 @PreAuthorize("hasRole('EVENTCOORDINATOR')")
 public class EvaluationAuditLogController {
 
-    private final EvaluationAuditLogService evaluationAuditLogService;
+    private final EvaluationAuditLogServiceImpl evaluationAuditLogServiceImpl;
 
     @GetMapping("/category-rounds/{categoryRoundId}/evaluations")
     public ResponseEntity<ApiResponse<List<EvaluationAuditListResponse>>>
@@ -32,7 +32,7 @@ public class EvaluationAuditLogController {
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         List<EvaluationAuditListResponse> response =
-                evaluationAuditLogService.getEvaluations(
+                evaluationAuditLogServiceImpl.getEvaluations(
                         userDetails.getAccount(), categoryRoundId);
         return ResponseEntity.ok(ApiResponse.ok(
                 "Lấy danh sách bảng chấm theo hạng mục của vòng thi thành công",
@@ -46,7 +46,7 @@ public class EvaluationAuditLogController {
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         List<EvaluationAuditAttemptResponse> response =
-                evaluationAuditLogService.getEvaluationAttempts(
+                evaluationAuditLogServiceImpl.getEvaluationAttempts(
                         userDetails.getAccount(), evaluationId);
         return ResponseEntity.ok(ApiResponse.ok(
                 "Lấy lịch sử các lần chấm thành công", response));
@@ -59,7 +59,7 @@ public class EvaluationAuditLogController {
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         List<EvaluationDetailAuditResponse> response =
-                evaluationAuditLogService.getAttemptDetails(
+                evaluationAuditLogServiceImpl.getAttemptDetails(
                         userDetails.getAccount(), attemptId);
         return ResponseEntity.ok(ApiResponse.ok(
                 "Lấy chi tiết điểm của lần chấm thành công", response));
