@@ -3,7 +3,9 @@ package com.hackathon.service.impl;
 import com.hackathon.dto.analytics.MetricResultDTO;
 import com.hackathon.dto.analytics.RawScoreDTO;
 import com.hackathon.dto.analytics.ReliabilityResultDTO;
+import com.hackathon.dto.analytics.StudentCountResponse;
 import com.hackathon.repository.EvaluationDetailRepository;
+import com.hackathon.repository.StudentRepository;
 import com.hackathon.service.AnalyticsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
 public class AnalyticsServiceImpl implements AnalyticsService {
 
     private final EvaluationDetailRepository evaluationDetailRepository;
+    private final StudentRepository studentRepository;
 
     // =========================================================================
     // 0. SCOPE RESOLVER (BỘ ĐIỀU HƯỚNG PHẠM VI DỮ LIỆU)
@@ -255,6 +258,23 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
         // 5. Stream trực tiếp chuỗi ra mảng byte để Controller download thẳng xuống Client
         return csvBuilder.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    @Override
+    public StudentCountResponse getStudentCounts() {
+        // 1. Lấy tổng số lượng sinh viên (Hàm count() mặc định của JpaRepository)
+        long totalStudents = studentRepository.count();
+
+        // 2. Lấy số lượng SV FPT (Email FPT hoặc Tên trường có chữ FPT)
+        long fptStudents = studentRepository.countFptStudents();
+
+        // 3. Tính SV trường ngoài bằng phép trừ
+        long externalStudents = totalStudents - fptStudents;
+
+        return StudentCountResponse.builder()
+                .fptStudentCount(fptStudents)
+                .externalStudentCount(externalStudents)
+                .build();
     }
 
     /**
