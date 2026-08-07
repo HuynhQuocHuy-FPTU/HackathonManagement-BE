@@ -17,29 +17,55 @@ public interface TeamRequestRepository extends JpaRepository<TeamRequest,Integer
 
     //Tìm các request PENDING chưa có ai nhận (expertAssign IS NULL)
     //thuộc về các Đội thi đấu ở Hạng mục mà Mentor này được phân công.
+//    @Query(value = "SELECT DISTINCT tr FROM TeamRequest tr " +
+//            "JOIN tr.team t " +
+//            "JOIN t.registrations reg " +
+//            "JOIN reg.participants p " +
+//            "WHERE tr.status = 'PENDING' " +
+//            "AND tr.expertAssign IS NULL " +  // Chỉ lấy request chưa ai nhận
+//            "AND reg.status = 'APPROVED' " +
+//            "AND p.categoryRound.round.status = 'ONGOING' " +
+//            "AND p.categoryRound.categoryRoundId IN " +
+//            "    (SELECT ea.categoryRound.categoryRoundId FROM ExpertAssign ea " +
+//            "     WHERE ea.expert.expertId = :expertId " +
+//            "     AND ea.role = 'MENTOR')",
+//            countQuery = "SELECT COUNT(tr) FROM TeamRequest tr " +
+//                    "JOIN tr.team t " +
+//                    "JOIN t.registrations reg " +
+//                    "JOIN reg.participants p " +
+//                    "WHERE tr.status = 'PENDING' " +
+//                    "AND tr.expertAssign IS NULL " +
+//                    "AND reg.status = 'APPROVED' " +
+//                    "AND p.categoryRound.round.status = 'ONGOING' " +
+//                    "AND p.categoryRound.categoryRoundId IN " +
+//                    "(SELECT ea.categoryRound.categoryRoundId FROM ExpertAssign ea " +
+//                    "WHERE ea.expert.expertId = :expertId AND ea.role = 'MENTOR')")
     @Query(value = "SELECT tr FROM TeamRequest tr " +
             "JOIN tr.team t " +
             "JOIN t.registrations reg " +
             "JOIN reg.participants p " +
-            "WHERE tr.status = 'PENDING' " +
-            "AND tr.expertAssign IS NULL " +  // Chỉ lấy request chưa ai nhận
+            "LEFT JOIN tr.expertAssign ea " +
+            "WHERE (tr.status = 'RESOLVED' AND ea.expert.expertId = :expertId AND ea.role = 'MENTOR') " +
+            "   OR (tr.status = 'PENDING' AND tr.expertAssign IS NULL) " +
             "AND reg.status = 'APPROVED' " +
             "AND p.categoryRound.round.status = 'ONGOING' " +
             "AND p.categoryRound.categoryRoundId IN " +
-            "    (SELECT ea.categoryRound.categoryRoundId FROM ExpertAssign ea " +
-            "     WHERE ea.expert.expertId = :expertId " +
-            "     AND ea.role = 'MENTOR')",
+            "    (SELECT assigned.categoryRound.categoryRoundId FROM ExpertAssign assigned " +
+            "     WHERE assigned.expert.expertId = :expertId " +
+            "     AND assigned.role = 'MENTOR')",
             countQuery = "SELECT COUNT(tr) FROM TeamRequest tr " +
                     "JOIN tr.team t " +
                     "JOIN t.registrations reg " +
                     "JOIN reg.participants p " +
-                    "WHERE tr.status = 'PENDING' " +
-                    "AND tr.expertAssign IS NULL " +
+                    "LEFT JOIN tr.expertAssign ea " +
+                    "WHERE ((tr.status = 'RESOLVED' AND ea.expert.expertId = :expertId AND ea.role = 'MENTOR') " +
+                    "   OR (tr.status = 'PENDING' AND tr.expertAssign IS NULL)) " +
                     "AND reg.status = 'APPROVED' " +
                     "AND p.categoryRound.round.status = 'ONGOING' " +
                     "AND p.categoryRound.categoryRoundId IN " +
-                    "(SELECT ea.categoryRound.categoryRoundId FROM ExpertAssign ea " +
-                    "WHERE ea.expert.expertId = :expertId AND ea.role = 'MENTOR')")
+                    "    (SELECT assigned.categoryRound.categoryRoundId FROM ExpertAssign assigned " +
+                    "     WHERE assigned.expert.expertId = :expertId " +
+                    "     AND assigned.role = 'MENTOR')")
     List<TeamRequest> findRequestForExpertRoleMentor(
             @Param("expertId") Integer expertID);
 
@@ -63,7 +89,7 @@ public interface TeamRequestRepository extends JpaRepository<TeamRequest,Integer
             RequestStatus status
     );
 
-    List<TeamRequest> findByRound_RoundIdAndRequestTypeAndStatusIn(Integer roundId, RequestType type, List<RequestStatus> statuses);
+//    List<TeamRequest> findByRound_RoundIdAndRequestTypeAndStatusIn(Integer roundId, RequestType type, List<RequestStatus> statuses);
 
     List<TeamRequest> findByRound_HackathonEvent_EventIdAndRequestTypeNotOrderByCreateDateDesc(
             Integer eventId,
