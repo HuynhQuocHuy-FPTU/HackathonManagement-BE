@@ -269,28 +269,30 @@ public class TeamServiceImpl implements TeamService {
     // Nếu như chưa dk thì có quyền thay đổi tùy thích
     public void checkEventRegistrationWindow(Team team) {
         List<Registration> registrations = registrationRepository.findByTeam(team);
-        if (registrations != null && !registrations.isEmpty()) {
-            int lockHours = systemConfigService.getIntConfig(SystemConfigKey.LOCK_BEFORE_DEADLINE_HOURS);
+        if (registrations == null || registrations.isEmpty()) {
+            return; // Không có đăng ký sự kiện nào thì bỏ qua
+        }
+        int lockHours = systemConfigService.getIntConfig(SystemConfigKey.LOCK_BEFORE_DEADLINE_HOURS);
+        LocalDateTime now = LocalDateTime.now();
+        for (Registration regis : registrations) {
+            HackathonEvent event = regis.getHackathonEvent();
 
-            boolean isPastDeadline = registrations.stream().anyMatch(regis -> {
-                //  Nếu đơn APPROVED không cho phép làm dì hết
-                if (regis.getStatus() == RegistrationStatus.APPROVED && regis.getHackathonEvent().getStatus() == EventStatus.COMPLETED) {
-                    return true;
-                }
-                if (regis.getStatus() == RegistrationStatus.PENDING) {
-                    HackathonEvent event = regis.getHackathonEvent();
-                    if (event.getRegistrationDeadline() != null) {
-                        // CHECK: Nếu thời gian hiện tại đã vượt qua (Deadline - LOCK_HOURS)
-                        return !LocalDateTime.now().isAfter(event.getRegistrationDeadline().minusHours(lockHours));
-                    }
-                }
-                return false;
-            });
-
-            if (!isPastDeadline) {
-                throw new BadRequestException("Hệ thống đã đóng cổng thay đổi thông tin do cuộc thi đã bước vào giai đoạn chốt sổ (Trước deadline " + lockHours + " giờ).");
+            // 1. Nếu đơn đã APPROVED và sự kiện đã COMPLETED -> Chặn
+            if (regis.getStatus() == RegistrationStatus.APPROVED && event != null && event.getStatus() == EventStatus.COMPLETED) {
+                throw new BadRequestException("Cuộc thi đã hoàn thành, không thể thay đổi thông tin.");
             }
 
+            // 2. Kiểm tra thời gian khóa sổ cho đơn PENDING (hoặc các trạng thái cần check deadline)
+            if (regis.getStatus() == RegistrationStatus.PENDING && event != null && event.getRegistrationDeadline() != null) {
+
+                // Tính thời điểm bắt đầu khóa sổ (Deadline trừ đi số giờ lock)
+                LocalDateTime lockTime = event.getRegistrationDeadline().minusHours(lockHours);
+
+                // NẾU thời gian hiện tại ĐÃ SAU (hoặc bằng) thời điểm khóa sổ -> Chặn!
+                if (now.isAfter(lockTime) || now.isEqual(lockTime)) {
+                    throw new BadRequestException("Hệ thống đã đóng cổng thay đổi thông tin do cuộc thi đã bước vào giai đoạn chốt sổ (Trước deadline " + lockHours + " giờ).");
+                }
+            }
         }
 
     }
@@ -334,12 +336,12 @@ public class TeamServiceImpl implements TeamService {
 
     }
 
-    //-------------------------------------//
-    // STUDENT: TẠO TEAM, LỜI MỜI
-    //-------------------------------------//
+//-------------------------------------//
+// STUDENT: TẠO TEAM, LỜI MỜI
+//-------------------------------------//
 
-    //FUNCTION 1:Create Team
-    //BR: Khi tao team phai co tieu thieu it nhat 1 thanh vien duoc moi (bao gom leader va 1 thanh vien khac)
+//FUNCTION 1:Create Team
+//BR: Khi tao team phai co tieu thieu it nhat 1 thanh vien duoc moi (bao gom leader va 1 thanh vien khac)
 
     @Transactional
     @Override
@@ -790,7 +792,7 @@ public class TeamServiceImpl implements TeamService {
         }
     }
 
-    //FUNCTION 3: RỜI TEAM
+//FUNCTION 3: RỜI TEAM
 
     @Transactional
     @Override
@@ -846,7 +848,7 @@ public class TeamServiceImpl implements TeamService {
         TeamDraft draft = teamDraftRepository.findById(Long.valueOf(teamId))
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy team hoặc draft với ID này."));
 
-        boolean isDraftOwner = draft.getAccount() != null && draft.getAccount().getAccountId()==(currentUser.getAccountId());
+        boolean isDraftOwner = draft.getAccount() != null && draft.getAccount().getAccountId() == (currentUser.getAccountId());
 
         if (isDraftOwner) {
             // Chủ nhóm Draft bấm rời -> Xóa/hủy luôn Draft
@@ -880,96 +882,6 @@ public class TeamServiceImpl implements TeamService {
             );
         }
     }
-//    @Transactional
-//    @Override
-//    public void leaveTeam(CustomUserDetails userDetails, Integer teamId) {
-//        //1. Lấy thông tin người dùng hiện đang đăng nhập từ JWT/OAuth2.
-//        Account currentUser = userDetails.getAccount();
-//        Student student = currentUser.getStudent();
-//        //1.1 Check Student có đang thuộc Team nào không(Team chinh thuc)
-//        Optional<TeamMember> teamMember = teamMemberRepository.findByTeam_TeamIdAndStudent(teamId, student);
-//        if (teamMember.isPresent()) {
-//            //2. Check deadline
-//            Team team = teamMember.get().getTeam();
-//            checkEventRegistrationWindow(team);
-//
-//            //2. Leader khong duoc phep roi khoi nhom , truoc khi chuyen quyen leader cho nguoi khac
-//            int countMember = team.getTeamSize();
-//            if (teamMember.get().getIsLeader() && countMember > 1) {
-//                throw new BadRequestException("Leader phải chuyển quyền cho thành viên khác trước khi rời team.");
-//            }
-//
-//            // Th1: Đội chỉ còn đúng 1 người xóa luôn
-//            if (countMember == 1) {
-//                auditService.saveLog(currentUser, AuditAction.UPDATE_TEAM, AuditEntityType.TEAM, team.getTeamId(), "Leave team " + team.getTeamName());
-//                team.setStatus(TeamStatus.DELETED);
-//                team.setTeamSize(0);
-//                teamRepository.save(team);
-//                teamMemberRepository.delete(teamMember.get());
-//
-//                teamDraftRepository.findByAccount_AccountIdAndStatus(currentUser.getAccountId(), TeamStatus.DRAFT)
-//                        .ifPresent(draft -> {
-//                            draft.setStatus(TeamStatus.DELETED);
-//                            teamDraftRepository.save(draft);
-//                        });
-//                return;
-//
-//
-//            }
-//            // Th2 2: Đội có nhiều thành viên rời nhóm bình thường
-//            teamMemberRepository.delete(teamMember.get());
-//            //5. Cập nhật lại số lượng thành viên thực tế trong DB
-//            team.setTeamSize(Math.max(0, team.getTeamSize() - 1));
-//            teamRepository.save(team);
-//            // 1.2 Xử lý Team Draft
-//            teamDraftRepository.findByAccount_AccountIdAndStatus(currentUser.getAccountId(), TeamStatus.DRAFT)
-//                    .ifPresent(teamDraft -> {
-//                        teamDraft.setStatus(TeamStatus.DELETED);
-//                        teamDraftRepository.save(teamDraft);
-//                    });
-//
-//            auditService.saveLog(currentUser, AuditAction.UPDATE_TEAM, AuditEntityType.TEAM, team.getTeamId(), "Leave team " + team.getTeamName());
-//
-//        }
-//        // TEAM DRAFT
-//
-//        TeamDraft draft = teamDraftRepository.findById(Long.valueOf(t))
-//                .orElseThrow(() -> new BadRequestException("Không tìm thấy team."));
-//
-//        // Leader rời draft -> xóa draft
-//        if (draft.getAccount().getAccountId() == (currentUser.getAccountId())) {
-//
-//            draft.setStatus(TeamStatus.DELETED);
-//            teamDraftRepository.save(draft);
-//
-//            auditService.saveLog(
-//                    currentUser,
-//                    AuditAction.UPDATE_TEAM,
-//                    AuditEntityType.TEAM,
-//                    Math.toIntExact(draft.getTeamDraftId()),
-//                    "Delete draft " + draft.getTeamName());
-//
-//            return;
-//        }
-//
-//        // Member rời draft
-//        TeamInvitation invitation = teamInvitationRepository
-//                .findByTeamDraftAndAccount(draft, currentUser)
-//                .orElseThrow(() -> new BadRequestException("Bạn không thuộc Team Draft này."));
-//
-//        teamInvitationRepository.delete(invitation);
-//
-//        draft.setTeamSize(Math.max(0, draft.getTeamSize() - 1));
-//        teamDraftRepository.save(draft);
-//
-//        auditService.saveLog(
-//                currentUser,
-//                AuditAction.UPDATE_TEAM,
-//                AuditEntityType.TEAM,
-//                Math.toIntExact(draft.getTeamDraftId()),
-//                "Leave draft " + draft.getTeamName());
-
-//    }
 
 
     //FUNCTION 4: CHUYỂN QUYỀN LEADER(Chỉ mới gửi lời mời đến thành viên muốn chuyển quyền )
@@ -979,7 +891,8 @@ public class TeamServiceImpl implements TeamService {
 
         // 2. Check Team
         Account currentUser = userDetails.getAccount();
-        TeamMember teamMember = teamMemberRepository.findByTeam_TeamIdAndStudent(teamId, currentUser.getStudent()).orElseThrow(() -> new BadRequestException("Bạn hiện không tham gia hoặc không phải thành viên của đội này!"));
+        TeamMember teamMember = teamMemberRepository.findByTeam_TeamIdAndStudent(teamId, currentUser.getStudent())
+                .orElseThrow(() -> new BadRequestException("Bạn hiện không tham gia hoặc không phải thành viên của đội này!"));
         Team team = teamMember.getTeam();
 
         //3. Check Team đã được phê duyệt chưa(xem lại bussiness rule)
@@ -1008,17 +921,15 @@ public class TeamServiceImpl implements TeamService {
         }
 
         // 8. Tạo thông báo gửi lời mời
-        Notification inviteTransfer = new Notification();
+        TeamInvitation inviteTransfer = new TeamInvitation();
 
         inviteTransfer.setAccount(newLeader.getAccount());
         inviteTransfer.setTeam(team);
-        inviteTransfer.setType(NotificationType.LEADER_TRANSFER_REQUEST);
-        inviteTransfer.setChannel(NotificationChannel.EMAIL);
-        inviteTransfer.setTitle("TRANSFER LEADER.");
-        inviteTransfer.setMessage("Bạn được mời làm trưởng nhóm " + team.getTeamName());
+        inviteTransfer.setType(InvitationType.LEADER_TRANSFER_REQUEST);
+        inviteTransfer.setTeamInvitationId(Long.valueOf(teamId));
         inviteTransfer.setStatus(InvitationStatus.PENDING);
         inviteTransfer.setCreatedAt(LocalDateTime.now());
-        Notification savedNoti = notificationRepository.save(inviteTransfer);
+        TeamInvitation savedNoti = teamInvitationRepository.save(inviteTransfer);
 
         // 9. Gửi lời mời
         try {
@@ -1031,7 +942,7 @@ public class TeamServiceImpl implements TeamService {
             props.put("leaderName", currentUser.getStudent().getStudentName());
             props.put("email", currentUser.getEmail());
             props.put("receiverEmail", newLeader.getAccount().getEmail());
-            props.put("notificationId", savedNoti.getId());
+            props.put("invitationId", savedNoti.getTeamInvitationId());
             mailRequest.setProps(props);
             emailService.sendEmail(mailRequest, "transfer");
         } catch (Exception e) {
@@ -1040,9 +951,9 @@ public class TeamServiceImpl implements TeamService {
         auditService.saveLog(currentUser, AuditAction.UPDATE_TEAM, AuditEntityType.TEAM, team.getTeamId(), "Transfer leader " + team.getTeamName() + "leader mới: " + newLeader);
     }
 
-    //-------------------------------------//
-    //XỬ LÝ LỜI MỜI: CHẤP NHẬN - TỪ CHỐI
-    //-------------------------------------//
+//-------------------------------------//
+//XỬ LÝ LỜI MỜI: CHẤP NHẬN - TỪ CHỐI
+//-------------------------------------//
 
     //FUNCTION 5: HÀM XỬ LÝ CHẤP NHẬN LỜI MỜI CHO TRANSFER, INVITE TEAM
     @Override
