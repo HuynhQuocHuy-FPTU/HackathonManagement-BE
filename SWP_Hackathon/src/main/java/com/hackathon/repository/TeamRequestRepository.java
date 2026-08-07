@@ -45,7 +45,7 @@ public interface TeamRequestRepository extends JpaRepository<TeamRequest,Integer
             "JOIN t.registrations reg " +
             "JOIN reg.participants p " +
             "LEFT JOIN tr.expertAssign ea " +
-            "WHERE (tr.status = 'RESOLVED' AND ea.expert.expertId = :expertId AND ea.role = 'MENTOR') " +
+            "WHERE (tr.status IN ('RESOLVED','REJECTED') AND ea.expert.expertId = :expertId AND ea.role = 'MENTOR') " +
             "   OR (tr.status = 'PENDING' AND tr.expertAssign IS NULL) " +
             "AND reg.status = 'APPROVED' " +
             "AND p.categoryRound.round.status = 'ONGOING' " +
