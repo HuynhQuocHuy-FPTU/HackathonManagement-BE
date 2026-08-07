@@ -1262,54 +1262,116 @@ public class TeamServiceImpl implements TeamService {
     @Transactional()
     public TeamDetailResponse getTeamDetailByStudentId(CustomUserDetails userDetails) {
         Account currentAccount = userDetails.getAccount();
+        TeamDraft teamDraft = teamDraftRepository.findByAccount(currentAccount).orElse(null);
         List<TeamMember> members = teamMemberRepository.findByStudent_StudentId(currentAccount.getStudent().getStudentId());
-        if (members.isEmpty()) {
-            throw new BadRequestException("Bạn hiện chưa tham gia đội nào.");
-        }
-        Team team = teamRepository.findById(members.get(0).getTeam().getTeamId()).orElseThrow(() -> new BadRequestException("Team không tồn tại"));
-        //2. Check account đang đăng nhập có đag  là thành viên của Team đó hay không
-        TeamMember teamMember = teamMemberRepository.findByTeamAndStudent(team, currentAccount.getStudent()).orElseThrow(() -> new BadRequestException("Sinh viên hiện tại không thuộc Team này. Không được phép xem danh sách Team này."));
-        //3. Lấy danh sách teamMember
-        List<TeamMember> teamMembers = teamMemberRepository.findByTeam(team);
-        TeamDetailResponse.MemberInfo leaderInfo = null;
-        List<TeamDetailResponse.MemberInfo> officialMembers = new ArrayList<>();
-        for (TeamMember member : teamMembers) {
-            TeamDetailResponse.MemberInfo info = TeamDetailResponse.MemberInfo.builder().studentCode(member.getStudent().getStudentCode()).fullName(member.getStudent().getStudentName()).email(member.getStudent().getAccount().getEmail()).avatarUrl(member.getStudent().getAccount().getAvatarUrl()).isLeader(member.getIsLeader()).major(member.getStudent().getMajor()).build();
 
-            if (member.getIsLeader()) {
-                leaderInfo = info;
-            } else {
-                officialMembers.add(info); // Chỉ add thành viên thường vào list này
-            }
+        // 1. Kiểm tra xem user có team chính thức hoặc team draft nào không
+        if (teamDraft == null && members.isEmpty()) {
+            throw new BadRequestException("Bạn hiện chưa tham gia hoặc tạo đội nào.");
         }
-        // 4. Lấy danh sách các email đã gửi lời mời
-        List<TeamDetailResponse.InviteInfo> inviteInfo = new ArrayList<>();
-        // Chỉ khi người đang xem là LEADER  thì mới xem được lời mời
-        if (teamMember.getIsLeader()) {
-            List<TeamInvitation> invites;
-            Optional<TeamDraft> teamDraftOpt = teamDraftRepository.findByTeamNameIgnoreCase(team.getTeamName());
-            if (teamDraftOpt.isPresent()) {
-                // Team đang draft
-                invites = teamInvitationRepository.findByTeamDraft(teamDraftOpt.get());
-            } else {
-                // Team đã chính thức
-                invites = teamInvitationRepository.findByTeam(team);
+
+        // Trường hợp đã có team chính thức
+        if (!members.isEmpty()) {
+            Team team = teamRepository.findById(members.get(0).getTeam().getTeamId())
+                    .orElseThrow(() -> new BadRequestException("Team không tồn tại"));
+
+            // 2. Check account đang đăng nhập có đang là thành viên của Team đó hay không
+            TeamMember teamMember = teamMemberRepository.findByTeamAndStudent(team, currentAccount.getStudent())
+                    .orElseThrow(() -> new BadRequestException("Sinh viên hiện tại không thuộc Team này. Không được phép xem danh sách Team này."));
+
+            //3. Lấy danh sách teamMember
+            List<TeamMember> teamMembers = teamMemberRepository.findByTeam(team);
+            TeamDetailResponse.MemberInfo leaderInfo = null;
+            List<TeamDetailResponse.MemberInfo> officialMembers = new ArrayList<>();
+            for (TeamMember member : teamMembers) {
+                TeamDetailResponse.MemberInfo info = TeamDetailResponse.MemberInfo.builder()
+                        .studentCode(member.getStudent().getStudentCode())
+                        .fullName(member.getStudent().getStudentName())
+                        .email(member.getStudent().getAccount().getEmail())
+                        .avatarUrl(member.getStudent().getAccount().getAvatarUrl())
+                        .isLeader(member.getIsLeader())
+                        .major(member.getStudent().getMajor())
+                        .build();
+
+                if (member.getIsLeader()) {
+                    leaderInfo = info;
+                } else {
+                    officialMembers.add(info);
+                }
             }
-            for (TeamInvitation invite : invites) {
+            // 4. Lấy danh sách các email đã gửi lời mời
+            List<TeamDetailResponse.InviteInfo> inviteInfo = new ArrayList<>();
+            // Chỉ khi người đang xem là LEADER  thì mới xem được lời mời
+            if (teamMember.getIsLeader()) {
+                List<TeamInvitation> invites;
+                Optional<TeamDraft> teamDraftOpt = teamDraftRepository.findByTeamNameIgnoreCase(team.getTeamName());
+                if (teamDraftOpt.isPresent()) {
+                    // Team đang draft
+                    invites = teamInvitationRepository.findByTeamDraft(teamDraftOpt.get());
+                } else {
+                    // Team đã chính thức
+                    invites = teamInvitationRepository.findByTeam(team);
+                }
+                for (TeamInvitation invite : invites) {
+                    inviteInfo.add(new TeamDetailResponse.InviteInfo(
+                            invite.getEmail(),
+                            invite.getStatus().name()));
+                }
+            }
+
+
+            // 4. Đóng gói dữ liệu trả về cho Frontend
+            return TeamDetailResponse.builder()
+                    .teamId(team.getTeamId())
+                    .teamName(team.getTeamName())
+                    .leader(leaderInfo)
+                    .members(officialMembers)
+                    .sizeTeam(teamMembers.size())
+                    .invitations(inviteInfo)
+                    .build();
+        }
+        // Trường hợp 2  teamDraft (chưa có team chính thức)
+        TeamDetailResponse.MemberInfo leaderInfo = TeamDetailResponse.MemberInfo.builder()
+                .studentCode(currentAccount.getStudent().getStudentCode())
+                .fullName(currentAccount.getStudent().getStudentName())
+                .email(currentAccount.getEmail())
+                .avatarUrl(currentAccount.getAvatarUrl())
+                .isLeader(true)
+                .major(currentAccount.getStudent().getMajor())
+                .build();
+        // Lấy danh sách lời mời đã gửi của đội nháp
+        List<TeamInvitation> invites = teamInvitationRepository.findByTeamDraft(teamDraft);
+        List<TeamDetailResponse.InviteInfo> inviteInfo = new ArrayList<>();
+        List<TeamDetailResponse.MemberInfo> draftMembers = new ArrayList<>();
+        for (TeamInvitation invite : invites) {
+//
+            if (invite.getStatus().name().equals("ACCEPTED")) {
+                // Tìm thông tin sinh viên dựa theo email hoặc tài khoản của lời mời
+                Optional<Student> studentOpt = studentRepository.findByAccount_Email(invite.getEmail());
+                if (studentOpt.isPresent()) {
+                    Student student = studentOpt.get();
+                    draftMembers.add(TeamDetailResponse.MemberInfo.builder()
+                            .studentCode(student.getStudentCode())
+                            .fullName(student.getStudentName())
+                            .email(invite.getEmail())
+                            .avatarUrl(student.getAccount() != null ? student.getAccount().getAvatarUrl() : null)
+                            .isLeader(false)
+                            .major(student.getMajor())
+                            .build());
+                }
+            } else {
+                // Các trạng thái PENDING,... đưa vào danh sách lời mời đang chờ
                 inviteInfo.add(new TeamDetailResponse.InviteInfo(
                         invite.getEmail(),
                         invite.getStatus().name()));
             }
         }
-
-
-        // 4. Đóng gói dữ liệu trả về cho Frontend
+        int totalTeamSize = 1 + draftMembers.size();
         return TeamDetailResponse.builder()
-                .teamId(team.getTeamId())
-                .teamName(team.getTeamName())
+                .teamName(teamDraft.getTeamName())
                 .leader(leaderInfo)
-                .members(officialMembers)
-                .sizeTeam(teamMembers.size())
+                .members(new ArrayList<>()) // Đội nháp chưa có thành viên chính thức nào khác ngoài leader
+                .sizeTeam(totalTeamSize)
                 .invitations(inviteInfo)
                 .build();
     }

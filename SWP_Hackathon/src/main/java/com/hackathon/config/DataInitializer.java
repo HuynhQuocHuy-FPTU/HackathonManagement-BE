@@ -112,18 +112,18 @@ public class DataInitializer implements CommandLineRunner {
         createStudents(password);
         Team[] teams = createTeams();
 
-        registerTeamsForEvent(
-                TARGET_EVENT_ID
-        );
-
-        submitForParticipantsWithoutSubmission(
-                TARGET_ROUND_ID
-        );
-
-
-        gradeSubmissionsByAssignments(
-                TARGET_ROUND_ID
-        );
+//        registerTeamsForEvent(
+//                TARGET_EVENT_ID
+//        );
+//
+//        submitForParticipantsWithoutSubmission(
+//                TARGET_ROUND_ID
+//        );
+//
+//
+//        gradeSubmissionsByAssignments(
+//                TARGET_ROUND_ID
+//        );
     }
 
     // =====================================================
