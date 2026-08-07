@@ -28,7 +28,7 @@ public class DataInitializer implements CommandLineRunner {
      * Thay bằng ID event và round thật.
      * Round phải thuộc event.
      */
-    private static final Integer TARGET_EVENT_ID = 3;
+    private static final Integer TARGET_EVENT_ID = 10;
     private static final Integer TARGET_ROUND_ID = 1;
 
     private static final int ADMIN_COUNT = 2;

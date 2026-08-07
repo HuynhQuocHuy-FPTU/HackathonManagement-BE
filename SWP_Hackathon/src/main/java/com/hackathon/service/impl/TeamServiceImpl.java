@@ -677,8 +677,8 @@ public class TeamServiceImpl implements TeamService {
 
         // Lấy ra đối tượng Team từ dòng Leader tìm được
         Team team = leaderRole.getTeam();
-        if (team.getStatus() != TeamStatus.DRAFT) {
-            throw new BadRequestException("Chỉ được chỉnh sửa Team khi ở trạng thái DRAFT.");
+        if (team.getStatus() != TeamStatus.ACTIVE) {
+            throw new BadRequestException("Không được phép chỉnh sửa thông tin đội thi khi đang tham giải đấu.");
         }
         // 4. Check Team này đã được phê duyệt đội khi gửi đơn đăng ký chưa
         List<Registration> registration = registrationRepository.findByTeam(team);

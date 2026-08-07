@@ -52,14 +52,14 @@ public class TeamRequestServiceImpl implements TeamRequestService {
 
     /**
      * Tạo TeamRequest khi leader phản hồi trực tiếp một Notification.
-     *
+     * <p>
      * Luồng xử lý:
      * 1. Kiểm tra tài khoản đăng nhập là sinh viên.
      * 2. Lấy notification và xác nhận tài khoản có quyền phản hồi.
      * 3. Với ASSIGNED_CATEGORY: tạo DRAW_RESULT_VERIFICATION.
      * 4. Với RANKING_DRAFT: tạo APPEAL cho round tương ứng.
      * 5. Lưu TeamRequest, đóng quyền phản hồi notification và lưu nội dung
-     *    phản hồi của sinh viên.
+     * phản hồi của sinh viên.
      *
      * @param notificationId notification được sinh viên phản hồi
      * @return TeamRequest vừa được tạo ở trạng thái PENDING
@@ -103,9 +103,10 @@ public class TeamRequestServiceImpl implements TeamRequestService {
     //---------------------------------------------//
     // TEAM YÊU CẦU SỰ HỔ TRỢ TỪ MENTOR
     //---------------------------------------------//
+
     /**
      * Leader gửi yêu cầu hỗ trợ đến mentor phụ trách CategoryRound hiện tại.
-     *
+     * <p>
      * Hàm kiểm tra tài khoản là student, student là leader của team đang thi,
      * team chưa có MENTOR_SUPPORT đang chờ, round đang ONGOING và
      * CategoryRound đã có mentor được phân công. Sau khi lưu request, hệ thống
@@ -176,7 +177,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
 
     /**
      * Lấy các yêu cầu MENTOR_SUPPORT mà expert hiện tại có thể xử lý.
-     *
+     * <p>
      * Ngoài dữ liệu request, response còn chứa CategoryRound hiện tại và số
      * yêu cầu mentor đã chấp nhận/từ chối trong round để phục vụ hiển thị.
      */
@@ -219,6 +220,8 @@ public class TeamRequestServiceImpl implements TeamRequestService {
                     .requestMessage(rq.getRequestMessage())
                     .acceptedRequests(acceptedRequest)
                     .rejectedRequests(rejectedRequest)
+                    .responseAt(rq.getResponseAt())
+                    .responseMessage(rq.getResponseMessage())
                     .build();
         }).toList();
     }
@@ -229,7 +232,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
 
     /**
      * Mentor tiếp nhận một yêu cầu MENTOR_SUPPORT đang ở trạng thái PENDING.
-     *
+     * <p>
      * Hàm kiểm tra expert thuộc CategoryRound của team và request chưa bị
      * mentor khác nhận. Khi hợp lệ, request được gắn ExpertAssign, cập nhật
      * trạng thái xử lý, gửi notification cho leader và ghi audit log.
@@ -266,7 +269,13 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         teamRequest.setStatus(RequestStatus.RESOLVED);
         teamRequest.setResponseAt(LocalDateTime.now());
         teamRequest.setExpertAssign(mySpecificAssign);
+        teamRequest.setResponseMessage(responseMessage);
         teamRequest.setResponder(account);
+        Account teamLeader = teamRequest.getTeam().getTeamMembers().stream()
+                .filter(TeamMember::getIsLeader)
+                .map(tm -> tm.getStudent().getAccount())
+                .findFirst().orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin trưởng nhóm."));
+        notificationService.notifyMentorResponseSupportTeam(teamLeader, account, responseMessage, true);
 
         auditService.saveLog(
                 account,
@@ -298,7 +307,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
 
     /**
      * Mentor từ chối một yêu cầu MENTOR_SUPPORT đang chờ.
-     *
+     * <p>
      * Chỉ mentor có phân công phù hợp mới được từ chối. Request được cập nhật
      * trạng thái REJECTED, lưu lý do phản hồi, thông báo cho leader và ghi log.
      */
@@ -335,12 +344,18 @@ public class TeamRequestServiceImpl implements TeamRequestService {
         teamRequest.setExpertAssign(mySpecificAssign);
         teamRequest.setStatus(RequestStatus.REJECTED);
         teamRequest.setResponseAt(LocalDateTime.now());
+        teamRequest.setResponseMessage(responseMessage);
         teamRequest.setResponder(account);
         if (responseMessage == null || responseMessage.isEmpty()) {
             teamRequest.setResponseMessage("Yêu cầu đã được từ chối");
         } else {
             teamRequest.setResponseMessage(responseMessage);
         }
+        Account teamLeader = teamRequest.getTeam().getTeamMembers().stream()
+                .filter(TeamMember::getIsLeader)
+                .map(tm -> tm.getStudent().getAccount())
+                .findFirst().orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin trưởng nhóm."));
+        notificationService.notifyMentorResponseSupportTeam(teamLeader, account, responseMessage, false);
 
 
         auditService.saveLog(
@@ -462,6 +477,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
 
     // Khi có yêu cầu phúc khảo từ các bài đánh giá của mình. Ban giám khảo nhận danh sách bài nộp của đội mình đã chấm .
     // Tiến hành xem xét lại và chấm điểm lại.
+
     /**
      * Lấy các đơn khiếu nại liên quan đến bài chấm của giám khảo hiện tại.
      */
@@ -570,7 +586,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
     /**
      * Điểm vào chung để Ban tổ chức xử lý APPEAL hoặc
      * DRAW_RESULT_VERIFICATION.
-     *
+     * <p>
      * Hàm tải request, kiểm tra RequestType rồi chuyển tiếp:
      * - APPEAL sang processAppealRequest().
      * - DRAW_RESULT_VERIFICATION sang processDrawResultVerification().
@@ -600,12 +616,12 @@ public class TeamRequestServiceImpl implements TeamRequestService {
 
     /**
      * Cho phép leader tạo request mà không phản hồi qua endpoint notification.
-     *
+     * <p>
      * APPEAL:
      * - Team phải tham gia round.
      * - Phải có RANKING_DRAFT ban đầu.
      * - Thời gian hiện tại phải nằm trong appeal time của round.
-     *
+     * <p>
      * DRAW_RESULT_VERIFICATION:
      * - Team phải có kết quả phân category trong event.
      * - Phải có ASSIGNED_CATEGORY ban đầu.
@@ -679,7 +695,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
 
     /**
      * Dựng DRAW_RESULT_VERIFICATION từ notification ASSIGNED_CATEGORY.
-     *
+     * <p>
      * Hàm tìm team mà tài khoản đang là leader và team đó chính là team nhận
      * notification. Sau đó kiểm tra không có request cùng loại đang mở và team
      * thực sự đã có TeamParticipant được gán CategoryRound. Hàm chỉ dựng entity,
@@ -724,7 +740,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
 
     /**
      * Dựng APPEAL từ notification RANKING_DRAFT.
-     *
+     * <p>
      * Round ID bắt buộc phải có, phải trùng với round của notification và
      * tài khoản phải là leader của một team có participant trong round đó.
      * Cuối cùng kiểm tra team chưa có APPEAL đang mở trước khi dựng request.
@@ -1010,7 +1026,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
 
     /**
      * Xử lý DRAW_RESULT_VERIFICATION bởi Ban tổ chức.
-     *
+     * <p>
      * UPDATE_DRAW_RESULT chuyển request sang IN_REVIEW để Ban tổ chức sửa kết
      * quả bên chức năng bốc thăm. RESOLVE đóng request thành công, REJECT từ
      * chối request. REQUEST_RE_EVALUATION bị chặn vì xác minh bốc thăm không
@@ -1080,7 +1096,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
 
     /**
      * Tạo APPEAL trực tiếp cho một round.
-     *
+     * <p>
      * Hàm kiểm tra round tồn tại và team có participant thuộc round. Sau đó lấy
      * notification RANKING_DRAFT ban đầu qua findInitialResultNotification().
      * Việc kiểm tra appealStartTime/appealEndTime được thực hiện trong helper
@@ -1114,7 +1130,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
 
     /**
      * Tạo DRAW_RESULT_VERIFICATION trực tiếp trong một event.
-     *
+     * <p>
      * Hàm tìm registration APPROVED đúng event và participant đã có
      * CategoryRound, từ đó xác định round của kết quả bốc thăm. Request chỉ
      * được tạo nếu tìm thấy notification ASSIGNED_CATEGORY ban đầu còn hạn.
@@ -1157,12 +1173,12 @@ public class TeamRequestServiceImpl implements TeamRequestService {
 
     /**
      * Tìm notification gốc dùng làm bằng chứng cho direct request.
-     *
+     * <p>
      * Với APPEAL:
      * - Tìm notification RANKING_DRAFT đầu tiên của leader trong round.
      * - Yêu cầu round đã cấu hình appealStartTime và appealEndTime.
      * - Chỉ cho phép tạo request trong khoảng thời gian khiếu nại của round.
-     *
+     * <p>
      * Với DRAW_RESULT_VERIFICATION:
      * - Tìm notification ASSIGNED_CATEGORY đầu tiên.
      * - Notification ban đầu là bắt buộc; không có thì không thể xác minh.
@@ -1218,7 +1234,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
 
     /**
      * Lưu direct request sau khi kiểm tra chống tạo trùng.
-     *
+     * <p>
      * Nếu team đã có request cùng round, cùng type ở PENDING, IN_REVIEW hoặc
      * PROCESSING thì từ chối. Nếu không, tạo request PENDING, gắn notification
      * nguồn, lưu repository và chuyển entity thành response.
@@ -1227,10 +1243,10 @@ public class TeamRequestServiceImpl implements TeamRequestService {
     ) {
         boolean hasOpenRequest =
                 teamRequestRepository.existsByTeam_TeamIdAndRound_RoundIdAndStatusInAndRequestType(team.getTeamId(), round.getRoundId(), List.of(RequestStatus.PENDING,
-                                                                RequestStatus.IN_REVIEW,
-                                                                RequestStatus.PROCESSING),
-                                                                    requestType
-                        );
+                                RequestStatus.IN_REVIEW,
+                                RequestStatus.PROCESSING),
+                        requestType
+                );
         if (hasOpenRequest) {
             throw new BadRequestException(
                     "Team đã có một yêu cầu cùng loại đang được xử lý");
@@ -1251,7 +1267,7 @@ public class TeamRequestServiceImpl implements TeamRequestService {
 
     /**
      * Chuyển TeamRequest entity thành TeamRequestResponse.
-     *
+     * <p>
      * Nếu caller truyền CategoryRound thì round/category được lấy từ đó.
      * Nếu không, round lấy trực tiếp từ TeamRequest và category hiển thị N/A.
      * Helper này không thay đổi hoặc lưu dữ liệu.
