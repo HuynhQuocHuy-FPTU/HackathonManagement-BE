@@ -569,6 +569,14 @@ public class TeamServiceImpl implements TeamService {
                     if (isAlreadyInTeam) {
                         throw new BadRequestException("Sinh viên này đã là thành viên trong đội của bạn rồi.");
                     }
+
+                    boolean alreadyInvitedOfficial = teamInvitationRepository.existsByTeamAndAccountAndStatus(
+                            officialTeam.getTeam(), memberAccount, InvitationStatus.PENDING
+                    );
+                    if (alreadyInvitedOfficial) {
+                        throw new BadRequestException("Bạn đã gửi lời mời cho sinh viên " + memberEmail + " và đang chờ phản hồi (PENDING).");
+                    }
+
                     List<TeamMember> studentTeams = teamMemberRepository.findByStudent(memberAccount.getStudent());
                     for (TeamMember tm : studentTeams) {
                         if (tm.getTeam().getStatus() != TeamStatus.FINISHED) {
@@ -592,7 +600,6 @@ public class TeamServiceImpl implements TeamService {
             }else {
                 // NẾU TÀI KHOẢN CHƯA TỒN TẠI: Check xem email này đã từng được mời vào Draft chưa để chống spam rác DB
                 if (teamDraft != null) {
-                    // LƯU Ý: Bạn cần tạo hàm existsByTeamDraftAndEmail trong repository nhé
                     boolean emailAlreadyInvited = teamInvitationRepository.existsByTeamDraftAndEmail(teamDraft, memberEmail);
                     if (emailAlreadyInvited) {
                         throw new BadRequestException("Bạn đã gửi lời mời đến email " + memberEmail + " rồi.");
@@ -613,7 +620,7 @@ public class TeamServiceImpl implements TeamService {
             TeamInvitation savedNoti = teamInvitationRepository.save(invite);
             successfulInvites.add(memberEmail);
 
-            //7. Gui loi moi den cac thnah vien
+            //7. Gui loi moi den cac thanh vien
             try {
                 MailRequest mailRequest = new MailRequest();
                 mailRequest.setTo(memberEmail);
@@ -1075,7 +1082,6 @@ public class TeamServiceImpl implements TeamService {
             String teamName = (saveTeam != null) ? saveTeam.getTeamName() : teamDraft.getTeamName();
             notification.setTitle("INVITATION ACCEPTED. Bạn đã tham gia Team: " + teamName);
             notification.setMessage("Bạn đã trở thành thành viên  của " + teamName);
-            notification.setRead(true); // Đánh dấu đã đọc
             notification.setResponseStatus(NotiResponseStatus.NONE);
             notification.setResponseAt(LocalDateTime.now());
             notificationRepository.save(notification);
@@ -1130,7 +1136,6 @@ public class TeamServiceImpl implements TeamService {
             notification.setTitle("TRANSFER APPROVED. Bạn đã là Leader của Team: " + team.getTeamName());
             notification.setMessage("Bạn đã chấp nhận lời mời và chính thức trở thành Trưởng nhóm.");
             notification.setStatus(InvitationStatus.ACCEPTED);
-            notification.setRead(true); // Đánh dấu đã đọc
             notification.setResponseAt(LocalDateTime.now());
             notificationRepository.save(notification);
         }
