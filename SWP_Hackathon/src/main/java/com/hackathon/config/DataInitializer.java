@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -28,7 +29,7 @@ public class DataInitializer implements CommandLineRunner {
      * Thay bằng ID event và round thật.
      * Round phải thuộc event.
      */
-    private static final Integer TARGET_EVENT_ID = 10;
+    private static final Integer TARGET_EVENT_ID = 1;
     private static final Integer TARGET_ROUND_ID = 1;
 
     private static final int ADMIN_COUNT = 2;
@@ -38,7 +39,7 @@ public class DataInitializer implements CommandLineRunner {
     private static final int TEAM_COUNT = 10;
     private static final int MEMBER_PER_TEAM = 3;
 
-    @Value("${app.init-data:false}")
+    @Value("${app.init-data:true}")
     private boolean initData;
 
     @Autowired
@@ -116,30 +117,30 @@ public class DataInitializer implements CommandLineRunner {
 
         String password =
                 passwordEncoder.encode("123456");
-
-        createAdmins(password);
-        createEventCoordinators(password);
-
-        createExperts(password);
-        createCriteriaSets();
-
-        createStudents(password);
-        Team[] teams = createTeams();
-
-        createDemoEvents();
-
-        registerTeamsForEvent(
-                TARGET_EVENT_ID
-        );
+//
+//        createAdmins(password);
+//        createEventCoordinators(password);
+//
+//        createExperts(password);
+//        createCriteriaSets();
+//
+//        createStudents(password);
+//        Team[] teams = createTeams();
+//
+//        createDemoEvents();
+//
+//        registerTeamsForEvent(
+//                TARGET_EVENT_ID
+//        );
 //
 //        submitForParticipantsWithoutSubmission(
 //                TARGET_ROUND_ID
 //        );
-//
-//
-//        gradeSubmissionsByAssignments(
-//                TARGET_ROUND_ID
-//        );
+
+
+        gradeSubmissionsByAssignments(
+                TARGET_ROUND_ID
+        );
     }
 
     // =====================================================
@@ -1284,36 +1285,6 @@ public class DataInitializer implements CommandLineRunner {
             int judgeOrder,
             int criteriaIndex
     ) {
-        BigDecimal teamOffset =
-                new BigDecimal("0.30")
-                        .multiply(
-                                BigDecimal.valueOf(teamOrder)
-                        );
-
-        BigDecimal judgeOffset =
-                new BigDecimal("0.05")
-                        .multiply(
-                                BigDecimal.valueOf(judgeOrder)
-                        );
-
-        BigDecimal criteriaOffset =
-                new BigDecimal("0.02")
-                        .multiply(
-                                BigDecimal.valueOf(
-                                        criteriaIndex
-                                )
-                        );
-
-        BigDecimal score =
-                new BigDecimal("5.00")
-                        .add(teamOffset)
-                        .add(judgeOffset)
-                        .add(criteriaOffset);
-
-        /*
-         * Không vượt quá maxScore của tiêu chí.
-         * Nếu maxScore chưa cấu hình thì mặc định tối đa 10.
-         */
         BigDecimal maximumScore =
                 criterion.getMaxScore() > 0
                         ? BigDecimal.valueOf(
@@ -1321,7 +1292,23 @@ public class DataInitializer implements CommandLineRunner {
                 )
                         : BigDecimal.TEN;
 
-        return score.min(maximumScore);
+        // Tạo điểm theo tỷ lệ của maxScore để mỗi tiêu chí dùng đúng thang điểm riêng.
+        BigDecimal scoreRatio = new BigDecimal("0.50")
+                .add(new BigDecimal("0.03")
+                        .multiply(BigDecimal.valueOf(teamOrder)))
+                .add(new BigDecimal("0.005")
+                        .multiply(BigDecimal.valueOf(judgeOrder)))
+                .add(new BigDecimal("0.002")
+                        .multiply(BigDecimal.valueOf(criteriaIndex)));
+
+        // Giới hạn tỷ lệ trong khoảng hợp lệ rồi làm tròn điểm đến hai chữ số thập phân.
+        BigDecimal boundedRatio = scoreRatio
+                .max(BigDecimal.ZERO)
+                .min(BigDecimal.ONE);
+
+        return maximumScore
+                .multiply(boundedRatio)
+                .setScale(2, RoundingMode.HALF_UP);
     }
 
 }
