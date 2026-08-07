@@ -14,4 +14,5 @@ public interface EventCoordinatorRepository extends JpaRepository<EventCoordinat
 
     Optional<EventCoordinator> findByAccount_AccountId(Integer accountId);
     Optional<EventCoordinator> findByAccount_Email(String accountEmail);
+    Optional<EventCoordinator> findFirstByOrderByCoordinatorIdAsc();
 }
