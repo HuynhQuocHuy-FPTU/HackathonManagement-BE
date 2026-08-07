@@ -4,8 +4,10 @@ import com.hackathon.exception.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.kohsuke.github.GHBranch;
+import org.kohsuke.github.GHFileNotFoundException;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
+import org.kohsuke.github.HttpException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -33,24 +35,59 @@ public class GitHubService {
         }
 
         String repoFullName = extractRepoFullName(repoUrl);
-
         System.out.println("Calling GitHub API: " + repoUrl);
-        try {
-//            GitHub gitHub = GitHub.connectAnonymously();
-            GHRepository repository = gitHub.getRepository(repoFullName);
-            // Lấy nhánh mặc định
-            String defaultBranch = repository.getDefaultBranch();
-            GHBranch branch = repository.getBranch(defaultBranch);
 
-            if (branch == null) {
-                throw new IOException("Branch mặc định không tồn tại");
+        try {
+            return loadLatestCommitSha(gitHub, repoFullName);
+        } catch (HttpException e) {
+            if (e.getResponseCode() == 409) {
+                return null;
             }
-            System.out.println("GitHub API returned");
-            return branch.getSHA1();
+            log.warn("GitHub token hệ thống trả mã lỗi {}, thử truy cập repository công khai", e.getResponseCode());
+            return loadPublicRepository(repoFullName);
         } catch (IOException e) {
-            log.error("Lỗi khi lấy thông tin repository hoặc branch: {}", repoFullName, e);
-            // Ném BadRequestException để hệ thống chấm bài nhận diện được lỗi nghiệp vụ
+            log.warn("Không thể truy cập GitHub bằng token hệ thống, thử truy cập repository công khai", e);
+            return loadPublicRepository(repoFullName);
+        }
+    }
+
+    // Dùng truy cập công khai làm phương án dự phòng khi token hệ thống sai hoặc hết hạn.
+    private String loadPublicRepository(String repoFullName) {
+        try {
+            return loadLatestCommitSha(GitHub.connectAnonymously(), repoFullName);
+        } catch (HttpException e) {
+            if (e.getResponseCode() == 409) {
+                return null;
+            }
+            log.error("GitHub API công khai trả mã lỗi {} cho repository {}", e.getResponseCode(), repoFullName, e);
             throw new BadRequestException("Không thể truy xuất dữ liệu từ GitHub. Vui lòng kiểm tra lại URL!");
+        } catch (IOException e) {
+            log.error("Không thể truy cập repository công khai: {}", repoFullName, e);
+            throw new BadRequestException("Không thể truy xuất dữ liệu từ GitHub. Vui lòng kiểm tra lại URL!");
+        }
+    }
+
+    private String loadLatestCommitSha(GitHub client, String repoFullName) throws IOException {
+        GHRepository repository = client.getRepository(repoFullName);
+
+        if (repository.getPushedAt() == null) {
+            log.info("Repository {} chưa có commit", repoFullName);
+            return null;
+        }
+
+        String defaultBranch = repository.getDefaultBranch();
+        if (defaultBranch == null || defaultBranch.isBlank()) {
+            return null;
+        }
+
+        try {
+            GHBranch branch = repository.getBranch(defaultBranch);
+            return branch != null ? branch.getSHA1() : null;
+        } catch (GHFileNotFoundException e) {
+            if (repository.getSize() == 0) {
+                return null;
+            }
+            throw e;
         }
     }
 

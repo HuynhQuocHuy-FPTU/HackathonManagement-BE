@@ -1,4 +1,4 @@
-package com.hackathon.service.grading;
+package com.hackathon.service.impl;
 
 import com.hackathon.dto.evaluation.EvaluationAuditAttemptResponse;
 import com.hackathon.dto.evaluation.EvaluationDetailAuditResponse;
@@ -11,7 +11,7 @@ import com.hackathon.repository.EvaluationAuditLogRepository;
 import com.hackathon.repository.EventCoordinatorRepository;
 import com.hackathon.repository.EvaluationRepository;
 import com.hackathon.repository.CategoryRoundRepository;
-import com.hackathon.service.impl.AuditService;
+import com.hackathon.service.EvaluationAuditLogService;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class EvaluationAuditLogService {
+public class EvaluationAuditLogServiceImpl implements EvaluationAuditLogService {
 
     private final AuditService auditService;
     private final EvaluationAuditLogRepository evaluationAuditLogRepository;

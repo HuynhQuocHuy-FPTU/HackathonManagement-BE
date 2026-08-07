@@ -14,6 +14,7 @@ import com.hackathon.entity.enums.WorkshopStatus;
 import com.hackathon.exception.BadRequestException;
 import com.hackathon.repository.EventCoordinatorRepository;
 import com.hackathon.repository.HackathonEventRepository;
+import com.hackathon.repository.TeamRepository;
 import com.hackathon.security.CustomUserDetails;
 import com.hackathon.service.*;
 import com.hackathon.service.EventService;
@@ -48,6 +49,7 @@ public class EventServiceImpl implements EventService {
     private final RoundValidator roundValidator;
     private final AuditService auditService;
     private final NotificationService notificationService;
+    private final TeamRepository teamRepository;
 
     // =========================================================
     // CREATE
@@ -395,6 +397,15 @@ public class EventServiceImpl implements EventService {
         List<Registration> registrationList = registrationEventService
                 .getRegistrationsToCancelled(event.getEventId());
         registrationEventService.transferStatusToRejectd(registrationList);
+
+        List<Team> teams = registrationList.stream()
+                .map(Registration::getTeam)
+                .distinct()
+                .peek(team -> team.setStatus(
+                        com.hackathon.entity.enums.TeamStatus.ACTIVE))
+                .toList();
+        teamRepository.saveAll(teams);
+
         List<Account> accLeaders = registrationList.stream()
                 .map(Registration::getTeam)
                 .flatMap(team -> team.getTeamMembers().stream())
