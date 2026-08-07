@@ -5,6 +5,7 @@ import com.hackathon.entity.enums.*;
 import com.hackathon.repository.HackathonEventRepository;
 import com.hackathon.repository.RegistrationRepository;
 import com.hackathon.repository.RoundRepository;
+import com.hackathon.repository.TeamRepository;
 import com.hackathon.service.EventService;
 import com.hackathon.service.NotificationService;
 import com.hackathon.service.RankingService;
@@ -33,6 +34,7 @@ public class StatusSchedulerService {
     private final NotificationService notificationService;
     private final RegistrationRepository registrationRepository;
     private final EventService eventService;
+    private final TeamRepository teamRepository;
 
     @Scheduled(fixedRate = 5000)
     public void finalizeRoundsAtEndTime() {
@@ -201,10 +203,13 @@ public class StatusSchedulerService {
                 event.setUpdateAt(LocalDateTime.now());
                 event.setStatus(newStatus);
                 if (newStatus == EventStatus.COMPLETED) {
-                    for (Registration registration : event.getRegistrations()) {
-                        Team team = registration.getTeam();
-                        team.setStatus(TeamStatus.DRAFT);
-                    }
+                    List<Team> completedEventTeams = event.getRegistrations()
+                            .stream()
+                            .map(Registration::getTeam)
+                            .distinct()
+                            .peek(team -> team.setStatus(TeamStatus.ACTIVE))
+                            .toList();
+                    teamRepository.saveAll(completedEventTeams);
                 }
                 eventRepository.save(event);
             }

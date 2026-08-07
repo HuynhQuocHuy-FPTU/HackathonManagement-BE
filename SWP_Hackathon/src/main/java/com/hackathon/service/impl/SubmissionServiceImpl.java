@@ -129,7 +129,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         SubmissionResponse response = new SubmissionResponse();
         response.setSubmissionId(submission.getSubmissionId());
         response.setTeamName(submission.getTeamParticipant().getRegistration().getTeam().getTeamName());
-        response.setGithubUrl(submission.getGithubUrl() + "/commit/" + submission.getLatestCommitSha());
+        response.setGithubUrl(buildGithubUrl(submission));
         List<FileDTO> fileDTOList = new ArrayList<>();
         for(SubmissionFile f : submission.getFiles()){
             FileDTO fileDTO = new FileDTO(f.getFileName(), f.getFileUrl());
@@ -140,6 +140,17 @@ public class SubmissionServiceImpl implements SubmissionService {
         response.setFinal(submission.isFinal());
         response.setStatus(submission.getTeamParticipant().getSubmissionStatus());
         return response;
+    }
+
+    // Repository chưa có commit thì trả URL gốc, không tạo đường dẫn "/commit/null".
+    private String buildGithubUrl(Submission submission) {
+        if (submission.getGithubUrl() == null || submission.getGithubUrl().isBlank()) {
+            return null;
+        }
+        if (submission.getLatestCommitSha() == null || submission.getLatestCommitSha().isBlank()) {
+            return submission.getGithubUrl();
+        }
+        return submission.getGithubUrl() + "/commit/" + submission.getLatestCommitSha();
     }
 
     @Override
