@@ -19,6 +19,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
+// Quản lý các danh mục thi đấu được cấu hình cho từng sự kiện.
 public class CategoryServiceImpl implements CategoryService {
     @Autowired
     private CategoryRepository categoryRepository;
@@ -26,6 +27,7 @@ public class CategoryServiceImpl implements CategoryService {
     private HackathonEventRepository eventRepository;
 
     @Override
+    // Tạo nhiều danh mục cho sự kiện và kiểm tra tránh dữ liệu danh mục không hợp lệ.
     public List<Category> createCategory(List<CreateCategoryRequest> requests, int eventId) {
         // 1. Get event id
         HackathonEvent event = eventRepository.findById(eventId).orElseThrow(() -> new BadRequestException("Event not found"));
@@ -52,6 +54,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    // Lấy toàn bộ danh mục thuộc sự kiện được yêu cầu.
     public List<CategoryResponse> getAllCategories(Integer eventId) {
         List<Category> categories = categoryRepository.findAllByHackathonEvent_EventId(eventId);
 
@@ -60,6 +63,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Transactional
+    // Đồng bộ danh sách danh mục mới với các danh mục hiện có của sự kiện.
     public List<Category> updateCategories(List<UpdateCategoryRequest> categoryRequests, HackathonEvent event) {
         if (categoryRequests == null) return new ArrayList<>();
 

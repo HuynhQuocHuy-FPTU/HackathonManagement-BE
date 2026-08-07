@@ -14,6 +14,7 @@ import com.hackathon.repository.ParticipantRepository;
 import com.hackathon.repository.RoundRepository;
 import com.hackathon.repository.SubmissionRepository;
 import com.hackathon.security.CustomUserDetails;
+import com.hackathon.service.RoundAdvancementService;
 import com.hackathon.validator.AdvancementValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +36,8 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class RoundAdvancementService {
+// Tính điểm, xếp hạng và chuyển các đội đủ điều kiện sang vòng thi kế tiếp.
+public class RoundAdvancementServiceImpl implements RoundAdvancementService {
 
     private static final int SCORE_SCALE = 2;
 
@@ -45,19 +47,23 @@ public class RoundAdvancementService {
     private final ParticipantRepository participantRepository;
     private final SubmissionRepository submissionRepository;
     private final AdvancementValidator advancementValidator;
-    //tính điểm và ranking
+    // Tính lại tổng điểm và thứ hạng cho các đội trong một danh mục vòng.
     @Transactional
+    @Override
     public List<AdvancedTeamDTO> calculateScoresAndRanking(Integer categoryRoundId) {
+        // Tìm danh mục vòng cần xử lý và lấy vòng thi tương ứng.
         CategoryRound categoryRound = categoryRoundRepository.findById(categoryRoundId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Không tìm thấy category round hiện tại."));
 
         Round currentRound = categoryRound.getRound();
 
+        // Vòng cuối xếp hạng chung toàn vòng, các vòng trước xếp riêng theo danh mục.
         List<TeamParticipant> participants = isRoundFinal(currentRound)
                 ? getParticipantsInRound(currentRound)
                 : getListTeamParticipant(categoryRound.getCategoryRoundId());
 
+        // Không tính kết quả khi còn giám khảo được phân công chưa hoàn tất đánh giá.
         validateAllAssignedJudgesHaveEvaluated(participants);
 
         return recalculateScoresAndRanking(participants).stream()
@@ -65,22 +71,27 @@ public class RoundAdvancementService {
                 .toList();
     }
 
-    // Scheduler gọi sau khi hết thời gian đánh gia.
+    // Tác vụ nền tính điểm cho toàn bộ vòng sau khi hết thời gian đánh giá.
     @Transactional
+    @Override
     public void calculateRoundScoresAutomatically(Integer roundId) {
+        // Tải vòng cùng dữ liệu phục vụ thăng vòng và khóa xử lý lặp.
         Round round = roundRepository.findByIdForAdvancement(roundId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Không tìm thấy round hiện tại."));
 
+        // Bỏ qua khi vòng đã được tính điểm thành công trước đó.
         if (round.getScoringProcessedAt() != null) {
             return;
         }
 
+        // Vòng phải có ít nhất một danh mục để xác định các đội cần tính.
         List<CategoryRound> categoryRounds = round.getCategoryRounds();
         if (categoryRounds == null || categoryRounds.isEmpty()) {
             throw new BadRequestException("Round chưa có category nào.");
         }
 
+        // Vòng cuối tính chung một lần, các vòng khác tính riêng từng danh mục.
         if (isRoundFinal(round)) {
             calculateScoresAndRanking(categoryRounds.get(0).getCategoryRoundId());
         } else {
@@ -89,18 +100,22 @@ public class RoundAdvancementService {
             }
         }
 
+        // Ghi nhận thời điểm hoàn tất và xóa dấu vết cảnh báo thất bại cũ.
         round.setScoringProcessedAt(LocalDateTime.now());
         round.setScoringFailureNotifiedAt(null);
         roundRepository.save(round);
     }
 
+    // Tính lại điểm từng đội, lưu kết quả rồi sắp xếp thứ hạng.
     private List<TeamParticipant> recalculateScoresAndRanking(
             List<TeamParticipant> participants
     ) {
+        // Không thể xếp hạng khi danh sách chưa có đội tham gia.
         if (participants.isEmpty()) {
             throw new BadRequestException("Chưa có đội tham gia.");
         }
 
+        // Tính tổng điểm cho từng đội trước khi lưu đồng loạt.
         participants.forEach(this::calculateTotalScore);
         participantRepository.saveAll(participants);
 
@@ -108,7 +123,10 @@ public class RoundAdvancementService {
     }
 
     @Transactional
+    @Override
+    // Tính điểm trung bình từ các lượt đánh giá hợp lệ của một đội.
     public BigDecimal calculateTotalScore(TeamParticipant participant) {
+        // Chỉ lấy đánh giá đã hoàn tất chấm lần đầu hoặc hoàn tất chấm lại.
         List<Evaluation> gradedEvaluations = evaluationRepository
                 .findBySubmission_TeamParticipant(participant)
                 .stream()
@@ -116,11 +134,13 @@ public class RoundAdvancementService {
                 )
                 .toList();
 
+        // Ghi điểm trung bình vào lần tham gia để phục vụ xếp hạng.
         BigDecimal average = computeAverage(gradedEvaluations);
         participant.setTotalScore(average);
         return average;
     }
 
+    // Tính trung bình cộng của các tổng điểm hợp lệ và làm tròn theo độ chính xác chung.
     private BigDecimal computeAverage(List<Evaluation> gradedEvaluations) {
         if (gradedEvaluations == null || gradedEvaluations.isEmpty()) {
             return null;
@@ -145,6 +165,7 @@ public class RoundAdvancementService {
         );
     }
 
+    @Override
     public List<TeamParticipant> calculateRanking(
             List<TeamParticipant> participants
     ) {
@@ -154,11 +175,9 @@ public class RoundAdvancementService {
                 Comparator.nullsLast(Comparator.reverseOrder())
         );
 
-        /*
-         * Gom các tiêu chí có cùng weight vào một nhóm.
-         * Ví dụ: ba tiêu chí có weight 40 sẽ nằm trong cùng một List<Integer>.
-         * stripTrailingZeros() giúp 40, 40.0 và 40.00 được xem là cùng weight.
-         */
+        // Gom các tiêu chí có cùng weight vào một nhóm.
+        // Ví dụ: ba tiêu chí có weight 40 sẽ nằm trong cùng một List<Integer>.
+        // stripTrailingZeros() giúp 40, 40.0 và 40.00 được xem là cùng weight.
         Map<BigDecimal, List<Integer>> criteriaIdsByWeight =
                 new HashMap<>();
 
@@ -207,20 +226,16 @@ public class RoundAdvancementService {
         Map<Integer, Map<Integer, BigDecimal>> criteriaScoresByParticipant =
                 new HashMap<>();
         for (TeamParticipant participant : participants) {
-            /*
-             * Tính trước điểm trung bình của từng tiêu chí cho mỗi đội.
-             * Mỗi tiêu chí có thể được nhiều giám khảo chấm.
-             */
+            // Tính trước điểm trung bình của từng tiêu chí cho mỗi đội.
+            // Mỗi tiêu chí có thể được nhiều giám khảo chấm.
             criteriaScoresByParticipant.put(
                     participant.getId(),
                     getAverageCriteriaScores(participant)
             );
         }
 
-        /*
-         * Nếu tổng điểm bằng nhau, lần lượt so sánh điểm trung bình của từng
-         * nhóm weight, bắt đầu từ nhóm có weight cao nhất.
-         */
+        // Nếu tổng điểm bằng nhau, lần lượt so sánh điểm trung bình của từng
+        // nhóm weight, bắt đầu từ nhóm có weight cao nhất.
         for (List<Integer> criteriaIds : tieBreakCriteriaGroups) {
             scoreComparator = scoreComparator.thenComparing(
                     participant -> getAverageWeightGroupScore(
@@ -231,10 +246,8 @@ public class RoundAdvancementService {
             );
         }
 
-        /*
-         * Thời gian nộp bài chỉ dùng để giữ thứ tự hiển thị ổn định.
-         * Nó không thuộc scoreComparator nên không ảnh hưởng đến việc đồng hạng.
-         */
+        // Thời gian nộp bài chỉ dùng để giữ thứ tự hiển thị ổn định.
+        // Nó không thuộc scoreComparator nên không ảnh hưởng đến việc đồng hạng.
         Comparator<TeamParticipant> displayComparator =
                 scoreComparator.thenComparing(
                 this::getFinalSubmissionTime,
@@ -246,10 +259,8 @@ public class RoundAdvancementService {
         int currentRank = 0;
         for (int index = 0; index < participants.size(); index++) {
             TeamParticipant participant = participants.get(index);
-            /*
-             * Chỉ tạo hạng mới khi tổng điểm hoặc điểm của một nhóm weight khác.
-             * Nếu tất cả đều bằng nhau, đội hiện tại giữ cùng hạng với đội trước.
-             */
+            // Chỉ tạo hạng mới khi tổng điểm hoặc điểm của một nhóm weight khác.
+            // Nếu tất cả đều bằng nhau, đội hiện tại giữ cùng hạng với đội trước.
             if (previousParticipant == null
                     || scoreComparator.compare(
                             previousParticipant,
@@ -279,10 +290,8 @@ public class RoundAdvancementService {
                 .filter(Objects::nonNull)
                 .toList();
 
-        /*
-         * Một đội phải có điểm của tất cả tiêu chí trong nhóm.
-         * Không lấy trung bình trên dữ liệu thiếu vì có thể tạo lợi thế không công bằng.
-         */
+        // Một đội phải có điểm của tất cả tiêu chí trong nhóm.
+        // Không lấy trung bình trên dữ liệu thiếu vì có thể tạo lợi thế không công bằng.
         if (scores.size() != criteriaIds.size()) {
             return null;
         }
@@ -344,6 +353,7 @@ public class RoundAdvancementService {
 
     //thăng vòng theo từng
     @Transactional
+    @Override
     public List<AdvancedTeamDTO> advanceTopTeams(Integer currentCategoryRoundId) {
         CategoryRound currentCategoryRound = categoryRoundRepository
                 .findById(currentCategoryRoundId)
@@ -369,6 +379,7 @@ public class RoundAdvancementService {
         return advanceToNextRound(participants, nextCategoryRound, topN);
     }
 
+    // Đánh dấu kết quả đạt hoặc không đạt và tạo lần tham gia vòng sau cho các đội đứng đầu.
     private List<AdvancedTeamDTO> advanceToNextRound(
             List<TeamParticipant> participants,
             CategoryRound nextCategoryRound,
@@ -438,6 +449,7 @@ public class RoundAdvancementService {
     }
     //thăng vòng
     @Transactional
+    @Override
     public List<CategoryAdvancementResultDTO> advanceAllCategoriesInRound(
             Integer roundId, CustomUserDetails userDetails) {
         EventCoordinator eventCoordinator =
@@ -454,10 +466,12 @@ public class RoundAdvancementService {
 
     // Được scheduler gọi khi đã hết thời gian chờ thăng vòng.
     @Transactional
+    @Override
     public List<CategoryAdvancementResultDTO> advanceRoundAutomatically(Integer roundId) {
         return processRoundAdvancement(roundId, false);
     }
 
+    // Dùng chung quy trình thăng vòng cho thao tác thủ công và tác vụ tự động.
     private List<CategoryAdvancementResultDTO> processRoundAdvancement(
             Integer roundId,
             boolean validateAppeal
@@ -511,11 +525,13 @@ public class RoundAdvancementService {
         return results;
     }
 
+    // Ghi thời điểm hoàn tất để ngăn cùng một vòng được xử lý thăng hạng nhiều lần.
     private void markAdvancementProcessed(Round round) {
         round.setAdvancementProcessedAt(LocalDateTime.now());
         roundRepository.save(round);
     }
 
+    // Chặn thăng vòng thủ công khi ban tổ chức vẫn còn thời gian giải quyết khiếu nại.
     private void validateAppealFinished(Round round) {
         if (round.getAppealEndTime() == null) {
             throw new BadRequestException(
@@ -529,6 +545,7 @@ public class RoundAdvancementService {
         }
     }
 
+    // Xác nhận tất cả đội đã có tổng điểm và thứ hạng trước khi xét thăng vòng.
     private void validateRankingCalculated(List<TeamParticipant> participants) {
         boolean notCalculated = participants.stream()
                 .anyMatch(participant ->
@@ -544,6 +561,7 @@ public class RoundAdvancementService {
         }
     }
 
+    // Sắp xếp đội theo thứ hạng tăng dần và đưa đội chưa có hạng xuống cuối.
     private void sortByRank(List<TeamParticipant> participants) {
         participants.sort(Comparator.comparing(
                 TeamParticipant::getRank,
@@ -551,6 +569,7 @@ public class RoundAdvancementService {
         ));
     }
 
+    // Tìm danh mục tương ứng của vòng kế tiếp trong cùng sự kiện.
     private CategoryRound findNextCategoryRound(
             CategoryRound currentCategoryRound
     ) {
@@ -578,6 +597,7 @@ public class RoundAdvancementService {
 
     //Loại đội bổ sung
     @Transactional
+    @Override
     public void disqualifyRetroactively(
             TeamParticipant oldTeamParticipant,
             Round nextRound
@@ -666,6 +686,7 @@ public class RoundAdvancementService {
         return participants;
     }
 
+    // Gom các đội hợp lệ từ tất cả danh mục thuộc một vòng thi.
     private List<TeamParticipant> getParticipantsInRound(Round round) {
         List<TeamParticipant> participants = new ArrayList<>();
 
@@ -682,6 +703,7 @@ public class RoundAdvancementService {
         return participants;
     }
 
+    // Kiểm tra từng đội đã được tất cả giám khảo phân công hoàn tất chấm bài.
     private void validateAllAssignedJudgesHaveEvaluated(
             List<TeamParticipant> participants
     ) {
@@ -741,6 +763,7 @@ public class RoundAdvancementService {
         }
     }
 
+    // Tìm bài chính thức mới nhất của đội để kiểm tra kết quả chấm.
     private Submission findFinalSubmission(TeamParticipant participant) {
         return submissionRepository
                 .findByTeamParticipant_IdAndIsFinalTrue(participant.getId())
@@ -752,6 +775,7 @@ public class RoundAdvancementService {
                 ));
     }
 
+    // Xác định lượt đánh giá đã hoàn tất và có tổng điểm hợp lệ.
     private boolean isValidEvaluation(Evaluation evaluation) {
         if (evaluation == null) {
             return false;
@@ -763,6 +787,7 @@ public class RoundAdvancementService {
         return validStatus && evaluation.getScore() != null;
     }
 
+    // Lấy số đội được chọn từ cấu hình vòng và từ chối cấu hình không hợp lệ.
     private int resolveTopN(Round currentRound) {
         if (currentRound.getTopN() != null && currentRound.getTopN() > 0) {
             return currentRound.getTopN();
@@ -774,6 +799,7 @@ public class RoundAdvancementService {
         );
     }
 
+    // Xác định vòng cuối bằng cách kiểm tra không còn vòng có thứ tự kế tiếp.
     private boolean isRoundFinal(Round round) {
         return roundRepository
                 .findRoundByHackathonEvent_EventIdAndOrderIndex(
@@ -798,6 +824,8 @@ public class RoundAdvancementService {
         );
     }
 
+    @Override
+    // Lấy thời điểm nộp bài chính thức để giữ thứ tự hiển thị ổn định khi đồng hạng.
     public LocalDateTime getFinalSubmissionTime(
             TeamParticipant participant
     ) {

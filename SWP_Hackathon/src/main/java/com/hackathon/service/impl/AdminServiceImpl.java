@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+// Cung cấp các nghiệp vụ quản trị tài khoản và số liệu tổng quan dành cho quản trị viên.
 public class AdminServiceImpl implements AdminService {
 
     private final AccountRepository accountRepository;
@@ -39,17 +40,18 @@ public class AdminServiceImpl implements AdminService {
     private final AuditLogRepository auditLogRepository;
     private final ObjectMapper objectMapper;
 
+    // Lấy toàn bộ tài khoản và chuyển từng tài khoản sang dữ liệu hiển thị cho quản trị viên.
     @Override
     public List<UserAdminResponse> getAllUsers() {
         // Lấy toàn bộ danh sách Account từ Database
         List<Account> accounts = accountRepository.findAll();
 
-        // Map từng Entity Account sang DTO UserAdminResponse
         return accounts.stream()
                 .map(this::mapToUserAdminResponse)
                 .collect(Collectors.toList());
     }
 
+    // Tìm một tài khoản theo mã và trả về đầy đủ thông tin theo vai trò của tài khoản đó.
     @Override
     public UserAdminResponse getUserById(int id) {
         Account account = accountRepository.findById(id)
@@ -58,6 +60,8 @@ public class AdminServiceImpl implements AdminService {
         return mapToUserAdminResponse(account);
     }
 
+    // Tạo tài khoản được mời, gán đúng vai trò và gửi thư chứa thông tin đăng nhập ban đầu.
+    // Toàn bộ thao tác được thực hiện trong một giao dịch để tránh lưu dữ liệu dở dang.
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void inviteAccount(InviteAccountRequest request) {
@@ -104,19 +108,12 @@ public class AdminServiceImpl implements AdminService {
         emailService.sendTemporaryPasswordEmail(savedAccount.getEmail(), temporaryPassword, request.getFullName());
     }
 
-    /**
-     * Hàm Helper: Đóng gói Entity Account thành DTO trả về cho Admin.
-     * Xử lý trích xuất dữ liệu đa quyền (Role-based data extraction) tương tự như luồng Profile.
-     */
     private UserAdminResponse mapToUserAdminResponse(Account account) {
-        // 1. Lấy Full Name
         String fullName = accountRepository.findFullNameByEmail(account.getEmail()).orElse(null);
 
-        // 2. Lấy University (Nếu là Sinh viên)
         String university = (account.getRole() == AccountRole.STUDENT && account.getStudent() != null)
                 ? account.getStudent().getUniversityName() : null;
 
-        // 3. Lấy Organization (Nếu là Giám khảo hoặc Ban tổ chức)
         String organization = null;
         if (account.getRole() == AccountRole.EXPERT && account.getExpert() != null) {
             organization = account.getExpert().getOrganization();
@@ -138,6 +135,7 @@ public class AdminServiceImpl implements AdminService {
                 .build();
     }
 
+    // Cập nhật trạng thái hoạt động của tài khoản sau khi kiểm tra tài khoản có tồn tại.
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateUserStatus(int accountId, UpdateAccountStatusRequest request) {
@@ -158,6 +156,7 @@ public class AdminServiceImpl implements AdminService {
         }
     }
 
+    // Đếm và tổng hợp các số liệu chính của hệ thống để hiển thị trên trang quản trị.
     @Override
     public AdminOverviewResponse getOverviewForAdmin() {
 

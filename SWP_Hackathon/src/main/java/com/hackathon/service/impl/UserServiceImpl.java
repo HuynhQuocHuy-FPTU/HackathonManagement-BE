@@ -24,12 +24,14 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+// Xử lý việc xem và cập nhật hồ sơ của người dùng theo từng vai trò trong hệ thống.
 public class UserServiceImpl implements UserService {
 
     private final AccountRepository accountRepository;
     private final StudentRepository studentRepository;
     private final ExpertRepository expertRepository;
 
+    // Lấy thông tin của người đang đăng nhập và bổ sung dữ liệu riêng theo vai trò hiện tại.
     @Override
     public AuthResponse getCurrentUser(CustomUserDetails userDetails) {
         Account account = userDetails.getAccount();
@@ -64,10 +66,8 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
-    /**
-     * Xử lý luồng cập nhật hồ sơ người dùng đa quyền (Multi-role Profile Update).
-     * Áp dụng nguyên tắc SRP (Đơn trách nhiệm) để bóc tách logic theo từng Role.
-     */
+    // Xử lý luồng cập nhật hồ sơ người dùng đa quyền (Multi-role Profile Update).
+    // Áp dụng nguyên tắc SRP (Đơn trách nhiệm) để bóc tách logic theo từng Role.
     @Override
     @Transactional(rollbackFor = Exception.class) // Đảm bảo tính toàn vẹn: Lỗi ở bảng con thì bảng cha cũng Rollback
     public AuthResponse updateProfile(CustomUserDetails userDetails, UpdateProfileRequest request) {
@@ -117,6 +117,7 @@ public class UserServiceImpl implements UserService {
     // CÁC HÀM XỬ LÝ PRIVATE
     // =========================================================================
 
+    // Cập nhật các trường hồ sơ riêng của sinh viên và trả về tên trường sau khi lưu.
     private String updateStudentProfile(Account account, UpdateProfileRequest request) {
         com.hackathon.entity.Student student = account.getStudent();
         if (student == null) return null;
@@ -142,6 +143,7 @@ public class UserServiceImpl implements UserService {
         return student.getUniversityName();
     }
 
+    // Cập nhật hồ sơ chuyên gia và trả về đơn vị công tác hiện tại sau khi lưu.
     private String updateExpertProfile(Account account, UpdateProfileRequest request) {
         com.hackathon.entity.Expert expert = account.getExpert();
         if (expert == null) return null;
@@ -165,6 +167,7 @@ public class UserServiceImpl implements UserService {
         return expert.getOrganization();
     }
 
+    // Cập nhật thông tin riêng của ban tổ chức gắn với tài khoản đang được chỉnh sửa.
     private String updateCoordinatorProfile(Account account, UpdateProfileRequest request) {
         com.hackathon.entity.EventCoordinator coordinator = account.getEventCoordinator();
         if (coordinator == null) return null;
@@ -234,7 +237,6 @@ public class UserServiceImpl implements UserService {
                 break;
         }
 
-        // 4. Trả về DTO hoàn chỉnh (Các trường NULL sẽ tự động bị cắt bỏ bởi @JsonInclude)
         return response.build();
     }
 }

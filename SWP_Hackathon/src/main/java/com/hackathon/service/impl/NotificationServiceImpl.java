@@ -20,6 +20,7 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
+// Tạo, lưu, gửi và cập nhật các thông báo phát sinh từ những nghiệp vụ trong hệ thống.
 public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final AccountRepository accountRepository;
@@ -30,6 +31,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Transactional
     @Override
+    // Kiểm tra người nhận rồi lấy nội dung chi tiết của thông báo lời mời.
     public NotificationEmailResponse getInfoNotificationInvite(CustomUserDetails userDetails, Long notificationId) {
 
         // 1. Xác định loại lời mời đó thuộc trạng thái dì thông qua Id của notificaiton
@@ -72,6 +74,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    // Tạo thông báo cho phép người nhận phản hồi và lưu thời hạn phản hồi theo vòng thi.
     public void createNotificationHaveResponse(Account acc, Account actor, Round round, NotificationType type, NotificationChannel channel, String title, String message, boolean allowResponse, Integer responseDeadline) {
         Notification notification = new Notification();
 
@@ -93,6 +96,7 @@ public class NotificationServiceImpl implements NotificationService {
 
 
     @Override
+    // Tạo thông báo thông thường không cho phép người nhận gửi phản hồi.
     public void createNotificationNoResponse(Account acc, Account actor, NotificationType type, NotificationChannel channel, String title, String message) {
 
 
@@ -111,6 +115,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     }
 
+    // Tạo thông báo không phản hồi và gắn thêm vòng thi làm ngữ cảnh.
     public void createNotificationNoResponse(Account acc, Account actor, NotificationType type, NotificationChannel channel, String title, String message, Round round) {
         Notification notification = new Notification();
 
@@ -127,6 +132,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    // Thông báo kết quả xử lý yêu cầu của đội đến trưởng nhóm đã gửi yêu cầu.
     public void notifyTeamRequestResolved(
             Account actor,
             Account teamLeaderAccount,
@@ -167,6 +173,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    // Thông báo cho trưởng nhóm khi đăng ký sự kiện của đội được duyệt.
     public void notifyRegistrationApproved(Account actor, Account teamLeaderAccount, String teamName, String eventName) {
         String title = "Chấp nhận đơn đăng ký tham gia cuộc thi";
         String message = "Team của bạn\"" + teamName + "\" đã được phê duyệt tham gia vào cuộc thi " + eventName;
@@ -182,6 +189,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    // Thông báo cho trưởng nhóm khi đăng ký bị từ chối và kèm lý do cụ thể.
     public void notifyRegistrationRejected(Account actor, Account teamLeaderAccount, String teamName, String eventName, String reason) {
         String title = "Từ chối đơn đăng kí tham gia cuộc thi";
 
@@ -203,6 +211,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    // Thông báo quyết định loại đội khỏi sự kiện cùng nguyên nhân cho trưởng nhóm.
     public void notifyDisqualifyTeam(Account actor, Account teamLeaderAccount, String teamName, String eventName, String reason) {
         String title = "Loại team tham gia khỏi cuộc thi";
 
@@ -223,6 +232,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    // Gửi kết quả phân danh mục ban đầu và mở quyền phản hồi trong thời hạn quy định.
     public void notifyAssignedCategory(
             Account actor,
             Account teamLeaderAccount,
@@ -266,6 +276,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    // Thông báo danh mục chính thức sau khi kết quả phân loại được cập nhật.
     public void notifyAssignedCategoryFinal(Account actor, Account teamLeaderAccount, String teamName, String eventName, String category, String oldCategory) {
         String title = "Kết quả xác thực hạng mục";
         String message = String.format(
@@ -288,6 +299,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
+    // Gửi thông báo hủy sự kiện và lý do đến toàn bộ trưởng nhóm liên quan.
     public void notifyCancelledEvent(Account actor, List<Account> teamLeaderAccounts, String eventName, String reason) {
         String title = "Thông báo hủy sự kiện";
 
@@ -312,6 +324,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
+    // Thông báo cho ban tổ chức khi hệ thống tự động hủy sự kiện.
     public void notifyAutoCancelledEventCoordinator(
             Account coordinatorAccount,
             String eventName,
@@ -336,6 +349,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
+    // Kiểm tra thông báo còn cho phép phản hồi và chưa vượt quá thời hạn.
     public void checkResponseNoti(Long notificationId) {
         Notification notification = notificationRepository
                 .findById(notificationId)
@@ -353,6 +367,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    // Lấy toàn bộ thông báo của tài khoản theo thứ tự mới nhất.
     public List<NotificationWebResponse> getNotifications(CustomUserDetails userDetails) {
         Integer accountId = userDetails.getAccount().getAccountId();
         return notificationRepository
@@ -362,6 +377,7 @@ public class NotificationServiceImpl implements NotificationService {
 
 
     @Override
+    // Lấy các thông báo người dùng chưa đọc.
     public List<NotificationWebResponse> getUnreadNotifications(CustomUserDetails userDetails) {
         Integer accountId = userDetails.getAccount().getAccountId();
         return notificationRepository
@@ -370,6 +386,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    // Lấy các thông báo người dùng đã đọc.
     public List<NotificationWebResponse> getReadNotifications(CustomUserDetails userDetails) {
         Integer accountId = userDetails.getAccount().getAccountId();
         return notificationRepository
@@ -378,6 +395,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    // Lọc thông báo của tài khoản theo loại nghiệp vụ.
     public List<NotificationWebResponse> getByType(CustomUserDetails userDetails, NotificationType type) {
         Integer accountId = userDetails.getAccount().getAccountId();
         return notificationRepository
@@ -386,6 +404,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    // Lấy các thông báo đang chờ người dùng phản hồi và vẫn còn hiệu lực.
     public List<ResponseEntry> getPendingResponses(CustomUserDetails userDetails) {
         return notificationRepository
                 .findNotificationByAccount_AccountIdAndResponseStatus(
@@ -395,6 +414,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    // Đếm số thông báo chưa đọc để hiển thị huy hiệu trên giao diện.
     public long countUnread(CustomUserDetails userDetails) {
         Integer accountId = userDetails.getAccount().getAccountId();
         return notificationRepository.countByAccount_AccountIdAndIsReadFalse(accountId);
@@ -402,6 +422,7 @@ public class NotificationServiceImpl implements NotificationService {
 
 
     @Override
+    // Đánh dấu một thông báo thuộc tài khoản hiện tại là đã đọc.
     public void markAsRead(Long notificationId, CustomUserDetails userDetails) {
         Integer accountId = userDetails.getAccount().getAccountId();
         Notification notification = notificationRepository.findById(notificationId)
@@ -419,6 +440,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    // Đánh dấu toàn bộ thông báo của tài khoản hiện tại là đã đọc.
     public void markAllAsRead(CustomUserDetails userDetails) {
         Integer accountId = userDetails.getAccount().getAccountId();
         List<Notification> notifications =
@@ -430,6 +452,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    // Xóa thông báo sau khi xác nhận thông báo thuộc đúng tài khoản hiện tại.
     public void deleteNotification(Long notificationId, CustomUserDetails userDetails) {
         Integer accountId = userDetails.getAccount().getAccountId();
         Notification notification = notificationRepository.findById(notificationId)
@@ -443,6 +466,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
+    // Thông báo công bố bảng xếp hạng tạm thời hoặc chính thức đến các đội trong vòng.
     public void notifyRoundRankingPublished(Account actor, Integer roundId, boolean isFinal, Integer responseDeadline) {
         Round round = roundRepository.findById(roundId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy vòng thi."));
@@ -522,6 +546,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
+    // Cảnh báo toàn bộ ban tổ chức khi tác vụ tính điểm tự động của vòng thất bại.
     public void notifyScoringFailureToAllCoordinators(Round round, String reason) {
         List<EventCoordinator> coordinators = eventCoordinatorRepository.findAllWithAccount();
         if (coordinators.isEmpty()) {
@@ -547,6 +572,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
+    // Thông báo toàn bộ ban tổ chức khi hệ thống đã tính điểm vòng thành công.
     public void notifyScoringCompletedToAllCoordinators(Round round) {
         List<EventCoordinator> coordinators = eventCoordinatorRepository.findAllWithAccount();
         if (coordinators.isEmpty()) {
@@ -571,6 +597,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    // Gửi yêu cầu chấm lại đến từng giám khảo liên quan đến bài của đội.
     public void notifyExpertReEvaluation(Account actor, Set<Account> expertsToNotify, String teamName) {
         String title = "YÊU CẦU PHÚC KHẢO BÀI THI";
         String message = "Ban tổ chức yêu cầu ban giám khảo xem lại và chấm lại điểm số cho bài dự thi của đội " + teamName +
@@ -603,6 +630,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    // Thông báo kết quả giải quyết khiếu nại và cho biết điểm có được thay đổi hay không.
     public void notifyResponseAppeal(Account actor, Account account, String teamName, boolean isChanged) {
         String statusContent = isChanged
                 ? "chấp nhận và đã cập nhật lại điểm số cho"
@@ -647,6 +675,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    // Gửi yêu cầu hỗ trợ của đội đến các cố vấn được phân công.
     public void notifyMentorSupportTeam(Account actor, List<ExpertAssign> mentors) {
         String title = "THÔNG BÁO YÊU CẦU HỖ TRỢ TEAM";
         String message = "Ban tổ chức xin thông báo đến các Mentor đang tham gia hỗ trợ cuộc thi. "
@@ -668,6 +697,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    // Gửi lời mời tham gia đội đến tài khoản sinh viên được trưởng nhóm chọn.
     public void notifyInviteTeam(Account teamLeader, Account account, String message, Long id) {
         TeamInvitation invitation = teamInvitationRepository.findById(id)
                 .orElse(null);
@@ -683,6 +713,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    // Thông báo cho trưởng nhóm kết quả cố vấn chấp nhận hoặc từ chối hỗ trợ.
     public void notifyMentorResponseSupportTeam(Account teamLeader, Account mentor, String responseMessage, boolean isAccepted) {
         String title = "THÔNG BÁO YÊU CẦU HỖ TRỢ TEAM";
         String actionText = isAccepted ? " đã chấp nhận" : "đã từ chối";
@@ -699,6 +730,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
 
+    // Tạo thông báo không phản hồi có thể gắn với vòng và lời mời đội cụ thể.
     public void createNotificationNoResponse(
             Account acc,
             Account actor,

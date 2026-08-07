@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+// Quản lý ma trận quyền của từng vai trò và kiểm tra ảnh hưởng trước khi thay đổi quyền.
 public class RolePermissionServiceImpl implements RolePermissionService {
 
     private final AccountRepository accountRepository;
@@ -50,11 +51,13 @@ public class RolePermissionServiceImpl implements RolePermissionService {
         initRole("ADMIN", "Admin", new PermissionDto(true, false, true, true, true));
     }
 
+    // Khởi tạo tên hiển thị và tập quyền mặc định cho một vai trò trong ma trận quyền.
     private static void initRole(String dbKey, String feName, PermissionDto permissions) {
         permissionMatrix.put(dbKey, permissions);
         displayNames.put(dbKey, feName);
     }
 
+    // Trả về danh sách quyền hiện tại của tất cả vai trò theo tên dùng trên giao diện.
     @Override
     public List<RolePermissionResponse> getAllRolePermissions() {
         List<RolePermissionResponse> responses = new ArrayList<>();
@@ -90,6 +93,7 @@ public class RolePermissionServiceImpl implements RolePermissionService {
         return responses;
     }
 
+    // Kiểm tra yêu cầu thay đổi rồi cập nhật tập quyền tương ứng cho vai trò được chọn.
     @Override
     public void updateRolePermissions(UpdateRolePermissionRequest request) {
         String feRoleName = request.getRole().trim();

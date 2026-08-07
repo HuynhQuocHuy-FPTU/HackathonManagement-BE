@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -22,10 +23,22 @@ public class CloudinaryService {
     private final Cloudinary cloudinary;
 
     public String uploadFile(MultipartFile file, FileType fileType) {
-        Map<String, Object> params = ObjectUtils.asMap(
-                "resource_type", "auto",
-                "folder", "hackathon_submissions"
-        );
+        Map<String, Object> params = new HashMap<>();
+        params.put("folder", "hackathon_submissions");
+
+        // Tệp tài liệu và tệp nén được lưu dưới dạng raw để giữ nguyên nội dung, tên và phần mở rộng.
+        if (fileType.getGroup() == FileType.FileGroup.DOCUMENT
+                || fileType.getGroup() == FileType.FileGroup.ARCHIVE) {
+            params.put("resource_type", "raw");
+
+            // Thư mục ngẫu nhiên tránh ghi đè, còn public_id giữ tên gốc để tải về đúng tên file.
+            String originalFilename = file.getOriginalFilename();
+            if (originalFilename != null && !originalFilename.isBlank()) {
+                params.put("public_id", UUID.randomUUID() + "/" + originalFilename);
+            }
+        } else {
+            params.put("resource_type", "auto");
+        }
 
         try {
             Map uploadResult = cloudinary.uploader().upload(file.getBytes(), params);

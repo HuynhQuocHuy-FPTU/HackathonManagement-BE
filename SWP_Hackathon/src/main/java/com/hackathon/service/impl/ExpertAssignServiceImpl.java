@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+// Quản lý việc phân công chuyên gia vào từng danh mục của vòng thi.
 public class ExpertAssignServiceImpl implements ExpertAssignService {
 
     private final ExpertRepository expertRepository;
@@ -33,19 +34,17 @@ public class ExpertAssignServiceImpl implements ExpertAssignService {
     private final ExpertAssignRepository expertAssignRepository;
 
 
-    // =========================================================
-    // ASSIGN EXPERTS
-    // =========================================================
-
+    // Tạo toàn bộ phân công chuyên gia cho các danh mục thuộc một vòng thi.
     @Override
     public void assignExpertsToCategoryRound(List<CategoryRound> saveCateRound,
                                              List<CategoryExpertAssignRequestDTO> requests,
                                              Round round) {
+        // Không có yêu cầu phân công thì kết thúc mà không tác động dữ liệu hiện tại.
         if (requests == null || requests.isEmpty()) {
             return;
         }
 
-        // 1. Gom tất cả expertId từ toàn bộ request — tránh N+1 query
+        // Gom mã chuyên gia từ tất cả danh mục và loại bỏ mã bị lặp trước khi truy vấn.
         List<Integer> expertIds = requests.stream()
                 .filter(r -> r.getExperts() != null)
                 .flatMap(r -> r.getExperts().stream())
@@ -53,60 +52,71 @@ public class ExpertAssignServiceImpl implements ExpertAssignService {
                 .distinct()
                 .toList();
 
+        // Tải toàn bộ chuyên gia trong một lần và lập bảng tra cứu theo mã chuyên gia.
         Map<Integer, Expert> expertMap = expertRepository.findAllById(expertIds)
                 .stream()
                 .collect(Collectors.toMap(Expert::getExpertId, e -> e));
 
-        // 2. Kích hoạt lại tài khoản INACTIVE (xử lý trên RAM, batch save cuối)
+        // Lọc các tài khoản chuyên gia đang chưa hoạt động để kích hoạt lại khi được phân công.
         List<Account> accountsToActivate = expertMap.values().stream()
                 .map(Expert::getAccount)
                 .filter(acc -> acc != null && acc.getStatus().equals(AccountStatus.INACTIVE))
                 .toList();
 
+        // Chỉ thực hiện cập nhật cơ sở dữ liệu khi có ít nhất một tài khoản cần kích hoạt.
         if (!accountsToActivate.isEmpty()) {
+            // Chuyển trạng thái từng tài khoản chuyên gia sang hoạt động.
             accountsToActivate.forEach(acc -> acc.setStatus(AccountStatus.ACTIVE));
+            // Lưu toàn bộ tài khoản một lần để giảm số lần truy cập cơ sở dữ liệu.
             accountRepository.saveAll(accountsToActivate);
         }
 
-        // 3. Duyệt từng category trong request và tạo ExpertAssign
+        // Chuẩn bị danh sách chứa mọi phân công hợp lệ sẽ được lưu sau khi kiểm tra xong.
         List<ExpertAssign> allAssignments = new ArrayList<>();
 
+        // Xử lý lần lượt yêu cầu phân công của từng danh mục.
         for (CategoryExpertAssignRequestDTO cateExpertAssign : requests) {
+            // Bỏ qua danh mục không có chuyên gia nào được chọn.
             if (cateExpertAssign.getExperts() == null || cateExpertAssign.getExperts().isEmpty()) {
                 continue;
             }
 
+            // Giá trị categoryId hiện được dùng làm vị trí danh mục trong danh sách đã lưu.
             Integer index = cateExpertAssign.getCategoryId();
+            // Vị trí phải nằm trong giới hạn danh sách danh mục của vòng.
             if (index == null || index < 0 || index >= saveCateRound.size()) {
                 throw new BadRequestException("Index category không hợp lệ hoặc không tồn tại: " + index);
             }
+            // Lấy danh mục vòng tương ứng với vị trí đã được kiểm tra.
             CategoryRound cateRound = saveCateRound.get(index);
 
+            // Tạo một bản ghi phân công riêng cho từng chuyên gia của danh mục.
             for (var expertRequest : cateExpertAssign.getExperts()) {
+                // Tra cứu chuyên gia từ bảng đã tải trước đó thay vì truy vấn lại cơ sở dữ liệu.
                 Expert expert = expertMap.get(expertRequest.getExpertId());
+                // Mã không có trong bảng tra cứu nghĩa là chuyên gia không tồn tại.
                 if (expert == null) {
                     throw new BadRequestException("Không tìm thấy expert với id: " + expertRequest.getExpertId());
                 }
 
+                // Tạo quan hệ giữa chuyên gia, danh mục vòng và vai trò được giao.
                 ExpertAssign assign = ExpertAssign.builder()
                         .categoryRound(cateRound)
                         .expert(expert)
                         .role(expertRequest.getRole())
                         .build();
 
+                // Thêm phân công hợp lệ vào danh sách chờ lưu.
                 allAssignments.add(assign);
             }
         }
 
-        // 4. Lưu tất cả assignment 1 lần duy nhất
+        // Chỉ gọi thao tác lưu khi danh sách có ít nhất một phân công mới.
         if (!allAssignments.isEmpty()) {
+            // Lưu toàn bộ phân công trong một lần để bảo đảm hiệu quả xử lý.
             expertAssignRepository.saveAll(allAssignments);
         }
     }
-
-    // =========================================================
-    // GET EXPERTS BY ROUND
-    // =========================================================
 
     @Override
     public List<CategoryExpertAssignResponseDTO> getExpertAssignmentsByRound(Round round) {
@@ -114,7 +124,6 @@ public class ExpertAssignServiceImpl implements ExpertAssignService {
             return new ArrayList<>();
         }
 
-        // 1. Lấy tất cả assignment thuộc round này
         List<ExpertAssign> assigns = expertAssignRepository
                 .findByCategoryRound_Round_RoundId(round.getRoundId());
 
@@ -122,11 +131,9 @@ public class ExpertAssignServiceImpl implements ExpertAssignService {
             return new ArrayList<>();
         }
 
-        // 2. Group theo Category
         Map<Category, List<ExpertAssign>> groupByCategory = assigns.stream()
                 .collect(Collectors.groupingBy(assign -> assign.getCategoryRound().getCategory()));
 
-        // 3. Duyệt từng nhóm Category, chỉ lấy expert của đúng category đó
         return groupByCategory.entrySet().stream()
                 .map(entry -> {
                     Category category = entry.getKey();
@@ -147,18 +154,13 @@ public class ExpertAssignServiceImpl implements ExpertAssignService {
                 .toList();
     }
 
-    // =========================================================
-    // DELETE
-    // =========================================================
-
+    // Xóa toàn bộ phân công chuyên gia thuộc các vòng của một sự kiện.
     @Override
     public void deleteByEventId(Integer eventId) {
+        // Repository thực hiện xóa theo mã sự kiện trên tất cả danh mục vòng liên quan.
         expertAssignRepository.deleteByEventId(eventId);
     }
 
-    // =========================================================
-    // GET
-    // =========================================================
     @Override
     public List<EventDTO> getEventForJudge(CustomUserDetails userDetails) {
         int expertId = userDetails.getAccount().getExpert().getExpertId();

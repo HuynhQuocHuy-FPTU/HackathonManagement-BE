@@ -18,7 +18,14 @@ public enum FileType {
             "application/x-zip",
             "multipart/x-zip"
     ),
-    RAR("application/x-rar-compressed", FileGroup.ARCHIVE),
+    RAR(
+            "application/x-rar-compressed",
+            FileGroup.ARCHIVE,
+            "application/vnd.rar",
+            "application/rar",
+            "application/x-rar",
+            "application/octet-stream"
+    ),
     PNG("image/png", FileGroup.IMAGE),
     JPG("image/jpeg", FileGroup.IMAGE),
     JPEG("image/jpeg", FileGroup.IMAGE),

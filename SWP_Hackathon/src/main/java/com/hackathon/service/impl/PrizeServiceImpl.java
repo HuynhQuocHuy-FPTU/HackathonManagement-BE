@@ -17,6 +17,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+// Gán giải thưởng theo thứ hạng và cho phép ban tổ chức bổ sung giải ngoại lệ.
 public class PrizeServiceImpl {
     private final EventCoordinatorRepository eventCoordinatorRepository;
     private final RoundRepository roundRepository;
@@ -26,43 +27,49 @@ public class PrizeServiceImpl {
 
 
     @Transactional
+    // Gán giải cho các đội ở vòng chung kết dựa trên thứ hạng và yêu cầu bổ sung.
     public void assignPrize(CustomUserDetails userDetails, Integer eventId, List<PrizeRequestDTO> request) {
+        // Xác nhận người thao tác thuộc ban tổ chức.
         EventCoordinator eventCoordinator = eventCoordinatorRepository.findByAccount_AccountId(userDetails.getAccount().getAccountId())
                 .orElseThrow(() -> new BadRequestException("Bạn không phải là EventCoordinator."));
 
-        // Lấy round chung kết để gán giải thưởng
+        // Tìm vòng cuối cùng của sự kiện để xác định kết quả trao giải.
         Round finalRound = roundRepository.findFinalRoundByEventId(eventId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy vòng chung kết."));
 
-        // Lấy ds giải thưởng
+        // Lấy danh sách giải thưởng được cấu hình trong mô tả sự kiện.
         List<Prize> prizes = finalRound.getHackathonEvent().getDescription().prizes();
         
-        // Tìm những team tham gia vòng cuối cùng
+        // Chỉ chọn các đội đã vượt qua vòng cuối cùng để xét giải theo thứ hạng.
         List<TeamParticipant> rankings = participantRepository.findByRoundId(finalRound.getRoundId())
                 .stream()
                 .filter(rank -> rank.getStatus() == ParticipantStatus.PASSED).toList();
-        //1.Dựa vào rank để xếp giải thưởng tự động
+        // Chỉ gán tự động khi đồng thời có đội chiến thắng và cấu hình giải thưởng.
         if (!rankings.isEmpty() && prizes != null && !prizes.isEmpty()) {
 
+            // Số lần lặp không vượt quá số đội thắng, số giải và giới hạn đội được chọn.
             for (int i = 0; i < Math.min(finalRound.getTopN(), Math.min(rankings.size(), prizes.size())); i++) {
 
                 TeamParticipant team = rankings.get(i);
                 Prize prize = prizes.get(i);
+                // Gán phần thưởng và danh hiệu cùng vị trí trong danh sách giải cho đội.
                 team.setAward(prize.reward());
                 team.setTitleAward(prize.title());
             }
+            // Lưu đồng loạt kết quả trao giải tự động.
             participantRepository.saveAll(rankings);
         }
 
-        //2.BTC gán giải thưởng ngoại lệ
-
+        // Ban tổ chức có thể bổ sung giải ngoại lệ ngoài danh sách được gán tự động.
         if (request != null && !request.isEmpty()) {
+            // Xử lý từng yêu cầu bổ sung giải cho một đội cụ thể.
             for (PrizeRequestDTO rq : request) {
                 TeamParticipant tp = participantRepository.findById(rq.getTeamParticipantId())
                         .orElseThrow(() -> new BadRequestException("Không tìm thấy thông tin về đội thi này."));
-                // Check có giải thưởng trước đó chưa
+                // Nối giải mới vào dữ liệu hiện có để không làm mất giải đã nhận trước đó.
                 tp.setTitleAward(appendValue(tp.getTitleAward(), rq.getPrizeTitle()));
                 tp.setAward(appendValue(tp.getAward(), rq.getPrizeReward()));
+                // Lưu ngay thay đổi của đội đang được bổ sung giải.
                 participantRepository.save(tp);
             }
 
@@ -139,6 +146,7 @@ public class PrizeServiceImpl {
         return result;
     }
 
+    // Nối giải bổ sung vào giá trị cũ mà không làm mất giải đã được gán trước đó.
     private String appendValue(String current, String newValue) {
         if (current == null || current.isEmpty()) return newValue;
         return current + ", " + newValue;

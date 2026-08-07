@@ -35,7 +35,6 @@ public class CriteriaCompletenessValidator {
             }
         }
 
-        // Ánh xạ tập tiêu chí của vòng thi sang dạng Bản đồ
         Map<Integer, EvaluationCriteria> criteriaMap = roundCriteria.stream()
                 .collect(Collectors.toMap(EvaluationCriteria::getEvaluationCriteriaId, c -> c));
 

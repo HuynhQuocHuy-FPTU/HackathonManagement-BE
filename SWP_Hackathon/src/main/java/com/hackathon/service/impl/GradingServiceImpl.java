@@ -21,12 +21,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * Hiện thực dịch vụ chấm điểm. Đóng vai trò là Bộ điều hợp tiến trình (Orchestrator Pattern).
- * Lớp này điều phối các thành phần Support, không chứa logic tính toán trực tiếp.
- */
+// Hiện thực dịch vụ chấm điểm. Đóng vai trò là Bộ điều hợp tiến trình (Orchestrator Pattern).
+// Lớp này điều phối các thành phần Support, không chứa logic tính toán trực tiếp.
 @Service
 @RequiredArgsConstructor
+// Điều phối toàn bộ quy trình lấy bài chấm, lưu điểm và xử lý chấm lại của giám khảo.
 public class GradingServiceImpl implements GradingService {
 
     private final SubmissionRepository submissionRepository;
@@ -34,7 +33,6 @@ public class GradingServiceImpl implements GradingService {
     private final RoundRepository roundRepository;
     private final TeamRequestRepository teamRequestRepository;
 
-    // Tiêm các thành phần xử lý quy tắc nghiệp vụ (SOLID Components)
     private final JudgeAssignmentResolver assignmentResolver;
     private final RoundEndTimeGradingPolicy deadlinePolicy;
     private final CriteriaCompletenessValidator criteriaValidator;
@@ -99,7 +97,6 @@ public class GradingServiceImpl implements GradingService {
                     .build();
         }).filter(java.util.Objects::nonNull).collect(Collectors.toList());
 
-        // 4. Đóng gói toàn bộ vào DTO mới và trả về
         return JudgeDashboardResponse.builder()
                 .gradingDeadline(deadline)
                 .isGradingOpen(isOpen)
@@ -228,7 +225,6 @@ public class GradingServiceImpl implements GradingService {
         // Kéo danh sách hội đồng và truyền vào Mapper
         List<Evaluation> otherEvaluations = getOtherEvaluations(submissionId, expertAssign.getAssignId());
 
-        // 6. Map ra DTO trả về cho Client tái hiện giao diện
         return evaluationMapper.toResponse(evaluation, isEditable, deadline, otherEvaluations);
     }
 
@@ -287,7 +283,6 @@ public class GradingServiceImpl implements GradingService {
 
         deadlinePolicy.validateScoringTime(round, isReEvaluation);
 
-        // 9. ĐỒNG BỘ HÓA DỮ LIỆU ĐIỂM CHI TIẾT (PARTIAL MAPPING & MERGE)
         // Lấy danh sách điểm cũ chuyển thành Map để thao tác Add/Update trực tiếp trên từng Item,
         // giúp bảo toàn các điểm đã chấm ở phần khác (Ví dụ đang chấm CODE thì giữ nguyên điểm PRESENTATION)
         Map<Integer, EvaluationDetail> existingDetailsMap = evaluation.getEvaluationDetails().stream()
@@ -346,55 +341,66 @@ public class GradingServiceImpl implements GradingService {
         // Kéo danh sách hội đồng và truyền vào Mapper
         List<Evaluation> otherEvaluations = getOtherEvaluations(submissionId, expertAssign.getAssignId());
 
-        // 12. CHUYỂN ĐỔI DỮ LIỆU ĐẦU RA VÀ PHẢN HỒI PRESENTATION TẦNG
         return evaluationMapper.toResponse(evaluation, true, deadline, otherEvaluations);
     }
 
+    // Xác định trạng thái tiếp theo dựa trên mức độ hoàn thành các tiêu chí bắt buộc.
     private EvaluationStatus determineNextStatus(
             Evaluation evaluation,
             List<EvaluationCriteria> requiredCriteria,
             boolean isReEvaluation) {
+        // Khi chấm lại, chỉ tính các chi tiết đã được đánh dấu thuộc lần chấm lại hiện tại.
         if (isReEvaluation) {
+            // Tạo tập mã tiêu chí bắt buộc để so sánh không phụ thuộc thứ tự.
             Set<Integer> requiredIds = requiredCriteria.stream()
                     .map(EvaluationCriteria::getEvaluationCriteriaId)
                     .collect(Collectors.toSet());
+            // Tạo tập mã tiêu chí đã hoàn thành chấm lại.
             Set<Integer> reEvaluatedIds = evaluation.getEvaluationDetails().stream()
                     .filter(detail -> detail.getEvaluationCriteria() != null)
                     .filter(detail -> Boolean.TRUE.equals(detail.getIsReEvaluation()))
                     .map(detail -> detail.getEvaluationCriteria()
                             .getEvaluationCriteriaId())
                     .collect(Collectors.toSet());
+            // Chỉ hoàn tất khi tập tiêu chí đã chấm lại chứa toàn bộ tiêu chí bắt buộc.
             boolean allReEvaluated = reEvaluatedIds.containsAll(requiredIds);
             return allReEvaluated
                     ? EvaluationStatus.GRADED
                     : EvaluationStatus.RE_EVALUATION;
         }
 
+        // Với lần chấm thông thường, lấy tập mã của toàn bộ tiêu chí bắt buộc.
         Set<Integer> requiredIds = requiredCriteria.stream()
                 .map(EvaluationCriteria::getEvaluationCriteriaId)
                 .collect(Collectors.toSet());
+        // Chỉ tính tiêu chí có điểm và còn liên kết hợp lệ với cấu hình vòng.
         Set<Integer> gradedIds = evaluation.getEvaluationDetails().stream()
                 .filter(detail -> detail.getScore() != null)
                 .filter(detail -> detail.getEvaluationCriteria() != null)
                 .map(detail -> detail.getEvaluationCriteria().getEvaluationCriteriaId())
                 .collect(Collectors.toSet());
 
+        // Đủ tất cả tiêu chí thì hoàn tất, nếu thiếu thì giữ trạng thái chấm một phần.
         return gradedIds.containsAll(requiredIds)
                 ? EvaluationStatus.GRADED
                 : EvaluationStatus.PARTIALLY_GRADED;
     }
 
+    // Cập nhật tiến độ đơn khiếu nại sau khi một giám khảo hoàn thành chấm lại.
     private void updateAppealProgress(Evaluation completedEvaluation, String expertName) {
+        // Lấy bài nộp và đội tham gia để xác định đúng đơn khiếu nại liên quan.
         Submission submission = completedEvaluation.getSubmission();
         TeamParticipant participant = submission.getTeamParticipant();
         Integer submissionId = submission.getSubmissionId();
         Integer teamId = submission.getTeam().getTeamId();
         Integer roundId = participant.getCategoryRound().getRound().getRoundId();
 
+        // Kiểm tra còn giám khảo nào của cùng bài vẫn đang chờ chấm lại hay không.
         boolean stillWaiting = evaluationRepository
                 .existsBySubmission_SubmissionIdAndStatus(
                         submissionId, EvaluationStatus.RE_EVALUATION);
 
+        // Tìm đơn khiếu nại đang xử lý của đúng đội và vòng thi.
         TeamRequest appealRequest = teamRequestRepository
                 .findByTeam_TeamIdAndRound_RoundIdAndRequestTypeAndStatus(
                         teamId,
@@ -404,6 +410,7 @@ public class GradingServiceImpl implements GradingService {
                 .orElseThrow(() -> new BadRequestException(
                         "Không tìm thấy đơn khiếu nại đang được xử lý cho bài chấm này."));
 
+        // Nếu còn người chưa hoàn tất, giữ đơn ở trạng thái đang xử lý và cập nhật tiến độ.
         if (stillWaiting) {
             appealRequest.setStatus(RequestStatus.PROCESSING);
             appealRequest.setResponseMessage(String.format(
@@ -415,13 +422,12 @@ public class GradingServiceImpl implements GradingService {
                     "Toàn bộ hội đồng giám khảo đã hoàn tất cập nhật điểm phúc khảo.");
         }
 
+        // Ghi thời điểm cập nhật gần nhất và lưu trạng thái mới của đơn.
         appealRequest.setResponseAt(LocalDateTime.now());
         teamRequestRepository.save(appealRequest);
     }
 
-    /**
-     * Hàm Helper: Lấy danh sách bài chấm của Hội đồng (Trừ bản thân)
-     */
+    // Hàm Helper: Lấy danh sách bài chấm của Hội đồng (Trừ bản thân)
     private List<Evaluation> getOtherEvaluations(Integer submissionId, Integer currentAssignId) {
         List<EvaluationStatus> validStatuses = List.of(EvaluationStatus.GRADED, EvaluationStatus.RE_EVALUATION);
         return evaluationRepository.findOtherBoardEvaluations(submissionId, currentAssignId, validStatuses);

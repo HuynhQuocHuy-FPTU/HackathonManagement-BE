@@ -71,7 +71,6 @@ public class EvaluationMapper {
                 .map(detail -> mapCriteriaDetail(detail, otherEvaluations))
                 .collect(Collectors.toList());
 
-        // 3. ĐÓNG GÓI RESPONSE
         return JudgeEvaluationResponse.builder()
                 .evaluationId(evaluation.getEvaluationId())
                 .submissionId(evaluation.getSubmission().getSubmissionId())
@@ -111,13 +110,11 @@ public class EvaluationMapper {
 
         if (otherEvaluations != null && !otherEvaluations.isEmpty()) {
             for (Evaluation e : otherEvaluations) {
-                // Tìm kiếm điểm của giám khảo 'e' tương ứng với tiêu chí hiện tại
                 e.getEvaluationDetails().stream()
                         .filter(d -> d.getEvaluationCriteria().getEvaluationCriteriaId() == (criteriaId))
                         .findFirst()
                         .ifPresent(d -> {
                             if (d.getScore() != null) {
-                                // Add vào mảng Object để trả về UI hiển thị
                                 detailedOtherScores.add(OtherJudgeScoreDetailDTO.builder()
                                         .expertId(e.getExpertAssign().getExpert().getExpertId())
                                         .expertName(e.getExpertAssign().getExpert().getExpertName())
@@ -125,7 +122,6 @@ public class EvaluationMapper {
                                         .comment(d.getComment())
                                         .build());
 
-                                // Add vào mảng số để tính trung bình
                                 justScoresForMath.add(d.getScore());
                             }
                         });
@@ -154,7 +150,6 @@ public class EvaluationMapper {
                 .score(myScore)
                 .comment(detail.getComment())
 
-                // Trả về UI Dữ liệu Hiệu chuẩn của riêng tiêu chí này
                 .otherJudgesScores(detailedOtherScores)
                 .averageOtherScore(averageOtherScore)
                 .criteriaDeviation(criteriaDeviation)

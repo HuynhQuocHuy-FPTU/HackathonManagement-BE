@@ -1,5 +1,6 @@
 package com.hackathon.service.impl;
 
+import com.hackathon.service.GithubOAuthStateUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -11,7 +12,7 @@ import java.util.Base64;
 
  // state = base64(accountId:timestamp:signatureHex)
 @Component
-public class GithubOAuthStateUtil {
+public class GithubOAuthStateUtilImpl implements GithubOAuthStateUtil {
 
     // Dùng chung 1 secret riêng cho OAuth state, KHÁC với secret ký JWT để tránh phụ thuộc chéo.
     @Value("${github.oauth.state-secret}")
@@ -19,6 +20,8 @@ public class GithubOAuthStateUtil {
 
     private static final long MAX_AGE_MILLIS = 10 * 60 * 1000; // state chỉ có hiệu lực 10 phút
 
+    @Override
+    // Tạo trạng thái có chữ ký chứa mã tài khoản và thời điểm bắt đầu liên kết.
     public String encode(Integer accountId) {
         long timestamp = System.currentTimeMillis();
         String payload = accountId + ":" + timestamp;
@@ -28,6 +31,7 @@ public class GithubOAuthStateUtil {
     }
 
    //Trả về accountId nếu hợp lệ, throw nếu bị giả mạo hoặc hết hạn.
+    @Override
     public Integer decodeAndVerify(String state) {
         String raw = new String(Base64.getUrlDecoder().decode(state), StandardCharsets.UTF_8);
         String[] parts = raw.split(":");
@@ -54,6 +58,7 @@ public class GithubOAuthStateUtil {
         return Integer.parseInt(accountIdStr);
     }
 
+    // Ký nội dung trạng thái bằng khóa bí mật để phát hiện dữ liệu bị thay đổi.
     private String sign(String payload) {
         try {
             Mac mac = Mac.getInstance("HmacSHA256");
