@@ -92,7 +92,7 @@ public class RankingServiceImpl implements RankingService {
     // Khi chấm điểm xong thì sẽ public Draft
     @Override
     @Transactional
-    public void publishDraftRankingAndOpenAppeals(Integer roundId, CustomUserDetails userDetails, Integer hoursAmount) {
+    public void publishDraftRankingAndOpenAppeals(Integer roundId, CustomUserDetails userDetails, Integer minutesAmount) {
         // Lấy tài khoản làm người thực hiện trong lịch sử công bố kết quả.
         Account account = userDetails.getAccount();
         // Xác nhận tài khoản hiện tại thật sự là ban tổ chức.
@@ -107,9 +107,9 @@ public class RankingServiceImpl implements RankingService {
             throw new BadRequestException("Vòng đấu phải ở trạng thái PENDING mới có thể công bố kết quả.");
         }
 
-        // Khoảng thời gian mở cổng khiếu nại phải là một số giờ dương.
-        if (hoursAmount == null || hoursAmount <= 0) {
-            throw new BadRequestException("Vui lòng nhập số giờ mở cổng khiếu nại hợp lệ (lớn hơn 0).");
+        // Khoảng thời gian mở cổng khiếu nại phải là một số phút dương.
+        if (minutesAmount == null || minutesAmount <= 0) {
+            throw new BadRequestException("Vui lòng nhập số phút mở cổng khiếu nại hợp lệ (lớn hơn 0).");
         }
 
         // Hạn giải quyết khiếu nại phải còn nằm trong tương lai tại thời điểm công bố.
@@ -120,7 +120,7 @@ public class RankingServiceImpl implements RankingService {
         }
 
         // Cổng nhận đơn phải đóng trước hoặc đúng hạn giải quyết cuối cùng của ban tổ chức.
-        if(LocalDateTime.now().plusHours(hoursAmount).isAfter(round.getResolveAppealDeadline())){
+        if(LocalDateTime.now().plusMinutes(minutesAmount).isAfter(round.getResolveAppealDeadline())){
             throw new BadRequestException("Thời gian kết thúc nhận đơn khiếu nại không được phép sau thời gian giải quyết khiếu nại");
         }
 
@@ -139,12 +139,12 @@ public class RankingServiceImpl implements RankingService {
         // Ghi nhận thời điểm bắt đầu nhận đơn là thời điểm công bố hiện tại.
         round.setAppealStartTime(LocalDateTime.now());
         // Tính thời điểm đóng cổng dựa trên khoảng thời gian được cung cấp.
-        round.setAppealEndTime(LocalDateTime.now().plusMinutes(hoursAmount));
+        round.setAppealEndTime(LocalDateTime.now().plusMinutes(minutesAmount));
         // Lưu trạng thái và các mốc thời gian mới của vòng.
         roundRepository.save(round);
         log.info("Đã công bố bản nháp bảng xếp hạng vòng {}. Bắt đầu nhận phúc khảo.", roundId);
         // Gửi thông báo công bố kết quả tạm thời đến các đội trong vòng.
-        notificationService.notifyRoundRankingPublished(eventCoordinator.getAccount(), roundId, false, hoursAmount);
+        notificationService.notifyRoundRankingPublished(eventCoordinator.getAccount(), roundId, false, minutesAmount);
 
         // Chuẩn bị ảnh chụp dữ liệu xếp hạng dùng để lưu lịch sử kiểm toán.
         List<CategoryRankingResponse> auditRankingData = auditRankingData(categoryRounds);
