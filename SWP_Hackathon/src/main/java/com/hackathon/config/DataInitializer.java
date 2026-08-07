@@ -5,7 +5,7 @@ import com.hackathon.dto.event.Prize;
 import com.hackathon.entity.*;
 import com.hackathon.entity.enums.*;
 import com.hackathon.repository.*;
-import com.hackathon.service.grading.EvaluationAuditLogService;
+import com.hackathon.service.impl.EvaluationAuditLogServiceImpl;
 import com.hackathon.service.grading.support.ScoreCalculator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,7 +38,7 @@ public class DataInitializer implements CommandLineRunner {
     private static final int TEAM_COUNT = 10;
     private static final int MEMBER_PER_TEAM = 3;
 
-    @Value("${app.init-data:true}")
+    @Value("${app.init-data:false}")
     private boolean initData;
 
     @Autowired
@@ -93,7 +93,7 @@ public class DataInitializer implements CommandLineRunner {
     private EvaluationAuditLogRepository evaluationAuditLogRepository;
 
     @Autowired
-    private EvaluationAuditLogService evaluationAuditLogService;
+    private EvaluationAuditLogServiceImpl evaluationAuditLogServiceImpl;
 
     @Autowired
     private CriteriaSetRepository criteriaSetRepository;
@@ -117,20 +117,20 @@ public class DataInitializer implements CommandLineRunner {
         String password =
                 passwordEncoder.encode("123456");
 
-        createAdmins(password);
-        createEventCoordinators(password);
-
-        createExperts(password);
-        createCriteriaSets();
-
-        createStudents(password);
-        Team[] teams = createTeams();
-
-        createDemoEvents();
+//        createAdmins(password);
+//        createEventCoordinators(password);
 //
-//        registerTeamsForEvent(
-//                TARGET_EVENT_ID
-//        );
+//        createExperts(password);
+//        createCriteriaSets();
+//
+//        createStudents(password);
+//        Team[] teams = createTeams();
+//
+//        createDemoEvents();
+
+        registerTeamsForEvent(
+                TARGET_EVENT_ID
+        );
 //
 //        submitForParticipantsWithoutSubmission(
 //                TARGET_ROUND_ID
@@ -1263,7 +1263,7 @@ public class DataInitializer implements CommandLineRunner {
                 .map(EvaluationCriteria::getType)
                 .filter(type -> type != null)
                 .distinct()
-                .forEach(type -> evaluationAuditLogService.saveAttempt(
+                .forEach(type -> evaluationAuditLogServiceImpl.saveAttempt(
                         judgeAccount,
                         evaluation,
                         type,
