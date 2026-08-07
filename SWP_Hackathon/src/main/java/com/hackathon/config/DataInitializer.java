@@ -117,16 +117,16 @@ public class DataInitializer implements CommandLineRunner {
         String password =
                 passwordEncoder.encode("123456");
 
-//        createAdmins(password);
-//        createEventCoordinators(password);
-//
-//        createExperts(password);
-//        createCriteriaSets();
-//
-//        createStudents(password);
-//        Team[] teams = createTeams();
-//
-//        createDemoEvents();
+        createAdmins(password);
+        createEventCoordinators(password);
+
+        createExperts(password);
+        createCriteriaSets();
+
+        createStudents(password);
+        Team[] teams = createTeams();
+
+        createDemoEvents();
 
         registerTeamsForEvent(
                 TARGET_EVENT_ID

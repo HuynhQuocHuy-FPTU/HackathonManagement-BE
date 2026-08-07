@@ -59,6 +59,11 @@ public class SubmissionValidator {
         }
 
         List<FileType> allowedFileTypes = round.getAllowedFileType();
+        if (allowedFileTypes == null || allowedFileTypes.isEmpty()) {
+            throw new BadRequestException(
+                    "Vòng thi chưa cấu hình loại file được phép nộp. Vui lòng liên hệ Ban tổ chức."
+            );
+        }
 
         for (MultipartFile file : files) {
             if (file == null || file.isEmpty()) {
@@ -87,9 +92,7 @@ public class SubmissionValidator {
                 );
             }
 
-            boolean isAllowed = allowedFileTypes == null
-                    || allowedFileTypes.isEmpty()
-                    || allowedFileTypes.stream().anyMatch(allowedType ->
+            boolean isAllowed = allowedFileTypes.stream().anyMatch(allowedType ->
                             allowedType.getMimeType().equalsIgnoreCase(mimeType.getMimeType())
                     );
 
