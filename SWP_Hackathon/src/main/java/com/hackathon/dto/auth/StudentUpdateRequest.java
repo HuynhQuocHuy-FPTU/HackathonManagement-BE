@@ -11,12 +11,12 @@ import lombok.Setter;
 public class StudentUpdateRequest {
 
     @NotBlank(message = "Số điện thoại không được để trống")
-    @Pattern(regexp = "^(0)[0-9]{9}$", message = "Số điện thoại không hợp lệ (Phải bắt đầu bằng 0 hoặc +84 và theo sau là 9 chữ số)")
+    @Pattern(regexp = "^0[0-9]{9}$", message = "Số điện thoại không hợp lệ (Phải bắt đầu bằng 0 hoặc +84 và theo sau là 9 chữ số)")
     private String phone;
 
     @NotBlank(message = "Mã số sinh viên không được để trống")
     @Size(max = 20, message = "Mã số sinh viên tối đa 20 ký tự")
-    @Pattern(regexp = "^0[0-9]{9}$", message = "Mã số sinh viên chỉ được chứa chữ cái và số")
+    @Pattern(regexp = "^[a-zA-Z0-9]+$", message = "Mã số sinh viên chỉ được chứa chữ cái và số")
     private String studentCode;
 
     @NotBlank(message = "Tên sinh viên không được để trống")
@@ -37,4 +37,5 @@ public class StudentUpdateRequest {
     private String university;
 
     private String avatar;
+
 }
