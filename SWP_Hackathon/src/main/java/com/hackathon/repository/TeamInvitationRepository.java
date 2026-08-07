@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface TeamInvitationRepository extends JpaRepository<TeamInvitation, Long> {
     boolean existsByTeamDraftAndAccount(TeamDraft teamDraft, Account account);
@@ -28,8 +29,6 @@ public interface TeamInvitationRepository extends JpaRepository<TeamInvitation, 
 
     List<TeamInvitation> findByTypeAndStatusAndTeam(InvitationType type, InvitationStatus status, Team team);
 
-    List<TeamInvitation> findByAccount(Account account);
-
     List<TeamInvitation> findByAccountAndTypeOrderByCreatedAtDesc(
             Account account,
             InvitationType type
@@ -39,4 +38,6 @@ public interface TeamInvitationRepository extends JpaRepository<TeamInvitation, 
     boolean existsByTeamDraftAndEmail(TeamDraft teamDraft, String email);
 
     boolean existsByAccountAndStatusAndTeamDraftNot(Account account, InvitationStatus status, TeamDraft teamDraft);
+    Optional<TeamInvitation> findByTeamDraftAndAccount(TeamDraft draft, Account account);
+
 }
