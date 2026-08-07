@@ -37,5 +37,6 @@ public interface StudentRepository extends JpaRepository<Student, Integer> {
             @Param("statuses") List<ParticipantStatus> statuses
     );
     Optional<Student> findByAccount_AccountId(Integer accountId);
+    Optional<Student> findByAccount_Email(String email);
 
 }
