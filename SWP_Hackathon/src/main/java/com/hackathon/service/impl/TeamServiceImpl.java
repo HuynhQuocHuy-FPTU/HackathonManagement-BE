@@ -1368,6 +1368,7 @@ public class TeamServiceImpl implements TeamService {
         }
         int totalTeamSize = 1 + draftMembers.size();
         return TeamDetailResponse.builder()
+                .teamId(teamDraft.getTeamDraftId().intValue())
                 .teamName(teamDraft.getTeamName())
                 .leader(leaderInfo)
                 .members(new ArrayList<>()) // Đội nháp chưa có thành viên chính thức nào khác ngoài leader
