@@ -17,4 +17,6 @@ public interface TeamDraftRepository extends JpaRepository<TeamDraft, Long> {
 
     List<TeamDraft> findAllByStatus(TeamStatus status);
 
+    boolean existsByTeamNameIgnoreCase(String teamName);
+
     Optional<TeamDraft> findByAccount_AccountIdAndStatus(Integer accountId, TeamStatus status);}

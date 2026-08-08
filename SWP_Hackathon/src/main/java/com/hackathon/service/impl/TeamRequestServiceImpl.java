@@ -652,17 +652,26 @@ public class TeamRequestServiceImpl implements TeamRequestService {
             List<RequestType> requestTypes
     ) {
         Account account = teamRequestValidator.requireStudentAccount(userDetails);
-        if (!hackathonEventRepository.existsById(eventId)) {
-            throw new BadRequestException("Không tìm thấy sự kiện");
+        
+        if (eventId != null && eventId > 0) {
+            if (!hackathonEventRepository.existsById(eventId)) {
+                throw new BadRequestException("Không tìm thấy sự kiện");
+            }
+            return teamRequestRepository.findMyRequestsByEventAndTypes(
+                            eventId,
+                            requestTypes,
+                            account.getStudent().getStudentId())
+                    .stream()
+                    .map(request -> toResponse(request, null, null))
+                    .toList();
+        } else {
+            return teamRequestRepository.findAllMyRequestsByTypes(
+                            requestTypes,
+                            account.getStudent().getStudentId())
+                    .stream()
+                    .map(request -> toResponse(request, null, null))
+                    .toList();
         }
-
-        return teamRequestRepository.findMyRequestsByEventAndTypes(
-                        eventId,
-                        requestTypes,
-                        account.getStudent().getStudentId())
-                .stream()
-                .map(request -> toResponse(request, null, null))
-                .toList();
     }
 
     //---------------------------------------------//
