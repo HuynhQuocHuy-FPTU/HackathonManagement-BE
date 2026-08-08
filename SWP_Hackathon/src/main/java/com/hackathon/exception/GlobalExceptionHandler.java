@@ -25,12 +25,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleApiException(ApiException ex) {
         return ResponseEntity.status(ex.getStatus()).body(ApiResponse.fail(ex.getMessage()));
     }
+
     // 2. Lỗi dữ liệu không hợp lệ (Bad Request) 400
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ApiResponse<Void>> handleBadRequest(BadRequestException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.fail(ex.getMessage()));
     }
-    //404 Not found
+
+    // 404 Not found
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleResourceNotFound(ResourceNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -49,8 +51,7 @@ public class GlobalExceptionHandler {
                         .success(false)
                         .message("Dữ liệu không hợp lệ")
                         .data(errors)
-                        .build()
-        );
+                        .build());
     }
 
     // 3. Lỗi Validation từ @Valid (DTO)
@@ -60,7 +61,7 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.fail("Thiếu tham số bắt buộc: " + ex.getParameterName()));
     }
 
-    @ExceptionHandler({BadCredentialsException.class, UsernameNotFoundException.class})
+    @ExceptionHandler({ BadCredentialsException.class, UsernameNotFoundException.class })
     public ResponseEntity<ApiResponse<Void>> handleBadCredentials(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(ApiResponse.fail("Email hoặc mật khẩu không đúng"));
@@ -68,8 +69,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Void>> handleAccessDenied(
-            AccessDeniedException ex
-    ) {
+            AccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ApiResponse.fail(
                         "Bạn không có quyền thực hiện chức năng này"));
@@ -77,8 +77,17 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
     public ResponseEntity<ApiResponse<Void>> handleOptimisticLock(
-            ObjectOptimisticLockingFailureException ex
-    ) {
+            ObjectOptimisticLockingFailureException ex) {
+        Throwable rootCause = ex.getRootCause();
+
+        System.out.println("=== Optimistic Lock Error ===");
+        System.out.println("Exception: " + ex.getClass().getName());
+        System.out.println("Message: " + ex.getMessage());
+
+        if (rootCause != null) {
+            System.out.println("Root cause: " + rootCause.getClass().getName());
+            System.out.println("Root message: " + rootCause.getMessage());
+        }
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ApiResponse.fail(
                         "Registration đã được người khác xử lý. Vui lòng tải lại dữ liệu."));
@@ -96,6 +105,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ApiResponse.fail("Dữ liệu bị trùng, yêu cầu trả về 1 kết quả nhưng có nhiều bản ghi"));
     }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleSql(DataIntegrityViolationException ex) {
 
@@ -111,6 +121,7 @@ public class GlobalExceptionHandler {
             return ResponseEntity.badRequest().body(ApiResponse.fail("Dữ liệu liên kết không hợp lệ"));
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.fail("Lỗi ràng buộc dữ liệu"));
     }
+
     // 9. Lỗi Parse dữ liệu (JSON sai định dạng/ngày tháng)
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiResponse<Void>> handleDateParse(HttpMessageNotReadableException ex) {

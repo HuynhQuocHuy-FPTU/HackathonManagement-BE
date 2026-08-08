@@ -450,13 +450,13 @@ public class RegistrationEventServiceImpl implements RegistrationEventService {
     // Thống kê số lượng đăng ký theo từng trạng thái trong sự kiện.
     public CountRegistrationDTO getCountRegistrations(Integer eventId) {
         // Đếm các đăng ký đã được ban tổ chức chấp thuận.
-        Integer countApproved = registrationRepository.countRegistration(RegistrationStatus.APPROVED);
+        Integer countApproved = registrationRepository.countRegistration(RegistrationStatus.APPROVED, eventId);
 
         // Đếm các đăng ký đã bị từ chối.
-        Integer countRejected = registrationRepository.countRegistration(RegistrationStatus.REJECTED);
+        Integer countRejected = registrationRepository.countRegistration(RegistrationStatus.REJECTED, eventId);
 
         // Đếm các đăng ký vẫn đang chờ xử lý.
-        Integer countPending = registrationRepository.countRegistration(RegistrationStatus.PENDING);
+        Integer countPending = registrationRepository.countRegistration(RegistrationStatus.PENDING, eventId);
 
         return CountRegistrationDTO.builder().countApproved(countApproved).countReject(countRejected).countPending(countPending).build();
     }

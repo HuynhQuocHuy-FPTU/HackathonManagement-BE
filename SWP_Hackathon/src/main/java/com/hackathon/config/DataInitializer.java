@@ -29,17 +29,17 @@ public class DataInitializer implements CommandLineRunner {
      * Thay bằng ID event và round thật.
      * Round phải thuộc event.
      */
-    private static final Integer TARGET_EVENT_ID = 1;
-    private static final Integer TARGET_ROUND_ID = 1;
+    private static final Integer TARGET_EVENT_ID = 5;
+    private static final Integer TARGET_ROUND_ID = 8;
 
     private static final int ADMIN_COUNT = 2;
     private static final int COORDINATOR_COUNT = 3;
     private static final int EXPERT_COUNT = 6;
-    private static final int STUDENT_COUNT = 35;
-    private static final int TEAM_COUNT = 10;
+    private static final int STUDENT_COUNT = 50;
+    private static final int TEAM_COUNT = 15;
     private static final int MEMBER_PER_TEAM = 3;
 
-    @Value("${app.init-data:true}")
+    @Value("${app.init-data:false}")
     private boolean initData;
 
     @Autowired
@@ -120,10 +120,10 @@ public class DataInitializer implements CommandLineRunner {
 //
 //        createAdmins(password);
 //        createEventCoordinators(password);
-//
+
 //        createExperts(password);
 //        createCriteriaSets();
-//
+
 //        createStudents(password);
 //        Team[] teams = createTeams();
 //
@@ -138,9 +138,9 @@ public class DataInitializer implements CommandLineRunner {
 //        );
 
 
-        gradeSubmissionsByAssignments(
-                TARGET_ROUND_ID
-        );
+//         gradeSubmissionsByAssignments(
+//                 TARGET_ROUND_ID
+//         );
     }
 
     // =====================================================
@@ -1184,9 +1184,7 @@ public class DataInitializer implements CommandLineRunner {
         );
         evaluation.setIsReEvaluation(false);
         evaluation.setComment(
-                "Điểm chấm demo của "
-                        + assignment.getExpert()
-                        .getExpertName()
+                "đã chấm bài nộp"
         );
 
         List<EvaluationDetail> details =

@@ -53,8 +53,9 @@ public interface RegistrationRepository extends JpaRepository<Registration, Inte
 
     @Query("SELECT COUNT (r) " +
             "FROM Registration r " +
-            "WHERE r.status =:regisStatus")
-    Integer countRegistration(@Param("regisStatus") RegistrationStatus registrationStatus);
+            "WHERE r.status =:regisStatus" +
+            " AND r.hackathonEvent.eventId=:eventId")
+    Integer countRegistration(@Param("regisStatus") RegistrationStatus registrationStatus, @Param("eventId") Integer eventId);
 
 
 
